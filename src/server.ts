@@ -1,7 +1,3 @@
-import app from "./app";
+import { runUserTest } from "./modules/user/user.controller.js";
 
-const PORT = 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+runUserTest();
