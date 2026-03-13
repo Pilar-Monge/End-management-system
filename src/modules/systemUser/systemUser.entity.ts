@@ -13,7 +13,7 @@ import {
   USER_STATUS_VALUES,
   type SystemRole,
   type UserStatus,
-} from './user.model';
+} from './systemUser.model';
 
 @Entity({ name: 'system_user' })
 @Unique('uq_usuario_username_camp', ['campId', 'username'])

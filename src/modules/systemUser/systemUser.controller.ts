@@ -13,8 +13,8 @@ import {
   Put,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserService } from './user.service';
-import type { CreateUserDTO, LoginDTO } from './user.model';
+import { UserService } from './systemUser.service';
+import type { CreateUserDTO, LoginDTO } from './systemUser.model';
 
 @Controller()
 export class UserController {
