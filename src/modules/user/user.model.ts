@@ -1,43 +1,50 @@
-export type RolSistema = "VISITANTE" | "TRABAJADOR" | "GESTION_RECURSOS" | "ENCARGADO_VIAJES" | "ADMIN_SISTEMA";
+export const SYSTEM_ROLE_VALUES = [
+  'VISITOR',
+  'WORKER',
+  'RESOURCE_MANAGEMENT',
+  'TRAVEL_MANAGER',
+  'SYSTEM_ADMIN',
+] as const;
 
-export type EstadoUsuario = "ACTIVO" | "BLOQUEADO" | "INACTIVO";
+export type SystemRole = (typeof SYSTEM_ROLE_VALUES)[number];
+
+export const USER_STATUS_VALUES = ['ACTIVE', 'BLOCKED', 'INACTIVE'] as const;
+
+export type UserStatus = (typeof USER_STATUS_VALUES)[number];
 
 export interface User {
-  id: string;
-  personaId: string;
-  solicitudId: string;
+  id: number;
+  personId: number;
+  requestId: number;
   username: string;
   passwordHash: string;
-  correo: string;
-  nombreCompleto: string;
-  rol: RolSistema;
-  estado: EstadoUsuario;
-  campamentoId: string;
+  email: string;
+  status: UserStatus;
+  role: SystemRole;
+  campId: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export type CreateUserDTO = {
-  personaId: string;
-  solicitudId: string;
+  personId: number;
+  requestId: number;
   username: string;
   password: string;
-  correo: string;
-  nombreCompleto: string;
-  rol?: RolSistema;
-  campamentoId: string;
+  email: string;
+  role?: SystemRole;
+  campId: number;
 };
 
 export type CreateUserDBDTO = {
-  personaId: string;
-  solicitudId: string;
+  personId: number;
+  requestId: number;
   username: string;
   passwordHash: string;
-  correo: string;
-  nombreCompleto: string;
-  rol?: RolSistema;
-  estado?: EstadoUsuario;
-  campamentoId: string;
+  email: string;
+  role?: SystemRole;
+  status?: UserStatus;
+  campId: number;
 };
 
 export type UserResponse = Omit<User, 'passwordHash'>;
@@ -45,7 +52,7 @@ export type UserResponse = Omit<User, 'passwordHash'>;
 export interface LoginDTO {
   username: string;
   password: string;
-  campamentoId: string;
+  campId: number;
 }
 
 export type UpdateUserDTO = Partial<Omit<CreateUserDBDTO, 'passwordHash'>> & {

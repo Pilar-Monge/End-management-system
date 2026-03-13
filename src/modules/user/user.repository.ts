@@ -1,203 +1,56 @@
 import { Injectable } from '@nestjs/common';
-import { pool } from "../../config/database";
-import { User, CreateUserDBDTO, UpdateUserDTO } from "./user.model";
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserEntity } from './user.entity';
+import type { CreateUserDBDTO, UpdateUserDTO, User } from './user.model';
 
 @Injectable()
 export class UserRepository {
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly repo: Repository<UserEntity>,
+  ) {}
+
   async create(userData: CreateUserDBDTO): Promise<User> {
-    const query = `
-      INSERT INTO usuario_sistema (
-        persona_id,
-        solicitud_id,
-        username,
-        password_hash,
-        correo,
-        nombre_completo,
-        rol,
-        estado,
-        campamento_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING 
-        id,
-        persona_id as "personaId",
-        solicitud_id as "solicitudId",
-        username,
-        password_hash as "passwordHash",
-        correo,
-        nombre_completo as "nombreCompleto",
-        rol,
-        estado,
-        campamento_id as "campamentoId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
+    const entity = this.repo.create({
+      ...userData,
+      role: userData.role ?? 'VISITOR',
+      status: userData.status ?? 'ACTIVE',
+    });
 
-    const values = [
-      userData.personaId,
-      userData.solicitudId,
-      userData.username,
-      userData.passwordHash,
-      userData.correo,
-      userData.nombreCompleto,
-      userData.rol || 'VISITANTE',
-      userData.estado || 'ACTIVO',
-      userData.campamentoId
-    ];
-
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    return await this.repo.save(entity);
   }
 
   async findAll(): Promise<User[]> {
-    const query = `
-      SELECT 
-        id,
-        persona_id as "personaId",
-        solicitud_id as "solicitudId",
-        username,
-        password_hash as "passwordHash",
-        correo,
-        nombre_completo as "nombreCompleto",
-        rol,
-        estado,
-        campamento_id as "campamentoId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM usuario_sistema
-      ORDER BY created_at DESC
-    `;
-    
-    const result = await pool.query(query);
-    return result.rows;
+    return await this.repo.find({ order: { createdAt: 'DESC' } });
   }
 
-  async findById(id: string): Promise<User | null> {
-    const query = `
-      SELECT 
-        id,
-        persona_id as "personaId",
-        solicitud_id as "solicitudId",
-        username,
-        password_hash as "passwordHash",
-        correo,
-        nombre_completo as "nombreCompleto",
-        rol,
-        estado,
-        campamento_id as "campamentoId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM usuario_sistema
-      WHERE id = $1
-    `;
-    
-    const result = await pool.query(query, [id]);
-    return result.rows[0] || null;
+  async findById(id: number): Promise<User | null> {
+    return await this.repo.findOne({ where: { id } });
   }
 
-  async findByUsername(username: string, campamentoId: string): Promise<User | null> {
-    const query = `
-      SELECT 
-        id,
-        persona_id as "personaId",
-        solicitud_id as "solicitudId",
-        username,
-        password_hash as "passwordHash",
-        correo,
-        nombre_completo as "nombreCompleto",
-        rol,
-        estado,
-        campamento_id as "campamentoId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM usuario_sistema
-      WHERE username = $1 AND campamento_id = $2
-    `;
-    
-    const result = await pool.query(query, [username, campamentoId]);
-    return result.rows[0] || null;
+  async findByUsername(username: string, campId: number): Promise<User | null> {
+    return await this.repo.findOne({ where: { username, campId } });
   }
 
-  async update(id: string, userData: UpdateUserDTO): Promise<User | null> {
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
+  async update(id: number, userData: UpdateUserDTO): Promise<User | null> {
+    const existing = await this.repo.findOne({ where: { id } });
+    if (!existing) return null;
 
-    if (userData.personaId) {
-      updates.push(`persona_id = $${paramCount++}`);
-      values.push(userData.personaId);
-    }
-    if (userData.solicitudId) {
-      updates.push(`solicitud_id = $${paramCount++}`);
-      values.push(userData.solicitudId);
-    }
-    if (userData.username) {
-      updates.push(`username = $${paramCount++}`);
-      values.push(userData.username);
-    }
-    if (userData.passwordHash) {
-      updates.push(`password_hash = $${paramCount++}`);
-      values.push(userData.passwordHash);
-    }
-    if (userData.correo) {
-      updates.push(`correo = $${paramCount++}`);
-      values.push(userData.correo);
-    }
-    if (userData.nombreCompleto) {
-      updates.push(`nombre_completo = $${paramCount++}`);
-      values.push(userData.nombreCompleto);
-    }
-    if (userData.rol) {
-      updates.push(`rol = $${paramCount++}`);
-      values.push(userData.rol);
-    }
-    if (userData.estado) {
-      updates.push(`estado = $${paramCount++}`);
-      values.push(userData.estado);
-    }
-    if (userData.campamentoId) {
-      updates.push(`campamento_id = $${paramCount++}`);
-      values.push(userData.campamentoId);
-    }
+    const cleaned = Object.fromEntries(
+      Object.entries(userData).filter(([, value]) => value !== undefined),
+    ) as Partial<UserEntity>;
 
-    if (updates.length === 0) {
-      return this.findById(id);
-    }
-
-    updates.push(`updated_at = NOW()`);
-    values.push(id);
-
-    const query = `
-      UPDATE usuario_sistema 
-      SET ${updates.join(', ')}
-      WHERE id = $${paramCount}
-      RETURNING 
-        id,
-        persona_id as "personaId",
-        solicitud_id as "solicitudId",
-        username,
-        password_hash as "passwordHash",
-        correo,
-        nombre_completo as "nombreCompleto",
-        rol,
-        estado,
-        campamento_id as "campamentoId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
-
-    const result = await pool.query(query, values);
-    return result.rows[0] || null;
+    Object.assign(existing, cleaned);
+    return await this.repo.save(existing);
   }
 
-  async delete(id: string): Promise<boolean> {
-    const query = `DELETE FROM usuario_sistema WHERE id = $1 RETURNING id`;
-    const result = await pool.query(query, [id]);
-    return result.rowCount !== null && result.rowCount > 0;
+  async delete(id: number): Promise<boolean> {
+    const result = await this.repo.delete({ id });
+    return (result.affected ?? 0) > 0;
   }
 
-  async countByCampamento(campamentoId: string): Promise<number> {
-    const query = `SELECT COUNT(*) as count FROM usuario_sistema WHERE campamento_id = $1`;
-    const result = await pool.query(query, [campamentoId]);
-    return parseInt(result.rows[0].count);
+  async countByCamp(campId: number): Promise<number> {
+    return await this.repo.count({ where: { campId } });
   }
 }

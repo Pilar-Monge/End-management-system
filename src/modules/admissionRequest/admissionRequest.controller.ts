@@ -35,8 +35,11 @@ export class AdmissionRequestController {
   async getRequestById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
     try {
-      const request = await this.service.getRequestById(id);
+      const request = await this.service.getRequestById(parsedId);
       return {
         success: true,
         data: request,
@@ -48,20 +51,20 @@ export class AdmissionRequestController {
 
   @Get()
   async getAllRequests(
-    @Query('campamentoId') campamentoId?: string,
+    @Query('campId') campId?: string,
     @Query('estado') estado?: AdmissionRequestStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     try {
       const filters: {
-        campamentoId?: string;
+        campId?: number;
         estado?: AdmissionRequestStatus;
         page?: number;
         limit?: number;
       } = {};
 
-      if (campamentoId) filters.campamentoId = campamentoId;
+      if (campId) filters.campId = Number.parseInt(campId, 10);
       if (estado) filters.estado = estado;
       if (page) filters.page = Number.parseInt(page, 10);
       if (limit) filters.limit = Number.parseInt(limit, 10);
@@ -89,8 +92,11 @@ export class AdmissionRequestController {
   async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
     try {
-      const request = await this.service.updateRequest(id, body);
+      const request = await this.service.updateRequest(parsedId, body);
       return {
         success: true,
         data: request,
@@ -105,8 +111,11 @@ export class AdmissionRequestController {
   async deleteRequest(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
     try {
-      await this.service.deleteRequest(id);
+      await this.service.deleteRequest(parsedId);
       return {
         success: true,
         message: 'Request deleted successfully',
@@ -119,17 +128,20 @@ export class AdmissionRequestController {
   @Post(':id/process-ai')
   async processWithAI(
     @Param('id') id: string,
-    @Body() body: { oficioSugeridoId: string; decision: 'ACCEPT' | 'REJECT' },
+    @Body() body: { suggestedOccupationId: number; decision: 'ACCEPT' | 'REJECT' },
   ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
-    const { oficioSugeridoId, decision } = body;
-    if (!oficioSugeridoId || !decision) {
-      throw new BadRequestException('Missing oficioSugeridoId or decision');
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const { suggestedOccupationId, decision } = body;
+    if (!suggestedOccupationId || !decision) {
+      throw new BadRequestException('Missing suggestedOccupationId or decision');
     }
 
     try {
-      const request = await this.service.processWithAI(id, oficioSugeridoId, decision);
+      const request = await this.service.processWithAI(parsedId, suggestedOccupationId, decision);
       return {
         success: true,
         data: request,
@@ -143,17 +155,20 @@ export class AdmissionRequestController {
   @Post(':id/review')
   async reviewByAdmin(
     @Param('id') id: string,
-    @Body() body: { adminUserId: string; approved: boolean; motivoRechazo?: string },
+    @Body() body: { adminUserId: number; approved: boolean; rejectionReason?: string },
   ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
-    const { adminUserId, approved, motivoRechazo } = body;
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const { adminUserId, approved, rejectionReason } = body;
     if (!adminUserId || approved === undefined) {
       throw new BadRequestException('Missing adminUserId or approved');
     }
 
     try {
-      const request = await this.service.reviewByAdmin(id, adminUserId, approved, motivoRechazo);
+      const request = await this.service.reviewByAdmin(parsedId, adminUserId, approved, rejectionReason);
       return {
         success: true,
         data: request,
@@ -168,8 +183,11 @@ export class AdmissionRequestController {
   async getPendingByCamp(@Param('campamentoId') campamentoId: string) {
     if (!campamentoId) throw new BadRequestException('Invalid camp ID');
 
+    const parsedCampId = Number.parseInt(campamentoId, 10);
+    if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
+
     try {
-      const requests = await this.service.getPendingByCamp(campamentoId);
+      const requests = await this.service.getPendingByCamp(parsedCampId);
       return {
         success: true,
         data: requests,
