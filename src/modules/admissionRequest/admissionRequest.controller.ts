@@ -1,209 +1,182 @@
-import { Request, Response } from 'express';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { AdmissionRequestService } from './admissionRequest.service';
-import { CreateAdmissionRequestDTO, UpdateAdmissionRequestDTO, AdmissionRequestStatus } from './admissionRequest.model';
+import type { AdmissionRequestStatus, CreateAdmissionRequestDTO, UpdateAdmissionRequestDTO } from './admissionRequest.model';
 
+@Controller('admission-requests')
 export class AdmissionRequestController {
-  private service: AdmissionRequestService;
+  constructor(private readonly service: AdmissionRequestService) {}
 
-  constructor(service: AdmissionRequestService) {
-    this.service = service;
-  }
-
-  createRequest = async (req: Request, res: Response): Promise<void> => {
+  @Post()
+  async createRequest(@Body() body: CreateAdmissionRequestDTO) {
     try {
-      const data: CreateAdmissionRequestDTO = req.body;
-      const request = await this.service.createRequest(data);
-      res.status(201).json({
+      const request = await this.service.createRequest(body);
+      return {
         success: true,
         data: request,
-        message: 'Request created successfully'
-      });
+        message: 'Request created successfully',
+      };
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error creating request'
-      });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating request');
     }
-  };
+  }
 
-  getRequestById = async (req: Request, res: Response): Promise<void> => {
+  @Get(':id')
+  async getRequestById(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
     try {
-      const { id } = req.params;
-      if (!id || Array.isArray(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid ID'
-        });
-        return;
-      }
       const request = await this.service.getRequestById(id);
-      res.status(200).json({
+      return {
         success: true,
-        data: request
-      });
+        data: request,
+      };
     } catch (error) {
-      res.status(404).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Request not found'
-      });
+      throw new NotFoundException(error instanceof Error ? error.message : 'Request not found');
     }
-  };
+  }
 
-  getAllRequests = async (req: Request, res: Response): Promise<void> => {
+  @Get()
+  async getAllRequests(
+    @Query('campamentoId') campamentoId?: string,
+    @Query('estado') estado?: AdmissionRequestStatus,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     try {
-      const { campamentoId, estado, page, limit } = req.query;
-      
-      const filters: any = {};
-      
-      if (campamentoId) filters.campamentoId = campamentoId as string;
-      if (estado) filters.estado = estado as AdmissionRequestStatus;
-      if (page) filters.page = parseInt(page as string);
-      if (limit) filters.limit = parseInt(limit as string);
+      const filters: {
+        campamentoId?: string;
+        estado?: AdmissionRequestStatus;
+        page?: number;
+        limit?: number;
+      } = {};
+
+      if (campamentoId) filters.campamentoId = campamentoId;
+      if (estado) filters.estado = estado;
+      if (page) filters.page = Number.parseInt(page, 10);
+      if (limit) filters.limit = Number.parseInt(limit, 10);
 
       const result = await this.service.getAllRequests(filters);
-      
-      res.status(200).json({
+      const resolvedPage = filters.page || 1;
+      const resolvedLimit = filters.limit || 10;
+
+      return {
         success: true,
         data: result.data,
         pagination: {
-          page: filters.page || 1,
-          limit: filters.limit || 10,
+          page: resolvedPage,
+          limit: resolvedLimit,
           total: result.total,
-          pages: Math.ceil(result.total / (filters.limit || 10))
-        }
-      });
+          pages: Math.ceil(result.total / resolvedLimit),
+        },
+      };
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error getting requests'
-      });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error getting requests');
     }
-  };
+  }
 
-  updateRequest = async (req: Request, res: Response): Promise<void> => {
+  @Put(':id')
+  async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDTO) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
     try {
-      const { id } = req.params;
-      if (!id || Array.isArray(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid ID'
-        });
-        return;
-      }
-      const data: UpdateAdmissionRequestDTO = req.body;
-      const request = await this.service.updateRequest(id, data);
-      res.status(200).json({
+      const request = await this.service.updateRequest(id, body);
+      return {
         success: true,
         data: request,
-        message: 'Request updated successfully'
-      });
+        message: 'Request updated successfully',
+      };
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error updating request'
-      });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error updating request');
     }
-  };
+  }
 
-  deleteRequest = async (req: Request, res: Response): Promise<void> => {
+  @Delete(':id')
+  async deleteRequest(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
     try {
-      const { id } = req.params;
-      if (!id || Array.isArray(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid ID'
-        });
-        return;
-      }
       await this.service.deleteRequest(id);
-      res.status(200).json({
+      return {
         success: true,
-        message: 'Request deleted successfully'
-      });
+        message: 'Request deleted successfully',
+      };
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error deleting request'
-      });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error deleting request');
     }
-  };
+  }
 
-  processWithAI = async (req: Request, res: Response): Promise<void> => {
+  @Post(':id/process-ai')
+  async processWithAI(
+    @Param('id') id: string,
+    @Body() body: { oficioSugeridoId: string; decision: 'ACCEPT' | 'REJECT' },
+  ) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const { oficioSugeridoId, decision } = body;
+    if (!oficioSugeridoId || !decision) {
+      throw new BadRequestException('Missing oficioSugeridoId or decision');
+    }
+
     try {
-      const { id } = req.params;
-      if (!id || Array.isArray(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid ID'
-        });
-        return;
-      }
-      const { oficioSugeridoId, decision } = req.body;
-      
       const request = await this.service.processWithAI(id, oficioSugeridoId, decision);
-      
-      res.status(200).json({
+      return {
         success: true,
         data: request,
-        message: `Request processed by AI: ${decision}`
-      });
+        message: `Request processed by AI: ${decision}`,
+      };
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error processing with AI'
-      });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error processing with AI');
     }
-  };
+  }
 
-  reviewByAdmin = async (req: Request, res: Response): Promise<void> => {
+  @Post(':id/review')
+  async reviewByAdmin(
+    @Param('id') id: string,
+    @Body() body: { adminUserId: string; approved: boolean; motivoRechazo?: string },
+  ) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const { adminUserId, approved, motivoRechazo } = body;
+    if (!adminUserId || approved === undefined) {
+      throw new BadRequestException('Missing adminUserId or approved');
+    }
+
     try {
-      const { id } = req.params;
-      if (!id || Array.isArray(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid ID'
-        });
-        return;
-      }
-      const { adminUserId, approved, motivoRechazo } = req.body;
-      
       const request = await this.service.reviewByAdmin(id, adminUserId, approved, motivoRechazo);
-      
-      res.status(200).json({
+      return {
         success: true,
         data: request,
-        message: `Request ${approved ? 'approved' : 'rejected'} by admin`
-      });
+        message: `Request ${approved ? 'approved' : 'rejected'} by admin`,
+      };
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error in admin review'
-      });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error in admin review');
     }
-  };
+  }
 
-  getPendingByCamp = async (req: Request, res: Response): Promise<void> => {
+  @Get('camps/:campamentoId/pending')
+  async getPendingByCamp(@Param('campamentoId') campamentoId: string) {
+    if (!campamentoId) throw new BadRequestException('Invalid camp ID');
+
     try {
-      const { campamentoId } = req.params;
-      if (!campamentoId || Array.isArray(campamentoId)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid camp ID'
-        });
-        return;
-      }
       const requests = await this.service.getPendingByCamp(campamentoId);
-      
-      res.status(200).json({
+      return {
         success: true,
         data: requests,
-        count: requests.length
-      });
+        count: requests.length,
+      };
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error getting pending requests'
-      });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error getting pending requests');
     }
-  };
+  }
 }

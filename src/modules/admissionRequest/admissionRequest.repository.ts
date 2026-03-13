@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import { Injectable } from '@nestjs/common';
+import { pool } from '../../config/database';
 import {
   AdmissionRequest,
   CreateAdmissionRequestDTO,
@@ -7,13 +8,8 @@ import {
   Gender
 } from './admissionRequest.model';
 
+@Injectable()
 export class AdmissionRequestRepository {
-  private pool: Pool;
-
-  constructor(pool: Pool) {
-    this.pool = pool;
-  }
-
   async create(data: CreateAdmissionRequestDTO): Promise<AdmissionRequest> {
     const query = `
       INSERT INTO solicitud_ingreso (
@@ -46,7 +42,7 @@ export class AdmissionRequestRepository {
       data.campamentoId
     ];
 
-    const result = await this.pool.query(query, values);
+    const result = await pool.query(query, values);
     return result.rows[0];
   }
 
@@ -65,7 +61,7 @@ export class AdmissionRequestRepository {
       WHERE id = $1
     `;
 
-    const result = await this.pool.query(query, [id]);
+    const result = await pool.query(query, [id]);
     return result.rows[0] || null;
   }
 
@@ -117,7 +113,7 @@ export class AdmissionRequestRepository {
       values.push(filters.offset);
     }
 
-    const result = await this.pool.query(query, values);
+    const result = await pool.query(query, values);
     return result.rows;
   }
 
@@ -172,13 +168,13 @@ export class AdmissionRequestRepository {
         created_at as "createdAt", updated_at as "updatedAt"
     `;
 
-    const result = await this.pool.query(query, values);
+    const result = await pool.query(query, values);
     return result.rows[0] || null;
   }
 
   async delete(id: string): Promise<boolean> {
     const query = 'DELETE FROM solicitud_ingreso WHERE id = $1 RETURNING id';
-    const result = await this.pool.query(query, [id]);
+    const result = await pool.query(query, [id]);
     return (result.rowCount ?? 0) > 0;
   }
 
@@ -189,7 +185,7 @@ export class AdmissionRequestRepository {
       WHERE campamento_id = $1 AND estado = $2
     `;
 
-    const result = await this.pool.query(query, [campamentoId, estado]);
+    const result = await pool.query(query, [campamentoId, estado]);
     return parseInt(result.rows[0].count);
   }
 
@@ -208,7 +204,7 @@ export class AdmissionRequestRepository {
       WHERE correo = $1
     `;
 
-    const result = await this.pool.query(query, [correo]);
+    const result = await pool.query(query, [correo]);
     return result.rows[0] || null;
   }
 }

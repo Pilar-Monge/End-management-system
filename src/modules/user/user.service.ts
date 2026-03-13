@@ -1,7 +1,9 @@
+import { Injectable } from '@nestjs/common';
 import { UserRepository } from "./user.repository";
 import { User, CreateUserDTO, UserResponse, LoginDTO } from "./user.model";
 import { EncryptionService } from "../../services/encryption.service";
 
+@Injectable()
 export class UserService {
   constructor(private userRepo: UserRepository) {}
 

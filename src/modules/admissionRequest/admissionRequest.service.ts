@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { AdmissionRequestRepository } from './admissionRequest.repository';
 import {
   CreateAdmissionRequestDTO,
@@ -6,6 +7,7 @@ import {
   AdmissionRequestStatus
 } from './admissionRequest.model';
 
+@Injectable()
 export class AdmissionRequestService {
   private repository: AdmissionRequestRepository;
 
