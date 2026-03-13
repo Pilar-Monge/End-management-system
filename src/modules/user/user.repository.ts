@@ -1,6 +1,8 @@
+import { Injectable } from '@nestjs/common';
 import { pool } from "../../config/database";
 import { User, CreateUserDBDTO, UpdateUserDTO } from "./user.model";
 
+@Injectable()
 export class UserRepository {
   async create(userData: CreateUserDBDTO): Promise<User> {
     const query = `

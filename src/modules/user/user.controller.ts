@@ -1,120 +1,84 @@
-import { Request, Response } from 'express';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  InternalServerErrorException,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserRepository } from './user.repository';
+import type { CreateUserDTO, LoginDTO } from './user.model';
 
-const repository = new UserRepository();
-const service = new UserService(repository);
-
+@Controller()
 export class UserController {
-  async create(req: Request, res: Response): Promise<void> {
+  constructor(private readonly service: UserService) {}
+
+  @Post('users')
+  async create(@Body() body: CreateUserDTO) {
     try {
-      const user = await service.createUser(req.body);
-      res.status(201).json(user);
+      return await this.service.createUser(body);
     } catch (error) {
-      const err = error as Error;
-      res.status(400).json({ error: err.message });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating user');
     }
   }
 
-  async findAll(req: Request, res: Response): Promise<void> {
+  @Get('users')
+  async findAll() {
     try {
-      const users = await service.findAllUsers();
-      res.json(users);
+      return await this.service.findAllUsers();
     } catch (error) {
-      const err = error as Error;
-      res.status(500).json({ error: err.message });
+      throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error getting users');
     }
   }
 
-  async findById(req: Request, res: Response): Promise<void> {
+  @Get('users/:id')
+  async findById(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('ID no proporcionado');
+
+    const user = await this.service.findUserById(id);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    return user;
+  }
+
+  @Put('users/:id')
+  async update(@Param('id') id: string, @Body() body: any) {
+    if (!id) throw new BadRequestException('ID no proporcionado');
+
     try {
-      const idParam = req.params.id;
-      if (!idParam) {
-        res.status(400).json({ error: 'ID no proporcionado' });
-        return;
-      }
-      
-      const id = Array.isArray(idParam) ? idParam[0] : idParam;
-      if (!id) {
-        res.status(400).json({ error: 'ID no proporcionado' });
-        return;
-      }
-      
-      const user = await service.findUserById(id);
-      if (!user) {
-        res.status(404).json({ error: 'Usuario no encontrado' });
-        return;
-      }
-      res.json(user);
+      const user = await this.service.updateUser(id, body);
+      if (!user) throw new NotFoundException('Usuario no encontrado');
+      return user;
     } catch (error) {
-      const err = error as Error;
-      res.status(500).json({ error: err.message });
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error updating user');
     }
   }
 
-  async update(req: Request, res: Response): Promise<void> {
-    try {
-      const idParam = req.params.id;
-      if (!idParam) {
-        res.status(400).json({ error: 'ID no proporcionado' });
-        return;
-      }
+  @Delete('users/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(@Param('id') id: string): Promise<void> {
+    if (!id) throw new BadRequestException('ID no proporcionado');
 
-      const id = Array.isArray(idParam) ? idParam[0] : idParam;
-      if (!id) {
-        res.status(400).json({ error: 'ID no proporcionado' });
-        return;
-      }
-
-      const user = await service.updateUser(id, req.body);
-      if (!user) {
-        res.status(404).json({ error: 'Usuario no encontrado' });
-        return;
-      }
-      res.json(user);
-    } catch (error) {
-      const err = error as Error;
-      res.status(400).json({ error: err.message });
-    }
+    const deleted = await this.service.deleteUser(id);
+    if (!deleted) throw new NotFoundException('Usuario no encontrado');
   }
 
-  async delete(req: Request, res: Response): Promise<void> {
+  @Post('auth/login')
+  async login(@Body() body: LoginDTO) {
     try {
-      const idParam = req.params.id;
-      if (!idParam) {
-        res.status(400).json({ error: 'ID no proporcionado' });
-        return;
-      }
-
-      const id = Array.isArray(idParam) ? idParam[0] : idParam;
-      if (!id) {
-        res.status(400).json({ error: 'ID no proporcionado' });
-        return;
-      }
-
-      const deleted = await service.deleteUser(id);
-      if (!deleted) {
-        res.status(404).json({ error: 'Usuario no encontrado' });
-        return;
-      }
-      res.status(204).send();
+      const user = await this.service.login(body);
+      if (!user) throw new UnauthorizedException('Credenciales inválidas');
+      return user;
     } catch (error) {
-      const err = error as Error;
-      res.status(500).json({ error: err.message });
-    }
-  }
-
-  async login(req: Request, res: Response): Promise<void> {
-    try {
-      const user = await service.login(req.body);
-      if (!user) {
-        res.status(401).json({ error: 'Credenciales inválidas' });
-        return;
-      }
-      res.json(user);
-    } catch (error) {
-      const err = error as Error;
-      res.status(500).json({ error: err.message });
+      if (error instanceof UnauthorizedException) throw error;
+      throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error logging in');
     }
   }
 }
