@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AdmissionRequestModule } from './modules/admissionRequest/admissionRequest.module';
 import { CampModule } from './modules/camp/camp.module';
 import { PersonModule } from './modules/person/person.module';
+import { ResourceTypeModule } from './modules/resourceType/resourceType.module';
 import { UserModule } from './modules/systemUser/systemUser.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     AdmissionRequestModule,
     PersonModule,
     CampModule,
+    ResourceTypeModule,
   ],
   controllers: [AppController],
 })
