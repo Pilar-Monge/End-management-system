@@ -8,6 +8,10 @@ import { CampModule } from './modules/camp/camp.module';
 import { CampInventoryModule } from './modules/campInventory/campInventory.module';
 import { DailyCollectionRecordModule } from './modules/dailyCollectionRecord/dailyCollectionRecord.module';
 import { EvaluatedCriteriaReportModule } from './modules/evaluatedCriteriaReport/evaluatedCriteriaReport.module';
+import { ExpeditionModule } from './modules/expedition/expedition.module';
+import { ExpeditionParticipantModule } from './modules/expeditionParticipant/expeditionParticipant.module';
+import { ExpeditionResourceConsumedModule } from './modules/expeditionResourceConsumed/expeditionResourceConsumed.module';
+import { ExpeditionResourceObtainedModule } from './modules/expeditionResourceObtained/expeditionResourceObtained.module';
 import { InventoryAlertModule } from './modules/inventoryAlert/inventoryAlert.module';
 import { InventoryMovementModule } from './modules/inventoryMovement/inventoryMovement.module';
 import { OccupationAssignmentCriteriaModule } from './modules/occupationAssignmentCriteria/occupationAssignmentCriteria.module';
@@ -42,6 +46,10 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     ResourceTypeModule,
     OccupationModule,
     CampInventoryModule,
+    ExpeditionModule,
+    ExpeditionParticipantModule,
+    ExpeditionResourceConsumedModule,
+    ExpeditionResourceObtainedModule,
     SessionModule,
     AccessLogModule,
     InventoryMovementModule,
