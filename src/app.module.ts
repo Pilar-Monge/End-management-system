@@ -2,14 +2,17 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AdmissionRequestModule } from './modules/admissionRequest/admissionRequest.module';
+import { AiAdmissionReportModule } from './modules/aiAdmissionReport/aiAdmissionReport.module';
 import { CampModule } from './modules/camp/camp.module';
 import { CampInventoryModule } from './modules/campInventory/campInventory.module';
 import { DailyCollectionRecordModule } from './modules/dailyCollectionRecord/dailyCollectionRecord.module';
+import { EvaluatedCriteriaReportModule } from './modules/evaluatedCriteriaReport/evaluatedCriteriaReport.module';
 import { InventoryAlertModule } from './modules/inventoryAlert/inventoryAlert.module';
 import { InventoryMovementModule } from './modules/inventoryMovement/inventoryMovement.module';
 import { OccupationAssignmentCriteriaModule } from './modules/occupationAssignmentCriteria/occupationAssignmentCriteria.module';
 import { OccupationModule } from './modules/occupation/occupation.module';
 import { PersonModule } from './modules/person/person.module';
+import { PersonStatusHistoryModule } from './modules/personStatusHistory/personStatusHistory.module';
 import { ResourceTypeModule } from './modules/resourceType/resourceType.module';
 import { UserModule } from './modules/systemUser/systemUser.module';
 
@@ -27,7 +30,10 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     }),
     UserModule,
     AdmissionRequestModule,
+    AiAdmissionReportModule,
+    EvaluatedCriteriaReportModule,
     PersonModule,
+    PersonStatusHistoryModule,
     CampModule,
     ResourceTypeModule,
     OccupationModule,

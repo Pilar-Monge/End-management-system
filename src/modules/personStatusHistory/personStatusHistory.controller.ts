@@ -1,0 +1,179 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
+
+import { PersonStatusHistoryService } from './personStatusHistory.service';
+import type {
+  CreatePersonStatusHistoryDTO,
+  PersonStatus,
+  UpdatePersonStatusHistoryDTO,
+} from './personStatusHistory.model';
+
+@Controller('person-status-history')
+export class PersonStatusHistoryController {
+  constructor(private readonly service: PersonStatusHistoryService) {}
+
+  @Post()
+  async create(@Body() body: CreatePersonStatusHistoryDTO) {
+    try {
+      const entry = await this.service.createEntry(body);
+      return {
+        success: true,
+        data: entry,
+        message: 'Person status history entry created successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error creating person status history entry',
+      );
+    }
+  }
+
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const entry = await this.service.getEntryById(parsedId);
+    if (!entry) throw new NotFoundException('Person status history entry not found');
+
+    return { success: true, data: entry };
+  }
+
+  @Get()
+  async getAll(
+    @Query('personId') personId?: string,
+    @Query('personaId') personaId?: string,
+    @Query('changedBy') changedBy?: string,
+    @Query('cambiadoPor') cambiadoPor?: string,
+    @Query('previousStatus') previousStatus?: PersonStatus,
+    @Query('estadoAnterior') estadoAnterior?: PersonStatus,
+    @Query('newStatus') newStatus?: PersonStatus,
+    @Query('estadoNuevo') estadoNuevo?: PersonStatus,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      const filters: {
+        personId?: number;
+        changedBy?: number;
+        previousStatus?: PersonStatus;
+        newStatus?: PersonStatus;
+        page?: number;
+        limit?: number;
+      } = {};
+
+      const resolvedPersonId = personId ?? personaId;
+      if (resolvedPersonId) {
+        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+        if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
+        filters.personId = parsedPersonId;
+      }
+
+      const resolvedChangedBy = changedBy ?? cambiadoPor;
+      if (resolvedChangedBy) {
+        const parsedChangedBy = Number.parseInt(resolvedChangedBy, 10);
+        if (Number.isNaN(parsedChangedBy)) throw new BadRequestException('Invalid changedBy');
+        filters.changedBy = parsedChangedBy;
+      }
+
+      const resolvedPreviousStatus = previousStatus ?? estadoAnterior;
+      if (resolvedPreviousStatus) {
+        filters.previousStatus = resolvedPreviousStatus;
+      }
+
+      const resolvedNewStatus = newStatus ?? estadoNuevo;
+      if (resolvedNewStatus) {
+        filters.newStatus = resolvedNewStatus;
+      }
+
+      if (page) {
+        const parsedPage = Number.parseInt(page, 10);
+        if (Number.isNaN(parsedPage) || parsedPage < 1) {
+          throw new BadRequestException('Invalid page');
+        }
+        filters.page = parsedPage;
+      }
+
+      if (limit) {
+        const parsedLimit = Number.parseInt(limit, 10);
+        if (Number.isNaN(parsedLimit) || parsedLimit < 1) {
+          throw new BadRequestException('Invalid limit');
+        }
+        filters.limit = parsedLimit;
+      }
+
+      const result = await this.service.getAllEntries(filters);
+      const resolvedPage = filters.page ?? 1;
+      const resolvedLimit = filters.limit ?? 10;
+
+      return {
+        success: true,
+        data: result.data,
+        pagination: {
+          page: resolvedPage,
+          limit: resolvedLimit,
+          total: result.total,
+          pages: Math.ceil(result.total / resolvedLimit),
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error getting person status history',
+      );
+    }
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() body: UpdatePersonStatusHistoryDTO) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const entry = await this.service.updateEntry(parsedId, body);
+      if (!entry) throw new NotFoundException('Person status history entry not found');
+
+      return {
+        success: true,
+        data: entry,
+        message: 'Person status history entry updated successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error updating person status history entry',
+      );
+    }
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const deleted = await this.service.deleteEntry(parsedId);
+      if (!deleted) throw new NotFoundException('Person status history entry not found');
+
+      return { success: true, message: 'Person status history entry deleted successfully' };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error deleting person status history entry',
+      );
+    }
+  }
+}
