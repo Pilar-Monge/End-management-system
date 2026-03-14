@@ -14,12 +14,18 @@ import { ExpeditionResourceConsumedModule } from './modules/expeditionResourceCo
 import { ExpeditionResourceObtainedModule } from './modules/expeditionResourceObtained/expeditionResourceObtained.module';
 import { InventoryAlertModule } from './modules/inventoryAlert/inventoryAlert.module';
 import { InventoryMovementModule } from './modules/inventoryMovement/inventoryMovement.module';
+import { IntercampRequestModule } from './modules/intercampRequest/intercampRequest.module';
 import { OccupationAssignmentCriteriaModule } from './modules/occupationAssignmentCriteria/occupationAssignmentCriteria.module';
 import { OccupationModule } from './modules/occupation/occupation.module';
 import { PersonModule } from './modules/person/person.module';
 import { PersonStatusHistoryModule } from './modules/personStatusHistory/personStatusHistory.module';
+import { RequestPersonDetailModule } from './modules/requestPersonDetail/requestPersonDetail.module';
+import { RequestResourceDetailModule } from './modules/requestResourceDetail/requestResourceDetail.module';
+import { DeliveredTransferResourceModule } from './modules/deliveredTransferResource/deliveredTransferResource.module';
 import { ResourceTypeModule } from './modules/resourceType/resourceType.module';
 import { SessionModule } from './modules/session/session.module';
+import { TransferModule } from './modules/transfer/transfer.module';
+import { TransferPersonModule } from './modules/transferPerson/transferPerson.module';
 import { UserRoleHistoryModule } from './modules/userRoleHistory/userRoleHistory.module';
 import { UserModule } from './modules/systemUser/systemUser.module';
 
@@ -56,6 +62,12 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     InventoryAlertModule,
     DailyCollectionRecordModule,
     OccupationAssignmentCriteriaModule,
+    IntercampRequestModule,
+    RequestResourceDetailModule,
+    RequestPersonDetailModule,
+    TransferModule,
+    TransferPersonModule,
+    DeliveredTransferResourceModule,
   ],
   controllers: [AppController],
 })
