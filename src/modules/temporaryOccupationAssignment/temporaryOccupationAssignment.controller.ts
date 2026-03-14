@@ -1,0 +1,189 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
+
+import { TemporaryOccupationAssignmentService } from './temporaryOccupationAssignment.service';
+import type {
+  CreateTemporaryOccupationAssignmentDTO,
+  UpdateTemporaryOccupationAssignmentDTO,
+} from './temporaryOccupationAssignment.model';
+
+@Controller('temporary-occupation-assignments')
+export class TemporaryOccupationAssignmentController {
+  constructor(private readonly service: TemporaryOccupationAssignmentService) {}
+
+  @Post()
+  async create(@Body() body: CreateTemporaryOccupationAssignmentDTO) {
+    try {
+      const assignment = await this.service.createAssignment(body);
+      return {
+        success: true,
+        data: assignment,
+        message: 'Temporary occupation assignment created successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error
+          ? error.message
+          : 'Error creating temporary occupation assignment',
+      );
+    }
+  }
+
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const assignment = await this.service.getAssignmentById(parsedId);
+    if (!assignment) throw new NotFoundException('Temporary occupation assignment not found');
+
+    return { success: true, data: assignment };
+  }
+
+  @Get()
+  async getAll(
+    @Query('personId') personId?: string,
+    @Query('personaId') personaId?: string,
+    @Query('temporaryOccupationId') temporaryOccupationId?: string,
+    @Query('ocupacionTemporalId') ocupacionTemporalId?: string,
+    @Query('assignedBy') assignedBy?: string,
+    @Query('asignadoPor') asignadoPor?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      const filters: {
+        personId?: number;
+        temporaryOccupationId?: number;
+        assignedBy?: number;
+        page?: number;
+        limit?: number;
+      } = {};
+
+      const resolvedPersonId = personId ?? personaId;
+      if (resolvedPersonId) {
+        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+        if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
+        filters.personId = parsedPersonId;
+      }
+
+      const resolvedTemporaryOccupationId = temporaryOccupationId ?? ocupacionTemporalId;
+      if (resolvedTemporaryOccupationId) {
+        const parsedTemporaryOccupationId = Number.parseInt(resolvedTemporaryOccupationId, 10);
+        if (Number.isNaN(parsedTemporaryOccupationId)) {
+          throw new BadRequestException('Invalid temporaryOccupationId');
+        }
+        filters.temporaryOccupationId = parsedTemporaryOccupationId;
+      }
+
+      const resolvedAssignedBy = assignedBy ?? asignadoPor;
+      if (resolvedAssignedBy) {
+        const parsedAssignedBy = Number.parseInt(resolvedAssignedBy, 10);
+        if (Number.isNaN(parsedAssignedBy)) throw new BadRequestException('Invalid assignedBy');
+        filters.assignedBy = parsedAssignedBy;
+      }
+
+      if (page) {
+        const parsedPage = Number.parseInt(page, 10);
+        if (Number.isNaN(parsedPage) || parsedPage < 1) {
+          throw new BadRequestException('Invalid page');
+        }
+        filters.page = parsedPage;
+      }
+
+      if (limit) {
+        const parsedLimit = Number.parseInt(limit, 10);
+        if (Number.isNaN(parsedLimit) || parsedLimit < 1) {
+          throw new BadRequestException('Invalid limit');
+        }
+        filters.limit = parsedLimit;
+      }
+
+      const result = await this.service.getAllAssignments(filters);
+      const resolvedPage = filters.page ?? 1;
+      const resolvedLimit = filters.limit ?? 10;
+
+      return {
+        success: true,
+        data: result.data,
+        pagination: {
+          page: resolvedPage,
+          limit: resolvedLimit,
+          total: result.total,
+          pages: Math.ceil(result.total / resolvedLimit),
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error
+          ? error.message
+          : 'Error getting temporary occupation assignments',
+      );
+    }
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() body: UpdateTemporaryOccupationAssignmentDTO) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const assignment = await this.service.updateAssignment(parsedId, body);
+      if (!assignment) {
+        throw new NotFoundException('Temporary occupation assignment not found');
+      }
+
+      return {
+        success: true,
+        data: assignment,
+        message: 'Temporary occupation assignment updated successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error
+          ? error.message
+          : 'Error updating temporary occupation assignment',
+      );
+    }
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const deleted = await this.service.deleteAssignment(parsedId);
+      if (!deleted) {
+        throw new NotFoundException('Temporary occupation assignment not found');
+      }
+
+      return {
+        success: true,
+        message: 'Temporary occupation assignment deleted successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error
+          ? error.message
+          : 'Error deleting temporary occupation assignment',
+      );
+    }
+  }
+}
