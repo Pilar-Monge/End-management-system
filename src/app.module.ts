@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AdmissionRequestModule } from './modules/admissionRequest/admissionRequest.module';
+import { CampModule } from './modules/camp/camp.module';
 import { PersonModule } from './modules/person/person.module';
 import { UserModule } from './modules/systemUser/systemUser.module';
 
@@ -20,6 +21,7 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     UserModule,
     AdmissionRequestModule,
     PersonModule,
+    CampModule,
   ],
   controllers: [AppController],
 })
