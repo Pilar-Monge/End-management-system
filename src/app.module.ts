@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AdmissionRequestModule } from './modules/admissionRequest/admissionRequest.module';
+import { AchievementModule } from './modules/achievement/achievement.module';
 import { AiAdmissionReportModule } from './modules/aiAdmissionReport/aiAdmissionReport.module';
 import { AccessLogModule } from './modules/accessLog/accessLog.module';
 import { CampModule } from './modules/camp/camp.module';
+import { CampAchievementModule } from './modules/campAchievement/campAchievement.module';
 import { CampInventoryModule } from './modules/campInventory/campInventory.module';
 import { DailyCollectionRecordModule } from './modules/dailyCollectionRecord/dailyCollectionRecord.module';
 import { EvaluatedCriteriaReportModule } from './modules/evaluatedCriteriaReport/evaluatedCriteriaReport.module';
@@ -19,12 +21,15 @@ import { OccupationAssignmentCriteriaModule } from './modules/occupationAssignme
 import { OccupationModule } from './modules/occupation/occupation.module';
 import { PersonModule } from './modules/person/person.module';
 import { PersonStatusHistoryModule } from './modules/personStatusHistory/personStatusHistory.module';
+import { TemporaryOccupationAssignmentModule } from './modules/temporaryOccupationAssignment/temporaryOccupationAssignment.module';
 import { RequestPersonDetailModule } from './modules/requestPersonDetail/requestPersonDetail.module';
 import { RequestResourceDetailModule } from './modules/requestResourceDetail/requestResourceDetail.module';
 import { DeliveredTransferResourceModule } from './modules/deliveredTransferResource/deliveredTransferResource.module';
 import { ResourceTypeModule } from './modules/resourceType/resourceType.module';
 import { SessionModule } from './modules/session/session.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { TransferModule } from './modules/transfer/transfer.module';
+import { TransferHistoryModule } from './modules/transferHistory/transferHistory.module';
 import { TransferPersonModule } from './modules/transferPerson/transferPerson.module';
 import { UserRoleHistoryModule } from './modules/userRoleHistory/userRoleHistory.module';
 import { UserModule } from './modules/systemUser/systemUser.module';
@@ -43,10 +48,13 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     }),
     UserModule,
     AdmissionRequestModule,
+    AchievementModule,
+    CampAchievementModule,
     AiAdmissionReportModule,
     EvaluatedCriteriaReportModule,
     PersonModule,
     PersonStatusHistoryModule,
+    TemporaryOccupationAssignmentModule,
     UserRoleHistoryModule,
     CampModule,
     ResourceTypeModule,
@@ -66,8 +74,10 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     RequestResourceDetailModule,
     RequestPersonDetailModule,
     TransferModule,
+    TransferHistoryModule,
     TransferPersonModule,
     DeliveredTransferResourceModule,
+    NotificationModule,
   ],
   controllers: [AppController],
 })
