@@ -16,7 +16,7 @@ export class AdmissionRequestService {
   }
 
   async createRequest(data: CreateAdmissionRequestDTO): Promise<AdmissionRequest> {
-    const existingRequest = await this.repository.findByEmail(data.correo);
+    const existingRequest = await this.repository.findByEmail(data.email);
     
     if (existingRequest) {
       throw new Error('A request with this email already exists');
@@ -25,7 +25,7 @@ export class AdmissionRequestService {
     return await this.repository.create(data);
   }
 
-  async getRequestById(id: string): Promise<AdmissionRequest> {
+  async getRequestById(id: number): Promise<AdmissionRequest> {
     const request = await this.repository.findById(id);
     
     if (!request) {
@@ -36,7 +36,7 @@ export class AdmissionRequestService {
   }
 
   async getAllRequests(filters?: {
-    campamentoId?: string;
+    campId?: number;
     estado?: AdmissionRequestStatus;
     page?: number;
     limit?: number;
@@ -46,8 +46,8 @@ export class AdmissionRequestService {
     const offset = (page - 1) * limit;
 
     const findAllFilters: {
-      campamentoId?: string;
-      estado?: AdmissionRequestStatus;
+      campId?: number;
+      status?: AdmissionRequestStatus;
       limit: number;
       offset: number;
     } = {
@@ -55,20 +55,20 @@ export class AdmissionRequestService {
       offset
     };
 
-    if (filters?.campamentoId !== undefined) {
-      findAllFilters.campamentoId = filters.campamentoId;
+    if (filters?.campId !== undefined) {
+      findAllFilters.campId = filters.campId;
     }
 
     if (filters?.estado !== undefined) {
-      findAllFilters.estado = filters.estado;
+      findAllFilters.status = filters.estado;
     }
 
     const data = await this.repository.findAll(findAllFilters);
 
     let total = 0;
-    if (filters?.campamentoId && filters?.estado) {
+    if (filters?.campId && filters?.estado) {
       total = await this.repository.countByCampAndStatus(
-        filters.campamentoId, 
+        filters.campId, 
         filters.estado
       );
     } else {
@@ -78,16 +78,16 @@ export class AdmissionRequestService {
     return { data, total };
   }
 
-  async updateRequest(id: string, data: UpdateAdmissionRequestDTO): Promise<AdmissionRequest> {
+  async updateRequest(id: number, data: UpdateAdmissionRequestDTO): Promise<AdmissionRequest> {
     const existingRequest = await this.repository.findById(id);
     
     if (!existingRequest) {
       throw new Error('Request not found');
     }
 
-    if (data.correo && data.correo !== existingRequest.correo) {
-      const requestWithEmail = await this.repository.findByEmail(data.correo);
-      if (requestWithEmail && requestWithEmail.id !== id) {
+    if (data.email && data.email !== existingRequest.email) {
+      const requestWithEmail = await this.repository.findByEmail(data.email);
+      if (requestWithEmail && requestWithEmail.id !== existingRequest.id) {
         throw new Error('Another request with this email already exists');
       }
     }
@@ -101,14 +101,14 @@ export class AdmissionRequestService {
     return updatedRequest;
   }
 
-  async deleteRequest(id: string): Promise<void> {
+  async deleteRequest(id: number): Promise<void> {
     const existingRequest = await this.repository.findById(id);
     
     if (!existingRequest) {
       throw new Error('Request not found');
     }
 
-    if (existingRequest.estado === AdmissionRequestStatus.APROBADA) {
+    if (existingRequest.status === 'APPROVED') {
       throw new Error('Cannot delete an approved request');
     }
 
@@ -119,22 +119,26 @@ export class AdmissionRequestService {
     }
   }
 
-  async processWithAI(id: string, oficioSugeridoId: string, decision: 'ACCEPT' | 'REJECT'): Promise<AdmissionRequest> {
+  async processWithAI(
+    id: number,
+    suggestedOccupationId: number,
+    decision: 'ACCEPT' | 'REJECT',
+  ): Promise<AdmissionRequest> {
     const request = await this.repository.findById(id);
     
     if (!request) {
       throw new Error('Request not found');
     }
 
-    if (request.estado !== AdmissionRequestStatus.PENDIENTE_IA) {
+    if (request.status !== 'PENDING_AI') {
       throw new Error('This request is not pending AI analysis');
     }
 
     const updateData: UpdateAdmissionRequestDTO = {
-      oficioSugeridoId,
-      estado: decision === 'ACCEPT' 
-        ? AdmissionRequestStatus.PENDIENTE_ADMIN 
-        : AdmissionRequestStatus.RECHAZADA
+      suggestedOccupationId,
+      status: decision === 'ACCEPT' 
+        ? 'PENDING_ADMIN' 
+        : 'REJECTED'
     };
 
     const updatedRequest = await this.repository.update(id, updateData);
@@ -147,8 +151,8 @@ export class AdmissionRequestService {
   }
 
   async reviewByAdmin(
-    id: string, 
-    adminUserId: string, 
+    id: number, 
+    adminUserId: number, 
     approved: boolean, 
     rejectionReason?: string
   ): Promise<AdmissionRequest> {
@@ -158,15 +162,15 @@ export class AdmissionRequestService {
       throw new Error('Request not found');
     }
 
-    if (request.estado !== AdmissionRequestStatus.PENDIENTE_ADMIN) {
+    if (request.status !== 'PENDING_ADMIN') {
       throw new Error('This request is not pending admin review');
     }
 
     const updateData: UpdateAdmissionRequestDTO = {
-      revisadoPor: adminUserId,
-      fechaRevision: new Date(),
-      estado: approved ? AdmissionRequestStatus.APROBADA : AdmissionRequestStatus.RECHAZADA,
-      motivoRechazo: approved ? null : (rejectionReason || 'Request rejected')
+      reviewedBy: adminUserId,
+      reviewDate: new Date(),
+      status: approved ? 'APPROVED' : 'REJECTED',
+      rejectionReason: approved ? null : (rejectionReason || 'Request rejected')
     };
 
     const updatedRequest = await this.repository.update(id, updateData);
@@ -178,10 +182,10 @@ export class AdmissionRequestService {
     return updatedRequest;
   }
 
-  async getPendingByCamp(campamentoId: string): Promise<AdmissionRequest[]> {
+  async getPendingByCamp(campId: number): Promise<AdmissionRequest[]> {
     return await this.repository.findAll({
-      campamentoId,
-      estado: AdmissionRequestStatus.PENDIENTE_ADMIN
+      campId,
+      status: 'PENDING_ADMIN'
     });
   }
 }

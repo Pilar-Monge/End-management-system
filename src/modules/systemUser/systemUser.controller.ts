@@ -13,8 +13,8 @@ import {
   Put,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserService } from './user.service';
-import type { CreateUserDTO, LoginDTO } from './user.model';
+import { UserService } from './systemUser.service';
+import type { CreateUserDTO, LoginDTO } from './systemUser.model';
 
 @Controller()
 export class UserController {
@@ -40,21 +40,27 @@ export class UserController {
 
   @Get('users/:id')
   async findById(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('ID no proporcionado');
+    if (!id) throw new BadRequestException('ID not provided');
 
-    const user = await this.service.findUserById(id);
-    if (!user) throw new NotFoundException('Usuario no encontrado');
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('invalid ID');
+
+    const user = await this.service.findUserById(parsedId);
+    if (!user) throw new NotFoundException('User not found');
 
     return user;
   }
 
   @Put('users/:id')
   async update(@Param('id') id: string, @Body() body: any) {
-    if (!id) throw new BadRequestException('ID no proporcionado');
+    if (!id) throw new BadRequestException('ID not provided');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('invalid ID');
 
     try {
-      const user = await this.service.updateUser(id, body);
-      if (!user) throw new NotFoundException('Usuario no encontrado');
+      const user = await this.service.updateUser(parsedId, body);
+      if (!user) throw new NotFoundException('User not found');
       return user;
     } catch (error) {
       throw new BadRequestException(error instanceof Error ? error.message : 'Error updating user');
@@ -64,17 +70,20 @@ export class UserController {
   @Delete('users/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: string): Promise<void> {
-    if (!id) throw new BadRequestException('ID no proporcionado');
+    if (!id) throw new BadRequestException('ID not provided');
 
-    const deleted = await this.service.deleteUser(id);
-    if (!deleted) throw new NotFoundException('Usuario no encontrado');
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('invalid ID');
+
+    const deleted = await this.service.deleteUser(parsedId);
+    if (!deleted) throw new NotFoundException('User not found');
   }
 
   @Post('auth/login')
   async login(@Body() body: LoginDTO) {
     try {
       const user = await this.service.login(body);
-      if (!user) throw new UnauthorizedException('Credenciales inválidas');
+      if (!user) throw new UnauthorizedException('Invalid credentials');
       return user;
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;

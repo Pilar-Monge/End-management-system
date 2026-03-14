@@ -1,88 +1,78 @@
-export enum AdmissionRequestStatus {
-  PENDIENTE_IA = 'PENDIENTE_IA',
-  PENDIENTE_ADMIN = 'PENDIENTE_ADMIN',
-  APROBADA = 'APROBADA',
-  RECHAZADA = 'RECHAZADA'
-}
+export const ADMISSION_REQUEST_STATUS_VALUES = [
+  'PENDING_AI',
+  'PENDING_ADMIN',
+  'APPROVED',
+  'REJECTED',
+] as const;
 
-export enum Gender {
-  MASCULINO = 'MASCULINO',
-  FEMENINO = 'FEMENINO',
-  OTRO = 'OTRO'
-}
+export type AdmissionRequestStatus =
+  (typeof ADMISSION_REQUEST_STATUS_VALUES)[number];
+
+export const GENDER_VALUES = ['MALE', 'FEMALE', 'OTHER'] as const;
+
+export type Gender = (typeof GENDER_VALUES)[number];
 
 export interface AdmissionRequest {
-  id: string;
-  nombreCompleto: string;
-  correo: string;
-  usernameDeseado: string;
-  fechaNacimiento: Date;
-  genero: Gender;
-  fotoUrl?: string | null;
-  nivelSaludDeclarado?: string | null;
-  experienciasPrevias?: string | null;
-  condicionFisica?: string | null;
-  habilidadesDeclaradas?: string | null;
-  campamentoId: string;
-  estado: AdmissionRequestStatus;
-  oficioSugeridoId?: string | null;
-  revisadoPor?: string | null;
-  fechaRevision?: Date | null;
-  motivoRechazo?: string | null;
+  id: number;
+  name: string;
+  lastName1: string;
+  lastName2: string | null;
+  email: string;
+  desiredUsername: string;
+  birthDate: Date;
+  gender: Gender;
+  photoUrl: string | null;
+  declaredHealthLevel: string | null;
+  previousExperience: string | null;
+  physicalCondition: string | null;
+  declaredSkills: string | null;
+  campId: number;
+  status: AdmissionRequestStatus;
+  suggestedOccupationId: number | null;
+  finalOccupationId: number | null;
+  occupationModified: boolean;
+  reviewedBy: number | null;
+  reviewDate: Date | null;
+  rejectionReason: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CreateAdmissionRequestDTO {
-  nombreCompleto: string;
-  correo: string;
-  usernameDeseado: string;
-  fechaNacimiento: Date;
-  genero: Gender;
-  fotoUrl?: string | null;
-  nivelSaludDeclarado?: string | null;
-  experienciasPrevias?: string | null;
-  condicionFisica?: string | null;
-  habilidadesDeclaradas?: string | null;
-  campamentoId: string;
+  name: string;
+  lastName1: string;
+  lastName2?: string | null;
+  email: string;
+  desiredUsername: string;
+  birthDate: Date;
+  gender: Gender;
+  photoUrl?: string | null;
+  declaredHealthLevel?: string | null;
+  previousExperience?: string | null;
+  physicalCondition?: string | null;
+  declaredSkills?: string | null;
+  campId: number;
 }
 
 export interface UpdateAdmissionRequestDTO {
-  nombreCompleto?: string;
-  correo?: string;
-  usernameDeseado?: string;
-  fechaNacimiento?: Date;
-  genero?: Gender;
-  fotoUrl?: string | null;
-  nivelSaludDeclarado?: string | null;
-  experienciasPrevias?: string | null;
-  condicionFisica?: string | null;
-  habilidadesDeclaradas?: string | null;
-  estado?: AdmissionRequestStatus;
-  oficioSugeridoId?: string | null;
-  revisadoPor?: string | null;
-  fechaRevision?: Date | null;
-  motivoRechazo?: string | null;
-}
-
-export interface AdmissionRequestResponse {
-  id: string;
-  nombreCompleto: string;
-  correo: string;
-  usernameDeseado: string;
-  fechaNacimiento: Date;
-  genero: Gender;
-  fotoUrl: string | null;
-  nivelSaludDeclarado: string | null;
-  experienciasPrevias: string | null;
-  condicionFisica: string | null;
-  habilidadesDeclaradas: string | null;
-  campamentoId: string;
-  estado: AdmissionRequestStatus;
-  oficioSugeridoId: string | null;
-  revisadoPor: string | null;
-  fechaRevision: Date | null;
-  motivoRechazo: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  name?: string;
+  lastName1?: string;
+  lastName2?: string | null;
+  email?: string;
+  desiredUsername?: string;
+  birthDate?: Date;
+  gender?: Gender;
+  photoUrl?: string | null;
+  declaredHealthLevel?: string | null;
+  previousExperience?: string | null;
+  physicalCondition?: string | null;
+  declaredSkills?: string | null;
+  campId?: number;
+  status?: AdmissionRequestStatus;
+  suggestedOccupationId?: number | null;
+  finalOccupationId?: number | null;
+  occupationModified?: boolean;
+  reviewedBy?: number | null;
+  reviewDate?: Date | null;
+  rejectionReason?: string | null;
 }

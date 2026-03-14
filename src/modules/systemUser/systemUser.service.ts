@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { UserRepository } from "./user.repository";
-import { User, CreateUserDTO, UserResponse, LoginDTO } from "./user.model";
+import { UserRepository } from "./systemUser.repository";
+import { User, CreateUserDTO, UserResponse, LoginDTO } from "./systemUser.model";
 import { EncryptionService } from "../../services/encryption.service";
 
 @Injectable()
@@ -11,14 +11,13 @@ export class UserService {
     const passwordHash = await EncryptionService.hashPassword(data.password);
     
     const user = await this.userRepo.create({
-      personaId: data.personaId,
-      solicitudId: data.solicitudId,
+      personId: data.personId,
+      requestId: data.requestId,
       username: data.username,
       passwordHash: passwordHash,
-      correo: data.correo,
-      nombreCompleto: data.nombreCompleto,
-      rol: data.rol || 'VISITANTE',
-      campamentoId: data.campamentoId
+      email: data.email,
+      role: data.role || 'VISITOR',
+      campId: data.campId
     });
 
     const { passwordHash: _, ...userResponse } = user;
@@ -30,7 +29,7 @@ export class UserService {
     return users.map(({ passwordHash: _, ...user }) => user);
   }
 
-  async findUserById(id: string): Promise<UserResponse | null> {
+  async findUserById(id: number): Promise<UserResponse | null> {
     const user = await this.userRepo.findById(id);
     if (!user) return null;
     
@@ -38,11 +37,14 @@ export class UserService {
     return userResponse;
   }
 
-  async findUserByUsername(username: string, campamentoId: string): Promise<User | null> {
-    return this.userRepo.findByUsername(username, campamentoId);
+  async findUserByUsername(username: string, campId: number): Promise<User | null> {
+    return this.userRepo.findByUsername(username, campId);
   }
 
-  async updateUser(id: string, data: Partial<Omit<CreateUserDTO, 'password'>> & { password?: string }): Promise<UserResponse | null> {
+  async updateUser(
+    id: number,
+    data: Partial<Omit<CreateUserDTO, 'password'>> & { password?: string },
+  ): Promise<UserResponse | null> {
     let passwordHash: string | undefined;
     
     if (data.password) {
@@ -63,12 +65,12 @@ export class UserService {
     return userResponse;
   }
 
-  async deleteUser(id: string): Promise<boolean> {
+  async deleteUser(id: number): Promise<boolean> {
     return this.userRepo.delete(id);
   }
 
   async login(credentials: LoginDTO): Promise<UserResponse | null> {
-    const user = await this.userRepo.findByUsername(credentials.username, credentials.campamentoId);
+    const user = await this.userRepo.findByUsername(credentials.username, credentials.campId);
     
     if (!user) return null;
     
@@ -80,12 +82,12 @@ export class UserService {
     return userResponse;
   }
 
-  async countUsersByCampamento(campamentoId: string): Promise<number> {
-    return this.userRepo.countByCampamento(campamentoId);
+  async countUsersByCamp(campId: number): Promise<number> {
+    return this.userRepo.countByCamp(campId);
   }
 
-  async changeUserRole(id: string, newRole: User['rol']): Promise<UserResponse | null> {
-    const user = await this.userRepo.update(id, { rol: newRole });
+  async changeUserRole(id: number, newRole: User['role']): Promise<UserResponse | null> {
+    const user = await this.userRepo.update(id, { role: newRole });
     
     if (!user) return null;
 
@@ -93,8 +95,8 @@ export class UserService {
     return userResponse;
   }
 
-  async toggleUserStatus(id: string, newStatus: User['estado']): Promise<UserResponse | null> {
-    const user = await this.userRepo.update(id, { estado: newStatus });
+  async toggleUserStatus(id: number, newStatus: User['status']): Promise<UserResponse | null> {
+    const user = await this.userRepo.update(id, { status: newStatus });
     
     if (!user) return null;
 
