@@ -11,8 +11,11 @@ export class DecisionTreeEntity {
   @Column({ name: 'feature_names', type: 'jsonb' })
   featureNames!: string[];
 
-  @Column({ name: 'model_payload', type: 'jsonb' })
-  modelPayload!: unknown;
+  @Column({ name: 'model_payload', type: 'jsonb', nullable: true })
+  modelPayload!: unknown | null;
+
+  @Column({ name: 'model_file_path', type: 'varchar', length: 255, nullable: true })
+  modelFilePath!: string | null;
 
   @Column({ name: 'training_metrics', type: 'jsonb' })
   trainingMetrics!: unknown;

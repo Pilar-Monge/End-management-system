@@ -129,12 +129,25 @@ export class DecisionTreeController {
       parsedIsActive = isActive === 'true';
     }
 
-    const result = await this.service.listModels({
-      modelName,
-      isActive: parsedIsActive,
+    const filters: {
+      modelName?: string;
+      isActive?: boolean;
+      page?: number;
+      limit?: number;
+    } = {
       page: parsedPage,
       limit: parsedLimit,
-    });
+    };
+
+    if (modelName !== undefined) {
+      filters.modelName = modelName;
+    }
+
+    if (parsedIsActive !== undefined) {
+      filters.isActive = parsedIsActive;
+    }
+
+    const result = await this.service.listModels(filters);
 
     return {
       success: true,

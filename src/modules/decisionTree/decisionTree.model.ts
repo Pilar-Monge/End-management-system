@@ -27,13 +27,15 @@ export interface DecisionTreeTrainingMetrics {
   featureCount: number;
   trainAccuracy: number;
   labelDistribution: Record<string, number>;
+  labelClasses?: string[];
 }
 
 export interface DecisionTreeModel {
   id: number;
   modelName: string;
   featureNames: string[];
-  modelPayload: unknown;
+  modelPayload: unknown | null;
+  modelFilePath?: string | null;
   trainingMetrics: DecisionTreeTrainingMetrics;
   isActive: boolean;
   createdAt: Date;
@@ -43,7 +45,8 @@ export interface DecisionTreeModel {
 export interface CreateDecisionTreeModelDTO {
   modelName: string;
   featureNames: string[];
-  modelPayload: unknown;
+  modelPayload?: unknown | null;
+  modelFilePath?: string | null;
   trainingMetrics: DecisionTreeTrainingMetrics;
   isActive?: boolean;
 }
