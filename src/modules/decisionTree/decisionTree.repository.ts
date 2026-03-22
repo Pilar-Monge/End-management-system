@@ -72,7 +72,8 @@ export class DecisionTreeRepository {
       .filter((item) => item.modelName === modelName && item.isActive)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-    return matches.length > 0 ? this.toModel(matches[0]) : null;
+    const latest = matches.at(0);
+    return latest ? this.toModel(latest) : null;
   }
 
   async findAll(filters?: {
