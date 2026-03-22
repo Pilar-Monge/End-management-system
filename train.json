@@ -1,0 +1,17 @@
+{
+  "modelName": "occupation-v1",
+  "featureNames": ["age", "experience_years", "health_score"],
+  "samples": [
+    {"features": {"age": 22, "experience_years": 0, "health_score": 8}, "label": "VOLUNTEER"},
+    {"features": {"age": 24, "experience_years": 1, "health_score": 7}, "label": "VOLUNTEER"},
+    {"features": {"age": 21, "experience_years": 0, "health_score": 9}, "label": "VOLUNTEER"},
+    {"features": {"age": 35, "experience_years": 10, "health_score": 9}, "label": "LEADER"},
+    {"features": {"age": 38, "experience_years": 12, "health_score": 8}, "label": "LEADER"},
+    {"features": {"age": 32, "experience_years": 8, "health_score": 9}, "label": "LEADER"},
+    {"features": {"age": 28, "experience_years": 3, "health_score": 7}, "label": "WORKER"},
+    {"features": {"age": 27, "experience_years": 2, "health_score": 6}, "label": "WORKER"},
+    {"features": {"age": 29, "experience_years": 4, "health_score": 7}, "label": "WORKER"},
+    {"features": {"age": 26, "experience_years": 3, "health_score": 8}, "label": "WORKER"}
+  ],
+  "maxDepth": 5
+}
