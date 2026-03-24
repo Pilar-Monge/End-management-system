@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -32,6 +33,10 @@ export class ExpeditionParticipantController {
         message: 'Expedition participant created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating expedition participant',
       );
@@ -148,6 +153,10 @@ export class ExpeditionParticipantController {
         message: 'Expedition participant updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error
           ? error.message

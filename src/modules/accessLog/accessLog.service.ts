@@ -1,5 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
+import { SessionEntity } from '../session/session.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { AccessLogRepository } from './accessLog.repository';
 import type {
   AccessLog,
@@ -10,9 +14,48 @@ import type {
 
 @Injectable()
 export class AccessLogService {
-  constructor(private readonly repository: AccessLogRepository) {}
+  constructor(
+    private readonly repository: AccessLogRepository,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(SessionEntity)
+    private readonly sessionRepo: Repository<SessionEntity>,
+  ) {}
+
+  private async validateLogOwnership(
+    userId: number,
+    campId: number,
+    sessionId?: number | null,
+  ): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.campId !== campId) {
+      throw new BadRequestException('User does not belong to the provided camp');
+    }
+
+    if (sessionId === null || sessionId === undefined) {
+      return;
+    }
+
+    const session = await this.sessionRepo.findOne({ where: { id: sessionId } });
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (session.userId !== userId) {
+      throw new BadRequestException('Session does not belong to the provided user');
+    }
+
+    if (session.campId !== campId) {
+      throw new BadRequestException('Session does not belong to the provided camp');
+    }
+  }
 
   async createLog(data: CreateAccessLogDTO): Promise<AccessLog> {
+    await this.validateLogOwnership(data.userId, data.campId, data.sessionId);
     return await this.repository.create(data);
   }
 
@@ -53,6 +96,14 @@ export class AccessLogService {
   }
 
   async updateLog(id: number, data: UpdateAccessLogDTO): Promise<AccessLog | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    const userIdToValidate = data.userId ?? existing.userId;
+    const campIdToValidate = data.campId ?? existing.campId;
+    const sessionIdToValidate = data.sessionId !== undefined ? data.sessionId : existing.sessionId;
+
+    await this.validateLogOwnership(userIdToValidate, campIdToValidate, sessionIdToValidate);
     return await this.repository.update(id, data);
   }
 

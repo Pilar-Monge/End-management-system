@@ -45,7 +45,7 @@ import { UserModule } from './modules/systemUser/systemUser.module';
       password: process.env.DB_PASSWORD ?? 'gestionfin123',
       database: process.env.DB_NAME ?? 'gestionfin_db',
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: process.env.DB_SYNC === 'true',
     }),
     UserModule,
     AdmissionRequestModule,
