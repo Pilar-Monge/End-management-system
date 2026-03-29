@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -31,6 +32,10 @@ export class UserRoleHistoryController {
         message: 'User role history entry created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating user role history entry',
       );
@@ -135,6 +140,10 @@ export class UserRoleHistoryController {
         message: 'User role history entry updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating user role history entry',
       );

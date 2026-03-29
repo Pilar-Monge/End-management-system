@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { AiAdmissionReportRepository } from './aiAdmissionReport.repository';
+import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
 import type {
   AiAdmissionReport,
   AiDecision,
@@ -10,9 +13,21 @@ import type {
 
 @Injectable()
 export class AiAdmissionReportService {
-  constructor(private readonly repository: AiAdmissionReportRepository) {}
+  constructor(
+    private readonly repository: AiAdmissionReportRepository,
+    @InjectRepository(AdmissionRequestEntity)
+    private readonly admissionRequestRepo: Repository<AdmissionRequestEntity>,
+  ) {}
 
   async createReport(data: CreateAiAdmissionReportDTO): Promise<AiAdmissionReport> {
+    const admissionRequestExists = await this.admissionRequestRepo.exist({
+      where: { id: data.requestId },
+    });
+
+    if (!admissionRequestExists) {
+      throw new Error('Admission request not found');
+    }
+
     const existing = await this.repository.findByRequestId(data.requestId);
     if (existing) {
       throw new Error('An AI admission report already exists for this request');

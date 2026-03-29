@@ -1,5 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
+import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { ExpeditionResourceConsumedRepository } from './expeditionResourceConsumed.repository';
 import type {
   CreateExpeditionResourceConsumedDTO,
@@ -9,11 +14,74 @@ import type {
 
 @Injectable()
 export class ExpeditionResourceConsumedService {
-  constructor(private readonly repository: ExpeditionResourceConsumedRepository) {}
+  constructor(
+    private readonly repository: ExpeditionResourceConsumedRepository,
+    @InjectRepository(ExpeditionEntity)
+    private readonly expeditionRepo: Repository<ExpeditionEntity>,
+    @InjectRepository(InventoryMovementEntity)
+    private readonly movementRepo: Repository<InventoryMovementEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+  ) {}
+
+  private async validateRecorder(
+    expeditionId: number,
+    recordedBy: number,
+    resourceTypeId: number,
+    movementId?: number | null,
+  ): Promise<void> {
+    const expedition = await this.expeditionRepo.findOne({ where: { id: expeditionId } });
+    if (!expedition) {
+      throw new NotFoundException('Expedition not found');
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: recordedBy } });
+    if (!user) {
+      throw new NotFoundException('RecordedBy user not found');
+    }
+
+    if (user.status !== 'ACTIVE') {
+      throw new ForbiddenException('Only ACTIVE users can record consumed expedition resources');
+    }
+
+    if (user.role !== 'RESOURCE_MANAGEMENT' && user.role !== 'SYSTEM_ADMIN') {
+      throw new ForbiddenException(
+        'Only RESOURCE_MANAGEMENT or SYSTEM_ADMIN can record consumed expedition resources',
+      );
+    }
+
+    if (user.campId !== expedition.campId) {
+      throw new BadRequestException('RecordedBy user does not belong to expedition camp');
+    }
+
+    if (movementId === null || movementId === undefined) {
+      return;
+    }
+
+    const movement = await this.movementRepo.findOne({ where: { id: movementId } });
+    if (!movement) {
+      throw new NotFoundException('Movement not found');
+    }
+
+    if (movement.campId !== expedition.campId) {
+      throw new BadRequestException('Movement does not belong to expedition camp');
+    }
+
+    if (movement.resourceTypeId !== resourceTypeId) {
+      throw new BadRequestException('Movement resource type does not match provided resourceTypeId');
+    }
+  }
 
   async createRecord(
     data: CreateExpeditionResourceConsumedDTO,
   ): Promise<ExpeditionResourceConsumed> {
+    await this.validateRecorder(
+      data.expeditionId,
+      data.recordedBy,
+      data.resourceTypeId,
+      data.movementId,
+    );
+
     const existing = await this.repository.findByExpeditionAndResourceType(
       data.expeditionId,
       data.resourceTypeId,
@@ -62,6 +130,15 @@ export class ExpeditionResourceConsumedService {
     id: number,
     data: UpdateExpeditionResourceConsumedDTO,
   ): Promise<ExpeditionResourceConsumed | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    const expeditionId = data.expeditionId ?? existing.expeditionId;
+    const recordedBy = data.recordedBy ?? existing.recordedBy;
+    const resourceTypeId = data.resourceTypeId ?? existing.resourceTypeId;
+    const movementId = data.movementId !== undefined ? data.movementId : existing.movementId;
+    await this.validateRecorder(expeditionId, recordedBy, resourceTypeId, movementId);
+
     return await this.repository.update(id, data);
   }
 

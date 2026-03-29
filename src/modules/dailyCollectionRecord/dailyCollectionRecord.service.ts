@@ -1,5 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
+import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { PersonEntity } from '../person/person.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { DailyCollectionRecordRepository } from './dailyCollectionRecord.repository';
 import type {
   CreateDailyCollectionRecordDTO,
@@ -9,9 +14,68 @@ import type {
 
 @Injectable()
 export class DailyCollectionRecordService {
-  constructor(private readonly repository: DailyCollectionRecordRepository) {}
+  constructor(
+    private readonly repository: DailyCollectionRecordRepository,
+    @InjectRepository(PersonEntity)
+    private readonly personRepo: Repository<PersonEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(InventoryMovementEntity)
+    private readonly movementRepo: Repository<InventoryMovementEntity>,
+  ) {}
+
+  private async validateCampConsistency(
+    campId: number,
+    personId: number,
+    recordedBy: number,
+    resourceTypeId: number,
+    movementId?: number | null,
+  ): Promise<void> {
+    const person = await this.personRepo.findOne({ where: { id: personId } });
+    if (!person) {
+      throw new NotFoundException('Person not found');
+    }
+
+    if (person.campId !== campId) {
+      throw new BadRequestException('Person does not belong to the provided camp');
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: recordedBy } });
+    if (!user) {
+      throw new NotFoundException('User who recorded the collection was not found');
+    }
+
+    if (user.campId !== campId) {
+      throw new BadRequestException('RecordedBy user does not belong to the provided camp');
+    }
+
+    if (movementId === null || movementId === undefined) {
+      return;
+    }
+
+    const movement = await this.movementRepo.findOne({ where: { id: movementId } });
+    if (!movement) {
+      throw new NotFoundException('Inventory movement not found');
+    }
+
+    if (movement.campId !== campId) {
+      throw new BadRequestException('Movement does not belong to the provided camp');
+    }
+
+    if (movement.resourceTypeId !== resourceTypeId) {
+      throw new BadRequestException('Movement resource type does not match provided resourceTypeId');
+    }
+  }
 
   async createRecord(data: CreateDailyCollectionRecordDTO): Promise<DailyCollectionRecord> {
+    await this.validateCampConsistency(
+      data.campId,
+      data.personId,
+      data.recordedBy,
+      data.resourceTypeId,
+      data.movementId,
+    );
+
     const existing = await this.repository.findByPersonResourceDay(
       data.personId,
       data.resourceTypeId,
@@ -62,6 +126,17 @@ export class DailyCollectionRecordService {
   }
 
   async updateRecord(id: number, data: UpdateDailyCollectionRecordDTO): Promise<DailyCollectionRecord | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    const campId = data.campId ?? existing.campId;
+    const personId = data.personId ?? existing.personId;
+    const recordedBy = data.recordedBy ?? existing.recordedBy;
+    const resourceTypeId = data.resourceTypeId ?? existing.resourceTypeId;
+    const movementId = data.movementId !== undefined ? data.movementId : existing.movementId;
+
+    await this.validateCampConsistency(campId, personId, recordedBy, resourceTypeId, movementId);
+
     return await this.repository.update(id, data);
   }
 
