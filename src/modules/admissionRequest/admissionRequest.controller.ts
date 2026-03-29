@@ -11,14 +11,20 @@ import {
   Query,
 } from '@nestjs/common';
 import { AdmissionRequestService } from './admissionRequest.service';
-import type { AdmissionRequestStatus, CreateAdmissionRequestDTO, UpdateAdmissionRequestDTO } from './admissionRequest.model';
+import type { AdmissionRequestStatus } from './admissionRequest.model';
+import {
+  CreateAdmissionRequestDto,
+  ProcessAiAdmissionRequestDto,
+  ReviewAdmissionRequestDto,
+  UpdateAdmissionRequestDto,
+} from './dto';
 
 @Controller('admission-requests')
 export class AdmissionRequestController {
   constructor(private readonly service: AdmissionRequestService) {}
 
   @Post()
-  async createRequest(@Body() body: CreateAdmissionRequestDTO) {
+  async createRequest(@Body() body: CreateAdmissionRequestDto) {
     try {
       const request = await this.service.createRequest(body);
       return {
@@ -95,7 +101,7 @@ export class AdmissionRequestController {
   }
 
   @Put(':id')
-  async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDTO) {
+  async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDto) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -134,7 +140,7 @@ export class AdmissionRequestController {
   @Post(':id/process-ai')
   async processWithAI(
     @Param('id') id: string,
-    @Body() body: { oficioSugeridoId: string; decision: 'ACCEPT' | 'REJECT' },
+    @Body() body: ProcessAiAdmissionRequestDto,
   ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -142,17 +148,9 @@ export class AdmissionRequestController {
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     const { oficioSugeridoId, decision } = body;
-    if (!oficioSugeridoId || !decision) {
-      throw new BadRequestException('Missing oficioSugeridoId or decision');
-    }
-
-    const parsedOccupationId = Number.parseInt(oficioSugeridoId, 10);
-    if (Number.isNaN(parsedOccupationId)) {
-      throw new BadRequestException('Invalid oficioSugeridoId');
-    }
 
     try {
-      const request = await this.service.processWithAI(parsedId, parsedOccupationId, decision);
+      const request = await this.service.processWithAI(parsedId, oficioSugeridoId, decision);
       return {
         success: true,
         data: request,
@@ -166,7 +164,7 @@ export class AdmissionRequestController {
   @Post(':id/review')
   async reviewByAdmin(
     @Param('id') id: string,
-    @Body() body: { adminUserId: string; approved: boolean; motivoRechazo?: string },
+    @Body() body: ReviewAdmissionRequestDto,
   ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -174,19 +172,11 @@ export class AdmissionRequestController {
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     const { adminUserId, approved, motivoRechazo } = body;
-    if (!adminUserId || approved === undefined) {
-      throw new BadRequestException('Missing adminUserId or approved');
-    }
-
-    const parsedAdminUserId = Number.parseInt(adminUserId, 10);
-    if (Number.isNaN(parsedAdminUserId)) {
-      throw new BadRequestException('Invalid adminUserId');
-    }
 
     try {
       const request = await this.service.reviewByAdmin(
         parsedId,
-        parsedAdminUserId,
+        adminUserId,
         approved,
         motivoRechazo,
       );
