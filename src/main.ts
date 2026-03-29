@@ -18,6 +18,10 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: '', method: RequestMethod.GET }],
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('End Management System')
@@ -26,13 +30,9 @@ async function bootstrap(): Promise<void> {
       .build();
       
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+    // With global prefix 'api', this will be served at /api/docs
+    SwaggerModule.setup('docs', app, document);
   }
-
-
-  app.setGlobalPrefix('api', {
-    exclude: [{ path: '', method: RequestMethod.GET }],
-  });
 
   const port = Number(process.env.PORT) || 3000;
   await app.listen(port);
