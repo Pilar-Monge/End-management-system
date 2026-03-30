@@ -9,7 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { TransferPersonService } from './transferPerson.service';
 import type {
@@ -18,11 +22,16 @@ import type {
   UpdateTransferPersonDTO,
 } from './transferPerson.model';
 
+import { CreateTransferPersonDto, UpdateTransferPersonDto } from './dto';
 @Controller('transfer-persons')
+@ApiTags('Transfer Person')
 export class TransferPersonController {
   constructor(private readonly service: TransferPersonService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Transfer Person' })
+  @ApiBody({ type: CreateTransferPersonDto })
+  @ApiCreatedResponse({ description: 'Transfer Person created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateTransferPersonDTO) {
     try {
       const transferPerson = await this.service.createTransferPerson(body);
@@ -37,8 +46,12 @@ export class TransferPersonController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Transfer Person by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
+  @ApiOkResponse({ description: 'Transfer Person found' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Transfer Person not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +63,12 @@ export class TransferPersonController {
 
     return { success: true, data: transferPerson };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Transfer Person' })
+  @ApiOkResponse({ description: 'Transfer Person list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('trasladoId') trasladoId?: string,
@@ -61,8 +78,11 @@ export class TransferPersonController {
     @Query('estado') estado?: PersonTransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+
       const filters: {
         transferId?: number;
         personId?: number;
@@ -85,7 +105,7 @@ export class TransferPersonController {
         filters.personId = parsedPersonId;
       }
 
-      const resolvedStatus = status ?? estado;
+      const resolvedStatus = status ?? (legacyEstado as any);
       if (resolvedStatus) {
         filters.status = resolvedStatus;
       }
@@ -126,8 +146,13 @@ export class TransferPersonController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Transfer Person' })
+  @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
+  @ApiBody({ type: UpdateTransferPersonDto })
+  @ApiOkResponse({ description: 'Transfer Person updated' })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Transfer Person not found' })
   async update(@Param('id') id: string, @Body() body: UpdateTransferPersonDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -149,8 +174,12 @@ export class TransferPersonController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Transfer Person' })
+  @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
+  @ApiOkResponse({ description: 'Transfer Person deleted' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Transfer Person not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
