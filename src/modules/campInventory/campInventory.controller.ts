@@ -9,7 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CampInventoryService } from './campInventory.service';
 import type {
@@ -17,11 +21,16 @@ import type {
   UpdateCampInventoryDTO,
 } from './campInventory.model';
 
+import { CreateCampInventoryDto, UpdateCampInventoryDto } from './dto';
 @Controller('camp-inventory')
+@ApiTags('Camp Inventory')
 export class CampInventoryController {
   constructor(private readonly service: CampInventoryService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Camp Inventory' })
+  @ApiBody({ type: CreateCampInventoryDto })
+  @ApiCreatedResponse({ description: 'Camp Inventory created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampInventoryDTO) {
     try {
       const item = await this.service.createItem(body);
@@ -55,8 +64,12 @@ export class CampInventoryController {
 
     return { success: true, data: item };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Camp Inventory' })
+  @ApiOkResponse({ description: 'Camp Inventory list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campamentoId') campamentoId?: string,
     @Query('campId') campId?: string,
@@ -64,8 +77,11 @@ export class CampInventoryController {
     @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+
       const filters: {
         campId?: number;
         resourceTypeId?: number;
@@ -73,7 +89,7 @@ export class CampInventoryController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
