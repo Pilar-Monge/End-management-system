@@ -9,7 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { OccupationAssignmentCriteriaService } from './occupationAssignmentCriteria.service';
 import type {
@@ -18,11 +22,16 @@ import type {
   UpdateOccupationAssignmentCriteriaDTO,
 } from './occupationAssignmentCriteria.model';
 
+import { CreateOccupationAssignmentCriteriaDto, UpdateOccupationAssignmentCriteriaDto } from './dto';
 @Controller('occupation-assignment-criteria')
+@ApiTags('Occupation Assignment Criteria')
 export class OccupationAssignmentCriteriaController {
   constructor(private readonly service: OccupationAssignmentCriteriaService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Occupation Assignment Criteria' })
+  @ApiBody({ type: CreateOccupationAssignmentCriteriaDto })
+  @ApiCreatedResponse({ description: 'Occupation Assignment Criteria created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateOccupationAssignmentCriteriaDTO) {
     try {
       const criteria = await this.service.createCriteria(body);
@@ -37,8 +46,12 @@ export class OccupationAssignmentCriteriaController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Occupation Assignment Criteria by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Occupation Assignment Criteria id' })
+  @ApiOkResponse({ description: 'Occupation Assignment Criteria found' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Occupation Assignment Criteria not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +63,12 @@ export class OccupationAssignmentCriteriaController {
 
     return { success: true, data: criteria };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Occupation Assignment Criteria' })
+  @ApiOkResponse({ description: 'Occupation Assignment Criteria list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('occupationId') occupationId?: string,
     @Query('ocupacionId') ocupacionId?: string,
@@ -129,8 +146,13 @@ export class OccupationAssignmentCriteriaController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Occupation Assignment Criteria' })
+  @ApiParam({ name: 'id', type: Number, description: 'Occupation Assignment Criteria id' })
+  @ApiBody({ type: UpdateOccupationAssignmentCriteriaDto })
+  @ApiOkResponse({ description: 'Occupation Assignment Criteria updated' })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Occupation Assignment Criteria not found' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateOccupationAssignmentCriteriaDTO,
@@ -155,8 +177,12 @@ export class OccupationAssignmentCriteriaController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Occupation Assignment Criteria' })
+  @ApiParam({ name: 'id', type: Number, description: 'Occupation Assignment Criteria id' })
+  @ApiOkResponse({ description: 'Occupation Assignment Criteria deleted' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Occupation Assignment Criteria not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
