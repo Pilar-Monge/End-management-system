@@ -15,6 +15,13 @@ import {
 
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
+
 import { TransferHistoryService } from './transferHistory.service';
 import type {
   CreateTransferHistoryDTO,
@@ -30,7 +37,7 @@ export class TransferHistoryController {
   @Post()
   @ApiOperation({ summary: 'Create Transfer History' })
   @ApiBody({ type: CreateTransferHistoryDto })
-  @ApiCreatedResponse({ description: 'Transfer History created' })
+  @ApiCreatedResponse({ description: 'Transfer History created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateTransferHistoryDTO) {
     try {
@@ -49,7 +56,7 @@ export class TransferHistoryController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Transfer History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
-  @ApiOkResponse({ description: 'Transfer History found' })
+  @ApiOkResponse({ description: 'Transfer History found', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
   async getById(@Param('id') id: string) {
@@ -65,7 +72,7 @@ export class TransferHistoryController {
   }
   @Get()
   @ApiOperation({ summary: 'List Transfer History' })
-  @ApiOkResponse({ description: 'Transfer History list' })
+  @ApiOkResponse({ description: 'Transfer History list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -158,7 +165,7 @@ export class TransferHistoryController {
   @ApiOperation({ summary: 'Update Transfer History' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
   @ApiBody({ type: UpdateTransferHistoryDto })
-  @ApiOkResponse({ description: 'Transfer History updated' })
+  @ApiOkResponse({ description: 'Transfer History updated', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
   async update(@Param('id') id: string, @Body() body: UpdateTransferHistoryDTO) {
@@ -185,7 +192,7 @@ export class TransferHistoryController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Transfer History' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
-  @ApiOkResponse({ description: 'Transfer History deleted' })
+  @ApiOkResponse({ description: 'Transfer History deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
   async delete(@Param('id') id: string) {

@@ -15,6 +15,13 @@ import {
 
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
+
 import { CampInventoryService } from './campInventory.service';
 import type {
   CreateCampInventoryDTO,
@@ -29,7 +36,7 @@ export class CampInventoryController {
   @Post()
   @ApiOperation({ summary: 'Create Camp Inventory' })
   @ApiBody({ type: CreateCampInventoryDto })
-  @ApiCreatedResponse({ description: 'Camp Inventory created' })
+  @ApiCreatedResponse({ description: 'Camp Inventory created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampInventoryDTO) {
     try {
@@ -66,7 +73,7 @@ export class CampInventoryController {
   }
   @Get()
   @ApiOperation({ summary: 'List Camp Inventory' })
-  @ApiOkResponse({ description: 'Camp Inventory list' })
+  @ApiOkResponse({ description: 'Camp Inventory list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })

@@ -15,6 +15,13 @@ import {
 
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
+
 import { OccupationService } from './occupation.service';
 import type { CreateOccupationDTO, UpdateOccupationDTO } from './occupation.model';
 
@@ -26,7 +33,7 @@ export class OccupationController {
   @Post()
   @ApiOperation({ summary: 'Create Occupation' })
   @ApiBody({ type: CreateOccupationDto })
-  @ApiCreatedResponse({ description: 'Occupation created' })
+  @ApiCreatedResponse({ description: 'Occupation created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateOccupationDTO) {
     try {
@@ -45,7 +52,7 @@ export class OccupationController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Occupation by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
-  @ApiOkResponse({ description: 'Occupation found' })
+  @ApiOkResponse({ description: 'Occupation found', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
   async getById(@Param('id') id: string) {
@@ -61,7 +68,7 @@ export class OccupationController {
   }
   @Get()
   @ApiOperation({ summary: 'List Occupation' })
-  @ApiOkResponse({ description: 'Occupation list' })
+  @ApiOkResponse({ description: 'Occupation list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -149,7 +156,7 @@ export class OccupationController {
   @ApiOperation({ summary: 'Update Occupation' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
   @ApiBody({ type: UpdateOccupationDto })
-  @ApiOkResponse({ description: 'Occupation updated' })
+  @ApiOkResponse({ description: 'Occupation updated', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
   async update(@Param('id') id: string, @Body() body: UpdateOccupationDTO) {
@@ -176,7 +183,7 @@ export class OccupationController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Occupation' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
-  @ApiOkResponse({ description: 'Occupation deleted' })
+  @ApiOkResponse({ description: 'Occupation deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
   async delete(@Param('id') id: string) {

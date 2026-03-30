@@ -15,6 +15,13 @@ import {
 
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
+
 import { InventoryAlertService } from './inventoryAlert.service';
 import type { CreateInventoryAlertDTO, UpdateInventoryAlertDTO } from './inventoryAlert.model';
 
@@ -26,7 +33,7 @@ export class InventoryAlertController {
   @Post()
   @ApiOperation({ summary: 'Create Inventory Alert' })
   @ApiBody({ type: CreateInventoryAlertDto })
-  @ApiCreatedResponse({ description: 'Inventory Alert created' })
+  @ApiCreatedResponse({ description: 'Inventory Alert created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateInventoryAlertDTO) {
     try {
@@ -45,7 +52,7 @@ export class InventoryAlertController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Inventory Alert by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
-  @ApiOkResponse({ description: 'Inventory Alert found' })
+  @ApiOkResponse({ description: 'Inventory Alert found', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
   async getById(@Param('id') id: string) {
@@ -61,7 +68,7 @@ export class InventoryAlertController {
   }
   @Get()
   @ApiOperation({ summary: 'List Inventory Alert' })
-  @ApiOkResponse({ description: 'Inventory Alert list' })
+  @ApiOkResponse({ description: 'Inventory Alert list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -151,7 +158,7 @@ export class InventoryAlertController {
   @ApiOperation({ summary: 'Update Inventory Alert' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
   @ApiBody({ type: UpdateInventoryAlertDto })
-  @ApiOkResponse({ description: 'Inventory Alert updated' })
+  @ApiOkResponse({ description: 'Inventory Alert updated', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
   async update(@Param('id') id: string, @Body() body: UpdateInventoryAlertDTO) {
@@ -178,7 +185,7 @@ export class InventoryAlertController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Inventory Alert' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
-  @ApiOkResponse({ description: 'Inventory Alert deleted' })
+  @ApiOkResponse({ description: 'Inventory Alert deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
   async delete(@Param('id') id: string) {

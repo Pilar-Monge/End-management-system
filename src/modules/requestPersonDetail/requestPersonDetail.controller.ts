@@ -15,6 +15,13 @@ import {
 
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
+
 import { RequestPersonDetailService } from './requestPersonDetail.service';
 import type {
   CreateRequestPersonDetailDTO,
@@ -31,7 +38,7 @@ export class RequestPersonDetailController {
   @Post()
   @ApiOperation({ summary: 'Create Request Person Detail' })
   @ApiBody({ type: CreateRequestPersonDetailDto })
-  @ApiCreatedResponse({ description: 'Request Person Detail created' })
+  @ApiCreatedResponse({ description: 'Request Person Detail created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestPersonDetailDTO) {
     try {
@@ -52,7 +59,7 @@ export class RequestPersonDetailController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Request Person Detail by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
-  @ApiOkResponse({ description: 'Request Person Detail found' })
+  @ApiOkResponse({ description: 'Request Person Detail found', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async getById(@Param('id') id: string) {
@@ -68,7 +75,7 @@ export class RequestPersonDetailController {
   }
   @Get()
   @ApiOperation({ summary: 'List Request Person Detail' })
-  @ApiOkResponse({ description: 'Request Person Detail list' })
+  @ApiOkResponse({ description: 'Request Person Detail list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -175,7 +182,7 @@ export class RequestPersonDetailController {
   @ApiOperation({ summary: 'Update Request Person Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
   @ApiBody({ type: UpdateRequestPersonDetailDto })
-  @ApiOkResponse({ description: 'Request Person Detail updated' })
+  @ApiOkResponse({ description: 'Request Person Detail updated', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async update(@Param('id') id: string, @Body() body: UpdateRequestPersonDetailDTO) {
@@ -204,7 +211,7 @@ export class RequestPersonDetailController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Request Person Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
-  @ApiOkResponse({ description: 'Request Person Detail deleted' })
+  @ApiOkResponse({ description: 'Request Person Detail deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async delete(@Param('id') id: string) {

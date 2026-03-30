@@ -15,6 +15,13 @@ import {
 
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
+
 import { ResourceTypeService } from './resourceType.service';
 import type {
   CreateResourceTypeDTO,
@@ -30,7 +37,7 @@ export class ResourceTypeController {
   @Post()
   @ApiOperation({ summary: 'Create Resource Type' })
   @ApiBody({ type: CreateResourceTypeDto })
-  @ApiCreatedResponse({ description: 'Resource Type created' })
+  @ApiCreatedResponse({ description: 'Resource Type created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateResourceTypeDTO) {
     try {
@@ -49,7 +56,7 @@ export class ResourceTypeController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Resource Type by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
-  @ApiOkResponse({ description: 'Resource Type found' })
+  @ApiOkResponse({ description: 'Resource Type found', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async getById(@Param('id') id: string) {
@@ -65,7 +72,7 @@ export class ResourceTypeController {
   }
   @Get()
   @ApiOperation({ summary: 'List Resource Type' })
-  @ApiOkResponse({ description: 'Resource Type list' })
+  @ApiOkResponse({ description: 'Resource Type list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -127,7 +134,7 @@ export class ResourceTypeController {
   @ApiOperation({ summary: 'Update Resource Type' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
   @ApiBody({ type: UpdateResourceTypeDto })
-  @ApiOkResponse({ description: 'Resource Type updated' })
+  @ApiOkResponse({ description: 'Resource Type updated', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async update(@Param('id') id: string, @Body() body: UpdateResourceTypeDTO) {
@@ -154,7 +161,7 @@ export class ResourceTypeController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Resource Type' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
-  @ApiOkResponse({ description: 'Resource Type deleted' })
+  @ApiOkResponse({ description: 'Resource Type deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async delete(@Param('id') id: string) {

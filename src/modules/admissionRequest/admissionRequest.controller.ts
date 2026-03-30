@@ -22,6 +22,13 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 import { AdmissionRequestService } from './admissionRequest.service';
 import {
   ADMISSION_REQUEST_STATUS_VALUES,
@@ -42,7 +49,7 @@ export class AdmissionRequestController {
   @Post()
   @ApiOperation({ summary: 'Create an admission request' })
   @ApiBody({ type: CreateAdmissionRequestDto })
-  @ApiCreatedResponse({ description: 'Admission request created' })
+  @ApiCreatedResponse({ description: 'Admission request created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async createRequest(@Body() body: CreateAdmissionRequestDto) {
     try {
@@ -60,7 +67,7 @@ export class AdmissionRequestController {
   @Get(':id')
   @ApiOperation({ summary: 'Get an admission request by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
-  @ApiOkResponse({ description: 'Admission request found' })
+  @ApiOkResponse({ description: 'Admission request found', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Admission request not found' })
   async getRequestById(@Param('id') id: string) {
@@ -86,7 +93,7 @@ export class AdmissionRequestController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   @ApiOperation({ summary: 'List admission requests' })
-  @ApiOkResponse({ description: 'Admission requests list' })
+  @ApiOkResponse({ description: 'Admission requests list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   async getAllRequests(
     @Query('campId') campId?: string,
@@ -146,7 +153,7 @@ export class AdmissionRequestController {
   @ApiOperation({ summary: 'Update an admission request' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: UpdateAdmissionRequestDto })
-  @ApiOkResponse({ description: 'Admission request updated' })
+  @ApiOkResponse({ description: 'Admission request updated', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDto) {
     if (!id) throw new BadRequestException('Invalid ID');
@@ -169,7 +176,7 @@ export class AdmissionRequestController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an admission request' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
-  @ApiOkResponse({ description: 'Admission request deleted' })
+  @ApiOkResponse({ description: 'Admission request deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or request cannot be deleted' })
   async deleteRequest(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
@@ -192,7 +199,7 @@ export class AdmissionRequestController {
   @ApiOperation({ summary: 'Process an admission request with AI' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
-  @ApiOkResponse({ description: 'Admission request processed by AI' })
+  @ApiOkResponse({ description: 'Admission request processed by AI', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   async processWithAI(
     @Param('id') id: string,
@@ -221,7 +228,7 @@ export class AdmissionRequestController {
   @ApiOperation({ summary: 'Review an admission request by admin' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: ReviewAdmissionRequestDto })
-  @ApiOkResponse({ description: 'Admission request reviewed by admin' })
+  @ApiOkResponse({ description: 'Admission request reviewed by admin', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   async reviewByAdmin(
     @Param('id') id: string,
@@ -254,7 +261,7 @@ export class AdmissionRequestController {
   @Get('camps/:campamentoId/pending')
   @ApiOperation({ summary: 'List pending admission requests for a camp' })
   @ApiParam({ name: 'campamentoId', type: Number, description: 'Camp id' })
-  @ApiOkResponse({ description: 'Pending admission requests list' })
+  @ApiOkResponse({ description: 'Pending admission requests list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid camp id' })
   async getPendingByCamp(@Param('campamentoId') campamentoId: string) {
     if (!campamentoId) throw new BadRequestException('Invalid camp ID');

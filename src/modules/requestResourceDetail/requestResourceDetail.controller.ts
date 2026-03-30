@@ -15,6 +15,13 @@ import {
 
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
+
 import { RequestResourceDetailService } from './requestResourceDetail.service';
 import type {
   CreateRequestResourceDetailDTO,
@@ -29,7 +36,7 @@ export class RequestResourceDetailController {
   @Post()
   @ApiOperation({ summary: 'Create Request Resource Detail' })
   @ApiBody({ type: CreateRequestResourceDetailDto })
-  @ApiCreatedResponse({ description: 'Request Resource Detail created' })
+  @ApiCreatedResponse({ description: 'Request Resource Detail created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestResourceDetailDTO) {
     try {
@@ -50,7 +57,7 @@ export class RequestResourceDetailController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Request Resource Detail by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
-  @ApiOkResponse({ description: 'Request Resource Detail found' })
+  @ApiOkResponse({ description: 'Request Resource Detail found', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async getById(@Param('id') id: string) {
@@ -66,7 +73,7 @@ export class RequestResourceDetailController {
   }
   @Get()
   @ApiOperation({ summary: 'List Request Resource Detail' })
-  @ApiOkResponse({ description: 'Request Resource Detail list' })
+  @ApiOkResponse({ description: 'Request Resource Detail list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -144,7 +151,7 @@ export class RequestResourceDetailController {
   @ApiOperation({ summary: 'Update Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
   @ApiBody({ type: UpdateRequestResourceDetailDto })
-  @ApiOkResponse({ description: 'Request Resource Detail updated' })
+  @ApiOkResponse({ description: 'Request Resource Detail updated', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async update(@Param('id') id: string, @Body() body: UpdateRequestResourceDetailDTO) {
@@ -173,7 +180,7 @@ export class RequestResourceDetailController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
-  @ApiOkResponse({ description: 'Request Resource Detail deleted' })
+  @ApiOkResponse({ description: 'Request Resource Detail deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async delete(@Param('id') id: string) {
