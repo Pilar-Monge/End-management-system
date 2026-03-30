@@ -9,7 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { DailyCollectionRecordService } from './dailyCollectionRecord.service';
 import type {
@@ -17,11 +21,16 @@ import type {
   UpdateDailyCollectionRecordDTO,
 } from './dailyCollectionRecord.model';
 
+import { CreateDailyCollectionRecordDto, UpdateDailyCollectionRecordDto } from './dto';
 @Controller('daily-collection-records')
+@ApiTags('Daily Collection Record')
 export class DailyCollectionRecordController {
   constructor(private readonly service: DailyCollectionRecordService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Daily Collection Record' })
+  @ApiBody({ type: CreateDailyCollectionRecordDto })
+  @ApiCreatedResponse({ description: 'Daily Collection Record created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateDailyCollectionRecordDTO) {
     try {
       const record = await this.service.createRecord(body);
@@ -36,8 +45,12 @@ export class DailyCollectionRecordController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Daily Collection Record by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
+  @ApiOkResponse({ description: 'Daily Collection Record found' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -49,8 +62,12 @@ export class DailyCollectionRecordController {
 
     return { success: true, data: record };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Daily Collection Record' })
+  @ApiOkResponse({ description: 'Daily Collection Record list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('campamentoId') campamentoId?: string,
@@ -62,8 +79,11 @@ export class DailyCollectionRecordController {
     @Query('fecha') fecha?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+
       const filters: {
         campId?: number;
         personId?: number;
@@ -73,7 +93,7 @@ export class DailyCollectionRecordController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
@@ -140,8 +160,13 @@ export class DailyCollectionRecordController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Daily Collection Record' })
+  @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
+  @ApiBody({ type: UpdateDailyCollectionRecordDto })
+  @ApiOkResponse({ description: 'Daily Collection Record updated' })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async update(@Param('id') id: string, @Body() body: UpdateDailyCollectionRecordDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -163,8 +188,12 @@ export class DailyCollectionRecordController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Daily Collection Record' })
+  @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
+  @ApiOkResponse({ description: 'Daily Collection Record deleted' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
