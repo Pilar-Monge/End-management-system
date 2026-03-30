@@ -9,7 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { PersonService } from './person.service';
 import type {
@@ -18,11 +22,16 @@ import type {
   UpdatePersonDTO,
 } from './person.model';
 
+import { CreatePersonDto, UpdatePersonDto } from './dto';
 @Controller('persons')
+@ApiTags('Person')
 export class PersonController {
   constructor(private readonly service: PersonService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Person' })
+  @ApiBody({ type: CreatePersonDto })
+  @ApiCreatedResponse({ description: 'Person created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreatePersonDTO) {
     try {
       const person = await this.service.createPerson(body);
@@ -37,8 +46,12 @@ export class PersonController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Person by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Person id' })
+  @ApiOkResponse({ description: 'Person found' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Person not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +63,12 @@ export class PersonController {
 
     return { success: true, data: person };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Person' })
+  @ApiOkResponse({ description: 'Person list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campamentoId') campamentoId?: string,
     @Query('campId') campId?: string,
@@ -61,8 +78,12 @@ export class PersonController {
     @Query('occupationId') occupationId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+
       const filters: {
         campId?: number;
         currentStatus?: PersonStatus;
@@ -71,7 +92,7 @@ export class PersonController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) {
@@ -80,7 +101,7 @@ export class PersonController {
         filters.campId = parsedCampId;
       }
 
-      const resolvedStatus = currentStatus ?? status ?? estado;
+      const resolvedStatus = currentStatus ?? status ?? (legacyEstado as any);
       if (resolvedStatus) {
         filters.currentStatus = resolvedStatus;
       }
@@ -129,8 +150,13 @@ export class PersonController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Person' })
+  @ApiParam({ name: 'id', type: Number, description: 'Person id' })
+  @ApiBody({ type: UpdatePersonDto })
+  @ApiOkResponse({ description: 'Person updated' })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Person not found' })
   async update(@Param('id') id: string, @Body() body: UpdatePersonDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -152,8 +178,12 @@ export class PersonController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Person' })
+  @ApiParam({ name: 'id', type: Number, description: 'Person id' })
+  @ApiOkResponse({ description: 'Person deleted' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Person not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
