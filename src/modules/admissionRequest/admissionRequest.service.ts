@@ -37,7 +37,7 @@ export class AdmissionRequestService {
 
   async getAllRequests(filters?: {
     campId?: number;
-    estado?: AdmissionRequestStatus;
+    status?: AdmissionRequestStatus;
     page?: number;
     limit?: number;
   }): Promise<{ data: AdmissionRequest[]; total: number }> {
@@ -59,17 +59,17 @@ export class AdmissionRequestService {
       findAllFilters.campId = filters.campId;
     }
 
-    if (filters?.estado !== undefined) {
-      findAllFilters.status = filters.estado;
+    if (filters?.status !== undefined) {
+      findAllFilters.status = filters.status;
     }
 
     const data = await this.repository.findAll(findAllFilters);
 
     let total = 0;
-    if (filters?.campId && filters?.estado) {
+    if (filters?.campId && filters?.status) {
       total = await this.repository.countByCampAndStatus(
         filters.campId, 
-        filters.estado
+        filters.status
       );
     } else {
       total = data.length;

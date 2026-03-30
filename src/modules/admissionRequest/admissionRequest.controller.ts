@@ -8,17 +8,50 @@ import {
   Param,
   Post,
   Put,
+  Req,
   Query,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 import { AdmissionRequestService } from './admissionRequest.service';
-import type { AdmissionRequestStatus, CreateAdmissionRequestDTO, UpdateAdmissionRequestDTO } from './admissionRequest.model';
+import {
+  ADMISSION_REQUEST_STATUS_VALUES,
+  type AdmissionRequestStatus,
+} from './admissionRequest.model';
+import {
+  CreateAdmissionRequestDto,
+  ProcessAiAdmissionRequestDto,
+  ReviewAdmissionRequestDto,
+  UpdateAdmissionRequestDto,
+} from './dto';
 
 @Controller('admission-requests')
+@ApiTags('Admission Requests')
 export class AdmissionRequestController {
   constructor(private readonly service: AdmissionRequestService) {}
 
   @Post()
-  async createRequest(@Body() body: CreateAdmissionRequestDTO) {
+  @ApiOperation({ summary: 'Create an admission request' })
+  @ApiBody({ type: CreateAdmissionRequestDto })
+  @ApiCreatedResponse({ description: 'Admission request created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  async createRequest(@Body() body: CreateAdmissionRequestDto) {
     try {
       const request = await this.service.createRequest(body);
       return {
@@ -32,6 +65,11 @@ export class AdmissionRequestController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get an admission request by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiOkResponse({ description: 'Admission request found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Admission request not found' })
   async getRequestById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,28 +88,45 @@ export class AdmissionRequestController {
   }
 
   @Get()
+  @ApiQuery({ name: 'campId', required: false, type: String, description: 'Camp ID (legacy alias: campamentoId)' })
+  @ApiQuery({ name: 'status', required: false, enum: ADMISSION_REQUEST_STATUS_VALUES, description: 'Request status (legacy alias: estado)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiOperation({ summary: 'List admission requests' })
+  @ApiOkResponse({ description: 'Admission requests list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   async getAllRequests(
-    @Query('campamentoId') campamentoId?: string,
     @Query('campId') campId?: string,
-    @Query('estado') estado?: AdmissionRequestStatus,
+    @Query('status') status?: AdmissionRequestStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
       const filters: {
         campId?: number;
-        estado?: AdmissionRequestStatus;
+        status?: AdmissionRequestStatus;
         page?: number;
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const legacyCampamentoId =
+        typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+      const legacyStatus =
+        legacyEstado && (ADMISSION_REQUEST_STATUS_VALUES as readonly string[]).includes(legacyEstado)
+          ? (legacyEstado as AdmissionRequestStatus)
+          : undefined;
+
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
         filters.campId = parsedCampId;
       }
-      if (estado) filters.estado = estado;
+      const resolvedStatus = status ?? legacyStatus;
+      if (resolvedStatus) filters.status = resolvedStatus;
       if (page) filters.page = Number.parseInt(page, 10);
       if (limit) filters.limit = Number.parseInt(limit, 10);
 
@@ -95,7 +150,12 @@ export class AdmissionRequestController {
   }
 
   @Put(':id')
-  async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDTO) {
+  @ApiOperation({ summary: 'Update an admission request' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiBody({ type: UpdateAdmissionRequestDto })
+  @ApiOkResponse({ description: 'Admission request updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDto) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -114,6 +174,10 @@ export class AdmissionRequestController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete an admission request' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiOkResponse({ description: 'Admission request deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or request cannot be deleted' })
   async deleteRequest(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -132,9 +196,14 @@ export class AdmissionRequestController {
   }
 
   @Post(':id/process-ai')
+  @ApiOperation({ summary: 'Process an admission request with AI' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiBody({ type: ProcessAiAdmissionRequestDto })
+  @ApiOkResponse({ description: 'Admission request processed by AI', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   async processWithAI(
     @Param('id') id: string,
-    @Body() body: { oficioSugeridoId: string; decision: 'ACCEPT' | 'REJECT' },
+    @Body() body: ProcessAiAdmissionRequestDto,
   ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -142,17 +211,9 @@ export class AdmissionRequestController {
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     const { oficioSugeridoId, decision } = body;
-    if (!oficioSugeridoId || !decision) {
-      throw new BadRequestException('Missing oficioSugeridoId or decision');
-    }
-
-    const parsedOccupationId = Number.parseInt(oficioSugeridoId, 10);
-    if (Number.isNaN(parsedOccupationId)) {
-      throw new BadRequestException('Invalid oficioSugeridoId');
-    }
 
     try {
-      const request = await this.service.processWithAI(parsedId, parsedOccupationId, decision);
+      const request = await this.service.processWithAI(parsedId, oficioSugeridoId, decision);
       return {
         success: true,
         data: request,
@@ -164,9 +225,14 @@ export class AdmissionRequestController {
   }
 
   @Post(':id/review')
+  @ApiOperation({ summary: 'Review an admission request by admin' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiBody({ type: ReviewAdmissionRequestDto })
+  @ApiOkResponse({ description: 'Admission request reviewed by admin', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   async reviewByAdmin(
     @Param('id') id: string,
-    @Body() body: { adminUserId: string; approved: boolean; motivoRechazo?: string },
+    @Body() body: ReviewAdmissionRequestDto,
   ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -174,19 +240,11 @@ export class AdmissionRequestController {
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     const { adminUserId, approved, motivoRechazo } = body;
-    if (!adminUserId || approved === undefined) {
-      throw new BadRequestException('Missing adminUserId or approved');
-    }
-
-    const parsedAdminUserId = Number.parseInt(adminUserId, 10);
-    if (Number.isNaN(parsedAdminUserId)) {
-      throw new BadRequestException('Invalid adminUserId');
-    }
 
     try {
       const request = await this.service.reviewByAdmin(
         parsedId,
-        parsedAdminUserId,
+        adminUserId,
         approved,
         motivoRechazo,
       );
@@ -201,6 +259,10 @@ export class AdmissionRequestController {
   }
 
   @Get('camps/:campamentoId/pending')
+  @ApiOperation({ summary: 'List pending admission requests for a camp' })
+  @ApiParam({ name: 'campamentoId', type: Number, description: 'Camp id' })
+  @ApiOkResponse({ description: 'Pending admission requests list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid camp id' })
   async getPendingByCamp(@Param('campamentoId') campamentoId: string) {
     if (!campamentoId) throw new BadRequestException('Invalid camp ID');
 

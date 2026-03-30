@@ -124,4 +124,4 @@ Example (default): `http://localhost:3000/`
 
 ## Notes
 
-- TypeORM is configured with `synchronize: true` (useful for development; automatically creates/updates tables on startup).
+- TypeORM is configured with `synchronize: false`. Use migrations via `npm run migration:generate`, `npm run migration:run`, and `npm run migration:revert`.
