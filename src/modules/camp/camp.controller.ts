@@ -9,16 +9,25 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CampService } from './camp.service';
 import type { CampStatus, CreateCampDTO, UpdateCampDTO } from './camp.model';
 
+import { CreateCampDto, UpdateCampDto } from './dto';
 @Controller('camps')
+@ApiTags('Camp')
 export class CampController {
   constructor(private readonly service: CampService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Camp' })
+  @ApiBody({ type: CreateCampDto })
+  @ApiCreatedResponse({ description: 'Camp created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampDTO) {
     try {
       const camp = await this.service.createCamp(body);
@@ -33,8 +42,12 @@ export class CampController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Camp by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
+  @ApiOkResponse({ description: 'Camp found' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Camp not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -46,22 +59,29 @@ export class CampController {
 
     return { success: true, data: camp };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Camp' })
+  @ApiOkResponse({ description: 'Camp list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('estado') estado?: CampStatus,
     @Query('status') status?: CampStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+
       const filters: {
         status?: CampStatus;
         page?: number;
         limit?: number;
       } = {};
 
-      const resolvedStatus = status ?? estado;
+      const resolvedStatus = status ?? (legacyEstado as any);
       if (resolvedStatus) {
         filters.status = resolvedStatus;
       }
@@ -102,8 +122,13 @@ export class CampController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Camp' })
+  @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
+  @ApiBody({ type: UpdateCampDto })
+  @ApiOkResponse({ description: 'Camp updated' })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Camp not found' })
   async update(@Param('id') id: string, @Body() body: UpdateCampDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -125,8 +150,12 @@ export class CampController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Camp' })
+  @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
+  @ApiOkResponse({ description: 'Camp deleted' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Camp not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
