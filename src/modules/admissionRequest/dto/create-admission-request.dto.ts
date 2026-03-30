@@ -40,7 +40,7 @@ export class CreateAdmissionRequestDto {
   @IsNotEmpty()
   desiredUsername!: string;
 
-  @ApiProperty({ example: '2000-01-31', description: 'Fecha en formato ISO (YYYY-MM-DD)' })
+  @ApiProperty({ example: '2000-01-31', description: 'Date in ISO format (YYYY-MM-DD)' })
   @Type(() => Date)
   @IsDate()
   birthDate!: Date;
@@ -79,7 +79,7 @@ export class CreateAdmissionRequestDto {
   @IsNotEmpty()
   declaredSkills?: string | null;
 
-  @ApiProperty({ example: 1, description: 'ID del campamento' })
+  @ApiProperty({ example: 1, description: 'Camp ID' })
   @Type(() => Number)
   @IsInt()
   @Min(1)

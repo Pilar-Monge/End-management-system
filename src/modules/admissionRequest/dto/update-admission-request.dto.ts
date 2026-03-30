@@ -48,7 +48,7 @@ export class UpdateAdmissionRequestDto {
   @IsNotEmpty()
   desiredUsername?: string;
 
-  @ApiPropertyOptional({ description: 'Fecha en formato ISO (YYYY-MM-DD)' })
+  @ApiPropertyOptional({ description: 'Date in ISO format (YYYY-MM-DD)' })
   @IsOptional()
   @Type(() => Date)
   @IsDate()
@@ -94,7 +94,7 @@ export class UpdateAdmissionRequestDto {
   @IsNotEmpty()
   declaredSkills?: string | null;
 
-  @ApiPropertyOptional({ description: 'ID del campamento' })
+  @ApiPropertyOptional({ description: 'Camp ID' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

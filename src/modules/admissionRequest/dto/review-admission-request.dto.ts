@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateIf } from 'class-validator';
 
 export class ReviewAdmissionRequestDto {
-  @ApiProperty({ example: 3, description: 'ID del usuario admin que revisa' })
+  @ApiProperty({ example: 3, description: 'Admin user ID who reviews the request' })
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -13,7 +13,7 @@ export class ReviewAdmissionRequestDto {
   @IsBoolean()
   approved!: boolean;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ nullable: true, description: 'Rejection reason (only used when approved is false)' })
   @IsOptional()
   @IsString()
   @IsNotEmpty()

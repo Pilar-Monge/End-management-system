@@ -6,7 +6,7 @@ export const AI_DECISION_VALUES = ['ACCEPT', 'REJECT'] as const;
 export type AiDecision = (typeof AI_DECISION_VALUES)[number];
 
 export class ProcessAiAdmissionRequestDto {
-  @ApiProperty({ example: 12, description: 'ID del oficio/ocupación sugerida por la IA' })
+  @ApiProperty({ example: 12, description: 'Suggested occupation ID proposed by the AI' })
   @Type(() => Number)
   @IsInt()
   @Min(1)

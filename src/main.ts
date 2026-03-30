@@ -25,12 +25,12 @@ async function bootstrap(): Promise<void> {
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('End Management System')
-      .setDescription('API del sistema de gestión de campamentos')
+      .setDescription('API for the camp management system')
       .setVersion('1.0')
       .build();
       
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document);
+    SwaggerModule.setup('docs', app, document, { useGlobalPrefix: true });
   }
 
   const port = Number(process.env.PORT) || 3000;
