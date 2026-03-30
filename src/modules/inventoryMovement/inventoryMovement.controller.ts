@@ -9,7 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { InventoryMovementService } from './inventoryMovement.service';
 import type {
@@ -18,11 +22,16 @@ import type {
   UpdateInventoryMovementDTO,
 } from './inventoryMovement.model';
 
+import { CreateInventoryMovementDto, UpdateInventoryMovementDto } from './dto';
 @Controller('inventory-movements')
+@ApiTags('Inventory Movement')
 export class InventoryMovementController {
   constructor(private readonly service: InventoryMovementService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Inventory Movement' })
+  @ApiBody({ type: CreateInventoryMovementDto })
+  @ApiCreatedResponse({ description: 'Inventory Movement created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateInventoryMovementDTO) {
     try {
       const movement = await this.service.createMovement(body);
@@ -37,8 +46,12 @@ export class InventoryMovementController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Inventory Movement by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
+  @ApiOkResponse({ description: 'Inventory Movement found' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +63,12 @@ export class InventoryMovementController {
 
     return { success: true, data: movement };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Inventory Movement' })
+  @ApiOkResponse({ description: 'Inventory Movement list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('campamentoId') campamentoId?: string,
@@ -63,8 +80,11 @@ export class InventoryMovementController {
     @Query('registradoPor') registradoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+
       const filters: {
         campId?: number;
         resourceTypeId?: number;
@@ -74,7 +94,7 @@ export class InventoryMovementController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
@@ -140,8 +160,13 @@ export class InventoryMovementController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Inventory Movement' })
+  @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
+  @ApiBody({ type: UpdateInventoryMovementDto })
+  @ApiOkResponse({ description: 'Inventory Movement updated' })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async update(@Param('id') id: string, @Body() body: UpdateInventoryMovementDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -163,8 +188,12 @@ export class InventoryMovementController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Inventory Movement' })
+  @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
+  @ApiOkResponse({ description: 'Inventory Movement deleted' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
