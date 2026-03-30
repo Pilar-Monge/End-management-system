@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { OccupationAssignmentCriteriaRepository } from './occupationAssignmentCriteria.repository';
 import type {
@@ -17,7 +17,8 @@ export class OccupationAssignmentCriteriaService {
   async createCriteria(
     data: CreateOccupationAssignmentCriteriaDTO,
   ): Promise<OccupationAssignmentCriteria> {
-    return await this.repository.create(data);
+    const normalizedData = this.normalizeAndValidateWeight(data);
+    return await this.repository.create(normalizedData);
   }
 
   async getCriteriaById(id: number): Promise<OccupationAssignmentCriteria | null> {
@@ -57,10 +58,33 @@ export class OccupationAssignmentCriteriaService {
     id: number,
     data: UpdateOccupationAssignmentCriteriaDTO,
   ): Promise<OccupationAssignmentCriteria | null> {
-    return await this.repository.update(id, data);
+    const normalizedData = this.normalizeAndValidateWeight(data);
+    return await this.repository.update(id, normalizedData);
   }
 
   async deleteCriteria(id: number): Promise<boolean> {
     return await this.repository.delete(id);
+  }
+
+  private normalizeAndValidateWeight<
+    T extends CreateOccupationAssignmentCriteriaDTO | UpdateOccupationAssignmentCriteriaDTO,
+  >(data: T): T {
+    if (data.weight === undefined) {
+      return data;
+    }
+
+    const parsedWeight = Number.parseFloat(String(data.weight));
+    if (Number.isNaN(parsedWeight)) {
+      throw new BadRequestException('weight must be a valid number');
+    }
+
+    if (parsedWeight < 0 || parsedWeight > 1) {
+      throw new BadRequestException('weight must be between 0.00 and 1.00');
+    }
+
+    return {
+      ...data,
+      weight: parsedWeight.toFixed(2),
+    } as T;
   }
 }

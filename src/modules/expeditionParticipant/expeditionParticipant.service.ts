@@ -1,5 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
+import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { PersonEntity } from '../person/person.entity';
 import { ExpeditionParticipantRepository } from './expeditionParticipant.repository';
 import type {
   CreateExpeditionParticipantDTO,
@@ -10,9 +14,33 @@ import type {
 
 @Injectable()
 export class ExpeditionParticipantService {
-  constructor(private readonly repository: ExpeditionParticipantRepository) {}
+  constructor(
+    private readonly repository: ExpeditionParticipantRepository,
+    @InjectRepository(ExpeditionEntity)
+    private readonly expeditionRepo: Repository<ExpeditionEntity>,
+    @InjectRepository(PersonEntity)
+    private readonly personRepo: Repository<PersonEntity>,
+  ) {}
+
+  private async validateParticipantCamp(expeditionId: number, personId: number): Promise<void> {
+    const expedition = await this.expeditionRepo.findOne({ where: { id: expeditionId } });
+    if (!expedition) {
+      throw new NotFoundException('Expedition not found');
+    }
+
+    const person = await this.personRepo.findOne({ where: { id: personId } });
+    if (!person) {
+      throw new NotFoundException('Person not found');
+    }
+
+    if (person.campId !== expedition.campId) {
+      throw new BadRequestException('Person does not belong to the same camp as the expedition');
+    }
+  }
 
   async createParticipant(data: CreateExpeditionParticipantDTO): Promise<ExpeditionParticipant> {
+    await this.validateParticipantCamp(data.expeditionId, data.personId);
+
     const existing = await this.repository.findByExpeditionAndPerson(
       data.expeditionId,
       data.personId,
@@ -61,6 +89,14 @@ export class ExpeditionParticipantService {
     id: number,
     data: UpdateExpeditionParticipantDTO,
   ): Promise<ExpeditionParticipant | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    const expeditionId = data.expeditionId ?? existing.expeditionId;
+    const personId = data.personId ?? existing.personId;
+
+    await this.validateParticipantCamp(expeditionId, personId);
+
     return await this.repository.update(id, data);
   }
 

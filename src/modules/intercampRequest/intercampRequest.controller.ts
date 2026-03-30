@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -48,6 +49,10 @@ export class IntercampRequestController {
         message: 'Intercamp request created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating intercamp request',
       );
@@ -206,6 +211,10 @@ export class IntercampRequestController {
         message: 'Intercamp request updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error
           ? error.message
