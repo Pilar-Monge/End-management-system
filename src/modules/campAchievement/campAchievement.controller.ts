@@ -9,7 +9,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CampAchievementService } from './campAchievement.service';
 import type {
@@ -17,11 +21,16 @@ import type {
   UpdateCampAchievementDTO,
 } from './campAchievement.model';
 
+import { CreateCampAchievementDto, UpdateCampAchievementDto } from './dto';
 @Controller('camp-achievements')
+@ApiTags('Camp Achievement')
 export class CampAchievementController {
   constructor(private readonly service: CampAchievementService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Camp Achievement' })
+  @ApiBody({ type: CreateCampAchievementDto })
+  @ApiCreatedResponse({ description: 'Camp Achievement created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampAchievementDTO) {
     try {
       const campAchievement = await this.service.createCampAchievement(body);
@@ -53,8 +62,12 @@ export class CampAchievementController {
 
     return { success: true, data: campAchievement };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Camp Achievement' })
+  @ApiOkResponse({ description: 'Camp Achievement list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('campamentoId') campamentoId?: string,
@@ -64,8 +77,11 @@ export class CampAchievementController {
     @Query('desbloqueadoPor') desbloqueadoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+
       const filters: {
         campId?: number;
         achievementId?: number;
@@ -74,7 +90,7 @@ export class CampAchievementController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
