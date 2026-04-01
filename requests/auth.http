@@ -1,7 +1,8 @@
 @baseUrl = http://localhost:3000
-@token = TOKEN
+@token = REPLACE_WITH_VALID_TOKEN
+@wrongRoleToken = REPLACE_WITH_WRONG_ROLE_TOKEN
 
-### Login exitoso
+### 1. Login admin
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -11,34 +12,27 @@ Content-Type: application/json
   "campId": 1
 }
 
-### Contraseña incorrecta
+### 2. Ruta protegida sin token
+GET {{baseUrl}}/api/users
+
+### 3. Ruta protegida con token válido
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{token}}
+
+### 4. Login visitor
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "wrong_password",
+  "username": "visitor_test",
+  "password": "password",
   "campId": 1
 }
 
-### Usuario inactivo
-POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
+### 5. Ruta protegida con rol incorrecto
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{wrongRoleToken}}
 
-{
-  "username": "usuario_inactivo",
-  "password": "password123",
-  "campId": 1
-}
-
-### Campos incompletos
-POST {{baseUrl}}/api/auth/login
-Content-Type: application/json
-
-{
-  "username": "admin"
-}
-
-### Logout exitoso
+### 6. Logout exitoso
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{token}}

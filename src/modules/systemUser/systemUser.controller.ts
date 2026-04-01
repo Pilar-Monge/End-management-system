@@ -12,6 +12,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators';
 import { UserService } from './systemUser.service';
 import type { CreateUserDTO } from './systemUser.model';
 
@@ -29,6 +30,7 @@ export class UserController {
   }
 
   @Get('users')
+  @Roles('SYSTEM_ADMIN')
   async findAll() {
     try {
       return await this.service.findAllUsers();
@@ -38,6 +40,7 @@ export class UserController {
   }
 
   @Get('users/:id')
+  @Roles('SYSTEM_ADMIN')
   async findById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('ID not provided');
 

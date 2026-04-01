@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { AuthGuard, RolesGuard } from './common/guards';
 import { AdmissionRequestModule } from './modules/admissionRequest/admissionRequest.module';
 import { AchievementModule } from './modules/achievement/achievement.module';
 import { AiAdmissionReportModule } from './modules/aiAdmissionReport/aiAdmissionReport.module';
@@ -105,5 +107,15 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     NotificationModule,
   ],
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}

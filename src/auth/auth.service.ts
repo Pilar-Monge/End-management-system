@@ -132,4 +132,67 @@ export class AuthService {
       detail: 'Successful logout',
     });
   }
+
+  async validateSession(token: string, ip: string): Promise<JwtPayload> {
+    const normalizedToken = typeof token === 'string' ? token.trim() : '';
+    const secret = process.env.JWT_SECRET;
+
+    if (!normalizedToken || !secret) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    let decodedToken: unknown;
+    try {
+      decodedToken = jwt.verify(normalizedToken, secret);
+    } catch {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    if (
+      typeof decodedToken !== 'object' ||
+      decodedToken === null ||
+      !('userId' in decodedToken) ||
+      !('campId' in decodedToken) ||
+      !('rol' in decodedToken) ||
+      typeof decodedToken.userId !== 'number' ||
+      typeof decodedToken.campId !== 'number' ||
+      typeof decodedToken.rol !== 'string'
+    ) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    const payload: JwtPayload = {
+      userId: decodedToken.userId,
+      campId: decodedToken.campId,
+      rol: decodedToken.rol,
+    };
+
+    const session = await this.authRepository.findActiveSessionByToken(normalizedToken);
+    if (!session) {
+      throw new UnauthorizedException('Sesión no encontrada');
+    }
+
+    const sessionInactivityMinutes =
+      await this.authRepository.findCampSessionInactivityMinutes(session.campId);
+
+    const now = new Date();
+    const inactiveMilliseconds =
+      now.getTime() - session.lastActivityDate.getTime();
+
+    if (inactiveMilliseconds > sessionInactivityMinutes * 60000) {
+      await this.authRepository.expireSession(session.id);
+      await this.authRepository.createAccessLog({
+        sessionId: session.id,
+        userId: session.userId,
+        campId: session.campId,
+        eventType: 'INACTIVITY_EXPIRATION',
+        sourceIp: ip,
+        detail: 'EXPIRACION_INACTIVIDAD',
+      });
+      throw new UnauthorizedException('Sesión expirada por inactividad');
+    }
+
+    await this.authRepository.updateSessionLastActivity(session.id);
+    return payload;
+  }
 }
