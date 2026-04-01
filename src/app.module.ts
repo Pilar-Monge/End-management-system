@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AdmissionRequestModule } from './modules/admissionRequest/admissionRequest.module';
@@ -37,15 +38,35 @@ import { UserModule } from './modules/systemUser/systemUser.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST ?? 'localhost',
-      port: Number(process.env.DB_PORT ?? '5432'),
-      username: process.env.DB_USER ?? 'gestionfin',
-      password: process.env.DB_PASSWORD ?? 'gestionfin123',
-      database: process.env.DB_NAME ?? 'gestionfin_db',
-      autoLoadEntities: true,
-      synchronize: process.env.DB_SYNC === 'true',
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('DB_HOST');
+        const port = configService.get<number>('DB_PORT');
+        const username = configService.get<string>('DB_USER');
+        const password = configService.get<string>('DB_PASSWORD');
+        const database = configService.get<string>('DB_NAME');
+        const synchronize = configService.get<string>('DB_SYNC') == 'true';
+
+        if (!host || !port || !username || !password || !database) {
+          throw new Error('Faltan variables de entorno de base de datos');
+        }
+
+        return {
+          type: 'postgres' as const,
+          host,
+          port,
+          username,
+          password,
+          database,
+          autoLoadEntities: true,
+          synchronize,
+        };
+      },
     }),
     UserModule,
     AdmissionRequestModule,
