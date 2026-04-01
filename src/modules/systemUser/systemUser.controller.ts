@@ -11,10 +11,9 @@ import {
   Param,
   Post,
   Put,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './systemUser.service';
-import type { CreateUserDTO, LoginDTO } from './systemUser.model';
+import type { CreateUserDTO } from './systemUser.model';
 
 @Controller()
 export class UserController {
@@ -77,17 +76,5 @@ export class UserController {
 
     const deleted = await this.service.deleteUser(parsedId);
     if (!deleted) throw new NotFoundException('User not found');
-  }
-
-  @Post('auth/login')
-  async login(@Body() body: LoginDTO) {
-    try {
-      const user = await this.service.login(body);
-      if (!user) throw new UnauthorizedException('Invalid credentials');
-      return user;
-    } catch (error) {
-      if (error instanceof UnauthorizedException) throw error;
-      throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error logging in');
-    }
   }
 }

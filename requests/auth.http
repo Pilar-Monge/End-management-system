@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:3000
+@token = TOKEN
+
+### Login exitoso
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password",
+  "campId": 1
+}
+
+### Contraseña incorrecta
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "wrong_password",
+  "campId": 1
+}
+
+### Usuario inactivo
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "usuario_inactivo",
+  "password": "password123",
+  "campId": 1
+}
+
+### Campos incompletos
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin"
+}
+
+### Logout exitoso
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{token}}

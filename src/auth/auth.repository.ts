@@ -1,0 +1,117 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
+import { AccessLogEntity } from '../modules/accessLog/accessLog.entity';
+import type { AccessLogEventType } from '../modules/accessLog/accessLog.model';
+import { CampEntity } from '../modules/camp/camp.entity';
+import { SessionEntity } from '../modules/session/session.entity';
+import type { SessionStatus } from '../modules/session/session.model';
+
+@Injectable()
+export class AuthRepository {
+  constructor(
+    @InjectRepository(SessionEntity)
+    private readonly sessionRepo: Repository<SessionEntity>,
+    @InjectRepository(AccessLogEntity)
+    private readonly accessLogRepo: Repository<AccessLogEntity>,
+  ) {}
+
+  async createSession(data: {
+    token: string;
+    userId: number;
+    campId: number;
+    startDate?: Date;
+    lastActivityDate?: Date;
+    expirationDate: Date;
+    sourceIp?: string | null;
+    status?: SessionStatus;
+  }): Promise<SessionEntity> {
+    const entity = this.sessionRepo.create({
+      token: data.token,
+      userId: data.userId,
+      campId: data.campId,
+      startDate: data.startDate ?? new Date(),
+      lastActivityDate: data.lastActivityDate ?? new Date(),
+      expirationDate: data.expirationDate,
+      sourceIp: data.sourceIp ?? null,
+      status: data.status ?? 'ACTIVE',
+    });
+
+    return await this.sessionRepo.save(entity);
+  }
+
+  async findActiveSessionByToken(token: string): Promise<SessionEntity | null> {
+    return await this.sessionRepo.findOne({
+      where: {
+        token,
+        status: 'ACTIVE',
+      },
+    });
+  }
+
+  async expireSession(id: number): Promise<void> {
+    await this.sessionRepo.update(
+      { id },
+      {
+        status: 'EXPIRED',
+        lastActivityDate: new Date(),
+      },
+    );
+  }
+
+  async closeSession(id: number): Promise<void> {
+    await this.sessionRepo.update(
+      { id },
+      {
+        status: 'CLOSED',
+        lastActivityDate: new Date(),
+      },
+    );
+  }
+
+  async updateSessionLastActivity(id: number): Promise<void> {
+    await this.sessionRepo.update(
+      { id },
+      {
+        lastActivityDate: new Date(),
+      },
+    );
+  }
+
+  async createAccessLog(data: {
+    sessionId?: number | null;
+    userId: number;
+    campId: number;
+    eventType: AccessLogEventType;
+    eventDate?: Date;
+    sourceIp?: string | null;
+    detail?: string | null;
+  }): Promise<AccessLogEntity> {
+    const entity = this.accessLogRepo.create({
+      sessionId: data.sessionId ?? null,
+      userId: data.userId,
+      campId: data.campId,
+      eventType: data.eventType,
+      eventDate: data.eventDate ?? new Date(),
+      sourceIp: data.sourceIp ?? null,
+      detail: data.detail ?? null,
+    });
+
+    return await this.accessLogRepo.save(entity);
+  }
+
+  async findCampSessionInactivityMinutes(campId: number): Promise<number> {
+    const campRepo = this.sessionRepo.manager.getRepository(CampEntity);
+    const camp = await campRepo.findOne({
+      where: { id: campId },
+      select: ['id', 'sessionInactivityMinutes'],
+    });
+
+    if (!camp) {
+      throw new Error('Camp not found');
+    }
+
+    return camp.sessionInactivityMinutes;
+  }
+}

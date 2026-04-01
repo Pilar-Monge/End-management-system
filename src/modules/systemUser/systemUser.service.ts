@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from "./systemUser.repository";
-import { User, CreateUserDTO, UserResponse, LoginDTO } from "./systemUser.model";
+import { User, CreateUserDTO, UserResponse } from "./systemUser.model";
 import { EncryptionService } from "../../services/encryption.service";
 
 @Injectable()
@@ -67,19 +67,6 @@ export class UserService {
 
   async deleteUser(id: number): Promise<boolean> {
     return this.userRepo.delete(id);
-  }
-
-  async login(credentials: LoginDTO): Promise<UserResponse | null> {
-    const user = await this.userRepo.findByUsername(credentials.username, credentials.campId);
-    
-    if (!user) return null;
-    
-    const isValid = await EncryptionService.comparePassword(credentials.password, user.passwordHash);
-    
-    if (!isValid) return null;
-    
-    const { passwordHash: _, ...userResponse } = user;
-    return userResponse;
   }
 
   async countUsersByCamp(campId: number): Promise<number> {

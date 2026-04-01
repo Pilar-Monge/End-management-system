@@ -28,12 +28,13 @@
   "homepage": "https://github.com/JeisonSaldanaRios/End-management-system#readme",
   "dependencies": {
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
-    "@nestjs/config": "^4.0.0",
     "bcrypt": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
     "ml-cart": "^2.1.1",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
@@ -44,6 +45,8 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.3.3",
     "@types/pg": "^8.18.0",
     "@types/uuid": "^10.0.0",

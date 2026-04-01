@@ -30,6 +30,7 @@ import { DeliveredTransferResourceModule } from './modules/deliveredTransferReso
 import { ResourceTypeModule } from './modules/resourceType/resourceType.module';
 import { SessionModule } from './modules/session/session.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { AuthModule } from './auth/auth.module';
 import { TransferModule } from './modules/transfer/transfer.module';
 import { TransferHistoryModule } from './modules/transferHistory/transferHistory.module';
 import { TransferPersonModule } from './modules/transferPerson/transferPerson.module';
@@ -88,6 +89,7 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     ExpeditionResourceObtainedModule,
     SessionModule,
     AccessLogModule,
+    AuthModule,
     InventoryMovementModule,
     InventoryAlertModule,
     DailyCollectionRecordModule,
