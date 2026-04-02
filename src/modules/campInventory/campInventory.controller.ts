@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { CampInventoryService } from './campInventory.service';
@@ -34,6 +35,7 @@ import { CreateCampInventoryDto, UpdateCampInventoryDto } from './dto';
 export class CampInventoryController {
   constructor(private readonly service: CampInventoryService) {}
   @Post()
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create Camp Inventory' })
   @ApiBody({ type: CreateCampInventoryDto })
   @ApiCreatedResponse({ description: 'Camp Inventory created', type: SuccessDataResponseDto })
@@ -54,6 +56,7 @@ export class CampInventoryController {
   }
 
   @Get(':campId/:resourceTypeId')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   async getByKey(
     @Param('campId') campId: string,
     @Param('resourceTypeId') resourceTypeId: string,
@@ -72,6 +75,7 @@ export class CampInventoryController {
     return { success: true, data: item };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Camp Inventory' })
   @ApiOkResponse({ description: 'Camp Inventory list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -150,6 +154,7 @@ export class CampInventoryController {
   }
 
   @Put(':campId/:resourceTypeId')
+  @Roles('SYSTEM_ADMIN')
   async update(
     @Param('campId') campId: string,
     @Param('resourceTypeId') resourceTypeId: string,
@@ -180,6 +185,7 @@ export class CampInventoryController {
   }
 
   @Delete(':campId/:resourceTypeId')
+  @Roles('SYSTEM_ADMIN')
   async delete(
     @Param('campId') campId: string,
     @Param('resourceTypeId') resourceTypeId: string,

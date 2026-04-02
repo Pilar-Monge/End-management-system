@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 import { CampService } from './camp.service';
 import type { CampStatus, CreateCampDTO, UpdateCampDTO } from './camp.model';
@@ -27,6 +28,7 @@ import type { CampStatus, CreateCampDTO, UpdateCampDTO } from './camp.model';
 import { CreateCampDto, UpdateCampDto } from './dto';
 @Controller('camps')
 @ApiTags('Camp')
+@Roles('SYSTEM_ADMIN')
 export class CampController {
   constructor(private readonly service: CampService) {}
   @Post()

@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { CampAchievementService } from './campAchievement.service';
@@ -31,6 +32,7 @@ import type {
 import { CreateCampAchievementDto, UpdateCampAchievementDto } from './dto';
 @Controller('camp-achievements')
 @ApiTags('Camp Achievement')
+@Roles('SYSTEM_ADMIN')
 export class CampAchievementController {
   constructor(private readonly service: CampAchievementService) {}
   @Post()

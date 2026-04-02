@@ -195,4 +195,20 @@ export class AuthService {
     await this.authRepository.updateSessionLastActivity(session.id);
     return payload;
   }
+
+  async generateToken(payload: JwtPayload): Promise<string> {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
+    const sessionInactivityMinutes =
+      await this.authRepository.findCampSessionInactivityMinutes(payload.campId);
+
+    const token = jwt.sign(payload, secret, {
+      expiresIn: `${sessionInactivityMinutes}m`,
+    });
+
+    return token;
+  }
 }

@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { AiAdmissionReportService } from './aiAdmissionReport.service';
@@ -32,6 +33,7 @@ import type {
 import { CreateAiAdmissionReportDto, UpdateAiAdmissionReportDto } from './dto';
 @Controller('ai-admission-reports')
 @ApiTags('Ai Admission Report')
+@Roles('SYSTEM_ADMIN')
 export class AiAdmissionReportController {
   constructor(private readonly service: AiAdmissionReportService) {}
   @Post()

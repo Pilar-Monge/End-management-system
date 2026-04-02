@@ -1,8 +1,12 @@
 @baseUrl = http://localhost:3000
-@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwiaWF0IjoxNzc1MTEwNjU1LCJleHAiOjE3NzUxMTE4NTV9.rnRAQBUQcbDFiadVTLevYGNJYoWrGfjc0PCiNQ6PoAc
-@wrongRoleToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImlhdCI6MTc3NTExMDcwNywiZXhwIjoxNzc1MTExOTA3fQ.sCI_GO3XAVepajw_PtgZwssXTSYNW1z67mvPd9osKhw
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwiaWF0IjoxNzc1MTE4MjY1LCJleHAiOjE3NzUxMTk0NjV9.IRNqgAQjmv9flbH0jHyKdEoPu7xjMChSLTGG1l3WM1A
+@workerToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjgsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwiaWF0IjoxNzc1MTE4Mjg5LCJleHAiOjE3NzUxMTk0ODl9.flU_xraStF9tsAiH-L4-1e7sb89zhSWdoxiOfNxExjk
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjksImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImlhdCI6MTc3NTExODMwNiwiZXhwIjoxNzc1MTE5NTA2fQ.GxLg9KY6XJyaTmWV-7yL6gQ80zVzgOG-077JXoZxNEg
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJjYW1wSWQiOjEsInJvbCI6IlRSQVZFTF9NQU5BR0VSIiwiaWF0IjoxNzc1MTE4MzI1LCJleHAiOjE3NzUxMTk1MjV9.psHt6Njjv8MuW1pNAuHHhy4pAZJUcJSswmLdPPzta7g
+@visitorToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImlhdCI6MTc3NTExODM1NiwiZXhwIjoxNzc1MTE5NTU2fQ.tsoaD-PS9YWERoDmj8ZPyVx6vX593tKNrfVBewkB4A8
+@logoutToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwiaWF0IjoxNzc1MTE4MjY1LCJleHAiOjE3NzUxMTk0NjV9.IRNqgAQjmv9flbH0jHyKdEoPu7xjMChSLTGG1l3WM1A
 
-### 1. Login admin
+### Login SYSTEM_ADMIN
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -12,14 +16,37 @@ Content-Type: application/json
   "campId": 1
 }
 
-### 2. Ruta protegida sin token
-GET {{baseUrl}}/api/users
+### Login WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
 
-### 3. Ruta protegida con token válido
-GET {{baseUrl}}/api/users
-Authorization: Bearer {{token}}
+{
+  "username": "worker_user",
+  "password": "password",
+  "campId": 1
+}
 
-### 4. Login visitor
+### Login RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_user",
+  "password": "password",
+  "campId": 1
+}
+
+### Login TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_user",
+  "password": "password",
+  "campId": 1
+}
+
+### Login VISITOR
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -29,10 +56,90 @@ Content-Type: application/json
   "campId": 1
 }
 
-### 5. Ruta protegida con rol incorrecto
+### No token 401
 GET {{baseUrl}}/api/users
-Authorization: Bearer {{wrongRoleToken}}
 
-### 6. Logout exitoso
+### SYSTEM_ADMIN accesses users
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+### VISITOR forbidden 403
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{visitorToken}}
+
+### WORKER accesses occupations
+GET {{baseUrl}}/api/occupations
+Authorization: Bearer {{workerToken}}
+
+### WORKER forbidden 403
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{workerToken}}
+
+### RESOURCE_MANAGEMENT accesses inventory
+GET {{baseUrl}}/api/camp-inventory
+Authorization: Bearer {{resourceToken}}
+
+### TRAVEL_MANAGER accesses expeditions
+GET {{baseUrl}}/api/expeditions
+Authorization: Bearer {{travelToken}}
+
+### TRAVEL_MANAGER forbidden 403
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{travelToken}}
+
+### Logout
 POST {{baseUrl}}/api/auth/logout
-Authorization: Bearer {{token}}
+Authorization: Bearer {{adminToken}}
+
+### Access after logout 401
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{logoutToken}}
+
+### Token renewal check
+GET {{baseUrl}}/api/occupations
+Authorization: Bearer {{workerToken}}
+
+### Create WORKER user
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "username": "worker_user",
+  "password": "Password123!",
+  "email": "worker@example.com",
+  "role": "WORKER",
+  "campId": 1,
+  "personId": null,
+  "requestId": null
+}
+
+### Create RESOURCE_MANAGEMENT user
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "username": "resource_user",
+  "password": "Password123!",
+  "email": "resource@example.com",
+  "role": "RESOURCE_MANAGEMENT",
+  "campId": 1,
+  "personId": null,
+  "requestId": null
+}
+
+### Create TRAVEL_MANAGER user
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "username": "travel_user",
+  "password": "Password123!",
+  "email": "travel@example.com",
+  "role": "TRAVEL_MANAGER",
+  "campId": 1,
+  "personId": null,
+  "requestId": null
+}

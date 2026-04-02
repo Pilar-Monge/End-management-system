@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Roles } from '../../common/decorators';
 
 import { DecisionTreeService } from './decisionTree.service';
 import type {
@@ -17,6 +18,7 @@ import type {
 } from './decisionTree.model';
 
 @Controller('decision-tree')
+@Roles('SYSTEM_ADMIN')
 export class DecisionTreeController {
   constructor(private readonly service: DecisionTreeService) {}
 

@@ -21,6 +21,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { IntercampRequestService } from './intercampRequest.service';
@@ -36,6 +37,7 @@ import { CreateIntercampRequestDto, UpdateIntercampRequestDto } from './dto';
 export class IntercampRequestController {
   constructor(private readonly service: IntercampRequestService) {}
   @Post()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Intercamp Request' })
   @ApiBody({ type: CreateIntercampRequestDto })
   @ApiCreatedResponse({ description: 'Intercamp Request created', type: SuccessDataResponseDto })
@@ -59,6 +61,7 @@ export class IntercampRequestController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Intercamp Request by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
   @ApiOkResponse({ description: 'Intercamp Request found', type: SuccessDataResponseDto })
@@ -76,6 +79,7 @@ export class IntercampRequestController {
     return { success: true, data: request };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Intercamp Request' })
   @ApiOkResponse({ description: 'Intercamp Request list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -189,6 +193,7 @@ export class IntercampRequestController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Intercamp Request' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
   @ApiBody({ type: UpdateIntercampRequestDto })

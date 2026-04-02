@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { RequestPersonDetailService } from './requestPersonDetail.service';
@@ -33,6 +34,7 @@ import type {
 import { CreateRequestPersonDetailDto, UpdateRequestPersonDetailDto } from './dto';
 @Controller('request-person-details')
 @ApiTags('Request Person Detail')
+@Roles('SYSTEM_ADMIN')
 export class RequestPersonDetailController {
   constructor(private readonly service: RequestPersonDetailService) {}
   @Post()

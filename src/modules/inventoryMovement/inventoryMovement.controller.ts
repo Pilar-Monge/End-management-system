@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { InventoryMovementService } from './inventoryMovement.service';
@@ -32,6 +33,7 @@ import type {
 import { CreateInventoryMovementDto, UpdateInventoryMovementDto } from './dto';
 @Controller('inventory-movements')
 @ApiTags('Inventory Movement')
+@Roles('SYSTEM_ADMIN')
 export class InventoryMovementController {
   constructor(private readonly service: InventoryMovementService) {}
   @Post()

@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 import { TransferService } from './transfer.service';
 import type {
@@ -34,6 +35,7 @@ import { CreateTransferDto, UpdateTransferDto } from './dto';
 export class TransferController {
   constructor(private readonly service: TransferService) {}
   @Post()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Transfer' })
   @ApiBody({ type: CreateTransferDto })
   @ApiCreatedResponse({ description: 'Transfer created', type: SuccessDataResponseDto })
@@ -53,6 +55,7 @@ export class TransferController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Transfer by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
   @ApiOkResponse({ description: 'Transfer found', type: SuccessDataResponseDto })
@@ -70,6 +73,7 @@ export class TransferController {
     return { success: true, data: transfer };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Transfer' })
   @ApiOkResponse({ description: 'Transfer list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -143,6 +147,7 @@ export class TransferController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Transfer' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
   @ApiBody({ type: UpdateTransferDto })
@@ -171,6 +176,7 @@ export class TransferController {
     }
   }
   @Delete(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Delete Transfer' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
   @ApiOkResponse({ description: 'Transfer deleted', type: SuccessMessageResponseDto })

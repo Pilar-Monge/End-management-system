@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { DeliveredTransferResourceService } from './deliveredTransferResource.service';
@@ -31,6 +32,7 @@ import type {
 import { CreateDeliveredTransferResourceDto, UpdateDeliveredTransferResourceDto } from './dto';
 @Controller('delivered-transfer-resources')
 @ApiTags('Delivered Transfer Resource')
+@Roles('SYSTEM_ADMIN')
 export class DeliveredTransferResourceController {
   constructor(private readonly service: DeliveredTransferResourceService) {}
   @Post()

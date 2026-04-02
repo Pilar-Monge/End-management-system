@@ -21,6 +21,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 import { AccessLogService } from './accessLog.service';
 import type {
@@ -32,6 +33,7 @@ import type {
 import { CreateAccessLogDto, UpdateAccessLogDto } from './dto';
 @Controller('access-logs')
 @ApiTags('Access Log')
+@Roles('SYSTEM_ADMIN')
 export class AccessLogController {
   constructor(private readonly service: AccessLogService) {}
   @Post()

@@ -21,6 +21,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 import { NotificationService } from './notification.service';
 import type {
@@ -36,6 +37,7 @@ import { CreateNotificationDto, UpdateNotificationDto } from './dto';
 export class NotificationController {
   constructor(private readonly service: NotificationService) {}
   @Post()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Notification' })
   @ApiBody({ type: CreateNotificationDto })
   @ApiCreatedResponse({ description: 'Notification created', type: SuccessDataResponseDto })
@@ -59,6 +61,7 @@ export class NotificationController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'Get Notification by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
   @ApiOkResponse({ description: 'Notification found', type: SuccessDataResponseDto })
@@ -74,6 +77,7 @@ export class NotificationController {
     return { success: true, data: notification };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'List Notification' })
   @ApiOkResponse({ description: 'Notification list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })

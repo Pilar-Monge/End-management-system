@@ -28,6 +28,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 import { AdmissionRequestService } from './admissionRequest.service';
 import {
@@ -43,6 +44,7 @@ import {
 
 @Controller('admission-requests')
 @ApiTags('Admission Requests')
+@Roles('SYSTEM_ADMIN')
 export class AdmissionRequestController {
   constructor(private readonly service: AdmissionRequestService) {}
 

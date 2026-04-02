@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { TemporaryOccupationAssignmentService } from './temporaryOccupationAssignment.service';
@@ -31,6 +32,7 @@ import type {
 import { CreateTemporaryOccupationAssignmentDto, UpdateTemporaryOccupationAssignmentDto } from './dto';
 @Controller('temporary-occupation-assignments')
 @ApiTags('Temporary Occupation Assignment')
+@Roles('SYSTEM_ADMIN')
 export class TemporaryOccupationAssignmentController {
   constructor(private readonly service: TemporaryOccupationAssignmentService) {}
   @Post()

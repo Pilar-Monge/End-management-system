@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { OccupationService } from './occupation.service';
@@ -31,6 +32,7 @@ import { CreateOccupationDto, UpdateOccupationDto } from './dto';
 export class OccupationController {
   constructor(private readonly service: OccupationService) {}
   @Post()
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create Occupation' })
   @ApiBody({ type: CreateOccupationDto })
   @ApiCreatedResponse({ description: 'Occupation created', type: SuccessDataResponseDto })
@@ -50,6 +52,7 @@ export class OccupationController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'Get Occupation by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
   @ApiOkResponse({ description: 'Occupation found', type: SuccessDataResponseDto })
@@ -67,6 +70,7 @@ export class OccupationController {
     return { success: true, data: occupation };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'List Occupation' })
   @ApiOkResponse({ description: 'Occupation list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -153,6 +157,7 @@ export class OccupationController {
     }
   }
   @Put(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update Occupation' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
   @ApiBody({ type: UpdateOccupationDto })
@@ -181,6 +186,7 @@ export class OccupationController {
     }
   }
   @Delete(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Occupation' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
   @ApiOkResponse({ description: 'Occupation deleted', type: SuccessMessageResponseDto })

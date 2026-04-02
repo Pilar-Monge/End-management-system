@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { ResourceTypeService } from './resourceType.service';
@@ -35,6 +36,7 @@ import { CreateResourceTypeDto, UpdateResourceTypeDto } from './dto';
 export class ResourceTypeController {
   constructor(private readonly service: ResourceTypeService) {}
   @Post()
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create Resource Type' })
   @ApiBody({ type: CreateResourceTypeDto })
   @ApiCreatedResponse({ description: 'Resource Type created', type: SuccessDataResponseDto })
@@ -54,6 +56,7 @@ export class ResourceTypeController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Resource Type by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
   @ApiOkResponse({ description: 'Resource Type found', type: SuccessDataResponseDto })
@@ -71,6 +74,7 @@ export class ResourceTypeController {
     return { success: true, data: resourceType };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Resource Type' })
   @ApiOkResponse({ description: 'Resource Type list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -131,6 +135,7 @@ export class ResourceTypeController {
     }
   }
   @Put(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update Resource Type' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
   @ApiBody({ type: UpdateResourceTypeDto })
@@ -159,6 +164,7 @@ export class ResourceTypeController {
     }
   }
   @Delete(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Resource Type' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
   @ApiOkResponse({ description: 'Resource Type deleted', type: SuccessMessageResponseDto })

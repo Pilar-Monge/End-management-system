@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { InventoryAlertService } from './inventoryAlert.service';
@@ -31,6 +32,7 @@ import { CreateInventoryAlertDto, UpdateInventoryAlertDto } from './dto';
 export class InventoryAlertController {
   constructor(private readonly service: InventoryAlertService) {}
   @Post()
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create Inventory Alert' })
   @ApiBody({ type: CreateInventoryAlertDto })
   @ApiCreatedResponse({ description: 'Inventory Alert created', type: SuccessDataResponseDto })
@@ -50,6 +52,7 @@ export class InventoryAlertController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Inventory Alert by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
   @ApiOkResponse({ description: 'Inventory Alert found', type: SuccessDataResponseDto })
@@ -67,6 +70,7 @@ export class InventoryAlertController {
     return { success: true, data: alert };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Inventory Alert' })
   @ApiOkResponse({ description: 'Inventory Alert list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -155,6 +159,7 @@ export class InventoryAlertController {
     }
   }
   @Put(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update Inventory Alert' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
   @ApiBody({ type: UpdateInventoryAlertDto })
@@ -183,6 +188,7 @@ export class InventoryAlertController {
     }
   }
   @Delete(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Inventory Alert' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
   @ApiOkResponse({ description: 'Inventory Alert deleted', type: SuccessMessageResponseDto })

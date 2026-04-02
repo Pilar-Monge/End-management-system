@@ -21,6 +21,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { DailyCollectionRecordService } from './dailyCollectionRecord.service';
@@ -35,6 +36,7 @@ import { CreateDailyCollectionRecordDto, UpdateDailyCollectionRecordDto } from '
 export class DailyCollectionRecordController {
   constructor(private readonly service: DailyCollectionRecordService) {}
   @Post()
+  @Roles('WORKER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Daily Collection Record' })
   @ApiBody({ type: CreateDailyCollectionRecordDto })
   @ApiCreatedResponse({ description: 'Daily Collection Record created', type: SuccessDataResponseDto })
@@ -58,6 +60,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Daily Collection Record by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiOkResponse({ description: 'Daily Collection Record found', type: SuccessDataResponseDto })
@@ -75,6 +78,7 @@ export class DailyCollectionRecordController {
     return { success: true, data: record };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Daily Collection Record' })
   @ApiOkResponse({ description: 'Daily Collection Record list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -173,6 +177,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Update Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiBody({ type: UpdateDailyCollectionRecordDto })
@@ -205,6 +210,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Delete(':id')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Delete Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiOkResponse({ description: 'Daily Collection Record deleted', type: SuccessMessageResponseDto })

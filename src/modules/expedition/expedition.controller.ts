@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { ExpeditionService } from './expedition.service';
@@ -35,6 +36,7 @@ import { CreateExpeditionDto, UpdateExpeditionDto } from './dto';
 export class ExpeditionController {
   constructor(private readonly service: ExpeditionService) {}
   @Post()
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Expedition' })
   @ApiBody({ type: CreateExpeditionDto })
   @ApiCreatedResponse({ description: 'Expedition created', type: SuccessDataResponseDto })
@@ -54,6 +56,7 @@ export class ExpeditionController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Expedition by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponse({ description: 'Expedition found', type: SuccessDataResponseDto })
@@ -71,6 +74,7 @@ export class ExpeditionController {
     return { success: true, data: expedition };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Expedition' })
   @ApiOkResponse({ description: 'Expedition list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -145,6 +149,7 @@ export class ExpeditionController {
     }
   }
   @Put(':id')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Expedition' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiBody({ type: UpdateExpeditionDto })
@@ -173,6 +178,7 @@ export class ExpeditionController {
     }
   }
   @Delete(':id')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Delete Expedition' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponse({ description: 'Expedition deleted', type: SuccessMessageResponseDto })

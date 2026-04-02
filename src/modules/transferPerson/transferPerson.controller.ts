@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { TransferPersonService } from './transferPerson.service';
@@ -32,6 +33,7 @@ import type {
 import { CreateTransferPersonDto, UpdateTransferPersonDto } from './dto';
 @Controller('transfer-persons')
 @ApiTags('Transfer Person')
+@Roles('SYSTEM_ADMIN')
 export class TransferPersonController {
   constructor(private readonly service: TransferPersonService) {}
   @Post()

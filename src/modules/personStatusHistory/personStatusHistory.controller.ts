@@ -21,6 +21,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { PersonStatusHistoryService } from './personStatusHistory.service';
@@ -33,6 +34,7 @@ import type {
 import { CreatePersonStatusHistoryDto, UpdatePersonStatusHistoryDto } from './dto';
 @Controller('person-status-history')
 @ApiTags('Person Status History')
+@Roles('SYSTEM_ADMIN')
 export class PersonStatusHistoryController {
   constructor(private readonly service: PersonStatusHistoryService) {}
   @Post()

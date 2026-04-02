@@ -21,6 +21,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { ExpeditionResourceConsumedService } from './expeditionResourceConsumed.service';
@@ -32,6 +33,7 @@ import type {
 import { CreateExpeditionResourceConsumedDto, UpdateExpeditionResourceConsumedDto } from './dto';
 @Controller('expedition-resources-consumed')
 @ApiTags('Expedition Resource Consumed')
+@Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
 export class ExpeditionResourceConsumedController {
   constructor(private readonly service: ExpeditionResourceConsumedService) {}
   @Post()

@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { RequestResourceDetailService } from './requestResourceDetail.service';
@@ -31,6 +32,7 @@ import type {
 import { CreateRequestResourceDetailDto, UpdateRequestResourceDetailDto } from './dto';
 @Controller('request-resource-details')
 @ApiTags('Request Resource Detail')
+@Roles('SYSTEM_ADMIN')
 export class RequestResourceDetailController {
   constructor(private readonly service: RequestResourceDetailService) {}
   @Post()

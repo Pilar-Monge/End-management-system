@@ -135,3 +135,5 @@ Check which process is using port 3000:
 
 ```powershell
 netstat -ano | findstr :3000
+
+taskkill /PID XXXX /F

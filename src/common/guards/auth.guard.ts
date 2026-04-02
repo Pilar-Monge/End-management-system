@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 
 import { AuthService } from '../../auth/auth.service';
 
@@ -27,6 +27,7 @@ export class AuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request & { user?: unknown }>();
+    const response = context.switchToHttp().getResponse<Response>();
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token requerido');
@@ -37,7 +38,11 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Token requerido');
     }
 
-    request.user = await this.authService.validateSession(token, request.ip ?? 'unknown');
+    const payload = await this.authService.validateSession(token, request.ip ?? 'unknown');
+    const newToken = await this.authService.generateToken(payload);
+    response.setHeader('Authorization', `Bearer ${newToken}`);
+    
+    request.user = payload;
     return true;
   }
 }

@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { AchievementService } from './achievement.service';
@@ -28,6 +29,7 @@ import type { CreateAchievementDTO, UpdateAchievementDTO } from './achievement.m
 import { CreateAchievementDto, UpdateAchievementDto } from './dto';
 @Controller('achievements')
 @ApiTags('Achievement')
+@Roles('SYSTEM_ADMIN')
 export class AchievementController {
   constructor(private readonly service: AchievementService) {}
   @Post()

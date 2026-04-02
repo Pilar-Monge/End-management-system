@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 import { SessionService } from './session.service';
 import type { CreateSessionDTO, SessionStatus, UpdateSessionDTO } from './session.model';
@@ -27,6 +28,7 @@ import type { CreateSessionDTO, SessionStatus, UpdateSessionDTO } from './sessio
 import { CreateSessionDto, UpdateSessionDto } from './dto';
 @Controller('sessions')
 @ApiTags('Session')
+@Roles('SYSTEM_ADMIN')
 export class SessionController {
   constructor(private readonly service: SessionService) {}
   @Post()

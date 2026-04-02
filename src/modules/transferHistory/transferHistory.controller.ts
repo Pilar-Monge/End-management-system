@@ -20,6 +20,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
+import { Roles } from '../../common/decorators';
 
 
 import { TransferHistoryService } from './transferHistory.service';
@@ -32,6 +33,7 @@ import type { TransferStatus } from '../transfer/transfer.model';
 import { CreateTransferHistoryDto, UpdateTransferHistoryDto } from './dto';
 @Controller('transfer-history')
 @ApiTags('Transfer History')
+@Roles('SYSTEM_ADMIN')
 export class TransferHistoryController {
   constructor(private readonly service: TransferHistoryService) {}
   @Post()
