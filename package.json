@@ -9,10 +9,14 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
-    "prestart": "npm run build",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "typeorm": "node ./scripts/typeorm-cli.cjs -d src/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate src/migrations/Init",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert"
   },
   "repository": {
     "type": "git",
@@ -30,12 +34,16 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
     "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.4",
     "ml-cart": "^2.1.1",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.27",
     "uuid": "^13.0.0"
   },
@@ -44,7 +52,9 @@
     "@types/node": "^25.3.3",
     "@types/pg": "^8.18.0",
     "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "typeorm-ts-node-commonjs": "^0.3.20",
     "typescript": "^5.9.3"
   }
 }

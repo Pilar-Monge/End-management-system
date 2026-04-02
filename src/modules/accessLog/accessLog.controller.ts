@@ -4,12 +4,23 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
 
 import { AccessLogService } from './accessLog.service';
 import type {
@@ -18,11 +29,16 @@ import type {
   UpdateAccessLogDTO,
 } from './accessLog.model';
 
+import { CreateAccessLogDto, UpdateAccessLogDto } from './dto';
 @Controller('access-logs')
+@ApiTags('Access Log')
 export class AccessLogController {
   constructor(private readonly service: AccessLogService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Access Log' })
+  @ApiBody({ type: CreateAccessLogDto })
+  @ApiCreatedResponse({ description: 'Access Log created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateAccessLogDTO) {
     try {
       const log = await this.service.createLog(body);
@@ -32,13 +48,21 @@ export class AccessLogController {
         message: 'Access log created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating access log',
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Access Log by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Access Log id' })
+  @ApiOkResponse({ description: 'Access Log found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Access Log not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +74,12 @@ export class AccessLogController {
 
     return { success: true, data: log };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Access Log' })
+  @ApiOkResponse({ description: 'Access Log list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('userId') userId?: string,
     @Query('usuarioId') usuarioId?: string,
@@ -63,8 +91,12 @@ export class AccessLogController {
     @Query('tipoEvento') tipoEvento?: AccessLogEventType,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
+
       const filters: {
         userId?: number;
         campId?: number;
@@ -74,14 +106,14 @@ export class AccessLogController {
         limit?: number;
       } = {};
 
-      const resolvedUserId = userId ?? usuarioId;
+      const resolvedUserId = userId ?? legacyUsuarioId;
       if (resolvedUserId) {
         const parsedUserId = Number.parseInt(resolvedUserId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
         filters.userId = parsedUserId;
       }
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
@@ -136,8 +168,13 @@ export class AccessLogController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Access Log' })
+  @ApiParam({ name: 'id', type: Number, description: 'Access Log id' })
+  @ApiBody({ type: UpdateAccessLogDto })
+  @ApiOkResponse({ description: 'Access Log updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Access Log not found' })
   async update(@Param('id') id: string, @Body() body: UpdateAccessLogDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -154,13 +191,21 @@ export class AccessLogController {
         message: 'Access log updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating access log',
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Access Log' })
+  @ApiParam({ name: 'id', type: Number, description: 'Access Log id' })
+  @ApiOkResponse({ description: 'Access Log deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Access Log not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

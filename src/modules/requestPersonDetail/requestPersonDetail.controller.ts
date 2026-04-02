@@ -9,7 +9,18 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 
 import { RequestPersonDetailService } from './requestPersonDetail.service';
 import type {
@@ -19,11 +30,16 @@ import type {
   UpdateRequestPersonDetailDTO,
 } from './requestPersonDetail.model';
 
+import { CreateRequestPersonDetailDto, UpdateRequestPersonDetailDto } from './dto';
 @Controller('request-person-details')
+@ApiTags('Request Person Detail')
 export class RequestPersonDetailController {
   constructor(private readonly service: RequestPersonDetailService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Request Person Detail' })
+  @ApiBody({ type: CreateRequestPersonDetailDto })
+  @ApiCreatedResponse({ description: 'Request Person Detail created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestPersonDetailDTO) {
     try {
       const detail = await this.service.createDetail(body);
@@ -40,8 +56,12 @@ export class RequestPersonDetailController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Request Person Detail by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
+  @ApiOkResponse({ description: 'Request Person Detail found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -53,8 +73,12 @@ export class RequestPersonDetailController {
 
     return { success: true, data: detail };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Request Person Detail' })
+  @ApiOkResponse({ description: 'Request Person Detail list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('solicitudId') solicitudId?: string,
@@ -68,8 +92,11 @@ export class RequestPersonDetailController {
     @Query('ocupacionId') ocupacionId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+
       const filters: {
         requestId?: number;
         detailType?: PersonDetailType;
@@ -92,7 +119,7 @@ export class RequestPersonDetailController {
         filters.detailType = resolvedDetailType;
       }
 
-      const resolvedStatus = status ?? estado;
+      const resolvedStatus = status ?? (legacyEstado as any);
       if (resolvedStatus) {
         filters.status = resolvedStatus;
       }
@@ -151,8 +178,13 @@ export class RequestPersonDetailController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Request Person Detail' })
+  @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
+  @ApiBody({ type: UpdateRequestPersonDetailDto })
+  @ApiOkResponse({ description: 'Request Person Detail updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async update(@Param('id') id: string, @Body() body: UpdateRequestPersonDetailDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -176,8 +208,12 @@ export class RequestPersonDetailController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Request Person Detail' })
+  @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
+  @ApiOkResponse({ description: 'Request Person Detail deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

@@ -4,12 +4,23 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
 
 import { NotificationService } from './notification.service';
 import type {
@@ -19,11 +30,16 @@ import type {
 } from './notification.model';
 import type { SystemRole } from '../systemUser/systemUser.model';
 
+import { CreateNotificationDto, UpdateNotificationDto } from './dto';
 @Controller('notifications')
+@ApiTags('Notification')
 export class NotificationController {
   constructor(private readonly service: NotificationService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Notification' })
+  @ApiBody({ type: CreateNotificationDto })
+  @ApiCreatedResponse({ description: 'Notification created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateNotificationDTO) {
     try {
       const notification = await this.service.createNotification(body);
@@ -33,13 +49,21 @@ export class NotificationController {
         message: 'Notification created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating notification',
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Notification by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
+  @ApiOkResponse({ description: 'Notification found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Notification not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -49,8 +73,12 @@ export class NotificationController {
     if (!notification) throw new NotFoundException('Notification not found');
     return { success: true, data: notification };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Notification' })
+  @ApiOkResponse({ description: 'Notification list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('campamentoId') campamentoId?: string,
@@ -64,8 +92,12 @@ export class NotificationController {
     @Query('leida') leida?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
+
       const filters: {
         campId?: number;
         userId?: number;
@@ -76,14 +108,14 @@ export class NotificationController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedUserId = userId ?? usuarioId;
+      const resolvedUserId = userId ?? legacyUsuarioId;
       if (resolvedUserId) {
         const parsedUserId = Number.parseInt(resolvedUserId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
@@ -145,8 +177,13 @@ export class NotificationController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Notification' })
+  @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
+  @ApiBody({ type: UpdateNotificationDto })
+  @ApiOkResponse({ description: 'Notification updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Notification not found' })
   async update(@Param('id') id: string, @Body() body: UpdateNotificationDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -162,13 +199,21 @@ export class NotificationController {
         message: 'Notification updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating notification',
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Notification' })
+  @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
+  @ApiOkResponse({ description: 'Notification deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Notification not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);

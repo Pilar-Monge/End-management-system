@@ -4,12 +4,24 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 
 import { PersonStatusHistoryService } from './personStatusHistory.service';
 import type {
@@ -18,11 +30,16 @@ import type {
   UpdatePersonStatusHistoryDTO,
 } from './personStatusHistory.model';
 
+import { CreatePersonStatusHistoryDto, UpdatePersonStatusHistoryDto } from './dto';
 @Controller('person-status-history')
+@ApiTags('Person Status History')
 export class PersonStatusHistoryController {
   constructor(private readonly service: PersonStatusHistoryService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Person Status History' })
+  @ApiBody({ type: CreatePersonStatusHistoryDto })
+  @ApiCreatedResponse({ description: 'Person Status History created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreatePersonStatusHistoryDTO) {
     try {
       const entry = await this.service.createEntry(body);
@@ -32,13 +49,21 @@ export class PersonStatusHistoryController {
         message: 'Person status history entry created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating person status history entry',
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Person Status History by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
+  @ApiOkResponse({ description: 'Person Status History found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Person Status History not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +75,12 @@ export class PersonStatusHistoryController {
 
     return { success: true, data: entry };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Person Status History' })
+  @ApiOkResponse({ description: 'Person Status History list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('personId') personId?: string,
     @Query('personaId') personaId?: string,
@@ -134,8 +163,13 @@ export class PersonStatusHistoryController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Person Status History' })
+  @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
+  @ApiBody({ type: UpdatePersonStatusHistoryDto })
+  @ApiOkResponse({ description: 'Person Status History updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Person Status History not found' })
   async update(@Param('id') id: string, @Body() body: UpdatePersonStatusHistoryDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -152,13 +186,21 @@ export class PersonStatusHistoryController {
         message: 'Person status history entry updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating person status history entry',
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Person Status History' })
+  @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
+  @ApiOkResponse({ description: 'Person Status History deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Person Status History not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

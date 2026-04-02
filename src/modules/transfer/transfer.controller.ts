@@ -9,7 +9,17 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
 
 import { TransferService } from './transfer.service';
 import type {
@@ -18,11 +28,16 @@ import type {
   UpdateTransferDTO,
 } from './transfer.model';
 
+import { CreateTransferDto, UpdateTransferDto } from './dto';
 @Controller('transfers')
+@ApiTags('Transfer')
 export class TransferController {
   constructor(private readonly service: TransferService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Transfer' })
+  @ApiBody({ type: CreateTransferDto })
+  @ApiCreatedResponse({ description: 'Transfer created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateTransferDTO) {
     try {
       const transfer = await this.service.createTransfer(body);
@@ -37,8 +52,12 @@ export class TransferController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Transfer by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
+  @ApiOkResponse({ description: 'Transfer found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Transfer not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +69,12 @@ export class TransferController {
 
     return { success: true, data: transfer };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Transfer' })
+  @ApiOkResponse({ description: 'Transfer list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('solicitudId') solicitudId?: string,
@@ -59,8 +82,11 @@ export class TransferController {
     @Query('estado') estado?: TransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+
       const filters: {
         requestId?: number;
         status?: TransferStatus;
@@ -75,7 +101,7 @@ export class TransferController {
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedStatus = status ?? estado;
+      const resolvedStatus = status ?? (legacyEstado as any);
       if (resolvedStatus) {
         filters.status = resolvedStatus;
       }
@@ -116,8 +142,13 @@ export class TransferController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Transfer' })
+  @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
+  @ApiBody({ type: UpdateTransferDto })
+  @ApiOkResponse({ description: 'Transfer updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Transfer not found' })
   async update(@Param('id') id: string, @Body() body: UpdateTransferDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -139,8 +170,12 @@ export class TransferController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Transfer' })
+  @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
+  @ApiOkResponse({ description: 'Transfer deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Transfer not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
