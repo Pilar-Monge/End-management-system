@@ -125,3 +125,13 @@ Example (default): `http://localhost:3000/`
 ## Notes
 
 - TypeORM is configured with `synchronize: false`. Use migrations via `npm run migration:generate`, `npm run migration:run`, and `npm run migration:revert`.
+
+
+### Port 3000 is already in use
+
+If the application fails to start with an error like `EADDRINUSE: address already in use :::3000`, it means another process is already using port 3000.
+
+Check which process is using port 3000:
+
+```powershell
+netstat -ano | findstr :3000

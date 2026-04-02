@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:3000
-@token = REPLACE_WITH_VALID_TOKEN
-@wrongRoleToken = REPLACE_WITH_WRONG_ROLE_TOKEN
+@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwiaWF0IjoxNzc1MTEwNjU1LCJleHAiOjE3NzUxMTE4NTV9.rnRAQBUQcbDFiadVTLevYGNJYoWrGfjc0PCiNQ6PoAc
+@wrongRoleToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImlhdCI6MTc3NTExMDcwNywiZXhwIjoxNzc1MTExOTA3fQ.sCI_GO3XAVepajw_PtgZwssXTSYNW1z67mvPd9osKhw
 
 ### 1. Login admin
 POST {{baseUrl}}/api/auth/login
