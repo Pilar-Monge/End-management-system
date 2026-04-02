@@ -43,6 +43,7 @@ import { UserModule } from './modules/systemUser/systemUser.module';
       password: process.env.DB_PASSWORD ?? 'gestionfin123',
       database: process.env.DB_NAME ?? 'gestionfin_db',
       autoLoadEntities: true,
+      dropSchema: process.env.DB_DROP_SCHEMA !== 'false',
       synchronize: true,
     }),
     UserModule,
