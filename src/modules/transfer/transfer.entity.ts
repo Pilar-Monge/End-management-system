@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { TRANSFER_STATUS_VALUES, type TransferStatus } from './transfer.model';
+import { type TransferStatus } from './transfer.model';
 
 @Entity({ name: 'transfer' })
 @Unique('uq_transfer_request', ['requestId'])
@@ -20,6 +20,10 @@ import { TRANSFER_STATUS_VALUES, type TransferStatus } from './transfer.model';
   `"planned_arrival_date" > "planned_departure_date"`,
 )
 @Check('chk_transfer_rations', `"rations_for_trip" >= 0`)
+@Check(
+  'chk_transfer_status_values',
+  `"status" IN ('PENDING_DEPARTURE','COMPLETED','CANCELED')`,
+)
 export class TransferEntity {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -41,9 +45,7 @@ export class TransferEntity {
 
   @Column({
     name: 'status',
-    type: 'enum',
-    enum: TRANSFER_STATUS_VALUES,
-    enumName: 'transfer_status_enum',
+    type: 'text',
     default: 'PENDING_DEPARTURE',
   })
   status!: TransferStatus;

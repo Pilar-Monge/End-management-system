@@ -10,7 +10,6 @@ import { CampAchievementModule } from './modules/campAchievement/campAchievement
 import { CampInventoryModule } from './modules/campInventory/campInventory.module';
 import { DailyCollectionRecordModule } from './modules/dailyCollectionRecord/dailyCollectionRecord.module';
 import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
-import { EvaluatedCriteriaReportModule } from './modules/evaluatedCriteriaReport/evaluatedCriteriaReport.module';
 import { ExpeditionModule } from './modules/expedition/expedition.module';
 import { ExpeditionParticipantModule } from './modules/expeditionParticipant/expeditionParticipant.module';
 import { ExpeditionResourceConsumedModule } from './modules/expeditionResourceConsumed/expeditionResourceConsumed.module';
@@ -18,7 +17,6 @@ import { ExpeditionResourceObtainedModule } from './modules/expeditionResourceOb
 import { InventoryAlertModule } from './modules/inventoryAlert/inventoryAlert.module';
 import { InventoryMovementModule } from './modules/inventoryMovement/inventoryMovement.module';
 import { IntercampRequestModule } from './modules/intercampRequest/intercampRequest.module';
-import { OccupationAssignmentCriteriaModule } from './modules/occupationAssignmentCriteria/occupationAssignmentCriteria.module';
 import { OccupationModule } from './modules/occupation/occupation.module';
 import { PersonModule } from './modules/person/person.module';
 import { PersonStatusHistoryModule } from './modules/personStatusHistory/personStatusHistory.module';
@@ -45,14 +43,14 @@ import { UserModule } from './modules/systemUser/systemUser.module';
       password: process.env.DB_PASSWORD ?? 'gestionfin123',
       database: process.env.DB_NAME ?? 'gestionfin_db',
       autoLoadEntities: true,
-      synchronize: process.env.DB_SYNC === 'true',
+      dropSchema: process.env.DB_DROP_SCHEMA !== 'false',
+      synchronize: true,
     }),
     UserModule,
     AdmissionRequestModule,
     AchievementModule,
     CampAchievementModule,
     AiAdmissionReportModule,
-    EvaluatedCriteriaReportModule,
     PersonModule,
     PersonStatusHistoryModule,
     TemporaryOccupationAssignmentModule,
@@ -71,7 +69,6 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     InventoryAlertModule,
     DailyCollectionRecordModule,
     DecisionTreeModule,
-    OccupationAssignmentCriteriaModule,
     IntercampRequestModule,
     RequestResourceDetailModule,
     RequestPersonDetailModule,

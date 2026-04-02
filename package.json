@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
-    "build": "tsc",
+    "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
     "start": "node dist/main.js",
     "typeorm": "node ./scripts/typeorm-cli.cjs -d src/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate src/migrations/Init",

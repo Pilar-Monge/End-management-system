@@ -26,6 +26,10 @@ export interface AdmissionRequest {
   previousExperience: string | null;
   physicalCondition: string | null;
   declaredSkills: string | null;
+  healthLevelScore: number | null;
+  physicalConditionScore: number | null;
+  experienceYears: number | null;
+  skillsScore: number | null;
   campId: number;
   status: AdmissionRequestStatus;
   suggestedOccupationId: number | null;
@@ -51,6 +55,10 @@ export interface CreateAdmissionRequestDTO {
   previousExperience?: string | null;
   physicalCondition?: string | null;
   declaredSkills?: string | null;
+  healthLevelScore?: number | null;
+  physicalConditionScore?: number | null;
+  experienceYears?: number | null;
+  skillsScore?: number | null;
   campId: number;
 }
 
@@ -67,6 +75,10 @@ export interface UpdateAdmissionRequestDTO {
   previousExperience?: string | null;
   physicalCondition?: string | null;
   declaredSkills?: string | null;
+  healthLevelScore?: number | null;
+  physicalConditionScore?: number | null;
+  experienceYears?: number | null;
+  skillsScore?: number | null;
   campId?: number;
   status?: AdmissionRequestStatus;
   suggestedOccupationId?: number | null;

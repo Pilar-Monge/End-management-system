@@ -6,6 +6,10 @@ import {
   AdmissionRequest,
   AdmissionRequestStatus
 } from './admissionRequest.model';
+import {
+  buildAdmissionFeatures,
+  type AdmissionFeatureVector,
+} from './admissionFeatures.util';
 
 @Injectable()
 export class AdmissionRequestService {
@@ -22,7 +26,8 @@ export class AdmissionRequestService {
       throw new Error('A request with this email already exists');
     }
 
-    return await this.repository.create(data);
+    const normalizedData = this.normalizeAiFieldsForCreate(data);
+    return await this.repository.create(normalizedData);
   }
 
   async getRequestById(id: number): Promise<AdmissionRequest> {
@@ -92,7 +97,8 @@ export class AdmissionRequestService {
       }
     }
 
-    const updatedRequest = await this.repository.update(id, data);
+    const normalizedData = this.normalizeAiFieldsForUpdate(data, existingRequest);
+    const updatedRequest = await this.repository.update(id, normalizedData);
     
     if (!updatedRequest) {
       throw new Error('Error updating request');
@@ -187,5 +193,80 @@ export class AdmissionRequestService {
       campId,
       status: 'PENDING_ADMIN'
     });
+  }
+
+  async getAiFeaturesByRequestId(id: number): Promise<AdmissionFeatureVector> {
+    const request = await this.repository.findById(id);
+    if (!request) {
+      throw new Error('Request not found');
+    }
+
+    return buildAdmissionFeatures({
+      name: request.name,
+      lastName1: request.lastName1,
+      lastName2: request.lastName2,
+      email: request.email,
+      desiredUsername: request.desiredUsername,
+      birthDate: request.birthDate,
+      photoUrl: request.photoUrl,
+      declaredHealthLevel: request.declaredHealthLevel,
+      previousExperience: request.previousExperience,
+      physicalCondition: request.physicalCondition,
+      declaredSkills: request.declaredSkills,
+      healthLevelScore: request.healthLevelScore,
+      physicalConditionScore: request.physicalConditionScore,
+      experienceYears: request.experienceYears,
+      skillsScore: request.skillsScore,
+    });
+  }
+
+  private normalizeAiFieldsForCreate(data: CreateAdmissionRequestDTO): CreateAdmissionRequestDTO {
+    const features = buildAdmissionFeatures(data);
+
+    return {
+      ...data,
+      healthLevelScore: data.healthLevelScore ?? features.health_level_score,
+      physicalConditionScore:
+        data.physicalConditionScore ?? features.physical_condition_score,
+      experienceYears: data.experienceYears ?? features.experience_years,
+      skillsScore: data.skillsScore ?? features.skills_score,
+    };
+  }
+
+  private normalizeAiFieldsForUpdate(
+    data: UpdateAdmissionRequestDTO,
+    existingRequest: AdmissionRequest,
+  ): UpdateAdmissionRequestDTO {
+    const mergedForFeatures: CreateAdmissionRequestDTO = {
+      name: data.name ?? existingRequest.name,
+      lastName1: data.lastName1 ?? existingRequest.lastName1,
+      lastName2: data.lastName2 ?? existingRequest.lastName2,
+      email: data.email ?? existingRequest.email,
+      desiredUsername: data.desiredUsername ?? existingRequest.desiredUsername,
+      birthDate: data.birthDate ?? existingRequest.birthDate,
+      gender: data.gender ?? existingRequest.gender,
+      photoUrl: data.photoUrl ?? existingRequest.photoUrl,
+      declaredHealthLevel: data.declaredHealthLevel ?? existingRequest.declaredHealthLevel,
+      previousExperience: data.previousExperience ?? existingRequest.previousExperience,
+      physicalCondition: data.physicalCondition ?? existingRequest.physicalCondition,
+      declaredSkills: data.declaredSkills ?? existingRequest.declaredSkills,
+      campId: data.campId ?? existingRequest.campId,
+      healthLevelScore: data.healthLevelScore ?? existingRequest.healthLevelScore,
+      physicalConditionScore:
+        data.physicalConditionScore ?? existingRequest.physicalConditionScore,
+      experienceYears: data.experienceYears ?? existingRequest.experienceYears,
+      skillsScore: data.skillsScore ?? existingRequest.skillsScore,
+    };
+
+    const features = buildAdmissionFeatures(mergedForFeatures);
+
+    return {
+      ...data,
+      healthLevelScore: data.healthLevelScore ?? features.health_level_score,
+      physicalConditionScore:
+        data.physicalConditionScore ?? features.physical_condition_score,
+      experienceYears: data.experienceYears ?? features.experience_years,
+      skillsScore: data.skillsScore ?? features.skills_score,
+    };
   }
 }

@@ -46,6 +46,24 @@ import {
 export class AdmissionRequestController {
   constructor(private readonly service: AdmissionRequestService) {}
 
+  @Get(':id/ai-features')
+  async getAiFeatures(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const features = await this.service.getAiFeaturesByRequestId(parsedId);
+      return {
+        success: true,
+        data: features,
+      };
+    } catch (error) {
+      throw new NotFoundException(error instanceof Error ? error.message : 'Request not found');
+    }
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create an admission request' })
   @ApiBody({ type: CreateAdmissionRequestDto })

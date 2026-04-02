@@ -63,6 +63,18 @@ export class AdmissionRequestEntity {
   @Column({ name: 'declared_skills', type: 'text', nullable: true })
   declaredSkills!: string | null;
 
+  @Column({ name: 'health_level_score', type: 'int', nullable: true })
+  healthLevelScore!: number | null;
+
+  @Column({ name: 'physical_condition_score', type: 'int', nullable: true })
+  physicalConditionScore!: number | null;
+
+  @Column({ name: 'experience_years', type: 'int', nullable: true })
+  experienceYears!: number | null;
+
+  @Column({ name: 'skills_score', type: 'int', nullable: true })
+  skillsScore!: number | null;
+
   @Column({ name: 'camp_id', type: 'int' })
   campId!: number;
 
