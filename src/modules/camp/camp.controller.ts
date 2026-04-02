@@ -13,16 +13,18 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 import { CampService } from './camp.service';
 import type { CampStatus, CreateCampDTO, UpdateCampDTO } from './camp.model';
+import { CampEntity } from './camp.entity';
 
 import { CreateCampDto, UpdateCampDto } from './dto';
 @Controller('camps')
@@ -32,7 +34,7 @@ export class CampController {
   @Post()
   @ApiOperation({ summary: 'Create Camp' })
   @ApiBody({ type: CreateCampDto })
-  @ApiCreatedResponse({ description: 'Camp created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(CampEntity, { description: 'Camp created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampDTO) {
     try {
@@ -51,7 +53,7 @@ export class CampController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Camp by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
-  @ApiOkResponse({ description: 'Camp found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(CampEntity, { description: 'Camp found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Camp not found' })
   async getById(@Param('id') id: string) {
@@ -67,7 +69,7 @@ export class CampController {
   }
   @Get()
   @ApiOperation({ summary: 'List Camp' })
-  @ApiOkResponse({ description: 'Camp list', type: SuccessListResponseDto })
+  @ApiOkResponseList(CampEntity, { description: 'Camp list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -132,7 +134,7 @@ export class CampController {
   @ApiOperation({ summary: 'Update Camp' })
   @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
   @ApiBody({ type: UpdateCampDto })
-  @ApiOkResponse({ description: 'Camp updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(CampEntity, { description: 'Camp updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Camp not found' })
   async update(@Param('id') id: string, @Body() body: UpdateCampDTO) {
@@ -159,7 +161,7 @@ export class CampController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Camp' })
   @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
-  @ApiOkResponse({ description: 'Camp deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Camp deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Camp not found' })
   async delete(@Param('id') id: string) {

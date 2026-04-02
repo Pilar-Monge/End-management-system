@@ -1,5 +1,7 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 import { SESSION_STATUS_VALUES, type SessionStatus } from './session.model';
 
 @Entity({ name: 'session' })
@@ -9,15 +11,19 @@ import { SESSION_STATUS_VALUES, type SessionStatus } from './session.model';
 @Index('idx_sesion_ultima_actividad', ['lastActivityDate'])
 export class SessionEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'token', type: 'text' })
+  @ApiProperty()
   token!: string;
 
   @Column({ name: 'user_id', type: 'int' })
+  @ApiProperty()
   userId!: number;
 
   @Column({ name: 'camp_id', type: 'int' })
+  @ApiProperty()
   campId!: number;
 
   @Column({
@@ -25,6 +31,7 @@ export class SessionEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   startDate!: Date;
 
   @Column({
@@ -32,12 +39,15 @@ export class SessionEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   lastActivityDate!: Date;
 
   @Column({ name: 'expiration_date', type: 'timestamptz' })
+  @ApiProperty()
   expirationDate!: Date;
 
   @Column({ name: 'source_ip', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   sourceIp!: string | null;
 
   @Column({
@@ -47,5 +57,6 @@ export class SessionEntity {
     enumName: 'session_status_enum',
     default: 'ACTIVE',
   })
+  @ApiProperty({ enum: SESSION_STATUS_VALUES })
   status!: SessionStatus;
 }

@@ -13,13 +13,14 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { InventoryMovementService } from './inventoryMovement.service';
@@ -28,6 +29,7 @@ import type {
   InventoryMovementType,
   UpdateInventoryMovementDTO,
 } from './inventoryMovement.model';
+import { InventoryMovementEntity } from './inventoryMovement.entity';
 
 import { CreateInventoryMovementDto, UpdateInventoryMovementDto } from './dto';
 @Controller('inventory-movements')
@@ -37,7 +39,7 @@ export class InventoryMovementController {
   @Post()
   @ApiOperation({ summary: 'Create Inventory Movement' })
   @ApiBody({ type: CreateInventoryMovementDto })
-  @ApiCreatedResponse({ description: 'Inventory Movement created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(InventoryMovementEntity, { description: 'Inventory Movement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateInventoryMovementDTO) {
     try {
@@ -56,7 +58,7 @@ export class InventoryMovementController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Inventory Movement by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
-  @ApiOkResponse({ description: 'Inventory Movement found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async getById(@Param('id') id: string) {
@@ -72,7 +74,7 @@ export class InventoryMovementController {
   }
   @Get()
   @ApiOperation({ summary: 'List Inventory Movement' })
-  @ApiOkResponse({ description: 'Inventory Movement list', type: SuccessListResponseDto })
+  @ApiOkResponseList(InventoryMovementEntity, { description: 'Inventory Movement list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -171,7 +173,7 @@ export class InventoryMovementController {
   @ApiOperation({ summary: 'Update Inventory Movement' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
   @ApiBody({ type: UpdateInventoryMovementDto })
-  @ApiOkResponse({ description: 'Inventory Movement updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async update(@Param('id') id: string, @Body() body: UpdateInventoryMovementDTO) {
@@ -198,7 +200,7 @@ export class InventoryMovementController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Inventory Movement' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
-  @ApiOkResponse({ description: 'Inventory Movement deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Inventory Movement deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async delete(@Param('id') id: string) {

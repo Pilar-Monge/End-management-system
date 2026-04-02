@@ -1,15 +1,20 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 @Entity({ name: 'occupation' })
 @Unique('uq_occupation_name', ['name'])
 export class OccupationEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'name', type: 'text' })
+  @ApiProperty()
   name!: string;
 
   @Column({ name: 'description', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   description!: string | null;
 
   @Column({
@@ -17,6 +22,7 @@ export class OccupationEntity {
     type: 'boolean',
     default: false,
   })
+  @ApiProperty()
   collectsResources!: boolean;
 
   @Column({
@@ -24,9 +30,11 @@ export class OccupationEntity {
     type: 'boolean',
     default: false,
   })
+  @ApiProperty()
   participatesInExpeditions!: boolean;
 
   @Column({ name: 'resource_type_id', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   resourceTypeId!: number | null;
 
   @Column({
@@ -36,6 +44,7 @@ export class OccupationEntity {
     scale: 2,
     default: '0.00',
   })
+  @ApiProperty()
   dailyAmountProduced!: string;
 
   @Column({
@@ -45,6 +54,7 @@ export class OccupationEntity {
     scale: 2,
     default: '1.00',
   })
+  @ApiProperty()
   dailyRationConsumed!: string;
 
   @CreateDateColumn({
@@ -52,5 +62,6 @@ export class OccupationEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   createdAt!: Date;
 }

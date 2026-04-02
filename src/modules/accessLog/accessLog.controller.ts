@@ -13,13 +13,14 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 import { AccessLogService } from './accessLog.service';
 import type {
@@ -27,6 +28,7 @@ import type {
   CreateAccessLogDTO,
   UpdateAccessLogDTO,
 } from './accessLog.model';
+import { AccessLogEntity } from './accessLog.entity';
 
 import { CreateAccessLogDto, UpdateAccessLogDto } from './dto';
 @Controller('access-logs')
@@ -36,7 +38,7 @@ export class AccessLogController {
   @Post()
   @ApiOperation({ summary: 'Create Access Log' })
   @ApiBody({ type: CreateAccessLogDto })
-  @ApiCreatedResponse({ description: 'Access Log created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(AccessLogEntity, { description: 'Access Log created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateAccessLogDTO) {
     try {
@@ -55,7 +57,7 @@ export class AccessLogController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Access Log by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Access Log id' })
-  @ApiOkResponse({ description: 'Access Log found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(AccessLogEntity, { description: 'Access Log found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
   async getById(@Param('id') id: string) {
@@ -71,7 +73,7 @@ export class AccessLogController {
   }
   @Get()
   @ApiOperation({ summary: 'List Access Log' })
-  @ApiOkResponse({ description: 'Access Log list', type: SuccessListResponseDto })
+  @ApiOkResponseList(AccessLogEntity, { description: 'Access Log list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -167,7 +169,7 @@ export class AccessLogController {
   @ApiOperation({ summary: 'Update Access Log' })
   @ApiParam({ name: 'id', type: Number, description: 'Access Log id' })
   @ApiBody({ type: UpdateAccessLogDto })
-  @ApiOkResponse({ description: 'Access Log updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(AccessLogEntity, { description: 'Access Log updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
   async update(@Param('id') id: string, @Body() body: UpdateAccessLogDTO) {
@@ -194,7 +196,7 @@ export class AccessLogController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Access Log' })
   @ApiParam({ name: 'id', type: Number, description: 'Access Log id' })
-  @ApiOkResponse({ description: 'Access Log deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Access Log deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
   async delete(@Param('id') id: string) {

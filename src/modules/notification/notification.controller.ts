@@ -13,13 +13,14 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 import { NotificationService } from './notification.service';
 import type {
@@ -28,6 +29,7 @@ import type {
   UpdateNotificationDTO,
 } from './notification.model';
 import type { SystemRole } from '../systemUser/systemUser.model';
+import { NotificationEntity } from './notification.entity';
 
 import { CreateNotificationDto, UpdateNotificationDto } from './dto';
 @Controller('notifications')
@@ -37,7 +39,7 @@ export class NotificationController {
   @Post()
   @ApiOperation({ summary: 'Create Notification' })
   @ApiBody({ type: CreateNotificationDto })
-  @ApiCreatedResponse({ description: 'Notification created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(NotificationEntity, { description: 'Notification created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateNotificationDTO) {
     try {
@@ -56,7 +58,7 @@ export class NotificationController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Notification by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
-  @ApiOkResponse({ description: 'Notification found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(NotificationEntity, { description: 'Notification found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Notification not found' })
   async getById(@Param('id') id: string) {
@@ -70,7 +72,7 @@ export class NotificationController {
   }
   @Get()
   @ApiOperation({ summary: 'List Notification' })
-  @ApiOkResponse({ description: 'Notification list', type: SuccessListResponseDto })
+  @ApiOkResponseList(NotificationEntity, { description: 'Notification list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -176,7 +178,7 @@ export class NotificationController {
   @ApiOperation({ summary: 'Update Notification' })
   @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
   @ApiBody({ type: UpdateNotificationDto })
-  @ApiOkResponse({ description: 'Notification updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(NotificationEntity, { description: 'Notification updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Notification not found' })
   async update(@Param('id') id: string, @Body() body: UpdateNotificationDTO) {
@@ -202,7 +204,7 @@ export class NotificationController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Notification' })
   @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
-  @ApiOkResponse({ description: 'Notification deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Notification deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Notification not found' })
   async delete(@Param('id') id: string) {

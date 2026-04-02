@@ -13,17 +13,19 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { AchievementService } from './achievement.service';
 import type { CreateAchievementDTO, UpdateAchievementDTO } from './achievement.model';
+import { AchievementEntity } from './achievement.entity';
 
 import { CreateAchievementDto, UpdateAchievementDto } from './dto';
 @Controller('achievements')
@@ -33,7 +35,7 @@ export class AchievementController {
   @Post()
   @ApiOperation({ summary: 'Create Achievement' })
   @ApiBody({ type: CreateAchievementDto })
-  @ApiCreatedResponse({ description: 'Achievement created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(AchievementEntity, { description: 'Achievement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateAchievementDTO) {
     try {
@@ -52,7 +54,7 @@ export class AchievementController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Achievement by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Achievement id' })
-  @ApiOkResponse({ description: 'Achievement found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(AchievementEntity, { description: 'Achievement found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Achievement not found' })
   async getById(@Param('id') id: string) {
@@ -66,7 +68,7 @@ export class AchievementController {
   }
   @Get()
   @ApiOperation({ summary: 'List Achievement' })
-  @ApiOkResponse({ description: 'Achievement list', type: SuccessListResponseDto })
+  @ApiOkResponseList(AchievementEntity, { description: 'Achievement list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -122,7 +124,7 @@ export class AchievementController {
   @ApiOperation({ summary: 'Update Achievement' })
   @ApiParam({ name: 'id', type: Number, description: 'Achievement id' })
   @ApiBody({ type: UpdateAchievementDto })
-  @ApiOkResponse({ description: 'Achievement updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(AchievementEntity, { description: 'Achievement updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Achievement not found' })
   async update(@Param('id') id: string, @Body() body: UpdateAchievementDTO) {
@@ -147,7 +149,7 @@ export class AchievementController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Achievement' })
   @ApiParam({ name: 'id', type: Number, description: 'Achievement id' })
-  @ApiOkResponse({ description: 'Achievement deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Achievement deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Achievement not found' })
   async delete(@Param('id') id: string) {

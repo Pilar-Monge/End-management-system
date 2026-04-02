@@ -13,16 +13,18 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 import { SessionService } from './session.service';
 import type { CreateSessionDTO, SessionStatus, UpdateSessionDTO } from './session.model';
+import { SessionEntity } from './session.entity';
 
 import { CreateSessionDto, UpdateSessionDto } from './dto';
 @Controller('sessions')
@@ -32,7 +34,7 @@ export class SessionController {
   @Post()
   @ApiOperation({ summary: 'Create Session' })
   @ApiBody({ type: CreateSessionDto })
-  @ApiCreatedResponse({ description: 'Session created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(SessionEntity, { description: 'Session created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateSessionDTO) {
     try {
@@ -51,7 +53,7 @@ export class SessionController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Session by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Session id' })
-  @ApiOkResponse({ description: 'Session found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(SessionEntity, { description: 'Session found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Session not found' })
   async getById(@Param('id') id: string) {
@@ -67,7 +69,7 @@ export class SessionController {
   }
   @Get()
   @ApiOperation({ summary: 'List Session' })
-  @ApiOkResponse({ description: 'Session list', type: SuccessListResponseDto })
+  @ApiOkResponseList(SessionEntity, { description: 'Session list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -154,7 +156,7 @@ export class SessionController {
   @ApiOperation({ summary: 'Update Session' })
   @ApiParam({ name: 'id', type: Number, description: 'Session id' })
   @ApiBody({ type: UpdateSessionDto })
-  @ApiOkResponse({ description: 'Session updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(SessionEntity, { description: 'Session updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Session not found' })
   async update(@Param('id') id: string, @Body() body: UpdateSessionDTO) {
@@ -181,7 +183,7 @@ export class SessionController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Session' })
   @ApiParam({ name: 'id', type: Number, description: 'Session id' })
-  @ApiOkResponse({ description: 'Session deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Session deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Session not found' })
   async delete(@Param('id') id: string) {

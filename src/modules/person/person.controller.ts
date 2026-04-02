@@ -13,13 +13,14 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 import { PersonService } from './person.service';
 import type {
@@ -27,6 +28,7 @@ import type {
   PersonStatus,
   UpdatePersonDTO,
 } from './person.model';
+import { PersonEntity } from './person.entity';
 
 import { CreatePersonDto, UpdatePersonDto } from './dto';
 @Controller('persons')
@@ -36,7 +38,7 @@ export class PersonController {
   @Post()
   @ApiOperation({ summary: 'Create Person' })
   @ApiBody({ type: CreatePersonDto })
-  @ApiCreatedResponse({ description: 'Person created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(PersonEntity, { description: 'Person created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreatePersonDTO) {
     try {
@@ -55,7 +57,7 @@ export class PersonController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Person by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
-  @ApiOkResponse({ description: 'Person found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(PersonEntity, { description: 'Person found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person not found' })
   async getById(@Param('id') id: string) {
@@ -71,7 +73,7 @@ export class PersonController {
   }
   @Get()
   @ApiOperation({ summary: 'List Person' })
-  @ApiOkResponse({ description: 'Person list', type: SuccessListResponseDto })
+  @ApiOkResponseList(PersonEntity, { description: 'Person list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -160,7 +162,7 @@ export class PersonController {
   @ApiOperation({ summary: 'Update Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiBody({ type: UpdatePersonDto })
-  @ApiOkResponse({ description: 'Person updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(PersonEntity, { description: 'Person updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Person not found' })
   async update(@Param('id') id: string, @Body() body: UpdatePersonDTO) {
@@ -187,7 +189,7 @@ export class PersonController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
-  @ApiOkResponse({ description: 'Person deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Person deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person not found' })
   async delete(@Param('id') id: string) {
