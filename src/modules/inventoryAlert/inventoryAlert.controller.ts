@@ -9,16 +9,32 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 
 import { InventoryAlertService } from './inventoryAlert.service';
 import type { CreateInventoryAlertDTO, UpdateInventoryAlertDTO } from './inventoryAlert.model';
 
+import { CreateInventoryAlertDto, UpdateInventoryAlertDto } from './dto';
 @Controller('inventory-alerts')
+@ApiTags('Inventory Alert')
 export class InventoryAlertController {
   constructor(private readonly service: InventoryAlertService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Inventory Alert' })
+  @ApiBody({ type: CreateInventoryAlertDto })
+  @ApiCreatedResponse({ description: 'Inventory Alert created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateInventoryAlertDTO) {
     try {
       const alert = await this.service.createAlert(body);
@@ -33,8 +49,12 @@ export class InventoryAlertController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Inventory Alert by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
+  @ApiOkResponse({ description: 'Inventory Alert found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -46,8 +66,12 @@ export class InventoryAlertController {
 
     return { success: true, data: alert };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Inventory Alert' })
+  @ApiOkResponse({ description: 'Inventory Alert list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('campamentoId') campamentoId?: string,
@@ -57,8 +81,11 @@ export class InventoryAlertController {
     @Query('resuelta') resuelta?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+
       const filters: {
         campId?: number;
         resourceTypeId?: number;
@@ -67,7 +94,7 @@ export class InventoryAlertController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
@@ -127,8 +154,13 @@ export class InventoryAlertController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Inventory Alert' })
+  @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
+  @ApiBody({ type: UpdateInventoryAlertDto })
+  @ApiOkResponse({ description: 'Inventory Alert updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
   async update(@Param('id') id: string, @Body() body: UpdateInventoryAlertDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -150,8 +182,12 @@ export class InventoryAlertController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Inventory Alert' })
+  @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
+  @ApiOkResponse({ description: 'Inventory Alert deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

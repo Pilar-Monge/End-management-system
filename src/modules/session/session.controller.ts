@@ -9,16 +9,31 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
 
 import { SessionService } from './session.service';
 import type { CreateSessionDTO, SessionStatus, UpdateSessionDTO } from './session.model';
 
+import { CreateSessionDto, UpdateSessionDto } from './dto';
 @Controller('sessions')
+@ApiTags('Session')
 export class SessionController {
   constructor(private readonly service: SessionService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Session' })
+  @ApiBody({ type: CreateSessionDto })
+  @ApiCreatedResponse({ description: 'Session created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateSessionDTO) {
     try {
       const session = await this.service.createSession(body);
@@ -33,8 +48,12 @@ export class SessionController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Session by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Session id' })
+  @ApiOkResponse({ description: 'Session found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Session not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -46,8 +65,12 @@ export class SessionController {
 
     return { success: true, data: session };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Session' })
+  @ApiOkResponse({ description: 'Session list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('userId') userId?: string,
     @Query('usuarioId') usuarioId?: string,
@@ -57,8 +80,13 @@ export class SessionController {
     @Query('estado') estado?: SessionStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
+
       const filters: {
         userId?: number;
         campId?: number;
@@ -67,21 +95,21 @@ export class SessionController {
         limit?: number;
       } = {};
 
-      const resolvedUserId = userId ?? usuarioId;
+      const resolvedUserId = userId ?? legacyUsuarioId;
       if (resolvedUserId) {
         const parsedUserId = Number.parseInt(resolvedUserId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
         filters.userId = parsedUserId;
       }
 
-      const resolvedCampId = campId ?? campamentoId;
+      const resolvedCampId = campId ?? legacyCampamentoId;
       if (resolvedCampId) {
         const parsedCampId = Number.parseInt(resolvedCampId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedStatus = status ?? estado;
+      const resolvedStatus = status ?? (legacyEstado as any);
       if (resolvedStatus) {
         filters.status = resolvedStatus;
       }
@@ -122,8 +150,13 @@ export class SessionController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Session' })
+  @ApiParam({ name: 'id', type: Number, description: 'Session id' })
+  @ApiBody({ type: UpdateSessionDto })
+  @ApiOkResponse({ description: 'Session updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Session not found' })
   async update(@Param('id') id: string, @Body() body: UpdateSessionDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -145,8 +178,12 @@ export class SessionController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Session' })
+  @ApiParam({ name: 'id', type: Number, description: 'Session id' })
+  @ApiOkResponse({ description: 'Session deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Session not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

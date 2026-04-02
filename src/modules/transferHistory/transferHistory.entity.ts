@@ -1,9 +1,17 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { Check, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
-import { TRANSFER_STATUS_VALUES, type TransferStatus } from '../transfer/transfer.model';
+import { type TransferStatus } from '../transfer/transfer.model';
 
 @Entity({ name: 'transfer_history' })
 @Index('idx_transfer_history', ['transferId', 'date'])
+@Check(
+  'chk_transfer_history_previous_status_values',
+  `"previous_status" IN ('PENDING_DEPARTURE','COMPLETED','CANCELED')`,
+)
+@Check(
+  'chk_transfer_history_new_status_values',
+  `"new_status" IN ('PENDING_DEPARTURE','COMPLETED','CANCELED')`,
+)
 export class TransferHistoryEntity {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -13,17 +21,13 @@ export class TransferHistoryEntity {
 
   @Column({
     name: 'previous_status',
-    type: 'enum',
-    enum: TRANSFER_STATUS_VALUES,
-    enumName: 'transfer_status_enum',
+    type: 'text',
   })
   previousStatus!: TransferStatus;
 
   @Column({
     name: 'new_status',
-    type: 'enum',
-    enum: TRANSFER_STATUS_VALUES,
-    enumName: 'transfer_status_enum',
+    type: 'text',
   })
   newStatus!: TransferStatus;
 

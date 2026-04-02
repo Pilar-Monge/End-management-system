@@ -9,7 +9,18 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 
 import { ResourceTypeService } from './resourceType.service';
 import type {
@@ -18,11 +29,16 @@ import type {
   UpdateResourceTypeDTO,
 } from './resourceType.model';
 
+import { CreateResourceTypeDto, UpdateResourceTypeDto } from './dto';
 @Controller('resource-types')
+@ApiTags('Resource Type')
 export class ResourceTypeController {
   constructor(private readonly service: ResourceTypeService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Resource Type' })
+  @ApiBody({ type: CreateResourceTypeDto })
+  @ApiCreatedResponse({ description: 'Resource Type created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateResourceTypeDTO) {
     try {
       const resourceType = await this.service.createResourceType(body);
@@ -37,8 +53,12 @@ export class ResourceTypeController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Resource Type by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
+  @ApiOkResponse({ description: 'Resource Type found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -50,8 +70,12 @@ export class ResourceTypeController {
 
     return { success: true, data: resourceType };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Resource Type' })
+  @ApiOkResponse({ description: 'Resource Type list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('category') category?: ResourceCategory,
     @Query('categoria') categoria?: ResourceCategory,
@@ -106,8 +130,13 @@ export class ResourceTypeController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Resource Type' })
+  @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
+  @ApiBody({ type: UpdateResourceTypeDto })
+  @ApiOkResponse({ description: 'Resource Type updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async update(@Param('id') id: string, @Body() body: UpdateResourceTypeDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -129,8 +158,12 @@ export class ResourceTypeController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Resource Type' })
+  @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
+  @ApiOkResponse({ description: 'Resource Type deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

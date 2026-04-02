@@ -1,17 +1,36 @@
 {
-  "modelName": "occupation-v1",
-  "featureNames": ["age", "experience_years", "health_score"],
-  "samples": [
-    {"features": {"age": 22, "experience_years": 0, "health_score": 8}, "label": "VOLUNTEER"},
-    {"features": {"age": 24, "experience_years": 1, "health_score": 7}, "label": "VOLUNTEER"},
-    {"features": {"age": 21, "experience_years": 0, "health_score": 9}, "label": "VOLUNTEER"},
-    {"features": {"age": 35, "experience_years": 10, "health_score": 9}, "label": "LEADER"},
-    {"features": {"age": 38, "experience_years": 12, "health_score": 8}, "label": "LEADER"},
-    {"features": {"age": 32, "experience_years": 8, "health_score": 9}, "label": "LEADER"},
-    {"features": {"age": 28, "experience_years": 3, "health_score": 7}, "label": "WORKER"},
-    {"features": {"age": 27, "experience_years": 2, "health_score": 6}, "label": "WORKER"},
-    {"features": {"age": 29, "experience_years": 4, "health_score": 7}, "label": "WORKER"},
-    {"features": {"age": 26, "experience_years": 3, "health_score": 8}, "label": "WORKER"}
+  "modelName": "admission-acceptance-v1",
+  "featureNames": [
+    "age_years",
+    "health_level_score",
+    "physical_condition_score",
+    "experience_years",
+    "skills_score"
   ],
-  "maxDepth": 5
+  "samples": [
+    {"features": {"age_years": 24, "health_level_score": 8, "physical_condition_score": 8, "experience_years": 3, "skills_score": 7}, "label": "ACCEPT"},
+    {"features": {"age_years": 31, "health_level_score": 7, "physical_condition_score": 7, "experience_years": 6, "skills_score": 8}, "label": "ACCEPT"},
+    {"features": {"age_years": 22, "health_level_score": 9, "physical_condition_score": 9, "experience_years": 1, "skills_score": 6}, "label": "ACCEPT"},
+    {"features": {"age_years": 36, "health_level_score": 8, "physical_condition_score": 6, "experience_years": 9, "skills_score": 9}, "label": "ACCEPT"},
+    {"features": {"age_years": 29, "health_level_score": 6, "physical_condition_score": 7, "experience_years": 5, "skills_score": 7}, "label": "ACCEPT"},
+    {"features": {"age_years": 27, "health_level_score": 8, "physical_condition_score": 8, "experience_years": 2, "skills_score": 8}, "label": "ACCEPT"},
+    {"features": {"age_years": 33, "health_level_score": 7, "physical_condition_score": 7, "experience_years": 4, "skills_score": 8}, "label": "ACCEPT"},
+    {"features": {"age_years": 41, "health_level_score": 7, "physical_condition_score": 6, "experience_years": 12, "skills_score": 8}, "label": "ACCEPT"},
+    {"features": {"age_years": 19, "health_level_score": 6, "physical_condition_score": 8, "experience_years": 0, "skills_score": 5}, "label": "ACCEPT"},
+    {"features": {"age_years": 46, "health_level_score": 6, "physical_condition_score": 5, "experience_years": 10, "skills_score": 8}, "label": "ACCEPT"},
+
+    {"features": {"age_years": 28, "health_level_score": 4, "physical_condition_score": 4, "experience_years": 4, "skills_score": 6}, "label": "REJECT"},
+    {"features": {"age_years": 34, "health_level_score": 3, "physical_condition_score": 5, "experience_years": 7, "skills_score": 7}, "label": "REJECT"},
+    {"features": {"age_years": 25, "health_level_score": 6, "physical_condition_score": 6, "experience_years": 2, "skills_score": 5}, "label": "REJECT"},
+    {"features": {"age_years": 30, "health_level_score": 5, "physical_condition_score": 5, "experience_years": 3, "skills_score": 6}, "label": "REJECT"},
+    {"features": {"age_years": 39, "health_level_score": 4, "physical_condition_score": 4, "experience_years": 8, "skills_score": 7}, "label": "REJECT"},
+    {"features": {"age_years": 21, "health_level_score": 7, "physical_condition_score": 7, "experience_years": 1, "skills_score": 6}, "label": "REJECT"},
+    {"features": {"age_years": 44, "health_level_score": 5, "physical_condition_score": 4, "experience_years": 11, "skills_score": 8}, "label": "REJECT"},
+    {"features": {"age_years": 26, "health_level_score": 2, "physical_condition_score": 3, "experience_years": 2, "skills_score": 5}, "label": "REJECT"},
+    {"features": {"age_years": 32, "health_level_score": 6, "physical_condition_score": 6, "experience_years": 5, "skills_score": 7}, "label": "REJECT"},
+    {"features": {"age_years": 29, "health_level_score": 3, "physical_condition_score": 5, "experience_years": 4, "skills_score": 6}, "label": "REJECT"}
+  ],
+  "maxDepth": 6,
+  "minNumSamples": 2,
+  "gainFunction": "gini"
 }

@@ -10,7 +10,18 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 
 import { ExpeditionResourceConsumedService } from './expeditionResourceConsumed.service';
 import type {
@@ -18,11 +29,16 @@ import type {
   UpdateExpeditionResourceConsumedDTO,
 } from './expeditionResourceConsumed.model';
 
+import { CreateExpeditionResourceConsumedDto, UpdateExpeditionResourceConsumedDto } from './dto';
 @Controller('expedition-resources-consumed')
+@ApiTags('Expedition Resource Consumed')
 export class ExpeditionResourceConsumedController {
   constructor(private readonly service: ExpeditionResourceConsumedService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Expedition Resource Consumed' })
+  @ApiBody({ type: CreateExpeditionResourceConsumedDto })
+  @ApiCreatedResponse({ description: 'Expedition Resource Consumed created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateExpeditionResourceConsumedDTO) {
     try {
       const record = await this.service.createRecord(body);
@@ -43,8 +59,12 @@ export class ExpeditionResourceConsumedController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Expedition Resource Consumed by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Consumed id' })
+  @ApiOkResponse({ description: 'Expedition Resource Consumed found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -56,8 +76,12 @@ export class ExpeditionResourceConsumedController {
 
     return { success: true, data: record };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Expedition Resource Consumed' })
+  @ApiOkResponse({ description: 'Expedition Resource Consumed list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
     @Query('expedicionId') expedicionId?: string,
@@ -142,8 +166,13 @@ export class ExpeditionResourceConsumedController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Expedition Resource Consumed' })
+  @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Consumed id' })
+  @ApiBody({ type: UpdateExpeditionResourceConsumedDto })
+  @ApiOkResponse({ description: 'Expedition Resource Consumed updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   async update(@Param('id') id: string, @Body() body: UpdateExpeditionResourceConsumedDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -171,8 +200,12 @@ export class ExpeditionResourceConsumedController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Expedition Resource Consumed' })
+  @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Consumed id' })
+  @ApiOkResponse({ description: 'Expedition Resource Consumed deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

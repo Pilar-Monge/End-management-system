@@ -10,7 +10,18 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+
+
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  SuccessDataResponseDto,
+  SuccessListResponseDto,
+  SuccessMessageResponseDto,
+} from '../../common/dto/api-response.dto';
+
 
 import { IntercampRequestService } from './intercampRequest.service';
 import type {
@@ -19,11 +30,16 @@ import type {
   UpdateIntercampRequestDTO,
 } from './intercampRequest.model';
 
+import { CreateIntercampRequestDto, UpdateIntercampRequestDto } from './dto';
 @Controller('intercamp-requests')
+@ApiTags('Intercamp Request')
 export class IntercampRequestController {
   constructor(private readonly service: IntercampRequestService) {}
-
   @Post()
+  @ApiOperation({ summary: 'Create Intercamp Request' })
+  @ApiBody({ type: CreateIntercampRequestDto })
+  @ApiCreatedResponse({ description: 'Intercamp Request created', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateIntercampRequestDTO) {
     try {
       const request = await this.service.createRequest(body);
@@ -42,8 +58,12 @@ export class IntercampRequestController {
       );
     }
   }
-
   @Get(':id')
+  @ApiOperation({ summary: 'Get Intercamp Request by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
+  @ApiOkResponse({ description: 'Intercamp Request found', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -55,8 +75,12 @@ export class IntercampRequestController {
 
     return { success: true, data: request };
   }
-
   @Get()
+  @ApiOperation({ summary: 'List Intercamp Request' })
+  @ApiOkResponse({ description: 'Intercamp Request list', type: SuccessListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('originCampId') originCampId?: string,
     @Query('campamentoOrigenId') campamentoOrigenId?: string,
@@ -70,8 +94,11 @@ export class IntercampRequestController {
     @Query('respondidoPor') respondidoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
     try {
+      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+
       const filters: {
         originCampId?: number;
         destinationCampId?: number;
@@ -100,7 +127,7 @@ export class IntercampRequestController {
         filters.destinationCampId = parsedDestinationCampId;
       }
 
-      const resolvedStatus = status ?? estado;
+      const resolvedStatus = status ?? (legacyEstado as any);
       if (resolvedStatus) {
         filters.status = resolvedStatus;
       }
@@ -161,8 +188,13 @@ export class IntercampRequestController {
       );
     }
   }
-
   @Put(':id')
+  @ApiOperation({ summary: 'Update Intercamp Request' })
+  @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
+  @ApiBody({ type: UpdateIntercampRequestDto })
+  @ApiOkResponse({ description: 'Intercamp Request updated', type: SuccessDataResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   async update(@Param('id') id: string, @Body() body: UpdateIntercampRequestDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -190,8 +222,12 @@ export class IntercampRequestController {
       );
     }
   }
-
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete Intercamp Request' })
+  @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
+  @ApiOkResponse({ description: 'Intercamp Request deleted', type: SuccessMessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
