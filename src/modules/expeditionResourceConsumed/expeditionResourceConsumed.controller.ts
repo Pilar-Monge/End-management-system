@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -47,6 +48,10 @@ export class ExpeditionResourceConsumedController {
         message: 'Expedition consumed resource recorded successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error
           ? error.message
@@ -184,6 +189,10 @@ export class ExpeditionResourceConsumedController {
         message: 'Record updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error
           ? error.message

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -47,6 +48,10 @@ export class DailyCollectionRecordController {
         message: 'Daily collection record created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating daily collection record',
       );
@@ -190,6 +195,10 @@ export class DailyCollectionRecordController {
         message: 'Daily collection record updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating daily collection record',
       );

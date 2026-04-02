@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { NotificationRepository } from './notification.repository';
 import type {
@@ -8,10 +10,30 @@ import type {
   UpdateNotificationDTO,
 } from './notification.model';
 import type { SystemRole } from '../systemUser/systemUser.model';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 @Injectable()
 export class NotificationService {
-  constructor(private readonly repository: NotificationRepository) {}
+  constructor(
+    private readonly repository: NotificationRepository,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+  ) {}
+
+  private async validateUserCamp(campId: number, userId?: number | null): Promise<void> {
+    if (userId === null || userId === undefined) {
+      return;
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Notification user was not found');
+    }
+
+    if (user.campId !== campId) {
+      throw new BadRequestException('Notification user does not belong to the provided camp');
+    }
+  }
 
   async createNotification(data: CreateNotificationDTO): Promise<Notification> {
     const hasUser = data.userId !== undefined && data.userId !== null;
@@ -19,6 +41,8 @@ export class NotificationService {
     if (!hasUser && !hasRole) {
       throw new Error('Notification must target a userId or a targetRole');
     }
+
+    await this.validateUserCamp(data.campId, data.userId);
 
     return await this.repository.create(data);
   }
@@ -63,9 +87,18 @@ export class NotificationService {
   }
 
   async updateNotification(id: number, data: UpdateNotificationDTO): Promise<Notification | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
     if (data.userId === null && data.targetRole === null) {
       throw new Error('Notification must target a userId or a targetRole');
     }
+
+    const finalCampId = data.campId ?? existing.campId;
+    const finalUserId = data.userId !== undefined ? data.userId : existing.userId;
+
+    await this.validateUserCamp(finalCampId, finalUserId);
+
     return await this.repository.update(id, data);
   }
 

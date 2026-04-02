@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -48,6 +49,10 @@ export class PersonStatusHistoryController {
         message: 'Person status history entry created successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating person status history entry',
       );
@@ -181,6 +186,10 @@ export class PersonStatusHistoryController {
         message: 'Person status history entry updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating person status history entry',
       );
