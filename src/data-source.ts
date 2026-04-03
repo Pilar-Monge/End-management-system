@@ -1,11 +1,26 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
-const dbHost = process.env.DB_HOST ?? 'localhost';
-const dbPort = Number(process.env.DB_PORT ?? '5432');
-const dbUser = process.env.DB_USER ?? 'gestionfin';
-const dbPassword = process.env.DB_PASSWORD ?? 'gestionfin123';
-const dbName = process.env.DB_NAME ?? 'gestionfin_db';
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value || !value.trim()) {
+    throw new Error(`${name} environment variable is required`);
+  }
+
+  return value.trim();
+}
+
+const dbHost = requiredEnv('DB_HOST');
+const dbPortValue = requiredEnv('DB_PORT');
+const dbPort = Number(dbPortValue);
+
+if (Number.isNaN(dbPort)) {
+  throw new Error('DB_PORT environment variable must be a valid number');
+}
+
+const dbUser = requiredEnv('DB_USER');
+const dbPassword = requiredEnv('DB_PASSWORD');
+const dbName = requiredEnv('DB_NAME');
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
