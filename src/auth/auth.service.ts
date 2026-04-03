@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
@@ -68,7 +69,7 @@ export class AuthService {
       rol: user.role,
     };
 
-    const token = jwt.sign(payload, secret, {
+    const token = jwt.sign({ ...payload, jti: randomUUID() }, secret, {
       expiresIn: `${sessionInactivityMinutes}m`,
     });
 
@@ -202,7 +203,7 @@ export class AuthService {
       payload.campId,
     );
 
-    const token = jwt.sign(payload, secret, {
+    const token = jwt.sign({ ...payload, jti: randomUUID() }, secret, {
       expiresIn: `${sessionInactivityMinutes}m`,
     });
 
