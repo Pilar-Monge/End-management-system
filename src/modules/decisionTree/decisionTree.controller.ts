@@ -9,6 +9,22 @@ import {
   Query,
 } from '@nestjs/common';
 
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+
+import {
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+} from '../../common/swagger/api-response.decorator';
+
 import { DecisionTreeService } from './decisionTree.service';
 import type {
   ExplainDecisionTreeDTO,
@@ -16,11 +32,25 @@ import type {
   TrainDecisionTreeDTO,
 } from './decisionTree.model';
 
+import {
+  DecisionTreeExplainResultDto,
+  DecisionTreeModelDto,
+  DecisionTreePredictResultDto,
+  ExplainDecisionTreeDto,
+  PredictDecisionTreeDto,
+  TrainDecisionTreeDto,
+} from './dto';
+
 @Controller('decision-tree')
+@ApiTags('Decision Tree')
 export class DecisionTreeController {
   constructor(private readonly service: DecisionTreeService) {}
 
   @Post('train')
+  @ApiOperation({ summary: 'Train decision tree model' })
+  @ApiBody({ type: TrainDecisionTreeDto })
+  @ApiCreatedResponseData(DecisionTreeModelDto, { description: 'Decision tree model trained' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async train(@Body() body: TrainDecisionTreeDTO) {
     try {
       const model = await this.service.trainModel(body);
@@ -31,6 +61,7 @@ export class DecisionTreeController {
           modelName: model.modelName,
           featureNames: model.featureNames,
           trainingMetrics: model.trainingMetrics,
+          modelFilePath: (model as any).modelFilePath ?? null,
           isActive: model.isActive,
           createdAt: model.createdAt,
           updatedAt: model.updatedAt,
@@ -45,6 +76,10 @@ export class DecisionTreeController {
   }
 
   @Post('predict')
+  @ApiOperation({ summary: 'Predict using a decision tree model' })
+  @ApiBody({ type: PredictDecisionTreeDto })
+  @ApiOkResponseData(DecisionTreePredictResultDto, { description: 'Prediction generated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async predict(@Body() body: PredictDecisionTreeDTO) {
     try {
       const result = await this.service.predict(body);
@@ -61,6 +96,10 @@ export class DecisionTreeController {
   }
 
   @Post('explain')
+  @ApiOperation({ summary: 'Explain a prediction for a decision tree model' })
+  @ApiBody({ type: ExplainDecisionTreeDto })
+  @ApiOkResponseData(DecisionTreeExplainResultDto, { description: 'Prediction explanation generated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async explain(@Body() body: ExplainDecisionTreeDTO) {
     try {
       const result = await this.service.explain(body);
@@ -77,6 +116,11 @@ export class DecisionTreeController {
   }
 
   @Get('models/:id')
+  @ApiOperation({ summary: 'Get decision tree model by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Decision tree model id' })
+  @ApiOkResponseData(DecisionTreeModelDto, { description: 'Decision tree model found' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Decision tree model not found' })
   async getModelById(@Param('id') id: string) {
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) {
@@ -95,6 +139,7 @@ export class DecisionTreeController {
         modelName: model.modelName,
         featureNames: model.featureNames,
         trainingMetrics: model.trainingMetrics,
+        modelFilePath: (model as any).modelFilePath ?? null,
         isActive: model.isActive,
         createdAt: model.createdAt,
         updatedAt: model.updatedAt,
@@ -103,6 +148,13 @@ export class DecisionTreeController {
   }
 
   @Get('models')
+  @ApiOperation({ summary: 'List decision tree models' })
+  @ApiOkResponseList(DecisionTreeModelDto, { description: 'Decision tree models list' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiQuery({ name: 'modelName', required: false, type: String, description: 'Filter by modelName' })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by isActive (true/false)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async listModels(
     @Query('modelName') modelName?: string,
     @Query('isActive') isActive?: string,

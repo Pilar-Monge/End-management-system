@@ -1,5 +1,7 @@
 import { Check, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 import {
   INTERCAMP_REQUEST_STATUS_VALUES,
   type IntercampRequestStatus,
@@ -12,12 +14,15 @@ import {
 @Check('chk_solicitud_camp_distintos', `"origin_camp_id" <> "destination_camp_id"`)
 export class IntercampRequestEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'origin_camp_id', type: 'int' })
+  @ApiProperty()
   originCampId!: number;
 
   @Column({ name: 'destination_camp_id', type: 'int' })
+  @ApiProperty()
   destinationCampId!: number;
 
   @Column({
@@ -27,9 +32,11 @@ export class IntercampRequestEntity {
     enumName: 'intercamp_request_status_enum',
     default: 'PENDING',
   })
+  @ApiProperty({ enum: INTERCAMP_REQUEST_STATUS_VALUES })
   status!: IntercampRequestStatus;
 
   @Column({ name: 'description', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   description!: string | null;
 
   @Column({
@@ -37,14 +44,18 @@ export class IntercampRequestEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   createdDate!: Date;
 
   @Column({ name: 'response_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
   responseDate!: Date | null;
 
   @Column({ name: 'created_by', type: 'int' })
+  @ApiProperty()
   createdBy!: number;
 
   @Column({ name: 'responded_by', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   respondedBy!: number | null;
 }

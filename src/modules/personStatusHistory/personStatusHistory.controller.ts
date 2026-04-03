@@ -14,13 +14,22 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { PersonStatusHistoryService } from './personStatusHistory.service';
@@ -29,6 +38,7 @@ import type {
   PersonStatus,
   UpdatePersonStatusHistoryDTO,
 } from './personStatusHistory.model';
+import { PersonStatusHistoryEntity } from './personStatusHistory.entity';
 
 import { CreatePersonStatusHistoryDto, UpdatePersonStatusHistoryDto } from './dto';
 @Controller('person-status-history')
@@ -38,7 +48,7 @@ export class PersonStatusHistoryController {
   @Post()
   @ApiOperation({ summary: 'Create Person Status History' })
   @ApiBody({ type: CreatePersonStatusHistoryDto })
-  @ApiCreatedResponse({ description: 'Person Status History created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(PersonStatusHistoryEntity, { description: 'Person Status History created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreatePersonStatusHistoryDTO) {
     try {
@@ -61,7 +71,7 @@ export class PersonStatusHistoryController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Person Status History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
-  @ApiOkResponse({ description: 'Person Status History found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(PersonStatusHistoryEntity, { description: 'Person Status History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person Status History not found' })
   async getById(@Param('id') id: string) {
@@ -77,7 +87,7 @@ export class PersonStatusHistoryController {
   }
   @Get()
   @ApiOperation({ summary: 'List Person Status History' })
-  @ApiOkResponse({ description: 'Person Status History list', type: SuccessListResponseDto })
+  @ApiOkResponseList(PersonStatusHistoryEntity, { description: 'Person Status History list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -167,7 +177,7 @@ export class PersonStatusHistoryController {
   @ApiOperation({ summary: 'Update Person Status History' })
   @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
   @ApiBody({ type: UpdatePersonStatusHistoryDto })
-  @ApiOkResponse({ description: 'Person Status History updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(PersonStatusHistoryEntity, { description: 'Person Status History updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Person Status History not found' })
   async update(@Param('id') id: string, @Body() body: UpdatePersonStatusHistoryDTO) {
@@ -198,7 +208,7 @@ export class PersonStatusHistoryController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Person Status History' })
   @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
-  @ApiOkResponse({ description: 'Person Status History deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Person Status History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person Status History not found' })
   async delete(@Param('id') id: string) {

@@ -1,5 +1,7 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 import {
   PARTICIPANT_STATUS_VALUES,
   type ParticipantStatus,
@@ -10,15 +12,19 @@ import {
 @Index('idx_exp_participant_person', ['personId'])
 export class ExpeditionParticipantEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'expedition_id', type: 'int' })
+  @ApiProperty()
   expeditionId!: number;
 
   @Column({ name: 'person_id', type: 'int' })
+  @ApiProperty()
   personId!: number;
 
   @Column({ name: 'expedition_role', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   expeditionRole!: string | null;
 
   @Column({
@@ -28,6 +34,7 @@ export class ExpeditionParticipantEntity {
     enumName: 'participant_status_enum',
     default: 'ACTIVE',
   })
+  @ApiProperty({ enum: PARTICIPANT_STATUS_VALUES })
   status!: ParticipantStatus;
 
   @Column({
@@ -35,5 +42,6 @@ export class ExpeditionParticipantEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   assignmentDate!: Date;
 }

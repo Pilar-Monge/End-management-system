@@ -14,13 +14,14 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { DailyCollectionRecordService } from './dailyCollectionRecord.service';
@@ -28,6 +29,7 @@ import type {
   CreateDailyCollectionRecordDTO,
   UpdateDailyCollectionRecordDTO,
 } from './dailyCollectionRecord.model';
+import { DailyCollectionRecordEntity } from './dailyCollectionRecord.entity';
 
 import { CreateDailyCollectionRecordDto, UpdateDailyCollectionRecordDto } from './dto';
 @Controller('daily-collection-records')
@@ -37,7 +39,7 @@ export class DailyCollectionRecordController {
   @Post()
   @ApiOperation({ summary: 'Create Daily Collection Record' })
   @ApiBody({ type: CreateDailyCollectionRecordDto })
-  @ApiCreatedResponse({ description: 'Daily Collection Record created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateDailyCollectionRecordDTO) {
     try {
@@ -60,7 +62,7 @@ export class DailyCollectionRecordController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Daily Collection Record by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
-  @ApiOkResponse({ description: 'Daily Collection Record found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async getById(@Param('id') id: string) {
@@ -76,7 +78,7 @@ export class DailyCollectionRecordController {
   }
   @Get()
   @ApiOperation({ summary: 'List Daily Collection Record' })
-  @ApiOkResponse({ description: 'Daily Collection Record list', type: SuccessListResponseDto })
+  @ApiOkResponseList(DailyCollectionRecordEntity, { description: 'Daily Collection Record list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -176,7 +178,7 @@ export class DailyCollectionRecordController {
   @ApiOperation({ summary: 'Update Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiBody({ type: UpdateDailyCollectionRecordDto })
-  @ApiOkResponse({ description: 'Daily Collection Record updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async update(@Param('id') id: string, @Body() body: UpdateDailyCollectionRecordDTO) {
@@ -207,7 +209,7 @@ export class DailyCollectionRecordController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
-  @ApiOkResponse({ description: 'Daily Collection Record deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Daily Collection Record deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async delete(@Param('id') id: string) {

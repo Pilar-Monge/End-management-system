@@ -14,13 +14,22 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { UserRoleHistoryService } from './userRoleHistory.service';
@@ -28,6 +37,7 @@ import type {
   CreateUserRoleHistoryDTO,
   UpdateUserRoleHistoryDTO,
 } from './userRoleHistory.model';
+import { UserRoleHistoryEntity } from './userRoleHistory.entity';
 
 import { CreateUserRoleHistoryDto, UpdateUserRoleHistoryDto } from './dto';
 @Controller('user-role-history')
@@ -37,7 +47,7 @@ export class UserRoleHistoryController {
   @Post()
   @ApiOperation({ summary: 'Create User Role History' })
   @ApiBody({ type: CreateUserRoleHistoryDto })
-  @ApiCreatedResponse({ description: 'User Role History created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(UserRoleHistoryEntity, { description: 'User Role History created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateUserRoleHistoryDTO) {
     try {
@@ -60,7 +70,7 @@ export class UserRoleHistoryController {
   @Get(':id')
   @ApiOperation({ summary: 'Get User Role History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'User Role History id' })
-  @ApiOkResponse({ description: 'User Role History found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(UserRoleHistoryEntity, { description: 'User Role History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
   async getById(@Param('id') id: string) {
@@ -76,7 +86,7 @@ export class UserRoleHistoryController {
   }
   @Get()
   @ApiOperation({ summary: 'List User Role History' })
-  @ApiOkResponse({ description: 'User Role History list', type: SuccessListResponseDto })
+  @ApiOkResponseList(UserRoleHistoryEntity, { description: 'User Role History list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -153,7 +163,7 @@ export class UserRoleHistoryController {
   @ApiOperation({ summary: 'Update User Role History' })
   @ApiParam({ name: 'id', type: Number, description: 'User Role History id' })
   @ApiBody({ type: UpdateUserRoleHistoryDto })
-  @ApiOkResponse({ description: 'User Role History updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(UserRoleHistoryEntity, { description: 'User Role History updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
   async update(@Param('id') id: string, @Body() body: UpdateUserRoleHistoryDTO) {
@@ -184,7 +194,7 @@ export class UserRoleHistoryController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete User Role History' })
   @ApiParam({ name: 'id', type: Number, description: 'User Role History id' })
-  @ApiOkResponse({ description: 'User Role History deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'User Role History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
   async delete(@Param('id') id: string) {

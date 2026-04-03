@@ -14,13 +14,14 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { IntercampRequestService } from './intercampRequest.service';
@@ -29,6 +30,7 @@ import type {
   IntercampRequestStatus,
   UpdateIntercampRequestDTO,
 } from './intercampRequest.model';
+import { IntercampRequestEntity } from './intercampRequest.entity';
 
 import { CreateIntercampRequestDto, UpdateIntercampRequestDto } from './dto';
 @Controller('intercamp-requests')
@@ -38,7 +40,7 @@ export class IntercampRequestController {
   @Post()
   @ApiOperation({ summary: 'Create Intercamp Request' })
   @ApiBody({ type: CreateIntercampRequestDto })
-  @ApiCreatedResponse({ description: 'Intercamp Request created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(IntercampRequestEntity, { description: 'Intercamp Request created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateIntercampRequestDTO) {
     try {
@@ -61,7 +63,7 @@ export class IntercampRequestController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Intercamp Request by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
-  @ApiOkResponse({ description: 'Intercamp Request found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   async getById(@Param('id') id: string) {
@@ -77,7 +79,7 @@ export class IntercampRequestController {
   }
   @Get()
   @ApiOperation({ summary: 'List Intercamp Request' })
-  @ApiOkResponse({ description: 'Intercamp Request list', type: SuccessListResponseDto })
+  @ApiOkResponseList(IntercampRequestEntity, { description: 'Intercamp Request list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -192,7 +194,7 @@ export class IntercampRequestController {
   @ApiOperation({ summary: 'Update Intercamp Request' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
   @ApiBody({ type: UpdateIntercampRequestDto })
-  @ApiOkResponse({ description: 'Intercamp Request updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   async update(@Param('id') id: string, @Body() body: UpdateIntercampRequestDTO) {
@@ -225,7 +227,7 @@ export class IntercampRequestController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Intercamp Request' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
-  @ApiOkResponse({ description: 'Intercamp Request deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Intercamp Request deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   async delete(@Param('id') id: string) {

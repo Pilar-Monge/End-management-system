@@ -14,20 +14,21 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
-
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 import { ExpeditionResourceConsumedService } from './expeditionResourceConsumed.service';
 import type {
   CreateExpeditionResourceConsumedDTO,
   UpdateExpeditionResourceConsumedDTO,
 } from './expeditionResourceConsumed.model';
+import { ExpeditionResourceConsumedEntity } from './expeditionResourceConsumed.entity';
 
 import { CreateExpeditionResourceConsumedDto, UpdateExpeditionResourceConsumedDto } from './dto';
 @Controller('expedition-resources-consumed')
@@ -37,7 +38,7 @@ export class ExpeditionResourceConsumedController {
   @Post()
   @ApiOperation({ summary: 'Create Expedition Resource Consumed' })
   @ApiBody({ type: CreateExpeditionResourceConsumedDto })
-  @ApiCreatedResponse({ description: 'Expedition Resource Consumed created', type: SuccessDataResponseDto })
+    @ApiCreatedResponseData(ExpeditionResourceConsumedEntity, { description: 'Expedition Resource Consumed created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateExpeditionResourceConsumedDTO) {
     try {
@@ -62,7 +63,7 @@ export class ExpeditionResourceConsumedController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Expedition Resource Consumed by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Consumed id' })
-  @ApiOkResponse({ description: 'Expedition Resource Consumed found', type: SuccessDataResponseDto })
+    @ApiOkResponseData(ExpeditionResourceConsumedEntity, { description: 'Expedition Resource Consumed found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   async getById(@Param('id') id: string) {
@@ -78,7 +79,7 @@ export class ExpeditionResourceConsumedController {
   }
   @Get()
   @ApiOperation({ summary: 'List Expedition Resource Consumed' })
-  @ApiOkResponse({ description: 'Expedition Resource Consumed list', type: SuccessListResponseDto })
+    @ApiOkResponseList(ExpeditionResourceConsumedEntity, { description: 'Expedition Resource Consumed list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -170,7 +171,7 @@ export class ExpeditionResourceConsumedController {
   @ApiOperation({ summary: 'Update Expedition Resource Consumed' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Consumed id' })
   @ApiBody({ type: UpdateExpeditionResourceConsumedDto })
-  @ApiOkResponse({ description: 'Expedition Resource Consumed updated', type: SuccessDataResponseDto })
+    @ApiOkResponseData(ExpeditionResourceConsumedEntity, { description: 'Expedition Resource Consumed updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   async update(@Param('id') id: string, @Body() body: UpdateExpeditionResourceConsumedDTO) {
@@ -203,7 +204,7 @@ export class ExpeditionResourceConsumedController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Expedition Resource Consumed' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Consumed id' })
-  @ApiOkResponse({ description: 'Expedition Resource Consumed deleted', type: SuccessMessageResponseDto })
+    @ApiOkResponseMessage({ description: 'Expedition Resource Consumed deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   async delete(@Param('id') id: string) {

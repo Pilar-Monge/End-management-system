@@ -13,13 +13,12 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseList,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { CampAchievementService } from './campAchievement.service';
@@ -27,6 +26,7 @@ import type {
   CreateCampAchievementDTO,
   UpdateCampAchievementDTO,
 } from './campAchievement.model';
+import { CampAchievementEntity } from './campAchievement.entity';
 
 import { CreateCampAchievementDto, UpdateCampAchievementDto } from './dto';
 @Controller('camp-achievements')
@@ -36,7 +36,7 @@ export class CampAchievementController {
   @Post()
   @ApiOperation({ summary: 'Create Camp Achievement' })
   @ApiBody({ type: CreateCampAchievementDto })
-  @ApiCreatedResponse({ description: 'Camp Achievement created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(CampAchievementEntity, { description: 'Camp Achievement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampAchievementDTO) {
     try {
@@ -71,7 +71,7 @@ export class CampAchievementController {
   }
   @Get()
   @ApiOperation({ summary: 'List Camp Achievement' })
-  @ApiOkResponse({ description: 'Camp Achievement list', type: SuccessListResponseDto })
+  @ApiOkResponseList(CampAchievementEntity, { description: 'Camp Achievement list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })

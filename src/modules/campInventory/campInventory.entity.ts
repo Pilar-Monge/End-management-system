@@ -1,11 +1,15 @@
 import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 @Entity({ name: 'camp_inventory' })
 export class CampInventoryEntity {
   @PrimaryColumn({ name: 'camp_id', type: 'int' })
+  @ApiProperty()
   campId!: number;
 
   @PrimaryColumn({ name: 'resource_type_id', type: 'int' })
+  @ApiProperty()
   resourceTypeId!: number;
 
   @Column({
@@ -15,6 +19,7 @@ export class CampInventoryEntity {
     scale: 2,
     default: '0.00',
   })
+  @ApiProperty()
   currentAmount!: string;
 
   @Column({
@@ -24,6 +29,7 @@ export class CampInventoryEntity {
     scale: 2,
     default: '0.00',
   })
+  @ApiProperty()
   minimumAlertAmount!: string;
 
   @UpdateDateColumn({
@@ -31,5 +37,6 @@ export class CampInventoryEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   lastUpdate!: Date;
 }

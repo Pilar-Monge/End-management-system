@@ -13,13 +13,14 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { EvaluatedCriteriaReportService } from './evaluatedCriteriaReport.service';
@@ -27,6 +28,7 @@ import type {
   CreateEvaluatedCriteriaReportDTO,
   UpdateEvaluatedCriteriaReportDTO,
 } from './evaluatedCriteriaReport.model';
+import { EvaluatedCriteriaReportEntity } from './evaluatedCriteriaReport.entity';
 
 import { CreateEvaluatedCriteriaReportDto, UpdateEvaluatedCriteriaReportDto } from './dto';
 @Controller('evaluated-criteria-reports')
@@ -36,7 +38,7 @@ export class EvaluatedCriteriaReportController {
   @Post()
   @ApiOperation({ summary: 'Create Evaluated Criteria Report' })
   @ApiBody({ type: CreateEvaluatedCriteriaReportDto })
-  @ApiCreatedResponse({ description: 'Evaluated Criteria Report created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(EvaluatedCriteriaReportEntity, { description: 'Evaluated Criteria Report created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateEvaluatedCriteriaReportDTO) {
     try {
@@ -55,7 +57,7 @@ export class EvaluatedCriteriaReportController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Evaluated Criteria Report by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Evaluated Criteria Report id' })
-  @ApiOkResponse({ description: 'Evaluated Criteria Report found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(EvaluatedCriteriaReportEntity, { description: 'Evaluated Criteria Report found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Evaluated Criteria Report not found' })
   async getById(@Param('id') id: string) {
@@ -71,7 +73,7 @@ export class EvaluatedCriteriaReportController {
   }
   @Get()
   @ApiOperation({ summary: 'List Evaluated Criteria Report' })
-  @ApiOkResponse({ description: 'Evaluated Criteria Report list', type: SuccessListResponseDto })
+  @ApiOkResponseList(EvaluatedCriteriaReportEntity, { description: 'Evaluated Criteria Report list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
@@ -145,7 +147,7 @@ export class EvaluatedCriteriaReportController {
   @ApiOperation({ summary: 'Update Evaluated Criteria Report' })
   @ApiParam({ name: 'id', type: Number, description: 'Evaluated Criteria Report id' })
   @ApiBody({ type: UpdateEvaluatedCriteriaReportDto })
-  @ApiOkResponse({ description: 'Evaluated Criteria Report updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(EvaluatedCriteriaReportEntity, { description: 'Evaluated Criteria Report updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Evaluated Criteria Report not found' })
   async update(@Param('id') id: string, @Body() body: UpdateEvaluatedCriteriaReportDTO) {
@@ -172,7 +174,7 @@ export class EvaluatedCriteriaReportController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Evaluated Criteria Report' })
   @ApiParam({ name: 'id', type: Number, description: 'Evaluated Criteria Report id' })
-  @ApiOkResponse({ description: 'Evaluated Criteria Report deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Evaluated Criteria Report deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Evaluated Criteria Report not found' })
   async delete(@Param('id') id: string) {

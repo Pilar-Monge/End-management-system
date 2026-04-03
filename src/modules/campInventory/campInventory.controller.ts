@@ -13,13 +13,12 @@ import {
 } from '@nestjs/common';
 
 
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseList,
+} from '../../common/swagger/api-response.decorator';
 
 
 import { CampInventoryService } from './campInventory.service';
@@ -27,6 +26,7 @@ import type {
   CreateCampInventoryDTO,
   UpdateCampInventoryDTO,
 } from './campInventory.model';
+import { CampInventoryEntity } from './campInventory.entity';
 
 import { CreateCampInventoryDto, UpdateCampInventoryDto } from './dto';
 @Controller('camp-inventory')
@@ -36,7 +36,7 @@ export class CampInventoryController {
   @Post()
   @ApiOperation({ summary: 'Create Camp Inventory' })
   @ApiBody({ type: CreateCampInventoryDto })
-  @ApiCreatedResponse({ description: 'Camp Inventory created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(CampInventoryEntity, { description: 'Camp Inventory created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampInventoryDTO) {
     try {
@@ -73,7 +73,7 @@ export class CampInventoryController {
   }
   @Get()
   @ApiOperation({ summary: 'List Camp Inventory' })
-  @ApiOkResponse({ description: 'Camp Inventory list', type: SuccessListResponseDto })
+  @ApiOkResponseList(CampInventoryEntity, { description: 'Camp Inventory list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
