@@ -21,5 +21,4 @@ export class UpdateDeliveredTransferResourceDto {
 
   @ApiPropertyOptional({ nullable: true })
   movementId?: number | null;
-
 }

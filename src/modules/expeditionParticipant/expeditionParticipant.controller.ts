@@ -13,8 +13,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,7 +31,6 @@ import {
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
-
 
 import { ExpeditionParticipantService } from './expeditionParticipant.service';
 import type {
@@ -40,7 +48,10 @@ export class ExpeditionParticipantController {
   @Post()
   @ApiOperation({ summary: 'Create Expedition Participant' })
   @ApiBody({ type: CreateExpeditionParticipantDto })
-  @ApiCreatedResponse({ description: 'Expedition Participant created', type: SuccessDataResponseDto })
+  @ApiCreatedResponse({
+    description: 'Expedition Participant created',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateExpeditionParticipantDTO) {
     try {
@@ -82,7 +93,12 @@ export class ExpeditionParticipantController {
   @ApiOkResponse({ description: 'Expedition Participant list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
     @Query('expedicionId') expedicionId?: string,
@@ -95,7 +111,8 @@ export class ExpeditionParticipantController {
     @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+      const legacyEstado =
+        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
 
       const filters: {
         expeditionId?: number;
@@ -158,9 +175,7 @@ export class ExpeditionParticipantController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error getting expedition participants',
+        error instanceof Error ? error.message : 'Error getting expedition participants',
       );
     }
   }
@@ -192,9 +207,7 @@ export class ExpeditionParticipantController {
       }
 
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error updating expedition participant',
+        error instanceof Error ? error.message : 'Error updating expedition participant',
       );
     }
   }
@@ -220,9 +233,7 @@ export class ExpeditionParticipantController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error deleting expedition participant',
+        error instanceof Error ? error.message : 'Error deleting expedition participant',
       );
     }
   }

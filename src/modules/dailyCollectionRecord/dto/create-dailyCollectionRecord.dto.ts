@@ -2,16 +2,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDailyCollectionRecordDto {
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiProperty()
-  personId!:  number;
+  personId!: number;
 
   @ApiProperty()
-  resourceTypeId!:  number;
+  resourceTypeId!: number;
 
   @ApiProperty()
-  date!:  Date;
+  date!: Date;
 
   @ApiPropertyOptional()
   expectedAmount?: string;
@@ -23,9 +23,8 @@ export class CreateDailyCollectionRecordDto {
   differenceReason?: string | null;
 
   @ApiProperty()
-  recordedBy!:  number;
+  recordedBy!: number;
 
   @ApiPropertyOptional({ nullable: true })
   movementId?: number | null;
-
 }

@@ -4,15 +4,14 @@ import type { ResourceCategory } from '../resourceType.model';
 
 export class CreateResourceTypeDto {
   @ApiProperty()
-  name!:  string;
+  name!: string;
 
   @ApiProperty()
-  unitOfMeasure!:  string;
+  unitOfMeasure!: string;
 
   @ApiProperty()
-  category!:  ResourceCategory;
+  category!: ResourceCategory;
 
   @ApiPropertyOptional({ nullable: true })
   description?: string | null;
-
 }

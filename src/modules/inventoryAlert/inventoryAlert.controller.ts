@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -21,7 +30,6 @@ import {
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
-
 
 import { InventoryAlertService } from './inventoryAlert.service';
 import type { CreateInventoryAlertDTO, UpdateInventoryAlertDTO } from './inventoryAlert.model';
@@ -75,7 +83,12 @@ export class InventoryAlertController {
   @ApiOkResponse({ description: 'Inventory Alert list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('campId') campId?: string,
     @Query('campamentoId') campamentoId?: string,
@@ -88,7 +101,10 @@ export class InventoryAlertController {
     @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+      const legacyCampamentoId =
+        typeof req?.query?.campamentoId === 'string'
+          ? (req.query.campamentoId as string)
+          : undefined;
 
       const filters: {
         campId?: number;

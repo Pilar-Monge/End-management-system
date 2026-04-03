@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,12 +31,8 @@ import {
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
 
-
 import { TransferHistoryService } from './transferHistory.service';
-import type {
-  CreateTransferHistoryDTO,
-  UpdateTransferHistoryDTO,
-} from './transferHistory.model';
+import type { CreateTransferHistoryDTO, UpdateTransferHistoryDTO } from './transferHistory.model';
 import type { TransferStatus } from '../transfer/transfer.model';
 
 import { CreateTransferHistoryDto, UpdateTransferHistoryDto } from './dto';
@@ -77,7 +82,12 @@ export class TransferHistoryController {
   @ApiOkResponse({ description: 'Transfer History list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('transferenciaId') transferenciaId?: string,
@@ -92,7 +102,8 @@ export class TransferHistoryController {
     @Req() req?: any,
   ) {
     try {
-      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
+      const legacyUsuarioId =
+        typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
 
       const filters: {
         transferId?: number;

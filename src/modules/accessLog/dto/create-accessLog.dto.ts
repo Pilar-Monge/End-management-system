@@ -7,13 +7,13 @@ export class CreateAccessLogDto {
   sessionId?: number | null;
 
   @ApiProperty()
-  userId!:  number;
+  userId!: number;
 
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiProperty()
-  eventType!:  AccessLogEventType;
+  eventType!: AccessLogEventType;
 
   @ApiPropertyOptional()
   eventDate?: Date;
@@ -23,5 +23,4 @@ export class CreateAccessLogDto {
 
   @ApiPropertyOptional({ nullable: true })
   detail?: string | null;
-
 }

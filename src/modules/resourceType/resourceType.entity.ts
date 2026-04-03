@@ -1,9 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
-import {
-  RESOURCE_CATEGORY_VALUES,
-  type ResourceCategory,
-} from './resourceType.model';
+import { RESOURCE_CATEGORY_VALUES, type ResourceCategory } from './resourceType.model';
 
 @Entity({ name: 'resource_type' })
 @Unique('uq_tipo_recurso_nombre', ['name'])

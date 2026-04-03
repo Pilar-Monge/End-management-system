@@ -4,12 +4,9 @@ import {
   CreateAdmissionRequestDTO,
   UpdateAdmissionRequestDTO,
   AdmissionRequest,
-  AdmissionRequestStatus
+  AdmissionRequestStatus,
 } from './admissionRequest.model';
-import {
-  buildAdmissionFeatures,
-  type AdmissionFeatureVector,
-} from './admissionFeatures.util';
+import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admissionFeatures.util';
 
 @Injectable()
 export class AdmissionRequestService {
@@ -21,7 +18,7 @@ export class AdmissionRequestService {
 
   async createRequest(data: CreateAdmissionRequestDTO): Promise<AdmissionRequest> {
     const existingRequest = await this.repository.findByEmail(data.email);
-    
+
     if (existingRequest) {
       throw new Error('A request with this email already exists');
     }
@@ -32,11 +29,11 @@ export class AdmissionRequestService {
 
   async getRequestById(id: number): Promise<AdmissionRequest> {
     const request = await this.repository.findById(id);
-    
+
     if (!request) {
       throw new Error('Request not found');
     }
-    
+
     return request;
   }
 
@@ -57,7 +54,7 @@ export class AdmissionRequestService {
       offset: number;
     } = {
       limit,
-      offset
+      offset,
     };
 
     if (filters?.campId !== undefined) {
@@ -72,10 +69,7 @@ export class AdmissionRequestService {
 
     let total = 0;
     if (filters?.campId && filters?.status) {
-      total = await this.repository.countByCampAndStatus(
-        filters.campId, 
-        filters.status
-      );
+      total = await this.repository.countByCampAndStatus(filters.campId, filters.status);
     } else {
       total = data.length;
     }
@@ -85,7 +79,7 @@ export class AdmissionRequestService {
 
   async updateRequest(id: number, data: UpdateAdmissionRequestDTO): Promise<AdmissionRequest> {
     const existingRequest = await this.repository.findById(id);
-    
+
     if (!existingRequest) {
       throw new Error('Request not found');
     }
@@ -99,17 +93,17 @@ export class AdmissionRequestService {
 
     const normalizedData = this.normalizeAiFieldsForUpdate(data, existingRequest);
     const updatedRequest = await this.repository.update(id, normalizedData);
-    
+
     if (!updatedRequest) {
       throw new Error('Error updating request');
     }
-    
+
     return updatedRequest;
   }
 
   async deleteRequest(id: number): Promise<void> {
     const existingRequest = await this.repository.findById(id);
-    
+
     if (!existingRequest) {
       throw new Error('Request not found');
     }
@@ -119,7 +113,7 @@ export class AdmissionRequestService {
     }
 
     const deleted = await this.repository.delete(id);
-    
+
     if (!deleted) {
       throw new Error('Error deleting request');
     }
@@ -131,7 +125,7 @@ export class AdmissionRequestService {
     decision: 'ACCEPT' | 'REJECT',
   ): Promise<AdmissionRequest> {
     const request = await this.repository.findById(id);
-    
+
     if (!request) {
       throw new Error('Request not found');
     }
@@ -142,28 +136,26 @@ export class AdmissionRequestService {
 
     const updateData: UpdateAdmissionRequestDTO = {
       suggestedOccupationId,
-      status: decision === 'ACCEPT' 
-        ? 'PENDING_ADMIN' 
-        : 'REJECTED'
+      status: decision === 'ACCEPT' ? 'PENDING_ADMIN' : 'REJECTED',
     };
 
     const updatedRequest = await this.repository.update(id, updateData);
-    
+
     if (!updatedRequest) {
       throw new Error('Error processing request with AI');
     }
-    
+
     return updatedRequest;
   }
 
   async reviewByAdmin(
-    id: number, 
-    adminUserId: number, 
-    approved: boolean, 
-    rejectionReason?: string
+    id: number,
+    adminUserId: number,
+    approved: boolean,
+    rejectionReason?: string,
   ): Promise<AdmissionRequest> {
     const request = await this.repository.findById(id);
-    
+
     if (!request) {
       throw new Error('Request not found');
     }
@@ -176,22 +168,22 @@ export class AdmissionRequestService {
       reviewedBy: adminUserId,
       reviewDate: new Date(),
       status: approved ? 'APPROVED' : 'REJECTED',
-      rejectionReason: approved ? null : (rejectionReason || 'Request rejected')
+      rejectionReason: approved ? null : rejectionReason || 'Request rejected',
     };
 
     const updatedRequest = await this.repository.update(id, updateData);
-    
+
     if (!updatedRequest) {
       throw new Error('Error reviewing request');
     }
-    
+
     return updatedRequest;
   }
 
   async getPendingByCamp(campId: number): Promise<AdmissionRequest[]> {
     return await this.repository.findAll({
       campId,
-      status: 'PENDING_ADMIN'
+      status: 'PENDING_ADMIN',
     });
   }
 
@@ -226,8 +218,7 @@ export class AdmissionRequestService {
     return {
       ...data,
       healthLevelScore: data.healthLevelScore ?? features.health_level_score,
-      physicalConditionScore:
-        data.physicalConditionScore ?? features.physical_condition_score,
+      physicalConditionScore: data.physicalConditionScore ?? features.physical_condition_score,
       experienceYears: data.experienceYears ?? features.experience_years,
       skillsScore: data.skillsScore ?? features.skills_score,
     };
@@ -252,8 +243,7 @@ export class AdmissionRequestService {
       declaredSkills: data.declaredSkills ?? existingRequest.declaredSkills,
       campId: data.campId ?? existingRequest.campId,
       healthLevelScore: data.healthLevelScore ?? existingRequest.healthLevelScore,
-      physicalConditionScore:
-        data.physicalConditionScore ?? existingRequest.physicalConditionScore,
+      physicalConditionScore: data.physicalConditionScore ?? existingRequest.physicalConditionScore,
       experienceYears: data.experienceYears ?? existingRequest.experienceYears,
       skillsScore: data.skillsScore ?? existingRequest.skillsScore,
     };
@@ -263,8 +253,7 @@ export class AdmissionRequestService {
     return {
       ...data,
       healthLevelScore: data.healthLevelScore ?? features.health_level_score,
-      physicalConditionScore:
-        data.physicalConditionScore ?? features.physical_condition_score,
+      physicalConditionScore: data.physicalConditionScore ?? features.physical_condition_score,
       experienceYears: data.experienceYears ?? features.experience_years,
       skillsScore: data.skillsScore ?? features.skills_score,
     };

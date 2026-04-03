@@ -4,16 +4,16 @@ import type { SessionStatus } from '../session.model';
 
 export class CreateSessionDto {
   @ApiProperty()
-  token!:  string;
+  token!: string;
 
   @ApiProperty()
-  userId!:  number;
+  userId!: number;
 
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiProperty()
-  expirationDate!:  Date;
+  expirationDate!: Date;
 
   @ApiPropertyOptional()
   startDate?: Date;
@@ -26,5 +26,4 @@ export class CreateSessionDto {
 
   @ApiPropertyOptional()
   status?: SessionStatus;
-
 }

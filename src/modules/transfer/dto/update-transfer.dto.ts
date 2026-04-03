@@ -32,5 +32,4 @@ export class UpdateTransferDto {
 
   @ApiPropertyOptional({ nullable: true })
   receptionNotes?: string | null;
-
 }

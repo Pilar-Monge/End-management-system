@@ -4,16 +4,16 @@ import type { InventoryMovementType } from '../inventoryMovement.model';
 
 export class CreateInventoryMovementDto {
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiProperty()
-  resourceTypeId!:  number;
+  resourceTypeId!: number;
 
   @ApiProperty()
-  amount!:  string;
+  amount!: string;
 
   @ApiProperty()
-  movementType!:  InventoryMovementType;
+  movementType!: InventoryMovementType;
 
   @ApiPropertyOptional({ nullable: true })
   sourceId?: number | null;
@@ -22,12 +22,11 @@ export class CreateInventoryMovementDto {
   sourceType?: string | null;
 
   @ApiProperty()
-  recordedBy!:  number;
+  recordedBy!: number;
 
   @ApiPropertyOptional()
   date?: Date;
 
   @ApiPropertyOptional({ nullable: true })
   description?: string | null;
-
 }

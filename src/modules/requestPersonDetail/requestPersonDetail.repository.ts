@@ -82,7 +82,10 @@ export class RequestPersonDetailRepository {
     return { data, total };
   }
 
-  async update(id: number, data: UpdateRequestPersonDetailDTO): Promise<RequestPersonDetail | null> {
+  async update(
+    id: number,
+    data: UpdateRequestPersonDetailDTO,
+  ): Promise<RequestPersonDetail | null> {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
 

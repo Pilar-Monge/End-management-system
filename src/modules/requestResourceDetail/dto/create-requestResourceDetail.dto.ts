@@ -2,15 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRequestResourceDetailDto {
   @ApiProperty()
-  requestId!:  number;
+  requestId!: number;
 
   @ApiProperty()
-  resourceTypeId!:  number;
+  resourceTypeId!: number;
 
   @ApiProperty()
-  requestedAmount!:  string;
+  requestedAmount!: string;
 
   @ApiPropertyOptional({ nullable: true })
   approvedAmount?: string | null;
-
 }

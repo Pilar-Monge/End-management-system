@@ -18,5 +18,4 @@ export class UpdateExpeditionResourceConsumedDto {
 
   @ApiPropertyOptional({ nullable: true })
   movementId?: number | null;
-
 }

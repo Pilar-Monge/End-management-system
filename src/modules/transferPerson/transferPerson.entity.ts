@@ -1,9 +1,6 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
-import {
-  PERSON_TRANSFER_STATUS_VALUES,
-  type PersonTransferStatus,
-} from './transferPerson.model';
+import { PERSON_TRANSFER_STATUS_VALUES, type PersonTransferStatus } from './transferPerson.model';
 
 @Entity({ name: 'transfer_person' })
 @Unique('uq_transfer_person', ['transferId', 'personId'])

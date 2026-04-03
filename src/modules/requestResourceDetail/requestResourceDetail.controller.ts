@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -21,7 +30,6 @@ import {
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
-
 
 import { RequestResourceDetailService } from './requestResourceDetail.service';
 import type {
@@ -38,7 +46,10 @@ export class RequestResourceDetailController {
   @Post()
   @ApiOperation({ summary: 'Create Request Resource Detail' })
   @ApiBody({ type: CreateRequestResourceDetailDto })
-  @ApiCreatedResponse({ description: 'Request Resource Detail created', type: SuccessDataResponseDto })
+  @ApiCreatedResponse({
+    description: 'Request Resource Detail created',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestResourceDetailDTO) {
     try {
@@ -50,9 +61,7 @@ export class RequestResourceDetailController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error creating request resource detail',
+        error instanceof Error ? error.message : 'Error creating request resource detail',
       );
     }
   }
@@ -78,7 +87,12 @@ export class RequestResourceDetailController {
   @ApiOkResponse({ description: 'Request Resource Detail list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('solicitudId') solicitudId?: string,
@@ -143,9 +157,7 @@ export class RequestResourceDetailController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error getting request resource details',
+        error instanceof Error ? error.message : 'Error getting request resource details',
       );
     }
   }
@@ -173,16 +185,17 @@ export class RequestResourceDetailController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error updating request resource detail',
+        error instanceof Error ? error.message : 'Error updating request resource detail',
       );
     }
   }
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
-  @ApiOkResponse({ description: 'Request Resource Detail deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponse({
+    description: 'Request Resource Detail deleted',
+    type: SuccessMessageResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async delete(@Param('id') id: string) {
@@ -201,9 +214,7 @@ export class RequestResourceDetailController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error deleting request resource detail',
+        error instanceof Error ? error.message : 'Error deleting request resource detail',
       );
     }
   }

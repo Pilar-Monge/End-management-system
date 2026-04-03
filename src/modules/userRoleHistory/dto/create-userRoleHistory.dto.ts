@@ -4,21 +4,20 @@ import type { SystemRole } from '../../systemUser/systemUser.model';
 
 export class CreateUserRoleHistoryDto {
   @ApiProperty()
-  userId!:  number;
+  userId!: number;
 
   @ApiProperty()
-  previousRole!:  SystemRole;
+  previousRole!: SystemRole;
 
   @ApiProperty()
-  newRole!:  SystemRole;
+  newRole!: SystemRole;
 
   @ApiProperty()
-  changedBy!:  number;
+  changedBy!: number;
 
   @ApiPropertyOptional({ nullable: true })
   reason?: string | null;
 
   @ApiPropertyOptional()
   changeDate?: Date;
-
 }

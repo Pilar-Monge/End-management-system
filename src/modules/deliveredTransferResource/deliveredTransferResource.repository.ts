@@ -16,9 +16,7 @@ export class DeliveredTransferResourceRepository {
     private readonly repo: Repository<DeliveredTransferResourceEntity>,
   ) {}
 
-  async create(
-    data: CreateDeliveredTransferResourceDTO,
-  ): Promise<DeliveredTransferResource> {
+  async create(data: CreateDeliveredTransferResourceDTO): Promise<DeliveredTransferResource> {
     const entity = this.repo.create({
       transferId: data.transferId,
       resourceTypeId: data.resourceTypeId,

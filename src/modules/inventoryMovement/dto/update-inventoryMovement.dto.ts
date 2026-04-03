@@ -29,5 +29,4 @@ export class UpdateInventoryMovementDto {
 
   @ApiPropertyOptional({ nullable: true })
   description?: string | null;
-
 }

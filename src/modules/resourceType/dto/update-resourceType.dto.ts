@@ -14,5 +14,4 @@ export class UpdateResourceTypeDto {
 
   @ApiPropertyOptional({ nullable: true })
   description?: string | null;
-
 }

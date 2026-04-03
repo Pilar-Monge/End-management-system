@@ -1,9 +1,6 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
-import {
-  PARTICIPANT_STATUS_VALUES,
-  type ParticipantStatus,
-} from './expeditionParticipant.model';
+import { PARTICIPANT_STATUS_VALUES, type ParticipantStatus } from './expeditionParticipant.model';
 
 @Entity({ name: 'expedition_participant' })
 @Unique('uq_expedition_participant', ['expeditionId', 'personId'])

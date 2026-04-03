@@ -80,7 +80,9 @@ export class AdmissionRequestController {
         message: 'Request created successfully',
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating request');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error creating request',
+      );
     }
   }
 
@@ -108,10 +110,25 @@ export class AdmissionRequestController {
   }
 
   @Get()
-  @ApiQuery({ name: 'campId', required: false, type: String, description: 'Camp ID (legacy alias: campamentoId)' })
-  @ApiQuery({ name: 'status', required: false, enum: ADMISSION_REQUEST_STATUS_VALUES, description: 'Request status (legacy alias: estado)' })
+  @ApiQuery({
+    name: 'campId',
+    required: false,
+    type: String,
+    description: 'Camp ID (legacy alias: campamentoId)',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ADMISSION_REQUEST_STATUS_VALUES,
+    description: 'Request status (legacy alias: estado)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   @ApiOperation({ summary: 'List admission requests' })
   @ApiOkResponse({ description: 'Admission requests list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -131,11 +148,15 @@ export class AdmissionRequestController {
       } = {};
 
       const legacyCampamentoId =
-        typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+        typeof req?.query?.campamentoId === 'string'
+          ? (req.query.campamentoId as string)
+          : undefined;
 
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+      const legacyEstado =
+        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
       const legacyStatus =
-        legacyEstado && (ADMISSION_REQUEST_STATUS_VALUES as readonly string[]).includes(legacyEstado)
+        legacyEstado &&
+        (ADMISSION_REQUEST_STATUS_VALUES as readonly string[]).includes(legacyEstado)
           ? (legacyEstado as AdmissionRequestStatus)
           : undefined;
 
@@ -165,7 +186,9 @@ export class AdmissionRequestController {
         },
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error getting requests');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error getting requests',
+      );
     }
   }
 
@@ -189,7 +212,9 @@ export class AdmissionRequestController {
         message: 'Request updated successfully',
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error updating request');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error updating request',
+      );
     }
   }
 
@@ -211,7 +236,9 @@ export class AdmissionRequestController {
         message: 'Request deleted successfully',
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error deleting request');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error deleting request',
+      );
     }
   }
 
@@ -221,10 +248,7 @@ export class AdmissionRequestController {
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
   @ApiOkResponse({ description: 'Admission request processed by AI', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  async processWithAI(
-    @Param('id') id: string,
-    @Body() body: ProcessAiAdmissionRequestDto,
-  ) {
+  async processWithAI(@Param('id') id: string, @Body() body: ProcessAiAdmissionRequestDto) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -240,7 +264,9 @@ export class AdmissionRequestController {
         message: `Request processed by AI: ${decision}`,
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error processing with AI');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error processing with AI',
+      );
     }
   }
 
@@ -248,12 +274,12 @@ export class AdmissionRequestController {
   @ApiOperation({ summary: 'Review an admission request by admin' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: ReviewAdmissionRequestDto })
-  @ApiOkResponse({ description: 'Admission request reviewed by admin', type: SuccessDataResponseDto })
+  @ApiOkResponse({
+    description: 'Admission request reviewed by admin',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  async reviewByAdmin(
-    @Param('id') id: string,
-    @Body() body: ReviewAdmissionRequestDto,
-  ) {
+  async reviewByAdmin(@Param('id') id: string, @Body() body: ReviewAdmissionRequestDto) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -274,7 +300,9 @@ export class AdmissionRequestController {
         message: `Request ${approved ? 'approved' : 'rejected'} by admin`,
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error in admin review');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error in admin review',
+      );
     }
   }
 
@@ -297,7 +325,9 @@ export class AdmissionRequestController {
         count: requests.length,
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error getting pending requests');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error getting pending requests',
+      );
     }
   }
 }

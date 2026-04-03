@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { UserRepository } from "./systemUser.repository";
-import { User, CreateUserDTO, UserResponse } from "./systemUser.model";
-import { EncryptionService } from "../../services/encryption.service";
+import { UserRepository } from './systemUser.repository';
+import { User, CreateUserDTO, UserResponse } from './systemUser.model';
+import { EncryptionService } from '../../services/encryption.service';
 
 @Injectable()
 export class UserService {
@@ -9,7 +9,7 @@ export class UserService {
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
     const passwordHash = await EncryptionService.hashPassword(data.password);
-    
+
     const user = await this.userRepo.create({
       personId: data.personId,
       requestId: data.requestId,
@@ -17,7 +17,7 @@ export class UserService {
       passwordHash: passwordHash,
       email: data.email,
       role: data.role || 'VISITOR',
-      campId: data.campId
+      campId: data.campId,
     });
 
     const { passwordHash: _, ...userResponse } = user;
@@ -32,7 +32,7 @@ export class UserService {
   async findUserById(id: number): Promise<UserResponse | null> {
     const user = await this.userRepo.findById(id);
     if (!user) return null;
-    
+
     const { passwordHash: _, ...userResponse } = user;
     return userResponse;
   }
@@ -46,17 +46,17 @@ export class UserService {
     data: Partial<Omit<CreateUserDTO, 'password'>> & { password?: string },
   ): Promise<UserResponse | null> {
     let passwordHash: string | undefined;
-    
+
     if (data.password) {
       passwordHash = await EncryptionService.hashPassword(data.password);
     }
 
     const updateData: any = { ...data };
     delete updateData.password;
-    
+
     const user = await this.userRepo.update(id, {
       ...updateData,
-      passwordHash
+      passwordHash,
     });
 
     if (!user) return null;
@@ -75,7 +75,7 @@ export class UserService {
 
   async changeUserRole(id: number, newRole: User['role']): Promise<UserResponse | null> {
     const user = await this.userRepo.update(id, { role: newRole });
-    
+
     if (!user) return null;
 
     const { passwordHash: _, ...userResponse } = user;
@@ -84,7 +84,7 @@ export class UserService {
 
   async toggleUserStatus(id: number, newStatus: User['status']): Promise<UserResponse | null> {
     const user = await this.userRepo.update(id, { status: newStatus });
-    
+
     if (!user) return null;
 
     const { passwordHash: _, ...userResponse } = user;

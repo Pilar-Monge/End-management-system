@@ -44,5 +44,4 @@ export class UpdatePersonDto {
 
   @ApiPropertyOptional({ nullable: true })
   occupationId?: number | null;
-
 }

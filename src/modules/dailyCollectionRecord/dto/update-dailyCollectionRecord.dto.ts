@@ -27,5 +27,4 @@ export class UpdateDailyCollectionRecordDto {
 
   @ApiPropertyOptional({ nullable: true })
   movementId?: number | null;
-
 }

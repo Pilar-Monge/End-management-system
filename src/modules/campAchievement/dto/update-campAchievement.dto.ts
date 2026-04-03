@@ -9,5 +9,4 @@ export class UpdateCampAchievementDto {
 
   @ApiPropertyOptional({ nullable: true })
   unlockContext?: string | null;
-
 }

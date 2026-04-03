@@ -12,7 +12,6 @@ import { CampModule } from './modules/camp/camp.module';
 import { CampAchievementModule } from './modules/campAchievement/campAchievement.module';
 import { CampInventoryModule } from './modules/campInventory/campInventory.module';
 import { DailyCollectionRecordModule } from './modules/dailyCollectionRecord/dailyCollectionRecord.module';
-import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
 import { ExpeditionModule } from './modules/expedition/expedition.module';
 import { ExpeditionParticipantModule } from './modules/expeditionParticipant/expeditionParticipant.module';
 import { ExpeditionResourceConsumedModule } from './modules/expeditionResourceConsumed/expeditionResourceConsumed.module';
@@ -92,7 +91,6 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     InventoryMovementModule,
     InventoryAlertModule,
     DailyCollectionRecordModule,
-    DecisionTreeModule,
     IntercampRequestModule,
     RequestResourceDetailModule,
     RequestPersonDetailModule,

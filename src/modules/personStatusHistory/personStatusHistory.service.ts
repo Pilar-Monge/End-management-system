@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
@@ -123,7 +128,10 @@ export class PersonStatusHistoryService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
-  async updateEntry(id: number, data: UpdatePersonStatusHistoryDTO): Promise<PersonStatusHistory | null> {
+  async updateEntry(
+    id: number,
+    data: UpdatePersonStatusHistoryDTO,
+  ): Promise<PersonStatusHistory | null> {
     const existing = await this.repository.findById(id);
     if (!existing) {
       return null;

@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -68,7 +73,9 @@ export class ExpeditionResourceConsumedService {
     }
 
     if (movement.resourceTypeId !== resourceTypeId) {
-      throw new BadRequestException('Movement resource type does not match provided resourceTypeId');
+      throw new BadRequestException(
+        'Movement resource type does not match provided resourceTypeId',
+      );
     }
   }
 

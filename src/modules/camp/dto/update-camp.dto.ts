@@ -32,5 +32,4 @@ export class UpdateCampDto {
 
   @ApiPropertyOptional()
   stockAlertThresholdPercentage?: string;
-
 }

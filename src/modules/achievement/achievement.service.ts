@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { AchievementRepository } from './achievement.repository';
-import type {
-  Achievement,
-  CreateAchievementDTO,
-  UpdateAchievementDTO,
-} from './achievement.model';
+import type { Achievement, CreateAchievementDTO, UpdateAchievementDTO } from './achievement.model';
 
 @Injectable()
 export class AchievementService {

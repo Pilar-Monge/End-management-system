@@ -2,21 +2,20 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateExpeditionResourceConsumedDto {
   @ApiProperty()
-  expeditionId!:  number;
+  expeditionId!: number;
 
   @ApiProperty()
-  resourceTypeId!:  number;
+  resourceTypeId!: number;
 
   @ApiProperty()
-  amount!:  string;
+  amount!: string;
 
   @ApiProperty()
-  recordedBy!:  number;
+  recordedBy!: number;
 
   @ApiPropertyOptional()
   recordDate?: Date;
 
   @ApiPropertyOptional({ nullable: true })
   movementId?: number | null;
-
 }

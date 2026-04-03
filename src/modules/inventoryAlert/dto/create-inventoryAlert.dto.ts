@@ -2,13 +2,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateInventoryAlertDto {
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiProperty()
-  resourceTypeId!:  number;
+  resourceTypeId!: number;
 
   @ApiProperty()
-  amountAtAlertGeneration!:  string;
+  amountAtAlertGeneration!: string;
 
   @ApiPropertyOptional({ nullable: true })
   movementId?: number | null;
@@ -24,5 +24,4 @@ export class CreateInventoryAlertDto {
 
   @ApiPropertyOptional({ nullable: true })
   resolvedBy?: number | null;
-
 }

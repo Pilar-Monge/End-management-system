@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,12 +31,8 @@ import {
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
 
-
 import { CampInventoryService } from './campInventory.service';
-import type {
-  CreateCampInventoryDTO,
-  UpdateCampInventoryDTO,
-} from './campInventory.model';
+import type { CreateCampInventoryDTO, UpdateCampInventoryDTO } from './campInventory.model';
 
 import { CreateCampInventoryDto, UpdateCampInventoryDto } from './dto';
 @Controller('camp-inventory')
@@ -57,10 +62,7 @@ export class CampInventoryController {
 
   @Get(':campId/:resourceTypeId')
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
-  async getByKey(
-    @Param('campId') campId: string,
-    @Param('resourceTypeId') resourceTypeId: string,
-  ) {
+  async getByKey(@Param('campId') campId: string, @Param('resourceTypeId') resourceTypeId: string) {
     const parsedCampId = Number.parseInt(campId, 10);
     if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
 
@@ -80,7 +82,12 @@ export class CampInventoryController {
   @ApiOkResponse({ description: 'Camp Inventory list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('campamentoId') campamentoId?: string,
     @Query('campId') campId?: string,
@@ -91,7 +98,10 @@ export class CampInventoryController {
     @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+      const legacyCampamentoId =
+        typeof req?.query?.campamentoId === 'string'
+          ? (req.query.campamentoId as string)
+          : undefined;
 
       const filters: {
         campId?: number;
@@ -186,10 +196,7 @@ export class CampInventoryController {
 
   @Delete(':campId/:resourceTypeId')
   @Roles('SYSTEM_ADMIN')
-  async delete(
-    @Param('campId') campId: string,
-    @Param('resourceTypeId') resourceTypeId: string,
-  ) {
+  async delete(@Param('campId') campId: string, @Param('resourceTypeId') resourceTypeId: string) {
     const parsedCampId = Number.parseInt(campId, 10);
     if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
 

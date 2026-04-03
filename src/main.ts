@@ -28,7 +28,7 @@ async function bootstrap(): Promise<void> {
       .setDescription('API for the camp management system')
       .setVersion('1.0')
       .build();
-      
+
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('docs', app, document, { useGlobalPrefix: true });
   }

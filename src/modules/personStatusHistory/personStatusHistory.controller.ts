@@ -13,8 +13,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,7 +31,6 @@ import {
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
-
 
 import { PersonStatusHistoryService } from './personStatusHistory.service';
 import type {
@@ -40,7 +48,10 @@ export class PersonStatusHistoryController {
   @Post()
   @ApiOperation({ summary: 'Create Person Status History' })
   @ApiBody({ type: CreatePersonStatusHistoryDto })
-  @ApiCreatedResponse({ description: 'Person Status History created', type: SuccessDataResponseDto })
+  @ApiCreatedResponse({
+    description: 'Person Status History created',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreatePersonStatusHistoryDTO) {
     try {
@@ -82,7 +93,12 @@ export class PersonStatusHistoryController {
   @ApiOkResponse({ description: 'Person Status History list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('personId') personId?: string,
     @Query('personaId') personaId?: string,

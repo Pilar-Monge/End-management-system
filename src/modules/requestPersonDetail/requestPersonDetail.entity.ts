@@ -17,10 +17,7 @@ import {
   )`,
 )
 @Check('chk_request_person_amount', `"amount" > 0`)
-@Check(
-  'chk_request_person_specific_amount',
-  `"detail_type" = 'BY_OCCUPATION' OR "amount" = 1`,
-)
+@Check('chk_request_person_specific_amount', `"detail_type" = 'BY_OCCUPATION' OR "amount" = 1`)
 export class RequestPersonDetailEntity {
   @PrimaryGeneratedColumn()
   id!: number;

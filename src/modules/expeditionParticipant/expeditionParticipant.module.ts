@@ -10,11 +10,7 @@ import { ExpeditionParticipantService } from './expeditionParticipant.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      ExpeditionParticipantEntity,
-      ExpeditionEntity,
-      PersonEntity,
-    ]),
+    TypeOrmModule.forFeature([ExpeditionParticipantEntity, ExpeditionEntity, PersonEntity]),
   ],
   controllers: [ExpeditionParticipantController],
   providers: [ExpeditionParticipantRepository, ExpeditionParticipantService],

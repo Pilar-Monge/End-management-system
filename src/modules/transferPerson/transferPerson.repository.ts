@@ -75,10 +75,7 @@ export class TransferPersonRepository {
     return { data, total };
   }
 
-  async update(
-    id: number,
-    data: UpdateTransferPersonDTO,
-  ): Promise<TransferPerson | null> {
+  async update(id: number, data: UpdateTransferPersonDTO): Promise<TransferPerson | null> {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
 

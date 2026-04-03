@@ -13,8 +13,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,7 +31,6 @@ import {
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
-
 
 import { ExpeditionResourceObtainedService } from './expeditionResourceObtained.service';
 import type {
@@ -39,7 +47,10 @@ export class ExpeditionResourceObtainedController {
   @Post()
   @ApiOperation({ summary: 'Create Expedition Resource Obtained' })
   @ApiBody({ type: CreateExpeditionResourceObtainedDto })
-  @ApiCreatedResponse({ description: 'Expedition Resource Obtained created', type: SuccessDataResponseDto })
+  @ApiCreatedResponse({
+    description: 'Expedition Resource Obtained created',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateExpeditionResourceObtainedDTO) {
     try {
@@ -64,7 +75,10 @@ export class ExpeditionResourceObtainedController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Expedition Resource Obtained by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Obtained id' })
-  @ApiOkResponse({ description: 'Expedition Resource Obtained found', type: SuccessDataResponseDto })
+  @ApiOkResponse({
+    description: 'Expedition Resource Obtained found',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
   async getById(@Param('id') id: string) {
@@ -83,7 +97,12 @@ export class ExpeditionResourceObtainedController {
   @ApiOkResponse({ description: 'Expedition Resource Obtained list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
     @Query('expedicionId') expedicionId?: string,
@@ -172,7 +191,10 @@ export class ExpeditionResourceObtainedController {
   @ApiOperation({ summary: 'Update Expedition Resource Obtained' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Obtained id' })
   @ApiBody({ type: UpdateExpeditionResourceObtainedDto })
-  @ApiOkResponse({ description: 'Expedition Resource Obtained updated', type: SuccessDataResponseDto })
+  @ApiOkResponse({
+    description: 'Expedition Resource Obtained updated',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
   async update(@Param('id') id: string, @Body() body: UpdateExpeditionResourceObtainedDTO) {
@@ -205,7 +227,10 @@ export class ExpeditionResourceObtainedController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Expedition Resource Obtained' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Obtained id' })
-  @ApiOkResponse({ description: 'Expedition Resource Obtained deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponse({
+    description: 'Expedition Resource Obtained deleted',
+    type: SuccessMessageResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
   async delete(@Param('id') id: string) {

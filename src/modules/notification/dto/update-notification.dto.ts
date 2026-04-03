@@ -36,5 +36,4 @@ export class UpdateNotificationDto {
 
   @ApiPropertyOptional({ nullable: true })
   sourceId?: number | null;
-
 }

@@ -4,13 +4,13 @@ import type { CampStatus } from '../camp.model';
 
 export class CreateCampDto {
   @ApiProperty()
-  name!:  string;
+  name!: string;
 
   @ApiProperty()
-  latitude!:  string;
+  latitude!: string;
 
   @ApiProperty()
-  longitude!:  string;
+  longitude!: string;
 
   @ApiPropertyOptional({ nullable: true })
   description?: string | null;
@@ -19,7 +19,7 @@ export class CreateCampDto {
   status?: CampStatus;
 
   @ApiProperty()
-  foundationDate!:  Date;
+  foundationDate!: Date;
 
   @ApiPropertyOptional()
   maxPersonCapacity?: number;
@@ -32,5 +32,4 @@ export class CreateCampDto {
 
   @ApiPropertyOptional()
   stockAlertThresholdPercentage?: string;
-
 }

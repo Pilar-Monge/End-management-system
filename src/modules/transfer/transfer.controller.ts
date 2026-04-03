@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -23,11 +32,7 @@ import {
 import { Roles } from '../../common/decorators';
 
 import { TransferService } from './transfer.service';
-import type {
-  CreateTransferDTO,
-  TransferStatus,
-  UpdateTransferDTO,
-} from './transfer.model';
+import type { CreateTransferDTO, TransferStatus, UpdateTransferDTO } from './transfer.model';
 
 import { CreateTransferDto, UpdateTransferDto } from './dto';
 @Controller('transfers')
@@ -78,7 +83,12 @@ export class TransferController {
   @ApiOkResponse({ description: 'Transfer list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('solicitudId') solicitudId?: string,
@@ -89,7 +99,8 @@ export class TransferController {
     @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+      const legacyEstado =
+        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
 
       const filters: {
         requestId?: number;

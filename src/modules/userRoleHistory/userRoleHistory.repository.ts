@@ -63,10 +63,7 @@ export class UserRoleHistoryRepository {
     return { data, total };
   }
 
-  async update(
-    id: number,
-    data: UpdateUserRoleHistoryDTO,
-  ): Promise<UserRoleHistory | null> {
+  async update(id: number, data: UpdateUserRoleHistoryDTO): Promise<UserRoleHistory | null> {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
 

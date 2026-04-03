@@ -4,21 +4,20 @@ import type { AiDecision } from '../aiAdmissionReport.model';
 
 export class CreateAiAdmissionReportDto {
   @ApiProperty()
-  requestId!:  number;
+  requestId!: number;
 
   @ApiProperty()
-  submittedData!:  unknown;
+  submittedData!: unknown;
 
   @ApiProperty()
-  aiResponse!:  unknown;
+  aiResponse!: unknown;
 
   @ApiProperty()
-  aiDecision!:  AiDecision;
+  aiDecision!: AiDecision;
 
   @ApiPropertyOptional({ nullable: true })
   aiJustification?: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   suggestedOccupationId?: number | null;
-
 }

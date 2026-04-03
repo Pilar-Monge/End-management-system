@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTemporaryOccupationAssignmentDto {
   @ApiProperty()
-  personId!:  number;
+  personId!: number;
 
   @ApiProperty()
-  temporaryOccupationId!:  number;
+  temporaryOccupationId!: number;
 
   @ApiPropertyOptional()
   startDate?: Date;
@@ -14,9 +14,8 @@ export class CreateTemporaryOccupationAssignmentDto {
   endDate?: Date | null;
 
   @ApiProperty()
-  reason!:  string;
+  reason!: string;
 
   @ApiProperty()
-  assignedBy!:  number;
-
+  assignedBy!: number;
 }

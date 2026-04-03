@@ -13,8 +13,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,7 +31,6 @@ import {
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
-
 
 import { IntercampRequestService } from './intercampRequest.service';
 import type {
@@ -84,7 +92,12 @@ export class IntercampRequestController {
   @ApiOkResponse({ description: 'Intercamp Request list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('originCampId') originCampId?: string,
     @Query('campamentoOrigenId') campamentoOrigenId?: string,
@@ -101,7 +114,8 @@ export class IntercampRequestController {
     @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+      const legacyEstado =
+        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
 
       const filters: {
         originCampId?: number;
@@ -186,9 +200,7 @@ export class IntercampRequestController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error getting intercamp requests',
+        error instanceof Error ? error.message : 'Error getting intercamp requests',
       );
     }
   }
@@ -221,9 +233,7 @@ export class IntercampRequestController {
       }
 
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error updating intercamp request',
+        error instanceof Error ? error.message : 'Error updating intercamp request',
       );
     }
   }
@@ -246,9 +256,7 @@ export class IntercampRequestController {
       return { success: true, message: 'Intercamp request deleted successfully' };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error deleting intercamp request',
+        error instanceof Error ? error.message : 'Error deleting intercamp request',
       );
     }
   }

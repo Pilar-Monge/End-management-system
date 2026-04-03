@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -45,9 +54,7 @@ export class CampController {
         message: 'Camp created successfully',
       };
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error creating camp',
-      );
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating camp');
     }
   }
   @Get(':id')
@@ -72,7 +79,12 @@ export class CampController {
   @ApiOkResponse({ description: 'Camp list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('estado') estado?: CampStatus,
     @Query('status') status?: CampStatus,
@@ -81,7 +93,8 @@ export class CampController {
     @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
+      const legacyEstado =
+        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
 
       const filters: {
         status?: CampStatus;
@@ -125,9 +138,7 @@ export class CampController {
         },
       };
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error getting camps',
-      );
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error getting camps');
     }
   }
   @Put(':id')
@@ -153,9 +164,7 @@ export class CampController {
         message: 'Camp updated successfully',
       };
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error updating camp',
-      );
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error updating camp');
     }
   }
   @Delete(':id')
@@ -176,9 +185,7 @@ export class CampController {
 
       return { success: true, message: 'Camp deleted successfully' };
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting camp',
-      );
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error deleting camp');
     }
   }
 }

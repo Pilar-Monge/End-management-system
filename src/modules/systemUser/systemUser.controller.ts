@@ -28,11 +28,7 @@ import {
 import { Roles } from '../../common/decorators';
 import { UserService } from './systemUser.service';
 import type { CreateUserDTO } from './systemUser.model';
-import {
-  CreateSystemUserDto,
-  SystemUserResponseDto,
-  UpdateSystemUserDto,
-} from './dto';
+import { CreateSystemUserDto, SystemUserResponseDto, UpdateSystemUserDto } from './dto';
 
 @Controller()
 @ApiTags('System User')
@@ -64,7 +60,9 @@ export class UserController {
     try {
       return await this.service.findAllUsers();
     } catch (error) {
-      throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error getting users');
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Error getting users',
+      );
     }
   }
 

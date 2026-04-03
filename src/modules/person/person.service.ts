@@ -1,20 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
 import { PersonRepository } from './person.repository';
-import type {
-  CreatePersonDTO,
-  Person,
-  PersonStatus,
-  UpdatePersonDTO,
-} from './person.model';
+import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
 
 @Injectable()
 export class PersonService {
   constructor(private readonly repository: PersonRepository) {}
 
   async createPerson(data: CreatePersonDTO): Promise<Person> {
-    const existingByIdentification =
-      await this.repository.findByIdentificationNumber(data.identificationNumber);
+    const existingByIdentification = await this.repository.findByIdentificationNumber(
+      data.identificationNumber,
+    );
 
     if (existingByIdentification) {
       throw new Error('A person with this identification number already exists');
@@ -22,8 +18,7 @@ export class PersonService {
 
     const admissionRequestId = data.admissionRequestId ?? null;
     if (admissionRequestId !== null) {
-      const existingByRequest =
-        await this.repository.findByAdmissionRequestId(admissionRequestId);
+      const existingByRequest = await this.repository.findByAdmissionRequestId(admissionRequestId);
 
       if (existingByRequest) {
         throw new Error('A person for this admission request already exists');
@@ -70,17 +65,13 @@ export class PersonService {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 
-    if (
-      data.identificationNumber &&
-      data.identificationNumber !== existing.identificationNumber
-    ) {
-      const byIdentification =
-        await this.repository.findByIdentificationNumber(data.identificationNumber);
+    if (data.identificationNumber && data.identificationNumber !== existing.identificationNumber) {
+      const byIdentification = await this.repository.findByIdentificationNumber(
+        data.identificationNumber,
+      );
 
       if (byIdentification && byIdentification.id !== id) {
-        throw new Error(
-          'Another person with this identification number already exists',
-        );
+        throw new Error('Another person with this identification number already exists');
       }
     }
 
@@ -89,9 +80,7 @@ export class PersonService {
       data.admissionRequestId !== existing.admissionRequestId &&
       data.admissionRequestId !== null
     ) {
-      const byRequest = await this.repository.findByAdmissionRequestId(
-        data.admissionRequestId,
-      );
+      const byRequest = await this.repository.findByAdmissionRequestId(data.admissionRequestId);
 
       if (byRequest && byRequest.id !== id) {
         throw new Error('Another person for this admission request already exists');

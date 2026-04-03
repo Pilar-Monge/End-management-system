@@ -20,5 +20,4 @@ export class UpdateAiAdmissionReportDto {
 
   @ApiPropertyOptional({ nullable: true })
   suggestedOccupationId?: number | null;
-
 }

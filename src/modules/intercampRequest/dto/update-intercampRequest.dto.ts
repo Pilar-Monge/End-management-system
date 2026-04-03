@@ -26,5 +26,4 @@ export class UpdateIntercampRequestDto {
 
   @ApiPropertyOptional({ nullable: true })
   respondedBy?: number | null;
-
 }

@@ -19,9 +19,7 @@ export class SessionRepository {
       campId: data.campId,
       expirationDate: data.expirationDate,
       ...(data.startDate !== undefined ? { startDate: data.startDate } : {}),
-      ...(data.lastActivityDate !== undefined
-        ? { lastActivityDate: data.lastActivityDate }
-        : {}),
+      ...(data.lastActivityDate !== undefined ? { lastActivityDate: data.lastActivityDate } : {}),
       sourceIp: data.sourceIp ?? null,
       ...(data.status !== undefined ? { status: data.status } : {}),
     });

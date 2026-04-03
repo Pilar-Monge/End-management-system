@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,14 +31,16 @@ import {
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
 
-
 import { TemporaryOccupationAssignmentService } from './temporaryOccupationAssignment.service';
 import type {
   CreateTemporaryOccupationAssignmentDTO,
   UpdateTemporaryOccupationAssignmentDTO,
 } from './temporaryOccupationAssignment.model';
 
-import { CreateTemporaryOccupationAssignmentDto, UpdateTemporaryOccupationAssignmentDto } from './dto';
+import {
+  CreateTemporaryOccupationAssignmentDto,
+  UpdateTemporaryOccupationAssignmentDto,
+} from './dto';
 @Controller('temporary-occupation-assignments')
 @ApiTags('Temporary Occupation Assignment')
 @Roles('SYSTEM_ADMIN')
@@ -38,7 +49,10 @@ export class TemporaryOccupationAssignmentController {
   @Post()
   @ApiOperation({ summary: 'Create Temporary Occupation Assignment' })
   @ApiBody({ type: CreateTemporaryOccupationAssignmentDto })
-  @ApiCreatedResponse({ description: 'Temporary Occupation Assignment created', type: SuccessDataResponseDto })
+  @ApiCreatedResponse({
+    description: 'Temporary Occupation Assignment created',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateTemporaryOccupationAssignmentDTO) {
     try {
@@ -50,16 +64,17 @@ export class TemporaryOccupationAssignmentController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error creating temporary occupation assignment',
+        error instanceof Error ? error.message : 'Error creating temporary occupation assignment',
       );
     }
   }
   @Get(':id')
   @ApiOperation({ summary: 'Get Temporary Occupation Assignment by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Temporary Occupation Assignment id' })
-  @ApiOkResponse({ description: 'Temporary Occupation Assignment found', type: SuccessDataResponseDto })
+  @ApiOkResponse({
+    description: 'Temporary Occupation Assignment found',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
   async getById(@Param('id') id: string) {
@@ -75,10 +90,18 @@ export class TemporaryOccupationAssignmentController {
   }
   @Get()
   @ApiOperation({ summary: 'List Temporary Occupation Assignment' })
-  @ApiOkResponse({ description: 'Temporary Occupation Assignment list', type: SuccessListResponseDto })
+  @ApiOkResponse({
+    description: 'Temporary Occupation Assignment list',
+    type: SuccessListResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('personId') personId?: string,
     @Query('personaId') personaId?: string,
@@ -153,9 +176,7 @@ export class TemporaryOccupationAssignmentController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error getting temporary occupation assignments',
+        error instanceof Error ? error.message : 'Error getting temporary occupation assignments',
       );
     }
   }
@@ -163,7 +184,10 @@ export class TemporaryOccupationAssignmentController {
   @ApiOperation({ summary: 'Update Temporary Occupation Assignment' })
   @ApiParam({ name: 'id', type: Number, description: 'Temporary Occupation Assignment id' })
   @ApiBody({ type: UpdateTemporaryOccupationAssignmentDto })
-  @ApiOkResponse({ description: 'Temporary Occupation Assignment updated', type: SuccessDataResponseDto })
+  @ApiOkResponse({
+    description: 'Temporary Occupation Assignment updated',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
   async update(@Param('id') id: string, @Body() body: UpdateTemporaryOccupationAssignmentDTO) {
@@ -185,16 +209,17 @@ export class TemporaryOccupationAssignmentController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error updating temporary occupation assignment',
+        error instanceof Error ? error.message : 'Error updating temporary occupation assignment',
       );
     }
   }
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Temporary Occupation Assignment' })
   @ApiParam({ name: 'id', type: Number, description: 'Temporary Occupation Assignment id' })
-  @ApiOkResponse({ description: 'Temporary Occupation Assignment deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponse({
+    description: 'Temporary Occupation Assignment deleted',
+    type: SuccessMessageResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
   async delete(@Param('id') id: string) {
@@ -215,9 +240,7 @@ export class TemporaryOccupationAssignmentController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error deleting temporary occupation assignment',
+        error instanceof Error ? error.message : 'Error deleting temporary occupation assignment',
       );
     }
   }

@@ -4,18 +4,17 @@ import type { PersonStatus } from '../personStatusHistory.model';
 
 export class CreatePersonStatusHistoryDto {
   @ApiProperty()
-  personId!:  number;
+  personId!: number;
 
   @ApiProperty()
-  previousStatus!:  PersonStatus;
+  previousStatus!: PersonStatus;
 
   @ApiProperty()
-  newStatus!:  PersonStatus;
+  newStatus!: PersonStatus;
 
   @ApiPropertyOptional({ nullable: true })
   reason?: string | null;
 
   @ApiProperty()
-  changedBy!:  number;
-
+  changedBy!: number;
 }

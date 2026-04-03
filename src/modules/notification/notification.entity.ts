@@ -1,14 +1,8 @@
 import { Check, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
-import {
-  SYSTEM_ROLE_VALUES,
-  type SystemRole,
-} from '../systemUser/systemUser.model';
+import { SYSTEM_ROLE_VALUES, type SystemRole } from '../systemUser/systemUser.model';
 
-import {
-  NOTIFICATION_TYPE_VALUES,
-  type NotificationType,
-} from './notification.model';
+import { NOTIFICATION_TYPE_VALUES, type NotificationType } from './notification.model';
 
 @Entity({ name: 'notification' })
 @Index('idx_notification_camp', ['campId'])

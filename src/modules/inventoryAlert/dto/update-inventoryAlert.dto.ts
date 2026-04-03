@@ -24,5 +24,4 @@ export class UpdateInventoryAlertDto {
 
   @ApiPropertyOptional({ nullable: true })
   resolvedBy?: number | null;
-
 }

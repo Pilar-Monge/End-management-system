@@ -4,21 +4,20 @@ import type { TransferStatus } from '../../transfer/transfer.model';
 
 export class CreateTransferHistoryDto {
   @ApiProperty()
-  transferId!:  number;
+  transferId!: number;
 
   @ApiProperty()
-  previousStatus!:  TransferStatus;
+  previousStatus!: TransferStatus;
 
   @ApiProperty()
-  newStatus!:  TransferStatus;
+  newStatus!: TransferStatus;
 
   @ApiPropertyOptional()
   date?: Date;
 
   @ApiProperty()
-  userId!:  number;
+  userId!: number;
 
   @ApiPropertyOptional({ nullable: true })
   comment?: string | null;
-
 }

@@ -1,110 +1,278 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class Init1774818312971 implements MigrationInterface {
-    name = 'Init1774818312971'
+  name = 'Init1774818312971';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'system_role_enum') THEN CREATE TYPE "public"."system_role_enum" AS ENUM('VISITOR', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "user_role_history" ("id" SERIAL NOT NULL, "user_id" integer NOT NULL, "rol_anterior" "public"."system_role_enum" NOT NULL, "rol_nuevo" "public"."system_role_enum" NOT NULL, "changed_by" integer NOT NULL, "change_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "reason" text, CONSTRAINT "PK_be5bfc4f5e3e2e23886b3334155" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_historial_rol_usuario_por" ON "user_role_history" ("changed_by") `);
-        await queryRunner.query(`CREATE INDEX "idx_historial_rol_usuario" ON "user_role_history" ("user_id", "change_date") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_transfer_status_enum') THEN CREATE TYPE "public"."person_transfer_status_enum" AS ENUM('CONFIRMED', 'IN_TRANSIT', 'DELIVERED', 'CANCELED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "transfer_person" ("id" SERIAL NOT NULL, "transfer_id" integer NOT NULL, "person_id" integer NOT NULL, "status" "public"."person_transfer_status_enum" NOT NULL DEFAULT 'CONFIRMED', "departure_date" TIMESTAMP WITH TIME ZONE, "arrival_date" TIMESTAMP WITH TIME ZONE, CONSTRAINT "uq_transfer_person" UNIQUE ("transfer_id", "person_id"), CONSTRAINT "PK_50d579505cc530c49e5bb9755b6" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_person_person" ON "transfer_person" ("person_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_person_transfer" ON "transfer_person" ("transfer_id") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'transfer_status_enum') THEN CREATE TYPE "public"."transfer_status_enum" AS ENUM('PENDING_DEPARTURE', 'COMPLETED', 'CANCELED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "transfer_history" ("id" SERIAL NOT NULL, "transfer_id" integer NOT NULL, "previous_status" "public"."transfer_status_enum" NOT NULL, "new_status" "public"."transfer_status_enum" NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "user_id" integer NOT NULL, "comment" text, CONSTRAINT "PK_34abd51f724bd9604b046ce3e05" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_history" ON "transfer_history" ("transfer_id", "date") `);
-        await queryRunner.query(`CREATE TABLE "temporary_occupation_assignment" ("id" SERIAL NOT NULL, "person_id" integer NOT NULL, "temporary_occupation_id" integer NOT NULL, "start_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "end_date" TIMESTAMP WITH TIME ZONE, "reason" text NOT NULL, "assigned_by" integer NOT NULL, CONSTRAINT "PK_13503e65b2dd13096e7970df2a0" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_active_person_assignment" ON "temporary_occupation_assignment" ("person_id", "end_date") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'transfer_status_enum') THEN CREATE TYPE "public"."transfer_status_enum" AS ENUM('PENDING_DEPARTURE', 'COMPLETED', 'CANCELED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "transfer" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "planned_departure_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_departure_date" TIMESTAMP WITH TIME ZONE, "planned_arrival_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_arrival_date" TIMESTAMP WITH TIME ZONE, "status" "public"."transfer_status_enum" NOT NULL DEFAULT 'PENDING_DEPARTURE', "departure_approved_by" integer, "arrival_approved_by" integer, "rations_for_trip" numeric(10,2) NOT NULL DEFAULT '0.00', "reception_notes" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_transfer_request" UNIQUE ("request_id"), CONSTRAINT "chk_transfer_rations" CHECK ("rations_for_trip" >= 0), CONSTRAINT "chk_transfer_dates" CHECK ("planned_arrival_date" > "planned_departure_date"), CONSTRAINT "PK_fd9ddbdd49a17afcbe014401295" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_request" ON "transfer" ("request_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_status" ON "transfer" ("status") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'user_status_enum') THEN CREATE TYPE "public"."user_status_enum" AS ENUM('ACTIVE', 'BLOCKED', 'INACTIVE'); END IF; END $$;`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'system_role_enum') THEN CREATE TYPE "public"."system_role_enum" AS ENUM('VISITOR', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "system_user" ("id" SERIAL NOT NULL, "person_id" integer NOT NULL, "request_id" integer NOT NULL, "username" text NOT NULL, "password_hash" text NOT NULL, "email" text NOT NULL, "status" "public"."user_status_enum" NOT NULL DEFAULT 'ACTIVE', "role" "public"."system_role_enum" NOT NULL DEFAULT 'VISITOR', "camp_id" integer NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_usuario_solicitud" UNIQUE ("request_id"), CONSTRAINT "uq_user_person" UNIQUE ("person_id"), CONSTRAINT "uq_usuario_correo_camp" UNIQUE ("camp_id", "email"), CONSTRAINT "uq_usuario_username_camp" UNIQUE ("camp_id", "username"), CONSTRAINT "PK_9949334be1756656fab9fac4a0c" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_usuario_estado" ON "system_user" ("status") `);
-        await queryRunner.query(`CREATE INDEX "idx_usuario_rol" ON "system_user" ("role") `);
-        await queryRunner.query(`CREATE INDEX "idx_user_camp_id" ON "system_user" ("camp_id") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'resource_category_enum') THEN CREATE TYPE "public"."resource_category_enum" AS ENUM('FOOD', 'WATER', 'HYGIENE', 'DEFENSE', 'AMMUNITION', 'MEDICAL', 'OTHER'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "resource_type" ("id" SERIAL NOT NULL, "name" text NOT NULL, "unit_of_measure" text NOT NULL, "category" "public"."resource_category_enum" NOT NULL, "description" text, CONSTRAINT "uq_tipo_recurso_nombre" UNIQUE ("name"), CONSTRAINT "PK_a7ce3257b16bbb1372e2f6424f4" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'session_status_enum') THEN CREATE TYPE "public"."session_status_enum" AS ENUM('ACTIVE', 'EXPIRED', 'CLOSED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "session" ("id" SERIAL NOT NULL, "token" text NOT NULL, "user_id" integer NOT NULL, "camp_id" integer NOT NULL, "start_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "last_activity_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "expiration_date" TIMESTAMP WITH TIME ZONE NOT NULL, "source_ip" text, "status" "public"."session_status_enum" NOT NULL DEFAULT 'ACTIVE', CONSTRAINT "uq_sesion_token" UNIQUE ("token"), CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_sesion_ultima_actividad" ON "session" ("last_activity_date") `);
-        await queryRunner.query(`CREATE INDEX "idx_sesion_estado" ON "session" ("status") `);
-        await queryRunner.query(`CREATE INDEX "idx_sesion_usuario_id" ON "session" ("user_id") `);
-        await queryRunner.query(`CREATE TABLE "request_resource_detail" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "requested_amount" numeric(10,2) NOT NULL, "approved_amount" numeric(10,2), CONSTRAINT "uq_solicitud_recurso" UNIQUE ("request_id", "resource_type_id"), CONSTRAINT "chk_sol_rec_aprobada" CHECK ("approved_amount" IS NULL OR "approved_amount" >= 0), CONSTRAINT "chk_sol_rec_solicitada" CHECK ("requested_amount" > 0), CONSTRAINT "PK_63dea5210aab35c3a28e7aee13a" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_sol_recurso_detalle" ON "request_resource_detail" ("request_id") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_detail_type_enum') THEN CREATE TYPE "public"."person_detail_type_enum" AS ENUM('BY_OCCUPATION', 'SPECIFIC'); END IF; END $$;`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_detail_status_enum') THEN CREATE TYPE "public"."person_detail_status_enum" AS ENUM('PROPOSED', 'CONFIRMED', 'REJECTED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "request_person_detail" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "detail_type" "public"."person_detail_type_enum" NOT NULL DEFAULT 'BY_OCCUPATION', "person_id" integer, "occupation_id" integer, "amount" integer NOT NULL DEFAULT '1', "status" "public"."person_detail_status_enum" NOT NULL DEFAULT 'PROPOSED', CONSTRAINT "chk_request_person_specific_amount" CHECK ("detail_type" = 'BY_OCCUPATION' OR "amount" = 1), CONSTRAINT "chk_request_person_amount" CHECK ("amount" > 0), CONSTRAINT "chk_request_person_logic" CHECK ((
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'system_role_enum') THEN CREATE TYPE "public"."system_role_enum" AS ENUM('VISITOR', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "user_role_history" ("id" SERIAL NOT NULL, "user_id" integer NOT NULL, "rol_anterior" "public"."system_role_enum" NOT NULL, "rol_nuevo" "public"."system_role_enum" NOT NULL, "changed_by" integer NOT NULL, "change_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "reason" text, CONSTRAINT "PK_be5bfc4f5e3e2e23886b3334155" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_historial_rol_usuario_por" ON "user_role_history" ("changed_by") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_historial_rol_usuario" ON "user_role_history" ("user_id", "change_date") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_transfer_status_enum') THEN CREATE TYPE "public"."person_transfer_status_enum" AS ENUM('CONFIRMED', 'IN_TRANSIT', 'DELIVERED', 'CANCELED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "transfer_person" ("id" SERIAL NOT NULL, "transfer_id" integer NOT NULL, "person_id" integer NOT NULL, "status" "public"."person_transfer_status_enum" NOT NULL DEFAULT 'CONFIRMED', "departure_date" TIMESTAMP WITH TIME ZONE, "arrival_date" TIMESTAMP WITH TIME ZONE, CONSTRAINT "uq_transfer_person" UNIQUE ("transfer_id", "person_id"), CONSTRAINT "PK_50d579505cc530c49e5bb9755b6" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_transfer_person_person" ON "transfer_person" ("person_id") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_transfer_person_transfer" ON "transfer_person" ("transfer_id") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'transfer_status_enum') THEN CREATE TYPE "public"."transfer_status_enum" AS ENUM('PENDING_DEPARTURE', 'COMPLETED', 'CANCELED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "transfer_history" ("id" SERIAL NOT NULL, "transfer_id" integer NOT NULL, "previous_status" "public"."transfer_status_enum" NOT NULL, "new_status" "public"."transfer_status_enum" NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "user_id" integer NOT NULL, "comment" text, CONSTRAINT "PK_34abd51f724bd9604b046ce3e05" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_transfer_history" ON "transfer_history" ("transfer_id", "date") `,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "temporary_occupation_assignment" ("id" SERIAL NOT NULL, "person_id" integer NOT NULL, "temporary_occupation_id" integer NOT NULL, "start_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "end_date" TIMESTAMP WITH TIME ZONE, "reason" text NOT NULL, "assigned_by" integer NOT NULL, CONSTRAINT "PK_13503e65b2dd13096e7970df2a0" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_active_person_assignment" ON "temporary_occupation_assignment" ("person_id", "end_date") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'transfer_status_enum') THEN CREATE TYPE "public"."transfer_status_enum" AS ENUM('PENDING_DEPARTURE', 'COMPLETED', 'CANCELED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "transfer" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "planned_departure_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_departure_date" TIMESTAMP WITH TIME ZONE, "planned_arrival_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_arrival_date" TIMESTAMP WITH TIME ZONE, "status" "public"."transfer_status_enum" NOT NULL DEFAULT 'PENDING_DEPARTURE', "departure_approved_by" integer, "arrival_approved_by" integer, "rations_for_trip" numeric(10,2) NOT NULL DEFAULT '0.00', "reception_notes" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_transfer_request" UNIQUE ("request_id"), CONSTRAINT "chk_transfer_rations" CHECK ("rations_for_trip" >= 0), CONSTRAINT "chk_transfer_dates" CHECK ("planned_arrival_date" > "planned_departure_date"), CONSTRAINT "PK_fd9ddbdd49a17afcbe014401295" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_transfer_request" ON "transfer" ("request_id") `);
+    await queryRunner.query(`CREATE INDEX "idx_transfer_status" ON "transfer" ("status") `);
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'user_status_enum') THEN CREATE TYPE "public"."user_status_enum" AS ENUM('ACTIVE', 'BLOCKED', 'INACTIVE'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'system_role_enum') THEN CREATE TYPE "public"."system_role_enum" AS ENUM('VISITOR', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "system_user" ("id" SERIAL NOT NULL, "person_id" integer NOT NULL, "request_id" integer NOT NULL, "username" text NOT NULL, "password_hash" text NOT NULL, "email" text NOT NULL, "status" "public"."user_status_enum" NOT NULL DEFAULT 'ACTIVE', "role" "public"."system_role_enum" NOT NULL DEFAULT 'VISITOR', "camp_id" integer NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_usuario_solicitud" UNIQUE ("request_id"), CONSTRAINT "uq_user_person" UNIQUE ("person_id"), CONSTRAINT "uq_usuario_correo_camp" UNIQUE ("camp_id", "email"), CONSTRAINT "uq_usuario_username_camp" UNIQUE ("camp_id", "username"), CONSTRAINT "PK_9949334be1756656fab9fac4a0c" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_usuario_estado" ON "system_user" ("status") `);
+    await queryRunner.query(`CREATE INDEX "idx_usuario_rol" ON "system_user" ("role") `);
+    await queryRunner.query(`CREATE INDEX "idx_user_camp_id" ON "system_user" ("camp_id") `);
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'resource_category_enum') THEN CREATE TYPE "public"."resource_category_enum" AS ENUM('FOOD', 'WATER', 'HYGIENE', 'DEFENSE', 'AMMUNITION', 'MEDICAL', 'OTHER'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "resource_type" ("id" SERIAL NOT NULL, "name" text NOT NULL, "unit_of_measure" text NOT NULL, "category" "public"."resource_category_enum" NOT NULL, "description" text, CONSTRAINT "uq_tipo_recurso_nombre" UNIQUE ("name"), CONSTRAINT "PK_a7ce3257b16bbb1372e2f6424f4" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'session_status_enum') THEN CREATE TYPE "public"."session_status_enum" AS ENUM('ACTIVE', 'EXPIRED', 'CLOSED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "session" ("id" SERIAL NOT NULL, "token" text NOT NULL, "user_id" integer NOT NULL, "camp_id" integer NOT NULL, "start_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "last_activity_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "expiration_date" TIMESTAMP WITH TIME ZONE NOT NULL, "source_ip" text, "status" "public"."session_status_enum" NOT NULL DEFAULT 'ACTIVE', CONSTRAINT "uq_sesion_token" UNIQUE ("token"), CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_sesion_ultima_actividad" ON "session" ("last_activity_date") `,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_sesion_estado" ON "session" ("status") `);
+    await queryRunner.query(`CREATE INDEX "idx_sesion_usuario_id" ON "session" ("user_id") `);
+    await queryRunner.query(
+      `CREATE TABLE "request_resource_detail" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "requested_amount" numeric(10,2) NOT NULL, "approved_amount" numeric(10,2), CONSTRAINT "uq_solicitud_recurso" UNIQUE ("request_id", "resource_type_id"), CONSTRAINT "chk_sol_rec_aprobada" CHECK ("approved_amount" IS NULL OR "approved_amount" >= 0), CONSTRAINT "chk_sol_rec_solicitada" CHECK ("requested_amount" > 0), CONSTRAINT "PK_63dea5210aab35c3a28e7aee13a" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_sol_recurso_detalle" ON "request_resource_detail" ("request_id") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_detail_type_enum') THEN CREATE TYPE "public"."person_detail_type_enum" AS ENUM('BY_OCCUPATION', 'SPECIFIC'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_detail_status_enum') THEN CREATE TYPE "public"."person_detail_status_enum" AS ENUM('PROPOSED', 'CONFIRMED', 'REJECTED'); END IF; END $$;`,
+    );
+    await queryRunner.query(`CREATE TABLE "request_person_detail" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "detail_type" "public"."person_detail_type_enum" NOT NULL DEFAULT 'BY_OCCUPATION', "person_id" integer, "occupation_id" integer, "amount" integer NOT NULL DEFAULT '1', "status" "public"."person_detail_status_enum" NOT NULL DEFAULT 'PROPOSED', CONSTRAINT "chk_request_person_specific_amount" CHECK ("detail_type" = 'BY_OCCUPATION' OR "amount" = 1), CONSTRAINT "chk_request_person_amount" CHECK ("amount" > 0), CONSTRAINT "chk_request_person_logic" CHECK ((
     ("detail_type" = 'SPECIFIC' AND "person_id" IS NOT NULL) OR
     ("detail_type" = 'BY_OCCUPATION' AND "occupation_id" IS NOT NULL)
   )), CONSTRAINT "PK_e459565a6e2ce025b3062445458" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_request_person_detail" ON "request_person_detail" ("request_id") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_status_enum') THEN CREATE TYPE "public"."person_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'SICK', 'INJURED', 'OUTSIDE_CAMP', 'ON_EXPEDITION'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "person_status_history" ("id" SERIAL NOT NULL, "person_id" integer NOT NULL, "previous_status" "public"."person_status_enum" NOT NULL, "new_status" "public"."person_status_enum" NOT NULL, "change_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "reason" text, "changed_by" integer NOT NULL, CONSTRAINT "PK_b0d720c7135cc9e2930145ce8ff" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_person_history_by" ON "person_status_history" ("changed_by") `);
-        await queryRunner.query(`CREATE INDEX "idx_person_history" ON "person_status_history" ("person_id", "change_date") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'gender_enum') THEN CREATE TYPE "public"."gender_enum" AS ENUM('MALE', 'FEMALE', 'OTHER'); END IF; END $$;`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_status_enum') THEN CREATE TYPE "public"."person_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'SICK', 'INJURED', 'OUTSIDE_CAMP', 'ON_EXPEDITION'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "person" ("id" SERIAL NOT NULL, "admission_request_id" integer, "name" text NOT NULL, "last_name1" text NOT NULL, "last_name2" text, "identification_number" text NOT NULL, "birth_date" date NOT NULL, "gender" "public"."gender_enum" NOT NULL, "initial_health_level" text, "previous_experience" text, "physical_condition_at_entry" text, "current_status" "public"."person_status_enum" NOT NULL DEFAULT 'ACTIVE', "image_url" text, "camp_id" integer NOT NULL, "occupation_id" integer, "entry_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_person_request" UNIQUE ("admission_request_id"), CONSTRAINT "uq_person_identification" UNIQUE ("identification_number"), CONSTRAINT "PK_5fdaf670315c4b7e70cce85daa3" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_person_camp_status" ON "person" ("camp_id", "current_status") `);
-        await queryRunner.query(`CREATE INDEX "idx_person_occupation_id" ON "person" ("occupation_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_person_current_status" ON "person" ("current_status") `);
-        await queryRunner.query(`CREATE INDEX "idx_person_camp_id" ON "person" ("camp_id") `);
-        await queryRunner.query(`CREATE TABLE "occupation_assignment_criteria" ("id" SERIAL NOT NULL, "occupation_id" integer NOT NULL, "criteria_description" text NOT NULL, "evaluated_field" text NOT NULL, "weight" numeric(3,2) NOT NULL DEFAULT '1.00', "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "PK_3fa788c72cd8a038a388c851505" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "occupation" ("id" SERIAL NOT NULL, "name" text NOT NULL, "description" text, "collects_resources" boolean NOT NULL DEFAULT false, "participates_in_expeditions" boolean NOT NULL DEFAULT false, "resource_type_id" integer, "daily_amount_produced" numeric(8,2) NOT NULL DEFAULT '0.00', "daily_ration_consumed" numeric(8,2) NOT NULL DEFAULT '1.00', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_occupation_name" UNIQUE ("name"), CONSTRAINT "PK_07cfcefef555693d96dce8805c5" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'movement_type_enum') THEN CREATE TYPE "public"."movement_type_enum" AS ENUM('DAILY_COLLECTION', 'DAILY_RATION', 'EXPEDITION_DEPARTURE', 'EXPEDITION_RETURN', 'TRANSFER_SENT', 'TRANSFER_RECEIVED', 'MANUAL_ADJUSTMENT'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "inventory_movement" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount" numeric(12,2) NOT NULL, "movement_type" "public"."movement_type_enum" NOT NULL, "source_id" integer, "source_type" text, "recorded_by" integer NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "description" text, CONSTRAINT "PK_e17362693c889da517444ad8fb5" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_movimiento_recurso" ON "inventory_movement" ("resource_type_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_movimiento_tipo" ON "inventory_movement" ("movement_type") `);
-        await queryRunner.query(`CREATE INDEX "idx_movimiento_camp_fecha" ON "inventory_movement" ("camp_id", "date") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'system_role_enum') THEN CREATE TYPE "public"."system_role_enum" AS ENUM('VISITOR', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "notification" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "user_id" integer, "target_role" "public"."system_role_enum", "type" text NOT NULL, "title" text NOT NULL, "message" text NOT NULL, "read" boolean NOT NULL DEFAULT false, "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "read_date" TIMESTAMP WITH TIME ZONE, "source_type" text, "source_id" integer, CONSTRAINT "chk_notificacion_tipo" CHECK ("type" IN ('ADMISSION_REQUEST_PENDING', 'ADMISSION_REQUEST_APPROVED', 'ADMISSION_REQUEST_REJECTED', 'ROLE_UPDATED', 'INVENTORY_ALERT', 'OVERPOPULATION_ALERT', 'INTERCAMP_REQUEST_RECEIVED', 'INTERCAMP_REQUEST_APPROVED', 'INTERCAMP_REQUEST_REJECTED', 'EXPEDITION_RETURN', 'TRANSFER_PENDING', 'TRANSFER_COMPLETED', 'OCCUPATION_WITHOUT_STAFF')), CONSTRAINT "chk_notificacion_destinatario" CHECK ("user_id" IS NOT NULL OR "target_role" IS NOT NULL), CONSTRAINT "PK_705b6c7cdf9b2c2ff7ac7872cb7" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_notificacion_usuario" ON "notification" ("user_id", "read") `);
-        await queryRunner.query(`CREATE INDEX "idx_notification_camp" ON "notification" ("camp_id") `);
-        await queryRunner.query(`CREATE TABLE "inventory_alert" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount_at_alert_generation" numeric(12,2) NOT NULL, "movement_id" integer, "alert_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "resolved" boolean NOT NULL DEFAULT false, "resolution_date" TIMESTAMP WITH TIME ZONE, "resolved_by" integer, CONSTRAINT "PK_2968e7603cb1e688d5704bd71d0" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_alerta_camp_resuelta" ON "inventory_alert" ("camp_id", "resolved") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'intercamp_request_status_enum') THEN CREATE TYPE "public"."intercamp_request_status_enum" AS ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "intercamp_request" ("id" SERIAL NOT NULL, "origin_camp_id" integer NOT NULL, "destination_camp_id" integer NOT NULL, "status" "public"."intercamp_request_status_enum" NOT NULL DEFAULT 'PENDING', "description" text, "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "response_date" TIMESTAMP WITH TIME ZONE, "created_by" integer NOT NULL, "responded_by" integer, CONSTRAINT "chk_solicitud_camp_distintos" CHECK ("origin_camp_id" <> "destination_camp_id"), CONSTRAINT "PK_4166e924f40a92d9aed457f33e9" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_solicitud_estado" ON "intercamp_request" ("status") `);
-        await queryRunner.query(`CREATE INDEX "idx_solicitud_destino" ON "intercamp_request" ("destination_camp_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_solicitud_origen" ON "intercamp_request" ("origin_camp_id") `);
-        await queryRunner.query(`CREATE TABLE "expedition_resource_obtained" ("id" SERIAL NOT NULL, "expedition_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount" numeric(10,2) NOT NULL, "recorded_by" integer NOT NULL, "record_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "movement_id" integer, CONSTRAINT "uq_exp_obten_recurso" UNIQUE ("expedition_id", "resource_type_id"), CONSTRAINT "chk_exp_obten_cant" CHECK ("amount" > 0), CONSTRAINT "PK_41a9a95870a6396497aa5bfba4e" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "expedition_resource_consumed" ("id" SERIAL NOT NULL, "expedition_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount" numeric(10,2) NOT NULL, "recorded_by" integer NOT NULL, "record_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "movement_id" integer, CONSTRAINT "uq_exp_cons_recurso" UNIQUE ("expedition_id", "resource_type_id"), CONSTRAINT "chk_exp_cons_cant" CHECK ("amount" > 0), CONSTRAINT "PK_c115b0cae00d4885f7442df4f21" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'expedition_status_enum') THEN CREATE TYPE "public"."expedition_status_enum" AS ENUM('PLANNED', 'COMPLETED', 'CANCELED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "expedition" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "name" text NOT NULL, "objective" text, "destination_description" text, "destination_latitude" numeric(9,6), "destination_longitude" numeric(9,6), "planned_departure_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_departure_date" TIMESTAMP WITH TIME ZONE, "planned_return_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_return_date" TIMESTAMP WITH TIME ZONE, "extra_days_available" integer NOT NULL DEFAULT '0', "extra_days_used" integer NOT NULL DEFAULT '0', "status" "public"."expedition_status_enum" NOT NULL DEFAULT 'PLANNED', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "chk_dias_extra_coherencia" CHECK ("extra_days_used" <= "extra_days_available"), CONSTRAINT "chk_dias_extra_usados" CHECK ("extra_days_used" >= 0), CONSTRAINT "chk_dias_extra_disp" CHECK ("extra_days_available" >= 0), CONSTRAINT "chk_expedition_dates" CHECK ("planned_return_date" > "planned_departure_date"), CONSTRAINT "PK_56c70437feb0b28a6c988afcd2b" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_expedition_status" ON "expedition" ("status") `);
-        await queryRunner.query(`CREATE INDEX "idx_expedition_camp" ON "expedition" ("camp_id") `);
-        await queryRunner.query(`CREATE TABLE "evaluated_criteria_report" ("id" SERIAL NOT NULL, "report_id" integer NOT NULL, "criteria_id" integer NOT NULL, "evaluated_value" text NOT NULL, "score_obtained" numeric(5,2), "observation" text, CONSTRAINT "uq_reporte_criterio" UNIQUE ("report_id", "criteria_id"), CONSTRAINT "PK_83dedd2e84f53f43ab35ebb9e83" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_reporte_criterio_criterio" ON "evaluated_criteria_report" ("criteria_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_reporte_criterio_reporte" ON "evaluated_criteria_report" ("report_id") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'participant_status_enum') THEN CREATE TYPE "public"."participant_status_enum" AS ENUM('ACTIVE', 'WITHDRAWN'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "expedition_participant" ("id" SERIAL NOT NULL, "expedition_id" integer NOT NULL, "person_id" integer NOT NULL, "expedition_role" text, "status" "public"."participant_status_enum" NOT NULL DEFAULT 'ACTIVE', "assignment_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_expedition_participant" UNIQUE ("expedition_id", "person_id"), CONSTRAINT "PK_c4399d0bf6dd76aaf0f00be6201" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_exp_participant_person" ON "expedition_participant" ("person_id") `);
-        await queryRunner.query(`CREATE TABLE "delivered_transfer_resource" ("id" SERIAL NOT NULL, "transfer_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "sent_amount" numeric(10,2) NOT NULL, "received_amount" numeric(10,2) NOT NULL, "recorded_by" integer NOT NULL, "record_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "movement_id" integer, CONSTRAINT "uq_transfer_resource_delivered" UNIQUE ("transfer_id", "resource_type_id"), CONSTRAINT "chk_transfer_resource_received" CHECK ("received_amount" >= 0), CONSTRAINT "chk_transfer_resource_sent" CHECK ("sent_amount" >= 0), CONSTRAINT "PK_87a8dc3e525a3763c0f05efb761" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_resource_delivered" ON "delivered_transfer_resource" ("transfer_id") `);
-        await queryRunner.query(`CREATE TABLE "daily_collection_record" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "person_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "date" date NOT NULL, "expected_amount" numeric(8,2) NOT NULL DEFAULT '0.00', "actual_amount" numeric(8,2) NOT NULL DEFAULT '0.00', "difference_reason" text, "recorded_by" integer NOT NULL, "movement_id" integer, CONSTRAINT "PK_ff3526dd10ef1202756fd30e8df" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_collection_camp_date" ON "daily_collection_record" ("camp_id", "date") `);
-        await queryRunner.query(`CREATE INDEX "idx_collection_person_date" ON "daily_collection_record" ("person_id", "date") `);
-        await queryRunner.query(`CREATE UNIQUE INDEX "uq_collection_person_resource_day" ON "daily_collection_record" ("person_id", "resource_type_id", "date") `);
-        await queryRunner.query(`CREATE TABLE "camp_inventory" ("camp_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "current_amount" numeric(12,2) NOT NULL DEFAULT '0.00', "minimum_alert_amount" numeric(12,2) NOT NULL DEFAULT '0.00', "last_update" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "PK_0ff3965a6cc5474a79842b1e7da" PRIMARY KEY ("camp_id", "resource_type_id"))`);
-        await queryRunner.query(`CREATE TABLE "camp_achievement" ("camp_id" integer NOT NULL, "logro_id" integer NOT NULL, "obtained_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "unlocked_by" integer NOT NULL, "unlock_context" text, CONSTRAINT "PK_d0d85f61c79bd3de814439ce185" PRIMARY KEY ("camp_id", "logro_id"))`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'camp_status_enum') THEN CREATE TYPE "public"."camp_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'ABANDONED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "camp" ("id" SERIAL NOT NULL, "name" text NOT NULL, "latitude" numeric(9,6) NOT NULL, "longitude" numeric(9,6) NOT NULL, "description" text, "status" "public"."camp_status_enum" NOT NULL DEFAULT 'ACTIVE', "foundation_date" date NOT NULL, "max_person_capacity" integer NOT NULL DEFAULT '100', "session_inactivity_minutes" integer NOT NULL DEFAULT '20', "minimum_daily_ration_per_person" numeric(8,2) NOT NULL DEFAULT '1.00', "stock_alert_threshold_percentage" numeric(5,2) NOT NULL DEFAULT '20.00', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_camp_name" UNIQUE ("name"), CONSTRAINT "PK_80bfb9f28fe9bdd60efd8866964" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_camp_status" ON "camp" ("status") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'gender_enum') THEN CREATE TYPE "public"."gender_enum" AS ENUM('MALE', 'FEMALE', 'OTHER'); END IF; END $$;`);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'admission_request_status_enum') THEN CREATE TYPE "public"."admission_request_status_enum" AS ENUM('PENDING_AI', 'PENDING_ADMIN', 'APPROVED', 'REJECTED'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "admission_request" ("id" SERIAL NOT NULL, "name" text NOT NULL, "last_name1" text NOT NULL, "last_name2" text, "email" text NOT NULL, "desired_username" text NOT NULL, "birth_date" date NOT NULL, "gender" "public"."gender_enum" NOT NULL, "photo_url" text, "declared_health_level" text, "previous_experience" text, "physical_condition" text, "declared_skills" text, "camp_id" integer NOT NULL, "status" "public"."admission_request_status_enum" NOT NULL DEFAULT 'PENDING_AI', "suggested_occupation_id" integer, "final_occupation_id" integer, "occupation_modified" boolean NOT NULL DEFAULT false, "reviewed_by" integer, "review_date" TIMESTAMP WITH TIME ZONE, "rejection_reason" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "PK_35051ced56ec942d54ee08443b9" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_admission_request_email" ON "admission_request" ("email") `);
-        await queryRunner.query(`CREATE INDEX "idx_admission_request_status" ON "admission_request" ("status") `);
-        await queryRunner.query(`CREATE INDEX "idx_admission_request_camp" ON "admission_request" ("camp_id") `);
-        await queryRunner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'ai_decision_enum') THEN CREATE TYPE "public"."ai_decision_enum" AS ENUM('ACCEPT', 'REJECT'); END IF; END $$;`);
-        await queryRunner.query(`CREATE TABLE "ai_admission_report" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "submitted_data" jsonb NOT NULL, "ai_response" jsonb NOT NULL, "ai_decision" "public"."ai_decision_enum" NOT NULL, "ai_justification" text, "suggested_occupation_id" integer, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_reporte_por_solicitud" UNIQUE ("request_id"), CONSTRAINT "PK_9a60107c4db7587eeddaca61532" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "achievement" ("id" SERIAL NOT NULL, "name" text NOT NULL, "description" text, "unlock_condition" text NOT NULL, "icon_url" text, CONSTRAINT "uq_logro_nombre" UNIQUE ("name"), CONSTRAINT "PK_441339f40e8ce717525a381671e" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "access_log" ("id" SERIAL NOT NULL, "session_id" integer, "user_id" integer NOT NULL, "camp_id" integer NOT NULL, "event_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "event_type" text NOT NULL, "source_ip" text, "detail" text, CONSTRAINT "chk_log_tipo" CHECK ("event_type" IN (
+    await queryRunner.query(
+      `CREATE INDEX "idx_request_person_detail" ON "request_person_detail" ("request_id") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_status_enum') THEN CREATE TYPE "public"."person_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'SICK', 'INJURED', 'OUTSIDE_CAMP', 'ON_EXPEDITION'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "person_status_history" ("id" SERIAL NOT NULL, "person_id" integer NOT NULL, "previous_status" "public"."person_status_enum" NOT NULL, "new_status" "public"."person_status_enum" NOT NULL, "change_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "reason" text, "changed_by" integer NOT NULL, CONSTRAINT "PK_b0d720c7135cc9e2930145ce8ff" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_person_history_by" ON "person_status_history" ("changed_by") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_person_history" ON "person_status_history" ("person_id", "change_date") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'gender_enum') THEN CREATE TYPE "public"."gender_enum" AS ENUM('MALE', 'FEMALE', 'OTHER'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'person_status_enum') THEN CREATE TYPE "public"."person_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'SICK', 'INJURED', 'OUTSIDE_CAMP', 'ON_EXPEDITION'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "person" ("id" SERIAL NOT NULL, "admission_request_id" integer, "name" text NOT NULL, "last_name1" text NOT NULL, "last_name2" text, "identification_number" text NOT NULL, "birth_date" date NOT NULL, "gender" "public"."gender_enum" NOT NULL, "initial_health_level" text, "previous_experience" text, "physical_condition_at_entry" text, "current_status" "public"."person_status_enum" NOT NULL DEFAULT 'ACTIVE', "image_url" text, "camp_id" integer NOT NULL, "occupation_id" integer, "entry_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_person_request" UNIQUE ("admission_request_id"), CONSTRAINT "uq_person_identification" UNIQUE ("identification_number"), CONSTRAINT "PK_5fdaf670315c4b7e70cce85daa3" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_person_camp_status" ON "person" ("camp_id", "current_status") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_person_occupation_id" ON "person" ("occupation_id") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_person_current_status" ON "person" ("current_status") `,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_person_camp_id" ON "person" ("camp_id") `);
+    await queryRunner.query(
+      `CREATE TABLE "occupation_assignment_criteria" ("id" SERIAL NOT NULL, "occupation_id" integer NOT NULL, "criteria_description" text NOT NULL, "evaluated_field" text NOT NULL, "weight" numeric(3,2) NOT NULL DEFAULT '1.00', "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "PK_3fa788c72cd8a038a388c851505" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "occupation" ("id" SERIAL NOT NULL, "name" text NOT NULL, "description" text, "collects_resources" boolean NOT NULL DEFAULT false, "participates_in_expeditions" boolean NOT NULL DEFAULT false, "resource_type_id" integer, "daily_amount_produced" numeric(8,2) NOT NULL DEFAULT '0.00', "daily_ration_consumed" numeric(8,2) NOT NULL DEFAULT '1.00', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_occupation_name" UNIQUE ("name"), CONSTRAINT "PK_07cfcefef555693d96dce8805c5" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'movement_type_enum') THEN CREATE TYPE "public"."movement_type_enum" AS ENUM('DAILY_COLLECTION', 'DAILY_RATION', 'EXPEDITION_DEPARTURE', 'EXPEDITION_RETURN', 'TRANSFER_SENT', 'TRANSFER_RECEIVED', 'MANUAL_ADJUSTMENT'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "inventory_movement" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount" numeric(12,2) NOT NULL, "movement_type" "public"."movement_type_enum" NOT NULL, "source_id" integer, "source_type" text, "recorded_by" integer NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "description" text, CONSTRAINT "PK_e17362693c889da517444ad8fb5" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_movimiento_recurso" ON "inventory_movement" ("resource_type_id") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_movimiento_tipo" ON "inventory_movement" ("movement_type") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_movimiento_camp_fecha" ON "inventory_movement" ("camp_id", "date") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'system_role_enum') THEN CREATE TYPE "public"."system_role_enum" AS ENUM('VISITOR', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "notification" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "user_id" integer, "target_role" "public"."system_role_enum", "type" text NOT NULL, "title" text NOT NULL, "message" text NOT NULL, "read" boolean NOT NULL DEFAULT false, "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "read_date" TIMESTAMP WITH TIME ZONE, "source_type" text, "source_id" integer, CONSTRAINT "chk_notificacion_tipo" CHECK ("type" IN ('ADMISSION_REQUEST_PENDING', 'ADMISSION_REQUEST_APPROVED', 'ADMISSION_REQUEST_REJECTED', 'ROLE_UPDATED', 'INVENTORY_ALERT', 'OVERPOPULATION_ALERT', 'INTERCAMP_REQUEST_RECEIVED', 'INTERCAMP_REQUEST_APPROVED', 'INTERCAMP_REQUEST_REJECTED', 'EXPEDITION_RETURN', 'TRANSFER_PENDING', 'TRANSFER_COMPLETED', 'OCCUPATION_WITHOUT_STAFF')), CONSTRAINT "chk_notificacion_destinatario" CHECK ("user_id" IS NOT NULL OR "target_role" IS NOT NULL), CONSTRAINT "PK_705b6c7cdf9b2c2ff7ac7872cb7" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_notificacion_usuario" ON "notification" ("user_id", "read") `,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_notification_camp" ON "notification" ("camp_id") `);
+    await queryRunner.query(
+      `CREATE TABLE "inventory_alert" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount_at_alert_generation" numeric(12,2) NOT NULL, "movement_id" integer, "alert_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "resolved" boolean NOT NULL DEFAULT false, "resolution_date" TIMESTAMP WITH TIME ZONE, "resolved_by" integer, CONSTRAINT "PK_2968e7603cb1e688d5704bd71d0" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_alerta_camp_resuelta" ON "inventory_alert" ("camp_id", "resolved") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'intercamp_request_status_enum') THEN CREATE TYPE "public"."intercamp_request_status_enum" AS ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "intercamp_request" ("id" SERIAL NOT NULL, "origin_camp_id" integer NOT NULL, "destination_camp_id" integer NOT NULL, "status" "public"."intercamp_request_status_enum" NOT NULL DEFAULT 'PENDING', "description" text, "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "response_date" TIMESTAMP WITH TIME ZONE, "created_by" integer NOT NULL, "responded_by" integer, CONSTRAINT "chk_solicitud_camp_distintos" CHECK ("origin_camp_id" <> "destination_camp_id"), CONSTRAINT "PK_4166e924f40a92d9aed457f33e9" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_solicitud_estado" ON "intercamp_request" ("status") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_solicitud_destino" ON "intercamp_request" ("destination_camp_id") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_solicitud_origen" ON "intercamp_request" ("origin_camp_id") `,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "expedition_resource_obtained" ("id" SERIAL NOT NULL, "expedition_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount" numeric(10,2) NOT NULL, "recorded_by" integer NOT NULL, "record_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "movement_id" integer, CONSTRAINT "uq_exp_obten_recurso" UNIQUE ("expedition_id", "resource_type_id"), CONSTRAINT "chk_exp_obten_cant" CHECK ("amount" > 0), CONSTRAINT "PK_41a9a95870a6396497aa5bfba4e" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "expedition_resource_consumed" ("id" SERIAL NOT NULL, "expedition_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "amount" numeric(10,2) NOT NULL, "recorded_by" integer NOT NULL, "record_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "movement_id" integer, CONSTRAINT "uq_exp_cons_recurso" UNIQUE ("expedition_id", "resource_type_id"), CONSTRAINT "chk_exp_cons_cant" CHECK ("amount" > 0), CONSTRAINT "PK_c115b0cae00d4885f7442df4f21" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'expedition_status_enum') THEN CREATE TYPE "public"."expedition_status_enum" AS ENUM('PLANNED', 'COMPLETED', 'CANCELED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "expedition" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "name" text NOT NULL, "objective" text, "destination_description" text, "destination_latitude" numeric(9,6), "destination_longitude" numeric(9,6), "planned_departure_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_departure_date" TIMESTAMP WITH TIME ZONE, "planned_return_date" TIMESTAMP WITH TIME ZONE NOT NULL, "actual_return_date" TIMESTAMP WITH TIME ZONE, "extra_days_available" integer NOT NULL DEFAULT '0', "extra_days_used" integer NOT NULL DEFAULT '0', "status" "public"."expedition_status_enum" NOT NULL DEFAULT 'PLANNED', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "chk_dias_extra_coherencia" CHECK ("extra_days_used" <= "extra_days_available"), CONSTRAINT "chk_dias_extra_usados" CHECK ("extra_days_used" >= 0), CONSTRAINT "chk_dias_extra_disp" CHECK ("extra_days_available" >= 0), CONSTRAINT "chk_expedition_dates" CHECK ("planned_return_date" > "planned_departure_date"), CONSTRAINT "PK_56c70437feb0b28a6c988afcd2b" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_expedition_status" ON "expedition" ("status") `);
+    await queryRunner.query(`CREATE INDEX "idx_expedition_camp" ON "expedition" ("camp_id") `);
+    await queryRunner.query(
+      `CREATE TABLE "evaluated_criteria_report" ("id" SERIAL NOT NULL, "report_id" integer NOT NULL, "criteria_id" integer NOT NULL, "evaluated_value" text NOT NULL, "score_obtained" numeric(5,2), "observation" text, CONSTRAINT "uq_reporte_criterio" UNIQUE ("report_id", "criteria_id"), CONSTRAINT "PK_83dedd2e84f53f43ab35ebb9e83" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_reporte_criterio_criterio" ON "evaluated_criteria_report" ("criteria_id") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_reporte_criterio_reporte" ON "evaluated_criteria_report" ("report_id") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'participant_status_enum') THEN CREATE TYPE "public"."participant_status_enum" AS ENUM('ACTIVE', 'WITHDRAWN'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "expedition_participant" ("id" SERIAL NOT NULL, "expedition_id" integer NOT NULL, "person_id" integer NOT NULL, "expedition_role" text, "status" "public"."participant_status_enum" NOT NULL DEFAULT 'ACTIVE', "assignment_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_expedition_participant" UNIQUE ("expedition_id", "person_id"), CONSTRAINT "PK_c4399d0bf6dd76aaf0f00be6201" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_exp_participant_person" ON "expedition_participant" ("person_id") `,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "delivered_transfer_resource" ("id" SERIAL NOT NULL, "transfer_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "sent_amount" numeric(10,2) NOT NULL, "received_amount" numeric(10,2) NOT NULL, "recorded_by" integer NOT NULL, "record_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "movement_id" integer, CONSTRAINT "uq_transfer_resource_delivered" UNIQUE ("transfer_id", "resource_type_id"), CONSTRAINT "chk_transfer_resource_received" CHECK ("received_amount" >= 0), CONSTRAINT "chk_transfer_resource_sent" CHECK ("sent_amount" >= 0), CONSTRAINT "PK_87a8dc3e525a3763c0f05efb761" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_transfer_resource_delivered" ON "delivered_transfer_resource" ("transfer_id") `,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "daily_collection_record" ("id" SERIAL NOT NULL, "camp_id" integer NOT NULL, "person_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "date" date NOT NULL, "expected_amount" numeric(8,2) NOT NULL DEFAULT '0.00', "actual_amount" numeric(8,2) NOT NULL DEFAULT '0.00', "difference_reason" text, "recorded_by" integer NOT NULL, "movement_id" integer, CONSTRAINT "PK_ff3526dd10ef1202756fd30e8df" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_collection_camp_date" ON "daily_collection_record" ("camp_id", "date") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_collection_person_date" ON "daily_collection_record" ("person_id", "date") `,
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "uq_collection_person_resource_day" ON "daily_collection_record" ("person_id", "resource_type_id", "date") `,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "camp_inventory" ("camp_id" integer NOT NULL, "resource_type_id" integer NOT NULL, "current_amount" numeric(12,2) NOT NULL DEFAULT '0.00', "minimum_alert_amount" numeric(12,2) NOT NULL DEFAULT '0.00', "last_update" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "PK_0ff3965a6cc5474a79842b1e7da" PRIMARY KEY ("camp_id", "resource_type_id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "camp_achievement" ("camp_id" integer NOT NULL, "logro_id" integer NOT NULL, "obtained_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "unlocked_by" integer NOT NULL, "unlock_context" text, CONSTRAINT "PK_d0d85f61c79bd3de814439ce185" PRIMARY KEY ("camp_id", "logro_id"))`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'camp_status_enum') THEN CREATE TYPE "public"."camp_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'ABANDONED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "camp" ("id" SERIAL NOT NULL, "name" text NOT NULL, "latitude" numeric(9,6) NOT NULL, "longitude" numeric(9,6) NOT NULL, "description" text, "status" "public"."camp_status_enum" NOT NULL DEFAULT 'ACTIVE', "foundation_date" date NOT NULL, "max_person_capacity" integer NOT NULL DEFAULT '100', "session_inactivity_minutes" integer NOT NULL DEFAULT '20', "minimum_daily_ration_per_person" numeric(8,2) NOT NULL DEFAULT '1.00', "stock_alert_threshold_percentage" numeric(5,2) NOT NULL DEFAULT '20.00', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_camp_name" UNIQUE ("name"), CONSTRAINT "PK_80bfb9f28fe9bdd60efd8866964" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_camp_status" ON "camp" ("status") `);
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'gender_enum') THEN CREATE TYPE "public"."gender_enum" AS ENUM('MALE', 'FEMALE', 'OTHER'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'admission_request_status_enum') THEN CREATE TYPE "public"."admission_request_status_enum" AS ENUM('PENDING_AI', 'PENDING_ADMIN', 'APPROVED', 'REJECTED'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "admission_request" ("id" SERIAL NOT NULL, "name" text NOT NULL, "last_name1" text NOT NULL, "last_name2" text, "email" text NOT NULL, "desired_username" text NOT NULL, "birth_date" date NOT NULL, "gender" "public"."gender_enum" NOT NULL, "photo_url" text, "declared_health_level" text, "previous_experience" text, "physical_condition" text, "declared_skills" text, "camp_id" integer NOT NULL, "status" "public"."admission_request_status_enum" NOT NULL DEFAULT 'PENDING_AI', "suggested_occupation_id" integer, "final_occupation_id" integer, "occupation_modified" boolean NOT NULL DEFAULT false, "reviewed_by" integer, "review_date" TIMESTAMP WITH TIME ZONE, "rejection_reason" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "PK_35051ced56ec942d54ee08443b9" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_admission_request_email" ON "admission_request" ("email") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_admission_request_status" ON "admission_request" ("status") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_admission_request_camp" ON "admission_request" ("camp_id") `,
+    );
+    await queryRunner.query(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'ai_decision_enum') THEN CREATE TYPE "public"."ai_decision_enum" AS ENUM('ACCEPT', 'REJECT'); END IF; END $$;`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "ai_admission_report" ("id" SERIAL NOT NULL, "request_id" integer NOT NULL, "submitted_data" jsonb NOT NULL, "ai_response" jsonb NOT NULL, "ai_decision" "public"."ai_decision_enum" NOT NULL, "ai_justification" text, "suggested_occupation_id" integer, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_reporte_por_solicitud" UNIQUE ("request_id"), CONSTRAINT "PK_9a60107c4db7587eeddaca61532" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "achievement" ("id" SERIAL NOT NULL, "name" text NOT NULL, "description" text, "unlock_condition" text NOT NULL, "icon_url" text, CONSTRAINT "uq_logro_nombre" UNIQUE ("name"), CONSTRAINT "PK_441339f40e8ce717525a381671e" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(`CREATE TABLE "access_log" ("id" SERIAL NOT NULL, "session_id" integer, "user_id" integer NOT NULL, "camp_id" integer NOT NULL, "event_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), "event_type" text NOT NULL, "source_ip" text, "detail" text, CONSTRAINT "chk_log_tipo" CHECK ("event_type" IN (
     'LOGIN',
     'LOGOUT',
     'INACTIVITY_EXPIRATION',
@@ -112,127 +280,142 @@ export class Init1774818312971 implements MigrationInterface {
     'CAMP_CHANGE',
     'FAILED_ATTEMPT'
   )), CONSTRAINT "PK_bd09621fb73b42d9e32b85ae41f" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "idx_log_acceso_fecha" ON "access_log" ("event_date") `);
-        await queryRunner.query(`CREATE INDEX "idx_log_acceso_usuario" ON "access_log" ("user_id") `);
-        await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_history"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_history"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_movimiento_camp_fecha"`);
-        await queryRunner.query(`CREATE INDEX "idx_historial_rol_usuario" ON "user_role_history" ("user_id", "change_date") `);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_history" ON "transfer_history" ("transfer_id", "date") `);
-        await queryRunner.query(`CREATE INDEX "idx_person_history" ON "person_status_history" ("person_id", "change_date") `);
-        await queryRunner.query(`CREATE INDEX "idx_movimiento_camp_fecha" ON "inventory_movement" ("camp_id", "date") `);
-    }
+    await queryRunner.query(`CREATE INDEX "idx_log_acceso_fecha" ON "access_log" ("event_date") `);
+    await queryRunner.query(`CREATE INDEX "idx_log_acceso_usuario" ON "access_log" ("user_id") `);
+    await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_history"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_history"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_movimiento_camp_fecha"`);
+    await queryRunner.query(
+      `CREATE INDEX "idx_historial_rol_usuario" ON "user_role_history" ("user_id", "change_date") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_transfer_history" ON "transfer_history" ("transfer_id", "date") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_person_history" ON "person_status_history" ("person_id", "change_date") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_movimiento_camp_fecha" ON "inventory_movement" ("camp_id", "date") `,
+    );
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX "public"."idx_movimiento_camp_fecha"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_history"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_history"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario"`);
-        await queryRunner.query(`CREATE INDEX "idx_movimiento_camp_fecha" ON "inventory_movement" ("camp_id", "date") `);
-        await queryRunner.query(`CREATE INDEX "idx_person_history" ON "person_status_history" ("person_id", "change_date") `);
-        await queryRunner.query(`CREATE INDEX "idx_transfer_history" ON "transfer_history" ("transfer_id", "date") `);
-        await queryRunner.query(`CREATE INDEX "idx_historial_rol_usuario" ON "user_role_history" ("user_id", "change_date") `);
-        await queryRunner.query(`DROP INDEX "public"."idx_log_acceso_usuario"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_log_acceso_fecha"`);
-        await queryRunner.query(`DROP TABLE "access_log"`);
-        await queryRunner.query(`DROP TABLE "achievement"`);
-        await queryRunner.query(`DROP TABLE "ai_admission_report"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."ai_decision_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_admission_request_camp"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_admission_request_status"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_admission_request_email"`);
-        await queryRunner.query(`DROP TABLE "admission_request"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."admission_request_status_enum"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."gender_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_camp_status"`);
-        await queryRunner.query(`DROP TABLE "camp"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."camp_status_enum"`);
-        await queryRunner.query(`DROP TABLE "camp_achievement"`);
-        await queryRunner.query(`DROP TABLE "camp_inventory"`);
-        await queryRunner.query(`DROP INDEX "public"."uq_collection_person_resource_day"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_collection_person_date"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_collection_camp_date"`);
-        await queryRunner.query(`DROP TABLE "daily_collection_record"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_resource_delivered"`);
-        await queryRunner.query(`DROP TABLE "delivered_transfer_resource"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_exp_participant_person"`);
-        await queryRunner.query(`DROP TABLE "expedition_participant"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."participant_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_reporte_criterio_reporte"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_reporte_criterio_criterio"`);
-        await queryRunner.query(`DROP TABLE "evaluated_criteria_report"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_expedition_camp"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_expedition_status"`);
-        await queryRunner.query(`DROP TABLE "expedition"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."expedition_status_enum"`);
-        await queryRunner.query(`DROP TABLE "expedition_resource_consumed"`);
-        await queryRunner.query(`DROP TABLE "expedition_resource_obtained"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_solicitud_origen"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_solicitud_destino"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_solicitud_estado"`);
-        await queryRunner.query(`DROP TABLE "intercamp_request"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."intercamp_request_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_alerta_camp_resuelta"`);
-        await queryRunner.query(`DROP TABLE "inventory_alert"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_notification_camp"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_notificacion_usuario"`);
-        await queryRunner.query(`DROP TABLE "notification"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."system_role_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_movimiento_camp_fecha"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_movimiento_tipo"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_movimiento_recurso"`);
-        await queryRunner.query(`DROP TABLE "inventory_movement"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."movement_type_enum"`);
-        await queryRunner.query(`DROP TABLE "occupation"`);
-        await queryRunner.query(`DROP TABLE "occupation_assignment_criteria"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_camp_id"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_current_status"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_occupation_id"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_camp_status"`);
-        await queryRunner.query(`DROP TABLE "person"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_status_enum"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."gender_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_history"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_person_history_by"`);
-        await queryRunner.query(`DROP TABLE "person_status_history"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_request_person_detail"`);
-        await queryRunner.query(`DROP TABLE "request_person_detail"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_detail_status_enum"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_detail_type_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_sol_recurso_detalle"`);
-        await queryRunner.query(`DROP TABLE "request_resource_detail"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_sesion_usuario_id"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_sesion_estado"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_sesion_ultima_actividad"`);
-        await queryRunner.query(`DROP TABLE "session"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."session_status_enum"`);
-        await queryRunner.query(`DROP TABLE "resource_type"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."resource_category_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_user_camp_id"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_usuario_rol"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_usuario_estado"`);
-        await queryRunner.query(`DROP TABLE "system_user"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."system_role_enum"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."user_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_status"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_request"`);
-        await queryRunner.query(`DROP TABLE "transfer"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."transfer_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_active_person_assignment"`);
-        await queryRunner.query(`DROP TABLE "temporary_occupation_assignment"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_history"`);
-        await queryRunner.query(`DROP TABLE "transfer_history"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."transfer_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_person_transfer"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_transfer_person_person"`);
-        await queryRunner.query(`DROP TABLE "transfer_person"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_transfer_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario"`);
-        await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario_por"`);
-        await queryRunner.query(`DROP TABLE "user_role_history"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."system_role_enum"`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX "public"."idx_movimiento_camp_fecha"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_history"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_history"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario"`);
+    await queryRunner.query(
+      `CREATE INDEX "idx_movimiento_camp_fecha" ON "inventory_movement" ("camp_id", "date") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_person_history" ON "person_status_history" ("person_id", "change_date") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_transfer_history" ON "transfer_history" ("transfer_id", "date") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "idx_historial_rol_usuario" ON "user_role_history" ("user_id", "change_date") `,
+    );
+    await queryRunner.query(`DROP INDEX "public"."idx_log_acceso_usuario"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_log_acceso_fecha"`);
+    await queryRunner.query(`DROP TABLE "access_log"`);
+    await queryRunner.query(`DROP TABLE "achievement"`);
+    await queryRunner.query(`DROP TABLE "ai_admission_report"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."ai_decision_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_admission_request_camp"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_admission_request_status"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_admission_request_email"`);
+    await queryRunner.query(`DROP TABLE "admission_request"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."admission_request_status_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."gender_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_camp_status"`);
+    await queryRunner.query(`DROP TABLE "camp"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."camp_status_enum"`);
+    await queryRunner.query(`DROP TABLE "camp_achievement"`);
+    await queryRunner.query(`DROP TABLE "camp_inventory"`);
+    await queryRunner.query(`DROP INDEX "public"."uq_collection_person_resource_day"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_collection_person_date"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_collection_camp_date"`);
+    await queryRunner.query(`DROP TABLE "daily_collection_record"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_resource_delivered"`);
+    await queryRunner.query(`DROP TABLE "delivered_transfer_resource"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_exp_participant_person"`);
+    await queryRunner.query(`DROP TABLE "expedition_participant"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."participant_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_reporte_criterio_reporte"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_reporte_criterio_criterio"`);
+    await queryRunner.query(`DROP TABLE "evaluated_criteria_report"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_expedition_camp"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_expedition_status"`);
+    await queryRunner.query(`DROP TABLE "expedition"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."expedition_status_enum"`);
+    await queryRunner.query(`DROP TABLE "expedition_resource_consumed"`);
+    await queryRunner.query(`DROP TABLE "expedition_resource_obtained"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_solicitud_origen"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_solicitud_destino"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_solicitud_estado"`);
+    await queryRunner.query(`DROP TABLE "intercamp_request"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."intercamp_request_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_alerta_camp_resuelta"`);
+    await queryRunner.query(`DROP TABLE "inventory_alert"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_notification_camp"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_notificacion_usuario"`);
+    await queryRunner.query(`DROP TABLE "notification"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."system_role_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_movimiento_camp_fecha"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_movimiento_tipo"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_movimiento_recurso"`);
+    await queryRunner.query(`DROP TABLE "inventory_movement"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."movement_type_enum"`);
+    await queryRunner.query(`DROP TABLE "occupation"`);
+    await queryRunner.query(`DROP TABLE "occupation_assignment_criteria"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_camp_id"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_current_status"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_occupation_id"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_camp_status"`);
+    await queryRunner.query(`DROP TABLE "person"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_status_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."gender_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_history"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_person_history_by"`);
+    await queryRunner.query(`DROP TABLE "person_status_history"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_request_person_detail"`);
+    await queryRunner.query(`DROP TABLE "request_person_detail"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_detail_status_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_detail_type_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_sol_recurso_detalle"`);
+    await queryRunner.query(`DROP TABLE "request_resource_detail"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_sesion_usuario_id"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_sesion_estado"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_sesion_ultima_actividad"`);
+    await queryRunner.query(`DROP TABLE "session"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."session_status_enum"`);
+    await queryRunner.query(`DROP TABLE "resource_type"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."resource_category_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_user_camp_id"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_usuario_rol"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_usuario_estado"`);
+    await queryRunner.query(`DROP TABLE "system_user"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."system_role_enum"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."user_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_status"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_request"`);
+    await queryRunner.query(`DROP TABLE "transfer"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."transfer_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_active_person_assignment"`);
+    await queryRunner.query(`DROP TABLE "temporary_occupation_assignment"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_history"`);
+    await queryRunner.query(`DROP TABLE "transfer_history"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."transfer_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_person_transfer"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_transfer_person_person"`);
+    await queryRunner.query(`DROP TABLE "transfer_person"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."person_transfer_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_historial_rol_usuario_por"`);
+    await queryRunner.query(`DROP TABLE "user_role_history"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."system_role_enum"`);
+  }
 }

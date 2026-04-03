@@ -8,10 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import {
-  EXPEDITION_STATUS_VALUES,
-  type ExpeditionStatus,
-} from './expedition.model';
+import { EXPEDITION_STATUS_VALUES, type ExpeditionStatus } from './expedition.model';
 
 @Entity({ name: 'expedition' })
 @Index('idx_expedition_camp', ['campId'])
@@ -19,10 +16,7 @@ import {
 @Check('chk_expedition_dates', `"planned_return_date" > "planned_departure_date"`)
 @Check('chk_dias_extra_disp', `"extra_days_available" >= 0`)
 @Check('chk_dias_extra_usados', `"extra_days_used" >= 0`)
-@Check(
-  'chk_dias_extra_coherencia',
-  `"extra_days_used" <= "extra_days_available"`,
-)
+@Check('chk_dias_extra_coherencia', `"extra_days_used" <= "extra_days_available"`)
 export class ExpeditionEntity {
   @PrimaryGeneratedColumn()
   id!: number;

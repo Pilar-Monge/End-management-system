@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -21,7 +30,6 @@ import {
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
-
 
 import { DeliveredTransferResourceService } from './deliveredTransferResource.service';
 import type {
@@ -38,7 +46,10 @@ export class DeliveredTransferResourceController {
   @Post()
   @ApiOperation({ summary: 'Create Delivered Transfer Resource' })
   @ApiBody({ type: CreateDeliveredTransferResourceDto })
-  @ApiCreatedResponse({ description: 'Delivered Transfer Resource created', type: SuccessDataResponseDto })
+  @ApiCreatedResponse({
+    description: 'Delivered Transfer Resource created',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateDeliveredTransferResourceDTO) {
     try {
@@ -50,9 +61,7 @@ export class DeliveredTransferResourceController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error creating delivered transfer resource',
+        error instanceof Error ? error.message : 'Error creating delivered transfer resource',
       );
     }
   }
@@ -78,7 +87,12 @@ export class DeliveredTransferResourceController {
   @ApiOkResponse({ description: 'Delivered Transfer Resource list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('trasladoId') trasladoId?: string,
@@ -143,9 +157,7 @@ export class DeliveredTransferResourceController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error getting delivered transfer resources',
+        error instanceof Error ? error.message : 'Error getting delivered transfer resources',
       );
     }
   }
@@ -153,13 +165,13 @@ export class DeliveredTransferResourceController {
   @ApiOperation({ summary: 'Update Delivered Transfer Resource' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
   @ApiBody({ type: UpdateDeliveredTransferResourceDto })
-  @ApiOkResponse({ description: 'Delivered Transfer Resource updated', type: SuccessDataResponseDto })
+  @ApiOkResponse({
+    description: 'Delivered Transfer Resource updated',
+    type: SuccessDataResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateDeliveredTransferResourceDTO,
-  ) {
+  async update(@Param('id') id: string, @Body() body: UpdateDeliveredTransferResourceDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -178,16 +190,17 @@ export class DeliveredTransferResourceController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error updating delivered transfer resource',
+        error instanceof Error ? error.message : 'Error updating delivered transfer resource',
       );
     }
   }
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Delivered Transfer Resource' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
-  @ApiOkResponse({ description: 'Delivered Transfer Resource deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponse({
+    description: 'Delivered Transfer Resource deleted',
+    type: SuccessMessageResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
   async delete(@Param('id') id: string) {
@@ -208,9 +221,7 @@ export class DeliveredTransferResourceController {
       };
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error deleting delivered transfer resource',
+        error instanceof Error ? error.message : 'Error deleting delivered transfer resource',
       );
     }
   }

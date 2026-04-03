@@ -23,5 +23,4 @@ export class UpdateAccessLogDto {
 
   @ApiPropertyOptional({ nullable: true })
   detail?: string | null;
-
 }

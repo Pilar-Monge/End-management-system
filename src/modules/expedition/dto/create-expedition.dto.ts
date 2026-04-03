@@ -4,10 +4,10 @@ import type { ExpeditionStatus } from '../expedition.model';
 
 export class CreateExpeditionDto {
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiProperty()
-  name!:  string;
+  name!: string;
 
   @ApiPropertyOptional({ nullable: true })
   objective?: string | null;
@@ -22,13 +22,13 @@ export class CreateExpeditionDto {
   destinationLongitude?: string | null;
 
   @ApiProperty()
-  plannedDepartureDate!:  Date;
+  plannedDepartureDate!: Date;
 
   @ApiPropertyOptional({ nullable: true })
   actualDepartureDate?: Date | null;
 
   @ApiProperty()
-  plannedReturnDate!:  Date;
+  plannedReturnDate!: Date;
 
   @ApiPropertyOptional({ nullable: true })
   actualReturnDate?: Date | null;
@@ -41,5 +41,4 @@ export class CreateExpeditionDto {
 
   @ApiPropertyOptional()
   status?: ExpeditionStatus;
-
 }

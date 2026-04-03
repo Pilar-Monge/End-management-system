@@ -12,5 +12,4 @@ export class UpdateAchievementDto {
 
   @ApiPropertyOptional({ nullable: true })
   iconUrl?: string | null;
-
 }

@@ -41,5 +41,4 @@ export class UpdateExpeditionDto {
 
   @ApiPropertyOptional()
   status?: ExpeditionStatus;
-
 }

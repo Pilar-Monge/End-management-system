@@ -4,16 +4,16 @@ import type { TransferStatus } from '../transfer.model';
 
 export class CreateTransferDto {
   @ApiProperty()
-  requestId!:  number;
+  requestId!: number;
 
   @ApiProperty()
-  plannedDepartureDate!:  Date;
+  plannedDepartureDate!: Date;
 
   @ApiPropertyOptional({ nullable: true })
   actualDepartureDate?: Date | null;
 
   @ApiProperty()
-  plannedArrivalDate!:  Date;
+  plannedArrivalDate!: Date;
 
   @ApiPropertyOptional({ nullable: true })
   actualArrivalDate?: Date | null;
@@ -32,5 +32,4 @@ export class CreateTransferDto {
 
   @ApiPropertyOptional({ nullable: true })
   receptionNotes?: string | null;
-
 }

@@ -18,5 +18,4 @@ export class UpdateTemporaryOccupationAssignmentDto {
 
   @ApiPropertyOptional()
   assignedBy?: number;
-
 }

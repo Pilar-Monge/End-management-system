@@ -116,7 +116,10 @@ export class IntercampRequestService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
-  async updateRequest(id: number, data: UpdateIntercampRequestDTO): Promise<IntercampRequest | null> {
+  async updateRequest(
+    id: number,
+    data: UpdateIntercampRequestDTO,
+  ): Promise<IntercampRequest | null> {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 

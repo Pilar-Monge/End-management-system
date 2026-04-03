@@ -12,10 +12,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-import {
-  GENDER_VALUES,
-  type Gender,
-} from '../admissionRequest.model';
+import { GENDER_VALUES, type Gender } from '../admissionRequest.model';
 
 export class UpdateAdmissionRequestDto {
   @ApiPropertyOptional()

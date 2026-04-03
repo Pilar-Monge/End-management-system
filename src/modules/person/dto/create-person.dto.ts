@@ -7,22 +7,22 @@ export class CreatePersonDto {
   admissionRequestId?: number | null;
 
   @ApiProperty()
-  name!:  string;
+  name!: string;
 
   @ApiProperty()
-  lastName1!:  string;
+  lastName1!: string;
 
   @ApiPropertyOptional({ nullable: true })
   lastName2?: string | null;
 
   @ApiProperty()
-  identificationNumber!:  string;
+  identificationNumber!: string;
 
   @ApiProperty()
-  birthDate!:  Date;
+  birthDate!: Date;
 
   @ApiProperty()
-  gender!:  Gender;
+  gender!: Gender;
 
   @ApiPropertyOptional({ nullable: true })
   initialHealthLevel?: string | null;
@@ -37,9 +37,8 @@ export class CreatePersonDto {
   imageUrl?: string | null;
 
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiPropertyOptional({ nullable: true })
   occupationId?: number | null;
-
 }

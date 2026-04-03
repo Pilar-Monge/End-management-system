@@ -83,10 +83,7 @@ export class InventoryMovementRepository {
     return { data, total };
   }
 
-  async update(
-    id: number,
-    data: UpdateInventoryMovementDTO,
-  ): Promise<InventoryMovement | null> {
+  async update(id: number, data: UpdateInventoryMovementDTO): Promise<InventoryMovement | null> {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
 

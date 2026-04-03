@@ -17,5 +17,4 @@ export class UpdateTransferPersonDto {
 
   @ApiPropertyOptional({ nullable: true })
   arrivalDate?: Date | null;
-
 }

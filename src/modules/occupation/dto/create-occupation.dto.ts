@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateOccupationDto {
   @ApiProperty()
-  name!:  string;
+  name!: string;
 
   @ApiPropertyOptional({ nullable: true })
   description?: string | null;
@@ -21,5 +21,4 @@ export class CreateOccupationDto {
 
   @ApiPropertyOptional()
   dailyRationConsumed?: string;
-
 }

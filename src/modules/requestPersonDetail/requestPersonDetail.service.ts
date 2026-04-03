@@ -56,7 +56,10 @@ export class RequestPersonDetailService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
-  async updateDetail(id: number, data: UpdateRequestPersonDetailDTO): Promise<RequestPersonDetail | null> {
+  async updateDetail(
+    id: number,
+    data: UpdateRequestPersonDetailDTO,
+  ): Promise<RequestPersonDetail | null> {
     return await this.repository.update(id, data);
   }
 

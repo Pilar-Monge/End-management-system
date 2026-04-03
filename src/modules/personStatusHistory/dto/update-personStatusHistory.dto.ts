@@ -20,5 +20,4 @@ export class UpdatePersonStatusHistoryDto {
 
   @ApiPropertyOptional()
   changedBy?: number;
-
 }

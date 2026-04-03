@@ -2,24 +2,23 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDeliveredTransferResourceDto {
   @ApiProperty()
-  transferId!:  number;
+  transferId!: number;
 
   @ApiProperty()
-  resourceTypeId!:  number;
+  resourceTypeId!: number;
 
   @ApiProperty()
-  sentAmount!:  string;
+  sentAmount!: string;
 
   @ApiProperty()
-  receivedAmount!:  string;
+  receivedAmount!: string;
 
   @ApiProperty()
-  recordedBy!:  number;
+  recordedBy!: number;
 
   @ApiPropertyOptional()
   recordDate?: Date;
 
   @ApiPropertyOptional({ nullable: true })
   movementId?: number | null;
-
 }

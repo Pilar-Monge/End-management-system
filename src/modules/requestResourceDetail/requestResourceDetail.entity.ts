@@ -4,10 +4,7 @@ import { Check, Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'ty
 @Unique('uq_solicitud_recurso', ['requestId', 'resourceTypeId'])
 @Index('idx_sol_recurso_detalle', ['requestId'])
 @Check('chk_sol_rec_solicitada', `"requested_amount" > 0`)
-@Check(
-  'chk_sol_rec_aprobada',
-  `"approved_amount" IS NULL OR "approved_amount" >= 0`,
-)
+@Check('chk_sol_rec_aprobada', `"approved_amount" IS NULL OR "approved_amount" >= 0`)
 export class RequestResourceDetailEntity {
   @PrimaryGeneratedColumn()
   id!: number;

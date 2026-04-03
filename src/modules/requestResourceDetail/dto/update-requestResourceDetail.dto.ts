@@ -12,5 +12,4 @@ export class UpdateRequestResourceDetailDto {
 
   @ApiPropertyOptional({ nullable: true })
   approvedAmount?: string | null;
-
 }

@@ -22,10 +22,7 @@ export class AuthService {
       throw new BadRequestException('Credenciales incompletas');
     }
 
-    const user = await this.systemUserRepository.findByUsername(
-      username,
-      campId,
-    );
+    const user = await this.systemUserRepository.findByUsername(username, campId);
 
     if (!user || user.status !== 'ACTIVE') {
       if (user) {
@@ -56,8 +53,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const sessionInactivityMinutes =
-      await this.authRepository.findCampSessionInactivityMinutes(user.campId);
+    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
+      user.campId,
+    );
 
     const secret = process.env.JWT_SECRET;
     if (!secret) {
@@ -75,9 +73,7 @@ export class AuthService {
     });
 
     const now = new Date();
-    const expirationDate = new Date(
-      now.getTime() + sessionInactivityMinutes * 60 * 1000,
-    );
+    const expirationDate = new Date(now.getTime() + sessionInactivityMinutes * 60 * 1000);
 
     const session = await this.authRepository.createSession({
       token,
@@ -172,12 +168,12 @@ export class AuthService {
       throw new UnauthorizedException('Sesión no encontrada');
     }
 
-    const sessionInactivityMinutes =
-      await this.authRepository.findCampSessionInactivityMinutes(session.campId);
+    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
+      session.campId,
+    );
 
     const now = new Date();
-    const inactiveMilliseconds =
-      now.getTime() - session.lastActivityDate.getTime();
+    const inactiveMilliseconds = now.getTime() - session.lastActivityDate.getTime();
 
     if (inactiveMilliseconds > sessionInactivityMinutes * 60000) {
       await this.authRepository.expireSession(session.id);
@@ -202,8 +198,9 @@ export class AuthService {
       throw new Error('JWT_SECRET is not configured');
     }
 
-    const sessionInactivityMinutes =
-      await this.authRepository.findCampSessionInactivityMinutes(payload.campId);
+    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
+      payload.campId,
+    );
 
     const token = jwt.sign(payload, secret, {
       expiresIn: `${sessionInactivityMinutes}m`,

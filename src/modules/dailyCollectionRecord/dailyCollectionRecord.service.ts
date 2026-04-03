@@ -63,7 +63,9 @@ export class DailyCollectionRecordService {
     }
 
     if (movement.resourceTypeId !== resourceTypeId) {
-      throw new BadRequestException('Movement resource type does not match provided resourceTypeId');
+      throw new BadRequestException(
+        'Movement resource type does not match provided resourceTypeId',
+      );
     }
   }
 
@@ -83,7 +85,9 @@ export class DailyCollectionRecordService {
     );
 
     if (existing) {
-      throw new Error('A daily collection record for this person, resource type and date already exists');
+      throw new Error(
+        'A daily collection record for this person, resource type and date already exists',
+      );
     }
 
     return await this.repository.create(data);
@@ -125,7 +129,10 @@ export class DailyCollectionRecordService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
-  async updateRecord(id: number, data: UpdateDailyCollectionRecordDTO): Promise<DailyCollectionRecord | null> {
+  async updateRecord(
+    id: number,
+    data: UpdateDailyCollectionRecordDTO,
+  ): Promise<DailyCollectionRecord | null> {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 

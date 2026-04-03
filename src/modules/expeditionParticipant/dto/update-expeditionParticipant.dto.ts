@@ -17,5 +17,4 @@ export class UpdateExpeditionParticipantDto {
 
   @ApiPropertyOptional()
   assignmentDate?: Date;
-
 }

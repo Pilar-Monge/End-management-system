@@ -20,5 +20,4 @@ export class UpdateUserRoleHistoryDto {
 
   @ApiPropertyOptional({ nullable: true })
   reason?: string | null;
-
 }

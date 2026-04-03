@@ -20,5 +20,4 @@ export class UpdateTransferHistoryDto {
 
   @ApiPropertyOptional({ nullable: true })
   comment?: string | null;
-
 }

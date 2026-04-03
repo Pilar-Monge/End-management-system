@@ -4,10 +4,10 @@ import type { PersonTransferStatus } from '../transferPerson.model';
 
 export class CreateTransferPersonDto {
   @ApiProperty()
-  transferId!:  number;
+  transferId!: number;
 
   @ApiProperty()
-  personId!:  number;
+  personId!: number;
 
   @ApiPropertyOptional()
   status?: PersonTransferStatus;
@@ -17,5 +17,4 @@ export class CreateTransferPersonDto {
 
   @ApiPropertyOptional({ nullable: true })
   arrivalDate?: Date | null;
-
 }

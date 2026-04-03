@@ -13,10 +13,7 @@ export class TransferPersonService {
   constructor(private readonly repository: TransferPersonRepository) {}
 
   async createTransferPerson(data: CreateTransferPersonDTO): Promise<TransferPerson> {
-    const existing = await this.repository.findByTransferAndPerson(
-      data.transferId,
-      data.personId,
-    );
+    const existing = await this.repository.findByTransferAndPerson(data.transferId, data.personId);
     if (existing) {
       throw new Error('This person is already assigned to this transfer');
     }

@@ -13,8 +13,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -23,12 +32,8 @@ import {
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
 
-
 import { UserRoleHistoryService } from './userRoleHistory.service';
-import type {
-  CreateUserRoleHistoryDTO,
-  UpdateUserRoleHistoryDTO,
-} from './userRoleHistory.model';
+import type { CreateUserRoleHistoryDTO, UpdateUserRoleHistoryDTO } from './userRoleHistory.model';
 
 import { CreateUserRoleHistoryDto, UpdateUserRoleHistoryDto } from './dto';
 @Controller('user-role-history')
@@ -81,7 +86,12 @@ export class UserRoleHistoryController {
   @ApiOkResponse({ description: 'User Role History list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('userId') userId?: string,
     @Query('usuarioId') usuarioId?: string,
@@ -92,7 +102,8 @@ export class UserRoleHistoryController {
     @Req() req?: any,
   ) {
     try {
-      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
+      const legacyUsuarioId =
+        typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
 
       const filters: {
         userId?: number;

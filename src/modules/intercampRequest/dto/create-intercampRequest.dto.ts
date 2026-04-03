@@ -4,10 +4,10 @@ import type { IntercampRequestStatus } from '../intercampRequest.model';
 
 export class CreateIntercampRequestDto {
   @ApiProperty()
-  originCampId!:  number;
+  originCampId!: number;
 
   @ApiProperty()
-  destinationCampId!:  number;
+  destinationCampId!: number;
 
   @ApiPropertyOptional()
   status?: IntercampRequestStatus;
@@ -22,9 +22,8 @@ export class CreateIntercampRequestDto {
   responseDate?: Date | null;
 
   @ApiProperty()
-  createdBy!:  number;
+  createdBy!: number;
 
   @ApiPropertyOptional({ nullable: true })
   respondedBy?: number | null;
-
 }

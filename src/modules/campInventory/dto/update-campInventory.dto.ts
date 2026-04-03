@@ -6,5 +6,4 @@ export class UpdateCampInventoryDto {
 
   @ApiPropertyOptional()
   minimumAlertAmount?: string;
-
 }

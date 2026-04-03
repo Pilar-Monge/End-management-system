@@ -3,11 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository, type FindManyOptions } from 'typeorm';
 
 import { AchievementEntity } from './achievement.entity';
-import type {
-  Achievement,
-  CreateAchievementDTO,
-  UpdateAchievementDTO,
-} from './achievement.model';
+import type { Achievement, CreateAchievementDTO, UpdateAchievementDTO } from './achievement.model';
 
 @Injectable()
 export class AchievementRepository {

@@ -5,7 +5,7 @@ import type { NotificationType } from '../notification.model';
 
 export class CreateNotificationDto {
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiPropertyOptional({ nullable: true })
   userId?: number | null;
@@ -14,13 +14,13 @@ export class CreateNotificationDto {
   targetRole?: SystemRole | null;
 
   @ApiProperty()
-  type!:  NotificationType;
+  type!: NotificationType;
 
   @ApiProperty()
-  title!:  string;
+  title!: string;
 
   @ApiProperty()
-  message!:  string;
+  message!: string;
 
   @ApiPropertyOptional()
   read?: boolean;
@@ -36,5 +36,4 @@ export class CreateNotificationDto {
 
   @ApiPropertyOptional({ nullable: true })
   sourceId?: number | null;
-
 }

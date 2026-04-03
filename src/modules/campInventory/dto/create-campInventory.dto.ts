@@ -2,15 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCampInventoryDto {
   @ApiProperty()
-  campId!:  number;
+  campId!: number;
 
   @ApiProperty()
-  resourceTypeId!:  number;
+  resourceTypeId!: number;
 
   @ApiPropertyOptional()
   currentAmount?: string;
 
   @ApiPropertyOptional()
   minimumAlertAmount?: string;
-
 }

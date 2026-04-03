@@ -5,8 +5,7 @@ export const ADMISSION_REQUEST_STATUS_VALUES = [
   'REJECTED',
 ] as const;
 
-export type AdmissionRequestStatus =
-  (typeof ADMISSION_REQUEST_STATUS_VALUES)[number];
+export type AdmissionRequestStatus = (typeof ADMISSION_REQUEST_STATUS_VALUES)[number];
 
 export const GENDER_VALUES = ['MALE', 'FEMALE', 'OTHER'] as const;
 

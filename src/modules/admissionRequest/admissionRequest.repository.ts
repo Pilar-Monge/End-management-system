@@ -5,7 +5,7 @@ import {
   type AdmissionRequest,
   type CreateAdmissionRequestDTO,
   type UpdateAdmissionRequestDTO,
-  type AdmissionRequestStatus
+  type AdmissionRequestStatus,
 } from './admissionRequest.model';
 import { AdmissionRequestEntity } from './admissionRequest.entity';
 

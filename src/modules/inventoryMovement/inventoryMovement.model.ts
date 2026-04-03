@@ -8,8 +8,7 @@ export const INVENTORY_MOVEMENT_TYPE_VALUES = [
   'MANUAL_ADJUSTMENT',
 ] as const;
 
-export type InventoryMovementType =
-  (typeof INVENTORY_MOVEMENT_TYPE_VALUES)[number];
+export type InventoryMovementType = (typeof INVENTORY_MOVEMENT_TYPE_VALUES)[number];
 
 export interface InventoryMovement {
   id: number;

@@ -20,5 +20,4 @@ export class UpdateRequestPersonDetailDto {
 
   @ApiPropertyOptional()
   status?: PersonDetailStatus;
-
 }

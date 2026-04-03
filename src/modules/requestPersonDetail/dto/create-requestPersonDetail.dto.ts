@@ -4,7 +4,7 @@ import type { PersonDetailStatus, PersonDetailType } from '../requestPersonDetai
 
 export class CreateRequestPersonDetailDto {
   @ApiProperty()
-  requestId!:  number;
+  requestId!: number;
 
   @ApiPropertyOptional()
   detailType?: PersonDetailType;
@@ -20,5 +20,4 @@ export class CreateRequestPersonDetailDto {
 
   @ApiPropertyOptional()
   status?: PersonDetailStatus;
-
 }

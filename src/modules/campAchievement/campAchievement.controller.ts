@@ -12,8 +12,17 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,
@@ -22,12 +31,8 @@ import {
 } from '../../common/dto/api-response.dto';
 import { Roles } from '../../common/decorators';
 
-
 import { CampAchievementService } from './campAchievement.service';
-import type {
-  CreateCampAchievementDTO,
-  UpdateCampAchievementDTO,
-} from './campAchievement.model';
+import type { CreateCampAchievementDTO, UpdateCampAchievementDTO } from './campAchievement.model';
 
 import { CreateCampAchievementDto, UpdateCampAchievementDto } from './dto';
 @Controller('camp-achievements')
@@ -76,7 +81,12 @@ export class CampAchievementController {
   @ApiOkResponse({ description: 'Camp Achievement list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('campId') campId?: string,
     @Query('campamentoId') campamentoId?: string,
@@ -89,7 +99,10 @@ export class CampAchievementController {
     @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
+      const legacyCampamentoId =
+        typeof req?.query?.campamentoId === 'string'
+          ? (req.query.campamentoId as string)
+          : undefined;
 
       const filters: {
         campId?: number;
