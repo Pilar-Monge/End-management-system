@@ -81,9 +81,7 @@ export class DeliveredTransferResourceController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('transferId') transferId?: string,
-    @Query('trasladoId') trasladoId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -95,16 +93,14 @@ export class DeliveredTransferResourceController {
         limit?: number;
       } = {};
 
-      const resolvedTransferId = transferId ?? trasladoId;
-      if (resolvedTransferId) {
-        const parsedTransferId = Number.parseInt(resolvedTransferId, 10);
+      if (transferId) {
+        const parsedTransferId = Number.parseInt(transferId, 10);
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
         filters.transferId = parsedTransferId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resourceTypeId');
         }

@@ -80,20 +80,14 @@ export class TransferHistoryController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('transferId') transferId?: string,
-    @Query('transferenciaId') transferenciaId?: string,
     @Query('userId') userId?: string,
-    @Query('usuarioId') usuarioId?: string,
     @Query('previousStatus') previousStatus?: TransferStatus,
-    @Query('estadoAnterior') estadoAnterior?: TransferStatus,
     @Query('newStatus') newStatus?: TransferStatus,
-    @Query('estadoNuevo') estadoNuevo?: TransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Req() req?: any,
   ) {
     try {
-      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
-
       const filters: {
         transferId?: number;
         userId?: number;
@@ -103,28 +97,24 @@ export class TransferHistoryController {
         limit?: number;
       } = {};
 
-      const resolvedTransferId = transferId ?? transferenciaId;
-      if (resolvedTransferId) {
-        const parsedTransferId = Number.parseInt(resolvedTransferId, 10);
+      if (transferId) {
+        const parsedTransferId = Number.parseInt(transferId, 10);
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
         filters.transferId = parsedTransferId;
       }
 
-      const resolvedUserId = userId ?? legacyUsuarioId;
-      if (resolvedUserId) {
-        const parsedUserId = Number.parseInt(resolvedUserId, 10);
+      if (userId) {
+        const parsedUserId = Number.parseInt(userId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
         filters.userId = parsedUserId;
       }
 
-      const resolvedPreviousStatus = previousStatus ?? estadoAnterior;
-      if (resolvedPreviousStatus) {
-        filters.previousStatus = resolvedPreviousStatus;
+      if (previousStatus) {
+        filters.previousStatus = previousStatus;
       }
 
-      const resolvedNewStatus = newStatus ?? estadoNuevo;
-      if (resolvedNewStatus) {
-        filters.newStatus = resolvedNewStatus;
+      if (newStatus) {
+        filters.newStatus = newStatus;
       }
 
       if (page) {

@@ -74,24 +74,19 @@ export class CampController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
-    @Query('estado') estado?: CampStatus,
     @Query('status') status?: CampStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         status?: CampStatus;
         page?: number;
         limit?: number;
       } = {};
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
       if (page) {

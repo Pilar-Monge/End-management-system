@@ -79,9 +79,7 @@ export class EvaluatedCriteriaReportController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('reportId') reportId?: string,
-    @Query('reporteId') reporteId?: string,
     @Query('criteriaId') criteriaId?: string,
-    @Query('criterioId') criterioId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -93,16 +91,14 @@ export class EvaluatedCriteriaReportController {
         limit?: number;
       } = {};
 
-      const resolvedReportId = reportId ?? reporteId;
-      if (resolvedReportId) {
-        const parsedReportId = Number.parseInt(resolvedReportId, 10);
+      if (reportId) {
+        const parsedReportId = Number.parseInt(reportId, 10);
         if (Number.isNaN(parsedReportId)) throw new BadRequestException('Invalid reportId');
         filters.reportId = parsedReportId;
       }
 
-      const resolvedCriteriaId = criteriaId ?? criterioId;
-      if (resolvedCriteriaId) {
-        const parsedCriteriaId = Number.parseInt(resolvedCriteriaId, 10);
+      if (criteriaId) {
+        const parsedCriteriaId = Number.parseInt(criteriaId, 10);
         if (Number.isNaN(parsedCriteriaId)) throw new BadRequestException('Invalid criteriaId');
         filters.criteriaId = parsedCriteriaId;
       }

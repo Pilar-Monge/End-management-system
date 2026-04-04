@@ -77,18 +77,12 @@ export class CampAchievementController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('achievementId') achievementId?: string,
-    @Query('logroId') logroId?: string,
     @Query('unlockedBy') unlockedBy?: string,
-    @Query('desbloqueadoPor') desbloqueadoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-
       const filters: {
         campId?: number;
         achievementId?: number;
@@ -97,25 +91,22 @@ export class CampAchievementController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedAchievementId = achievementId ?? logroId;
-      if (resolvedAchievementId) {
-        const parsedAchievementId = Number.parseInt(resolvedAchievementId, 10);
+      if (achievementId) {
+        const parsedAchievementId = Number.parseInt(achievementId, 10);
         if (Number.isNaN(parsedAchievementId)) {
           throw new BadRequestException('Invalid achievementId');
         }
         filters.achievementId = parsedAchievementId;
       }
 
-      const resolvedUnlockedBy = unlockedBy ?? desbloqueadoPor;
-      if (resolvedUnlockedBy) {
-        const parsedUnlockedBy = Number.parseInt(resolvedUnlockedBy, 10);
+      if (unlockedBy) {
+        const parsedUnlockedBy = Number.parseInt(unlockedBy, 10);
         if (Number.isNaN(parsedUnlockedBy)) {
           throw new BadRequestException('Invalid unlockedBy');
         }

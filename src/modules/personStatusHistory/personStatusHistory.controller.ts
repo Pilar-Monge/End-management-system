@@ -93,13 +93,9 @@ export class PersonStatusHistoryController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('changedBy') changedBy?: string,
-    @Query('cambiadoPor') cambiadoPor?: string,
     @Query('previousStatus') previousStatus?: PersonStatus,
-    @Query('estadoAnterior') estadoAnterior?: PersonStatus,
     @Query('newStatus') newStatus?: PersonStatus,
-    @Query('estadoNuevo') estadoNuevo?: PersonStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -113,28 +109,24 @@ export class PersonStatusHistoryController {
         limit?: number;
       } = {};
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedChangedBy = changedBy ?? cambiadoPor;
-      if (resolvedChangedBy) {
-        const parsedChangedBy = Number.parseInt(resolvedChangedBy, 10);
+      if (changedBy) {
+        const parsedChangedBy = Number.parseInt(changedBy, 10);
         if (Number.isNaN(parsedChangedBy)) throw new BadRequestException('Invalid changedBy');
         filters.changedBy = parsedChangedBy;
       }
 
-      const resolvedPreviousStatus = previousStatus ?? estadoAnterior;
-      if (resolvedPreviousStatus) {
-        filters.previousStatus = resolvedPreviousStatus;
+      if (previousStatus) {
+        filters.previousStatus = previousStatus;
       }
 
-      const resolvedNewStatus = newStatus ?? estadoNuevo;
-      if (resolvedNewStatus) {
-        filters.newStatus = resolvedNewStatus;
+      if (newStatus) {
+        filters.newStatus = newStatus;
       }
 
       if (page) {

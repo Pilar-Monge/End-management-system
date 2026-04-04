@@ -88,11 +88,8 @@ export class OccupationAssignmentCriteriaController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('occupationId') occupationId?: string,
-    @Query('ocupacionId') ocupacionId?: string,
     @Query('evaluatedField') evaluatedField?: OccupationCriteriaEvaluatedField,
-    @Query('campoEvaluado') campoEvaluado?: OccupationCriteriaEvaluatedField,
     @Query('active') active?: string,
-    @Query('activo') activo?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -105,26 +102,23 @@ export class OccupationAssignmentCriteriaController {
         limit?: number;
       } = {};
 
-      const resolvedOccupationId = occupationId ?? ocupacionId;
-      if (resolvedOccupationId) {
-        const parsedOccupationId = Number.parseInt(resolvedOccupationId, 10);
+      if (occupationId) {
+        const parsedOccupationId = Number.parseInt(occupationId, 10);
         if (Number.isNaN(parsedOccupationId)) {
           throw new BadRequestException('Invalid occupationId');
         }
         filters.occupationId = parsedOccupationId;
       }
 
-      const resolvedEvaluatedField = evaluatedField ?? campoEvaluado;
-      if (resolvedEvaluatedField) {
-        filters.evaluatedField = resolvedEvaluatedField;
+      if (evaluatedField) {
+        filters.evaluatedField = evaluatedField;
       }
 
-      const resolvedActive = active ?? activo;
-      if (resolvedActive !== undefined) {
-        if (resolvedActive !== 'true' && resolvedActive !== 'false') {
+      if (active !== undefined) {
+        if (active !== 'true' && active !== 'false') {
           throw new BadRequestException('Invalid active');
         }
-        filters.active = resolvedActive === 'true';
+        filters.active = active === 'true';
       }
 
       if (page) {

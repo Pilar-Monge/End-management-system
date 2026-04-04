@@ -80,11 +80,8 @@ export class AiAdmissionReportController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('requestId') requestId?: string,
-    @Query('solicitudId') solicitudId?: string,
     @Query('aiDecision') aiDecision?: AiDecision,
-    @Query('decisionIA') decisionIA?: AiDecision,
     @Query('suggestedOccupationId') suggestedOccupationId?: string,
-    @Query('ocupacionSugeridaId') ocupacionSugeridaId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -97,21 +94,18 @@ export class AiAdmissionReportController {
         limit?: number;
       } = {};
 
-      const resolvedRequestId = requestId ?? solicitudId;
-      if (resolvedRequestId) {
-        const parsedRequestId = Number.parseInt(resolvedRequestId, 10);
+      if (requestId) {
+        const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedDecision = aiDecision ?? decisionIA;
-      if (resolvedDecision) {
-        filters.aiDecision = resolvedDecision;
+      if (aiDecision) {
+        filters.aiDecision = aiDecision;
       }
 
-      const resolvedSuggestedOccupationId = suggestedOccupationId ?? ocupacionSugeridaId;
-      if (resolvedSuggestedOccupationId) {
-        const parsedSuggestedOccupationId = Number.parseInt(resolvedSuggestedOccupationId, 10);
+      if (suggestedOccupationId) {
+        const parsedSuggestedOccupationId = Number.parseInt(suggestedOccupationId, 10);
         if (Number.isNaN(parsedSuggestedOccupationId)) {
           throw new BadRequestException('Invalid suggestedOccupationId');
         }

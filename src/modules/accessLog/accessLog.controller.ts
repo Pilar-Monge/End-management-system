@@ -10,7 +10,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 
@@ -84,21 +83,13 @@ export class AccessLogController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('userId') userId?: string,
-    @Query('usuarioId') usuarioId?: string,
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('sessionId') sessionId?: string,
-    @Query('sesionId') sesionId?: string,
     @Query('eventType') eventType?: AccessLogEventType,
-    @Query('tipoEvento') tipoEvento?: AccessLogEventType,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
-
       const filters: {
         userId?: number;
         campId?: number;
@@ -108,30 +99,26 @@ export class AccessLogController {
         limit?: number;
       } = {};
 
-      const resolvedUserId = userId ?? legacyUsuarioId;
-      if (resolvedUserId) {
-        const parsedUserId = Number.parseInt(resolvedUserId, 10);
+      if (userId) {
+        const parsedUserId = Number.parseInt(userId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
         filters.userId = parsedUserId;
       }
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedSessionId = sessionId ?? sesionId;
-      if (resolvedSessionId) {
-        const parsedSessionId = Number.parseInt(resolvedSessionId, 10);
+      if (sessionId) {
+        const parsedSessionId = Number.parseInt(sessionId, 10);
         if (Number.isNaN(parsedSessionId)) throw new BadRequestException('Invalid sessionId');
         filters.sessionId = parsedSessionId;
       }
 
-      const resolvedEventType = eventType ?? tipoEvento;
-      if (resolvedEventType) {
-        filters.eventType = resolvedEventType;
+      if (eventType) {
+        filters.eventType = eventType;
       }
 
       if (page) {

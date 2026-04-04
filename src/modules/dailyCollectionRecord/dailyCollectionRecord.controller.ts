@@ -10,7 +10,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 
@@ -84,20 +83,13 @@ export class DailyCollectionRecordController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('date') date?: string,
-    @Query('fecha') fecha?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-
       const filters: {
         campId?: number;
         personId?: number;
@@ -107,35 +99,31 @@ export class DailyCollectionRecordController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
         filters.campId = parsedCampId;
       }
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid person ID');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resource type ID');
         }
         filters.resourceTypeId = parsedResourceTypeId;
       }
 
-      const resolvedDate = date ?? fecha;
-      if (resolvedDate) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(resolvedDate)) {
+      if (date) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
           throw new BadRequestException('Invalid date (expected YYYY-MM-DD)');
         }
-        filters.date = resolvedDate;
+        filters.date = date;
       }
 
       if (page) {

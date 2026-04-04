@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 
@@ -80,7 +79,6 @@ export class ResourceTypeController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('category') category?: ResourceCategory,
-    @Query('categoria') categoria?: ResourceCategory,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -91,9 +89,8 @@ export class ResourceTypeController {
         limit?: number;
       } = {};
 
-      const resolvedCategory = category ?? categoria;
-      if (resolvedCategory) {
-        filters.category = resolvedCategory;
+      if (category) {
+        filters.category = category;
       }
 
       if (page) {

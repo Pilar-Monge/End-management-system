@@ -78,17 +78,12 @@ export class CampInventoryController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
-    @Query('campamentoId') campamentoId?: string,
     @Query('campId') campId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-
       const filters: {
         campId?: number;
         resourceTypeId?: number;
@@ -96,16 +91,14 @@ export class CampInventoryController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
         filters.campId = parsedCampId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resource type ID');
         }

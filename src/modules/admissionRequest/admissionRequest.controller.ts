@@ -88,8 +88,8 @@ export class AdmissionRequestController {
   }
 
   @Get()
-  @ApiQuery({ name: 'campId', required: false, type: String, description: 'Camp ID (legacy alias: campamentoId)' })
-  @ApiQuery({ name: 'status', required: false, enum: ADMISSION_REQUEST_STATUS_VALUES, description: 'Request status (legacy alias: estado)' })
+  @ApiQuery({ name: 'campId', required: false, type: String, description: 'Camp ID' })
+  @ApiQuery({ name: 'status', required: false, enum: ADMISSION_REQUEST_STATUS_VALUES, description: 'Request status' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   @ApiOperation({ summary: 'List admission requests' })
@@ -100,7 +100,6 @@ export class AdmissionRequestController {
     @Query('status') status?: AdmissionRequestStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
       const filters: {
@@ -110,23 +109,13 @@ export class AdmissionRequestController {
         limit?: number;
       } = {};
 
-      const legacyCampamentoId =
-        typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-      const legacyStatus =
-        legacyEstado && (ADMISSION_REQUEST_STATUS_VALUES as readonly string[]).includes(legacyEstado)
-          ? (legacyEstado as AdmissionRequestStatus)
-          : undefined;
-
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
         filters.campId = parsedCampId;
       }
-      const resolvedStatus = status ?? legacyStatus;
-      if (resolvedStatus) filters.status = resolvedStatus;
+
+      if (status) filters.status = status;
       if (page) filters.page = Number.parseInt(page, 10);
       if (limit) filters.limit = Number.parseInt(limit, 10);
 
@@ -239,14 +228,14 @@ export class AdmissionRequestController {
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
-    const { adminUserId, approved, motivoRechazo } = body;
+    const { adminUserId, approved, rejectionReason } = body;
 
     try {
       const request = await this.service.reviewByAdmin(
         parsedId,
         adminUserId,
         approved,
-        motivoRechazo,
+        rejectionReason,
       );
       return {
         success: true,
@@ -258,15 +247,15 @@ export class AdmissionRequestController {
     }
   }
 
-  @Get('camps/:campamentoId/pending')
+  @Get('camps/:campId/pending')
   @ApiOperation({ summary: 'List pending admission requests for a camp' })
-  @ApiParam({ name: 'campamentoId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
   @ApiOkResponseList(AdmissionRequestEntity, { description: 'Pending admission requests list' })
   @ApiBadRequestResponse({ description: 'Invalid camp id' })
-  async getPendingByCamp(@Param('campamentoId') campamentoId: string) {
-    if (!campamentoId) throw new BadRequestException('Invalid camp ID');
+  async getPendingByCamp(@Param('campId') campId: string) {
+    if (!campId) throw new BadRequestException('Invalid camp ID');
 
-    const parsedCampId = Number.parseInt(campamentoId, 10);
+    const parsedCampId = Number.parseInt(campId, 10);
     if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
 
     try {

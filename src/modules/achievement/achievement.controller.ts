@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 
@@ -74,15 +73,13 @@ export class AchievementController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('name') name?: string,
-    @Query('nombre') nombre?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     try {
       const filters: { name?: string; page?: number; limit?: number } = {};
 
-      const resolvedName = name ?? nombre;
-      if (resolvedName) filters.name = resolvedName;
+      if (name) filters.name = name;
 
       if (page) {
         const parsedPage = Number.parseInt(page, 10);

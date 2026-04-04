@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 
@@ -79,16 +78,11 @@ export class TransferController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('requestId') requestId?: string,
-    @Query('solicitudId') solicitudId?: string,
     @Query('status') status?: TransferStatus,
-    @Query('estado') estado?: TransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         requestId?: number;
         status?: TransferStatus;
@@ -96,16 +90,14 @@ export class TransferController {
         limit?: number;
       } = {};
 
-      const resolvedRequestId = requestId ?? solicitudId;
-      if (resolvedRequestId) {
-        const parsedRequestId = Number.parseInt(resolvedRequestId, 10);
+      if (requestId) {
+        const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
       if (page) {

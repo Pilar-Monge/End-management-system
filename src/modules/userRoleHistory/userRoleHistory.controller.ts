@@ -92,16 +92,11 @@ export class UserRoleHistoryController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('userId') userId?: string,
-    @Query('usuarioId') usuarioId?: string,
     @Query('changedBy') changedBy?: string,
-    @Query('cambiadoPor') cambiadoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
-
       const filters: {
         userId?: number;
         changedBy?: number;
@@ -109,16 +104,14 @@ export class UserRoleHistoryController {
         limit?: number;
       } = {};
 
-      const resolvedUserId = userId ?? legacyUsuarioId;
-      if (resolvedUserId) {
-        const parsedUserId = Number.parseInt(resolvedUserId, 10);
+      if (userId) {
+        const parsedUserId = Number.parseInt(userId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
         filters.userId = parsedUserId;
       }
 
-      const resolvedChangedBy = changedBy ?? cambiadoPor;
-      if (resolvedChangedBy) {
-        const parsedChangedBy = Number.parseInt(resolvedChangedBy, 10);
+      if (changedBy) {
+        const parsedChangedBy = Number.parseInt(changedBy, 10);
         if (Number.isNaN(parsedChangedBy)) throw new BadRequestException('Invalid changedBy');
         filters.changedBy = parsedChangedBy;
       }

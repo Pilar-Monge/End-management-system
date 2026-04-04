@@ -80,20 +80,13 @@ export class InventoryMovementController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('movementType') movementType?: InventoryMovementType,
-    @Query('tipoMovimiento') tipoMovimiento?: InventoryMovementType,
     @Query('recordedBy') recordedBy?: string,
-    @Query('registradoPor') registradoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-
       const filters: {
         campId?: number;
         resourceTypeId?: number;
@@ -103,30 +96,26 @@ export class InventoryMovementController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
         filters.campId = parsedCampId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resource type ID');
         }
         filters.resourceTypeId = parsedResourceTypeId;
       }
 
-      const resolvedMovementType = movementType ?? tipoMovimiento;
-      if (resolvedMovementType) {
-        filters.movementType = resolvedMovementType;
+      if (movementType) {
+        filters.movementType = movementType;
       }
 
-      const resolvedRecordedBy = recordedBy ?? registradoPor;
-      if (resolvedRecordedBy) {
-        const parsedRecordedBy = Number.parseInt(resolvedRecordedBy, 10);
+      if (recordedBy) {
+        const parsedRecordedBy = Number.parseInt(recordedBy, 10);
         if (Number.isNaN(parsedRecordedBy)) {
           throw new BadRequestException('Invalid recordedBy');
         }

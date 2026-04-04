@@ -76,11 +76,8 @@ export class OccupationController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('collectsResources') collectsResources?: string,
-    @Query('recolectaRecursos') recolectaRecursos?: string,
     @Query('participatesInExpeditions') participatesInExpeditions?: string,
-    @Query('participaExpediciones') participaExpediciones?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -93,25 +90,22 @@ export class OccupationController {
         limit?: number;
       } = {};
 
-      const resolvedCollects = collectsResources ?? recolectaRecursos;
-      if (resolvedCollects !== undefined) {
-        if (resolvedCollects !== 'true' && resolvedCollects !== 'false') {
+      if (collectsResources !== undefined) {
+        if (collectsResources !== 'true' && collectsResources !== 'false') {
           throw new BadRequestException('Invalid collectsResources');
         }
-        filters.collectsResources = resolvedCollects === 'true';
+        filters.collectsResources = collectsResources === 'true';
       }
 
-      const resolvedParticipates = participatesInExpeditions ?? participaExpediciones;
-      if (resolvedParticipates !== undefined) {
-        if (resolvedParticipates !== 'true' && resolvedParticipates !== 'false') {
+      if (participatesInExpeditions !== undefined) {
+        if (participatesInExpeditions !== 'true' && participatesInExpeditions !== 'false') {
           throw new BadRequestException('Invalid participatesInExpeditions');
         }
-        filters.participatesInExpeditions = resolvedParticipates === 'true';
+        filters.participatesInExpeditions = participatesInExpeditions === 'true';
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resourceTypeId');
         }

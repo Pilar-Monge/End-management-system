@@ -86,11 +86,8 @@ export class ExpeditionResourceObtainedController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
-    @Query('expedicionId') expedicionId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('recordedBy') recordedBy?: string,
-    @Query('registradoPor') registradoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -103,27 +100,24 @@ export class ExpeditionResourceObtainedController {
         limit?: number;
       } = {};
 
-      const resolvedExpeditionId = expeditionId ?? expedicionId;
-      if (resolvedExpeditionId) {
-        const parsedExpeditionId = Number.parseInt(resolvedExpeditionId, 10);
+      if (expeditionId) {
+        const parsedExpeditionId = Number.parseInt(expeditionId, 10);
         if (Number.isNaN(parsedExpeditionId)) {
           throw new BadRequestException('Invalid expeditionId');
         }
         filters.expeditionId = parsedExpeditionId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resourceTypeId');
         }
         filters.resourceTypeId = parsedResourceTypeId;
       }
 
-      const resolvedRecordedBy = recordedBy ?? registradoPor;
-      if (resolvedRecordedBy) {
-        const parsedRecordedBy = Number.parseInt(resolvedRecordedBy, 10);
+      if (recordedBy) {
+        const parsedRecordedBy = Number.parseInt(recordedBy, 10);
         if (Number.isNaN(parsedRecordedBy)) {
           throw new BadRequestException('Invalid recordedBy');
         }

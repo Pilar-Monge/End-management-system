@@ -17,5 +17,5 @@ export class ReviewAdmissionRequestDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
-  motivoRechazo?: string;
+  rejectionReason?: string;
 }

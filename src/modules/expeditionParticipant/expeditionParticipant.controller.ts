@@ -85,18 +85,12 @@ export class ExpeditionParticipantController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
-    @Query('expedicionId') expedicionId?: string,
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('status') status?: ParticipantStatus,
-    @Query('estado') estado?: ParticipantStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         expeditionId?: number;
         personId?: number;
@@ -105,25 +99,22 @@ export class ExpeditionParticipantController {
         limit?: number;
       } = {};
 
-      const resolvedExpeditionId = expeditionId ?? expedicionId;
-      if (resolvedExpeditionId) {
-        const parsedExpeditionId = Number.parseInt(resolvedExpeditionId, 10);
+      if (expeditionId) {
+        const parsedExpeditionId = Number.parseInt(expeditionId, 10);
         if (Number.isNaN(parsedExpeditionId)) {
           throw new BadRequestException('Invalid expeditionId');
         }
         filters.expeditionId = parsedExpeditionId;
       }
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
       if (page) {

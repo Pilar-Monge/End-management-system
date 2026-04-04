@@ -80,17 +80,11 @@ export class ExpeditionController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('status') status?: ExpeditionStatus,
-    @Query('estado') estado?: ExpeditionStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         campId?: number;
         status?: ExpeditionStatus;
@@ -98,16 +92,14 @@ export class ExpeditionController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
       if (page) {

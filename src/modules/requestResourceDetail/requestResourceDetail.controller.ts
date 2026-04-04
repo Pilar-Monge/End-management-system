@@ -89,9 +89,7 @@ export class RequestResourceDetailController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('requestId') requestId?: string,
-    @Query('solicitudId') solicitudId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -103,16 +101,14 @@ export class RequestResourceDetailController {
         limit?: number;
       } = {};
 
-      const resolvedRequestId = requestId ?? solicitudId;
-      if (resolvedRequestId) {
-        const parsedRequestId = Number.parseInt(resolvedRequestId, 10);
+      if (requestId) {
+        const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resourceTypeId');
         }

@@ -75,20 +75,12 @@ export class SessionController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('userId') userId?: string,
-    @Query('usuarioId') usuarioId?: string,
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('status') status?: SessionStatus,
-    @Query('estado') estado?: SessionStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-      const legacyUsuarioId = typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
-
       const filters: {
         userId?: number;
         campId?: number;
@@ -97,23 +89,20 @@ export class SessionController {
         limit?: number;
       } = {};
 
-      const resolvedUserId = userId ?? legacyUsuarioId;
-      if (resolvedUserId) {
-        const parsedUserId = Number.parseInt(resolvedUserId, 10);
+      if (userId) {
+        const parsedUserId = Number.parseInt(userId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
         filters.userId = parsedUserId;
       }
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
       if (page) {

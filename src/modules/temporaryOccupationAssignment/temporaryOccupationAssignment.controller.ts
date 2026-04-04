@@ -89,11 +89,8 @@ export class TemporaryOccupationAssignmentController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('temporaryOccupationId') temporaryOccupationId?: string,
-    @Query('ocupacionTemporalId') ocupacionTemporalId?: string,
     @Query('assignedBy') assignedBy?: string,
-    @Query('asignadoPor') asignadoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -106,25 +103,22 @@ export class TemporaryOccupationAssignmentController {
         limit?: number;
       } = {};
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedTemporaryOccupationId = temporaryOccupationId ?? ocupacionTemporalId;
-      if (resolvedTemporaryOccupationId) {
-        const parsedTemporaryOccupationId = Number.parseInt(resolvedTemporaryOccupationId, 10);
+      if (temporaryOccupationId) {
+        const parsedTemporaryOccupationId = Number.parseInt(temporaryOccupationId, 10);
         if (Number.isNaN(parsedTemporaryOccupationId)) {
           throw new BadRequestException('Invalid temporaryOccupationId');
         }
         filters.temporaryOccupationId = parsedTemporaryOccupationId;
       }
 
-      const resolvedAssignedBy = assignedBy ?? asignadoPor;
-      if (resolvedAssignedBy) {
-        const parsedAssignedBy = Number.parseInt(resolvedAssignedBy, 10);
+      if (assignedBy) {
+        const parsedAssignedBy = Number.parseInt(assignedBy, 10);
         if (Number.isNaN(parsedAssignedBy)) throw new BadRequestException('Invalid assignedBy');
         filters.assignedBy = parsedAssignedBy;
       }

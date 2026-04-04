@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 
@@ -91,22 +90,14 @@ export class RequestPersonDetailController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
     @Query('requestId') requestId?: string,
-    @Query('solicitudId') solicitudId?: string,
     @Query('detailType') detailType?: PersonDetailType,
-    @Query('tipoDetalle') tipoDetalle?: PersonDetailType,
     @Query('status') status?: PersonDetailStatus,
-    @Query('estado') estado?: PersonDetailStatus,
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('occupationId') occupationId?: string,
-    @Query('ocupacionId') ocupacionId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         requestId?: number;
         detailType?: PersonDetailType;
@@ -117,33 +108,28 @@ export class RequestPersonDetailController {
         limit?: number;
       } = {};
 
-      const resolvedRequestId = requestId ?? solicitudId;
-      if (resolvedRequestId) {
-        const parsedRequestId = Number.parseInt(resolvedRequestId, 10);
+      if (requestId) {
+        const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedDetailType = detailType ?? tipoDetalle;
-      if (resolvedDetailType) {
-        filters.detailType = resolvedDetailType;
+      if (detailType) {
+        filters.detailType = detailType;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedOccupationId = occupationId ?? ocupacionId;
-      if (resolvedOccupationId) {
-        const parsedOccupationId = Number.parseInt(resolvedOccupationId, 10);
+      if (occupationId) {
+        const parsedOccupationId = Number.parseInt(occupationId, 10);
         if (Number.isNaN(parsedOccupationId)) {
           throw new BadRequestException('Invalid occupationId');
         }

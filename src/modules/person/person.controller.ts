@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 
@@ -78,20 +77,13 @@ export class PersonController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
   async getAll(
-    @Query('campamentoId') campamentoId?: string,
     @Query('campId') campId?: string,
-    @Query('estado') estado?: PersonStatus,
-    @Query('status') status?: PersonStatus,
     @Query('currentStatus') currentStatus?: PersonStatus,
     @Query('occupationId') occupationId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId = typeof req?.query?.campamentoId === 'string' ? (req.query.campamentoId as string) : undefined;
-      const legacyEstado = typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         campId?: number;
         currentStatus?: PersonStatus;
@@ -100,18 +92,16 @@ export class PersonController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) {
           throw new BadRequestException('Invalid camp ID');
         }
         filters.campId = parsedCampId;
       }
 
-      const resolvedStatus = currentStatus ?? status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.currentStatus = resolvedStatus;
+      if (currentStatus) {
+        filters.currentStatus = currentStatus;
       }
 
       if (occupationId) {
