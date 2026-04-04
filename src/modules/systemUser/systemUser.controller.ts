@@ -32,11 +32,11 @@ import { CreateSystemUserDto, SystemUserResponseDto, UpdateSystemUserDto } from 
 
 @Controller()
 @ApiTags('System User')
-@Roles('SYSTEM_ADMIN')
 export class UserController {
   constructor(private readonly service: UserService) {}
 
   @Post('users')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create user' })
   @ApiBody({ type: CreateSystemUserDto })
   @ApiCreatedResponse({ description: 'User created', type: SystemUserResponseDto })
@@ -52,6 +52,7 @@ export class UserController {
   }
 
   @Get('users')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List users' })
   @ApiOkResponse({ description: 'Users list', type: SystemUserResponseDto, isArray: true })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -67,6 +68,7 @@ export class UserController {
   }
 
   @Get('users/:id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get user by id' })
   @ApiParam({ name: 'id', type: Number, description: 'User id' })
   @ApiOkResponse({ description: 'User found', type: SystemUserResponseDto })
@@ -86,6 +88,7 @@ export class UserController {
   }
 
   @Put('users/:id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update user' })
   @ApiParam({ name: 'id', type: Number, description: 'User id' })
   @ApiBody({ type: UpdateSystemUserDto })
@@ -110,6 +113,7 @@ export class UserController {
   }
 
   @Delete('users/:id')
+  @Roles('NO_ACCESS')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user' })
   @ApiParam({ name: 'id', type: Number, description: 'User id' })

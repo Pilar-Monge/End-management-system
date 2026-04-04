@@ -1,0 +1,306 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZDBjMDAwMzEtYzFmMi00NTI4LWFhNmQtZWM0M2MzYmYxMWE4IiwiaWF0IjoxNzc1Mjg4NDU5LCJleHAiOjE3NzUyODk2NTl9.dj2v0HttBsJk02c6Yzw8A6soKlHTrKhI5c-uF0onfoo
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNDFmMzk1YmItOTFjMS00ZmU5LTg1ZGQtZmZjOWM1OWM0N2U1IiwiaWF0IjoxNzc1Mjg4NDc0LCJleHAiOjE3NzUyODk2NzR9.j7hEbjfu7_Pmlq9uuRBUWTlTKg9nAtJVTeO84nJirfA
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImE2ODQ2MDI0LTU4NDItNDEwMC05NGFiLTBlYmY3ZGJmNjE2OCIsImlhdCI6MTc3NTI4ODUwMiwiZXhwIjoxNzc1Mjg5NzAyfQ.QO1_qZSFzo_8YT9ev0EKjo4GODm2L6EkT3tKgTNHUSY
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0YjhhNmZlYS02MDcyLTRiZjUtOWQ4OS1lODMzNWQzMDM2NmMiLCJpYXQiOjE3NzUyODg1MTksImV4cCI6MTc3NTI4OTcxOX0.p58viR8wAgP6GZ5sGoU1RPovpEjReOTwwMscbzri2D0
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImE1NWJjMjBiLWFlOTUtNDYwNi1hOTVhLWRmZDk1NWNkNzZjNiIsImlhdCI6MTc3NTI4ODUzNiwiZXhwIjoxNzc1Mjg5NzM2fQ.VtiFDiv50FTfwWM9zsZNdX6cD3Bad4ges3f-tCu3Kog
+
+### 1. [LOGIN] SYSTEM_ADMIN (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 2. [LOGIN] WORKER (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 3. [LOGIN] RESOURCE_MANAGEMENT (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 4. [LOGIN] TRAVEL_MANAGER (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 5. [LOGIN] VISITOR (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 6. [SHOULD 401] GET /api/admission-requests - no token
+GET {{baseUrl}}/api/admission-requests
+
+###
+
+### 7. [SHOULD 200] GET /api/admission-requests - SYSTEM_ADMIN
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 8. [SHOULD 403] GET /api/admission-requests - WORKER
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 9. [SHOULD 403] GET /api/admission-requests - RESOURCE_MANAGEMENT
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 10. [SHOULD 403] GET /api/admission-requests - TRAVEL_MANAGER
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 11. [SHOULD 403] GET /api/admission-requests - VISITOR
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 12. [SHOULD 401] GET /api/admission-requests/1 - no token
+GET {{baseUrl}}/api/admission-requests/1
+
+###
+
+### 13. [SHOULD 200] GET /api/admission-requests/1 - SYSTEM_ADMIN
+GET {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 14. [SHOULD 403] GET /api/admission-requests/1 - WORKER
+GET {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 15. [SHOULD 403] GET /api/admission-requests/1 - RESOURCE_MANAGEMENT
+GET {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 16. [SHOULD 403] GET /api/admission-requests/1 - TRAVEL_MANAGER
+GET {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 17. [SHOULD 403] GET /api/admission-requests/1 - VISITOR
+GET {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 18. [SHOULD 401] GET /api/admission-requests/1/ai-features - no token
+GET {{baseUrl}}/api/admission-requests/1/ai-features
+
+###
+
+### 19. [SHOULD 200] GET /api/admission-requests/1/ai-features - SYSTEM_ADMIN
+GET {{baseUrl}}/api/admission-requests/1/ai-features
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 20. [SHOULD 403] GET /api/admission-requests/1/ai-features - WORKER
+GET {{baseUrl}}/api/admission-requests/1/ai-features
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 21. [SHOULD 401] GET /api/admission-requests/camps/1/pending - no token
+GET {{baseUrl}}/api/admission-requests/camps/1/pending
+
+###
+
+### 22. [SHOULD 200] GET /api/admission-requests/camps/1/pending - SYSTEM_ADMIN
+GET {{baseUrl}}/api/admission-requests/camps/1/pending
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 23. [SHOULD 403] GET /api/admission-requests/camps/1/pending - WORKER
+GET {{baseUrl}}/api/admission-requests/camps/1/pending
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 24. [SHOULD 200 or 400] POST /api/admission-requests - public no token
+POST {{baseUrl}}/api/admission-requests
+Content-Type: application/json
+
+{
+  "name": "Test",
+  "lastName1": "Applicant",
+  "email": "test.applicant@test.com",
+  "desiredUsername": "test_applicant",
+  "birthDate": "1995-06-15",
+  "gender": "MALE",
+  "campId": 1
+}
+
+###
+
+### 25. [SHOULD 401] POST /api/admission-requests/1/process-ai - no token
+POST {{baseUrl}}/api/admission-requests/1/process-ai
+Content-Type: application/json
+
+{
+  "oficioSugeridoId": 1,
+  "decision": "APPROVE"
+}
+
+###
+
+### 26. [SHOULD 200] POST /api/admission-requests/1/process-ai - SYSTEM_ADMIN
+POST {{baseUrl}}/api/admission-requests/1/process-ai
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "oficioSugeridoId": 1,
+  "decision": "APPROVE"
+}
+
+###
+
+### 27. [SHOULD 403] POST /api/admission-requests/1/process-ai - WORKER
+POST {{baseUrl}}/api/admission-requests/1/process-ai
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "oficioSugeridoId": 1,
+  "decision": "APPROVE"
+}
+
+###
+
+### 28. [SHOULD 401] POST /api/admission-requests/1/review - no token
+POST {{baseUrl}}/api/admission-requests/1/review
+Content-Type: application/json
+
+{
+  "adminUserId": 1,
+  "approved": true,
+  "motivoRechazo": null
+}
+
+###
+
+### 29. [SHOULD 200] POST /api/admission-requests/1/review - SYSTEM_ADMIN
+POST {{baseUrl}}/api/admission-requests/1/review
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "adminUserId": 1,
+  "approved": true,
+  "motivoRechazo": null
+}
+
+###
+
+### 30. [SHOULD 403] POST /api/admission-requests/1/review - WORKER
+POST {{baseUrl}}/api/admission-requests/1/review
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "adminUserId": 1,
+  "approved": true,
+  "motivoRechazo": null
+}
+
+###
+
+### 31. [SHOULD 401] PUT /api/admission-requests/1 - no token
+PUT {{baseUrl}}/api/admission-requests/1
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 32. [SHOULD 200] PUT /api/admission-requests/1 - SYSTEM_ADMIN
+PUT {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 33. [SHOULD 403] PUT /api/admission-requests/1 - WORKER
+PUT {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 34. [SHOULD 401] DELETE /api/admission-requests/1 - no token
+DELETE {{baseUrl}}/api/admission-requests/1
+
+###
+
+### 35. [SHOULD 200] DELETE /api/admission-requests/1 - SYSTEM_ADMIN
+DELETE {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 36. [SHOULD 403] DELETE /api/admission-requests/1 - WORKER
+DELETE {{baseUrl}}/api/admission-requests/1
+Authorization: Bearer {{workerToken}}

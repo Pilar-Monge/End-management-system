@@ -1,18 +1,18 @@
 @baseUrl = http://localhost:3000
-@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwiaWF0IjoxNzc1MTE4MjY1LCJleHAiOjE3NzUxMTk0NjV9.IRNqgAQjmv9flbH0jHyKdEoPu7xjMChSLTGG1l3WM1A
-@workerToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjgsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwiaWF0IjoxNzc1MTE4Mjg5LCJleHAiOjE3NzUxMTk0ODl9.flU_xraStF9tsAiH-L4-1e7sb89zhSWdoxiOfNxExjk
-@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjksImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImlhdCI6MTc3NTExODMwNiwiZXhwIjoxNzc1MTE5NTA2fQ.GxLg9KY6XJyaTmWV-7yL6gQ80zVzgOG-077JXoZxNEg
-@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJjYW1wSWQiOjEsInJvbCI6IlRSQVZFTF9NQU5BR0VSIiwiaWF0IjoxNzc1MTE4MzI1LCJleHAiOjE3NzUxMTk1MjV9.psHt6Njjv8MuW1pNAuHHhy4pAZJUcJSswmLdPPzta7g
-@visitorToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImlhdCI6MTc3NTExODM1NiwiZXhwIjoxNzc1MTE5NTU2fQ.tsoaD-PS9YWERoDmj8ZPyVx6vX593tKNrfVBewkB4A8
-@logoutToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwiaWF0IjoxNzc1MTE4MjY1LCJleHAiOjE3NzUxMTk0NjV9.IRNqgAQjmv9flbH0jHyKdEoPu7xjMChSLTGG1l3WM1A
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZGZhOTE1OGEtMmEyNy00ZmFkLThjOGQtNTY0NWM1M2E4ZmY2IiwiaWF0IjoxNzc1MjcxMjY0LCJleHAiOjE3NzUyNzI0NjR9.rJBvfGNhIEIJkA3gfZR3WALloANUc4W46AAXr5kYzME
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjQ4ZGNhNWMwLWQwOWUtNDQwZC1iZTQ1LTQ0Y2U0NjFhMTA5NyIsImlhdCI6MTc3NTI3MTMwOCwiZXhwIjoxNzc1MjcyNTA4fQ.LhYyQUfPOwUEiJAL5LzROBI7nAgouL6PuDRW7HsZvmw
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI1OWQxZmY0YS04ZDJkLTQ0NDMtYTAxZS1hMTgzYzFhM2VlNGEiLCJpYXQiOjE3NzUyNzEzMzcsImV4cCI6MTc3NTI3MjUzN30.6oHfdhBct2CWbjikees-LE88k8GIvf54J4X4t6PVX9A
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIwYTVkYWFhNy04MTMzLTRiNjUtOWFlMC04M2JiODQxODQ1ZjIiLCJpYXQiOjE3NzUyNzEzNTksImV4cCI6MTc3NTI3MjU1OX0.53I8Yr8nNnhGn77jnDawWyuLxfd0h00LqVlmnTv3yaI
+@logoutToken =
 
 ### Login SYSTEM_ADMIN
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "password",
+  "username": "admin_camp1",
+  "password": "Seed1234!",
   "campId": 1
 }
 
@@ -21,8 +21,8 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "worker_user",
-  "password": "password",
+  "username": "worker_camp1",
+  "password": "Seed1234!",
   "campId": 1
 }
 
@@ -31,8 +31,8 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "resource_user",
-  "password": "password",
+  "username": "resource_camp1",
+  "password": "Seed1234!",
   "campId": 1
 }
 
@@ -41,8 +41,8 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "travel_user",
-  "password": "password",
+  "username": "travel_camp1",
+  "password": "Seed1234!",
   "campId": 1
 }
 
@@ -51,8 +51,8 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_test",
-  "password": "password",
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
   "campId": 1
 }
 
@@ -99,47 +99,126 @@ Authorization: Bearer {{logoutToken}}
 GET {{baseUrl}}/api/occupations
 Authorization: Bearer {{workerToken}}
 
-### Create WORKER user
-POST {{baseUrl}}/api/users
-Content-Type: application/json
+### BLOCK 1 - ADMISSION REQUESTS
+
+### [SHOULD 401] admission requests list - no token
+GET {{baseUrl}}/api/admission-requests
+
+###
+
+### [SHOULD 200] admission requests list - admin
+GET {{baseUrl}}/api/admission-requests
 Authorization: Bearer {{adminToken}}
 
-{
-  "username": "worker_user",
-  "password": "Password123!",
-  "email": "worker@example.com",
-  "role": "WORKER",
-  "campId": 1,
-  "personId": null,
-  "requestId": null
-}
+###
 
-### Create RESOURCE_MANAGEMENT user
-POST {{baseUrl}}/api/users
-Content-Type: application/json
+### [SHOULD 403] admission requests list - worker
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{workerToken}}
+
+###
+
+### [SHOULD 403] admission requests list - resource
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### [SHOULD 403] admission requests list - travel
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{travelToken}}
+
+###
+
+### [SHOULD 403] admission requests list - visitor
+GET {{baseUrl}}/api/admission-requests
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### BLOCK 1 - PERSONS
+
+### [SHOULD 200] persons list - admin
+GET {{baseUrl}}/api/persons
 Authorization: Bearer {{adminToken}}
 
-{
-  "username": "resource_user",
-  "password": "Password123!",
-  "email": "resource@example.com",
-  "role": "RESOURCE_MANAGEMENT",
-  "campId": 1,
-  "personId": null,
-  "requestId": null
-}
+###
 
-### Create TRAVEL_MANAGER user
-POST {{baseUrl}}/api/users
-Content-Type: application/json
+### [SHOULD 200] persons list - worker
+GET {{baseUrl}}/api/persons
+Authorization: Bearer {{workerToken}}
+
+###
+
+### [SHOULD 200] persons list - resource
+GET {{baseUrl}}/api/persons
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### [SHOULD 200] persons list - travel
+GET {{baseUrl}}/api/persons
+Authorization: Bearer {{travelToken}}
+
+###
+
+### [SHOULD 200] persons list - visitor
+GET {{baseUrl}}/api/persons
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### [SHOULD 200] person detail - admin
+GET {{baseUrl}}/api/persons/1
 Authorization: Bearer {{adminToken}}
 
-{
-  "username": "travel_user",
-  "password": "Password123!",
-  "email": "travel@example.com",
-  "role": "TRAVEL_MANAGER",
-  "campId": 1,
-  "personId": null,
-  "requestId": null
-}
+###
+
+### [SHOULD 403] person detail - worker
+GET {{baseUrl}}/api/persons/1
+Authorization: Bearer {{workerToken}}
+
+###
+
+### [SHOULD 403] person detail - visitor
+GET {{baseUrl}}/api/persons/1
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### BLOCK 1 - SYSTEM USERS
+
+### [SHOULD 401] users list - no token
+GET {{baseUrl}}/api/users
+
+###
+
+### [SHOULD 200] users list - admin
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### [SHOULD 403] users list - worker
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{workerToken}}
+
+###
+
+### [SHOULD 403] users list - resource
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### [SHOULD 403] users list - travel
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{travelToken}}
+
+###
+
+### [SHOULD 403] users list - visitor
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{visitorToken}}
+
+###

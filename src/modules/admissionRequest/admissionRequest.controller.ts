@@ -28,7 +28,7 @@ import {
   SuccessListResponseDto,
   SuccessMessageResponseDto,
 } from '../../common/dto/api-response.dto';
-import { Roles } from '../../common/decorators';
+import { Public, Roles } from '../../common/decorators';
 
 import { AdmissionRequestService } from './admissionRequest.service';
 import {
@@ -44,11 +44,11 @@ import {
 
 @Controller('admission-requests')
 @ApiTags('Admission Requests')
-@Roles('SYSTEM_ADMIN')
 export class AdmissionRequestController {
   constructor(private readonly service: AdmissionRequestService) {}
 
   @Get(':id/ai-features')
+  @Roles('SYSTEM_ADMIN')
   async getAiFeatures(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -67,6 +67,7 @@ export class AdmissionRequestController {
   }
 
   @Post()
+  @Public()
   @ApiOperation({ summary: 'Create an admission request' })
   @ApiBody({ type: CreateAdmissionRequestDto })
   @ApiCreatedResponse({ description: 'Admission request created', type: SuccessDataResponseDto })
@@ -87,6 +88,7 @@ export class AdmissionRequestController {
   }
 
   @Get(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get an admission request by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiOkResponse({ description: 'Admission request found', type: SuccessDataResponseDto })
@@ -110,6 +112,7 @@ export class AdmissionRequestController {
   }
 
   @Get()
+  @Roles('SYSTEM_ADMIN')
   @ApiQuery({
     name: 'campId',
     required: false,
@@ -193,6 +196,7 @@ export class AdmissionRequestController {
   }
 
   @Put(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update an admission request' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: UpdateAdmissionRequestDto })
@@ -219,6 +223,7 @@ export class AdmissionRequestController {
   }
 
   @Delete(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete an admission request' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiOkResponse({ description: 'Admission request deleted', type: SuccessMessageResponseDto })
@@ -243,6 +248,7 @@ export class AdmissionRequestController {
   }
 
   @Post(':id/process-ai')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Process an admission request with AI' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
@@ -271,6 +277,7 @@ export class AdmissionRequestController {
   }
 
   @Post(':id/review')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Review an admission request by admin' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: ReviewAdmissionRequestDto })
@@ -307,6 +314,7 @@ export class AdmissionRequestController {
   }
 
   @Get('camps/:campamentoId/pending')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List pending admission requests for a camp' })
   @ApiParam({ name: 'campamentoId', type: Number, description: 'Camp id' })
   @ApiOkResponse({ description: 'Pending admission requests list', type: SuccessListResponseDto })

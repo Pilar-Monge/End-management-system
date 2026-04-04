@@ -1,47 +1,26 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 
-import type { Gender, PersonStatus } from '../person.model';
+import type { PersonStatus } from '../person.model';
+
+const PersonStatusEnum = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SICK: 'SICK',
+  INJURED: 'INJURED',
+  OUTSIDE_CAMP: 'OUTSIDE_CAMP',
+  ON_EXPEDITION: 'ON_EXPEDITION',
+} as const;
 
 export class UpdatePersonDto {
-  @ApiPropertyOptional({ nullable: true })
-  admissionRequestId?: number | null;
-
   @ApiPropertyOptional()
-  name?: string;
-
-  @ApiPropertyOptional()
-  lastName1?: string;
-
-  @ApiPropertyOptional({ nullable: true })
-  lastName2?: string | null;
-
-  @ApiPropertyOptional()
-  identificationNumber?: string;
-
-  @ApiPropertyOptional()
-  birthDate?: Date;
-
-  @ApiPropertyOptional()
-  gender?: Gender;
-
-  @ApiPropertyOptional({ nullable: true })
-  initialHealthLevel?: string | null;
-
-  @ApiPropertyOptional({ nullable: true })
-  previousExperience?: string | null;
-
-  @ApiPropertyOptional({ nullable: true })
-  physicalConditionAtEntry?: string | null;
-
-  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEnum(PersonStatusEnum)
   currentStatus?: PersonStatus;
 
   @ApiPropertyOptional({ nullable: true })
-  imageUrl?: string | null;
-
-  @ApiPropertyOptional()
-  campId?: number;
-
-  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   occupationId?: number | null;
 }

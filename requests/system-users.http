@@ -1,0 +1,289 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiYjU0NzE3ODMtZmRkNi00ZjNjLTg4ZDItMzU4Mjg5ZGMyMzBhIiwiaWF0IjoxNzc1Mjg5Mzk0LCJleHAiOjE3NzUyOTA1OTR9.YkeXeLdl_RxBTs6vogml1qYrOjbKOdt-Gndta1-FxPc
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNDFmMzk1YmItOTFjMS00ZmU5LTg1ZGQtZmZjOWM1OWM0N2U1IiwiaWF0IjoxNzc1Mjg4NDc0LCJleHAiOjE3NzUyODk2NzR9.j7hEbjfu7_Pmlq9uuRBUWTlTKg9nAtJVTeO84nJirfA
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImE2ODQ2MDI0LTU4NDItNDEwMC05NGFiLTBlYmY3ZGJmNjE2OCIsImlhdCI6MTc3NTI4ODUwMiwiZXhwIjoxNzc1Mjg5NzAyfQ.QO1_qZSFzo_8YT9ev0EKjo4GODm2L6EkT3tKgTNHUSY
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0YjhhNmZlYS02MDcyLTRiZjUtOWQ4OS1lODMzNWQzMDM2NmMiLCJpYXQiOjE3NzUyODg1MTksImV4cCI6MTc3NTI4OTcxOX0.p58viR8wAgP6GZ5sGoU1RPovpEjReOTwwMscbzri2D0
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImE1NWJjMjBiLWFlOTUtNDYwNi1hOTVhLWRmZDk1NWNkNzZjNiIsImlhdCI6MTc3NTI4ODUzNiwiZXhwIjoxNzc1Mjg5NzM2fQ.VtiFDiv50FTfwWM9zsZNdX6cD3Bad4ges3f-tCu3Kog
+
+### 1. [LOGIN] SYSTEM_ADMIN (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 2. [LOGIN] WORKER (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 3. [LOGIN] RESOURCE_MANAGEMENT (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 4. [LOGIN] TRAVEL_MANAGER (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 5. [LOGIN] VISITOR (Seeder)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 6. [SHOULD 401] GET /api/users - no token
+GET {{baseUrl}}/api/users
+
+###
+
+### 7. [SHOULD 200] GET /api/users - SYSTEM_ADMIN
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 8. [SHOULD 403] GET /api/users - WORKER
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 9. [SHOULD 403] GET /api/users - RESOURCE_MANAGEMENT
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 10. [SHOULD 403] GET /api/users - TRAVEL_MANAGER
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 11. [SHOULD 403] GET /api/users - VISITOR
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 12. [SHOULD 401] GET /api/users/1 - no token
+GET {{baseUrl}}/api/users/1
+
+###
+
+### 13. [SHOULD 200] GET /api/users/1 - SYSTEM_ADMIN
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 14. [SHOULD 403] GET /api/users/1 - WORKER
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 15. [SHOULD 403] GET /api/users/1 - RESOURCE_MANAGEMENT
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 16. [SHOULD 403] GET /api/users/1 - TRAVEL_MANAGER
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 17. [SHOULD 403] GET /api/users/1 - VISITOR
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 18. [SHOULD 401] POST /api/users - no token
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+
+{
+  "username": "test_block1_user",
+  "password": "Test1234!",
+  "email": "testblock1@test.com",
+  "role": "VISITOR",
+  "campId": 1,
+  "personId": 1,
+  "requestId": 1
+}
+
+###
+
+### 19. [SHOULD 200 or 201] POST /api/users - SYSTEM_ADMIN
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "test_block1_user",
+  "password": "Test1234!",
+  "email": "testblock1@test.com",
+  "role": "VISITOR",
+  "campId": 1,
+  "personId": 1,
+  "requestId": 1
+}
+
+###
+
+### 20. [SHOULD 403] POST /api/users - WORKER
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "username": "test_block1_user",
+  "password": "Test1234!",
+  "email": "testblock1@test.com",
+  "role": "VISITOR",
+  "campId": 1,
+  "personId": 1,
+  "requestId": 1
+}
+
+###
+
+### 21. [SHOULD 401] PUT /api/users/1 - no token
+PUT {{baseUrl}}/api/users/1
+Content-Type: application/json
+
+{
+  "role": "VISITOR",
+  "status": "ACTIVE"
+}
+
+###
+
+### 22. [SHOULD 200] PUT /api/users/1 - SYSTEM_ADMIN
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "VISITOR",
+  "status": "ACTIVE"
+}
+
+###
+
+### 23. [SHOULD 403] PUT /api/users/1 - WORKER
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "role": "VISITOR",
+  "status": "ACTIVE"
+}
+
+###
+
+### 24. [SHOULD 403] PUT /api/users/1 - RESOURCE_MANAGEMENT
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "role": "VISITOR",
+  "status": "ACTIVE"
+}
+
+###
+
+### 25. [SHOULD 403] PUT /api/users/1 - TRAVEL_MANAGER
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "role": "VISITOR",
+  "status": "ACTIVE"
+}
+
+###
+
+### 26. [SHOULD 403] PUT /api/users/1 - VISITOR
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "role": "VISITOR",
+  "status": "ACTIVE"
+}
+
+###
+
+### 27. [SHOULD 401] PUT /api/users/1 status INACTIVE - no token
+PUT {{baseUrl}}/api/users/1
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+###
+
+### 28. [SHOULD 200] PUT /api/users/1 status INACTIVE - SYSTEM_ADMIN
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+###
+
+### 29. [SHOULD 403] PUT /api/users/1 status INACTIVE - WORKER
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+###

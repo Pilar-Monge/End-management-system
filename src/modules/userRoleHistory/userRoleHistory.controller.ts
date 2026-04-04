@@ -42,6 +42,7 @@ import { CreateUserRoleHistoryDto, UpdateUserRoleHistoryDto } from './dto';
 export class UserRoleHistoryController {
   constructor(private readonly service: UserRoleHistoryService) {}
   @Post()
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create User Role History' })
   @ApiBody({ type: CreateUserRoleHistoryDto })
   @ApiCreatedResponse({ description: 'User Role History created', type: SuccessDataResponseDto })
@@ -65,6 +66,7 @@ export class UserRoleHistoryController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get User Role History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'User Role History id' })
   @ApiOkResponse({ description: 'User Role History found', type: SuccessDataResponseDto })
@@ -82,6 +84,7 @@ export class UserRoleHistoryController {
     return { success: true, data: entry };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List User Role History' })
   @ApiOkResponse({ description: 'User Role History list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -163,6 +166,7 @@ export class UserRoleHistoryController {
     }
   }
   @Put(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Update User Role History' })
   @ApiParam({ name: 'id', type: Number, description: 'User Role History id' })
   @ApiBody({ type: UpdateUserRoleHistoryDto })
@@ -195,6 +199,7 @@ export class UserRoleHistoryController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete User Role History' })
   @ApiParam({ name: 'id', type: Number, description: 'User Role History id' })
   @ApiOkResponse({ description: 'User Role History deleted', type: SuccessMessageResponseDto })

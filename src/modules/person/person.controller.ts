@@ -37,10 +37,10 @@ import type { CreatePersonDTO, PersonStatus, UpdatePersonDTO } from './person.mo
 import { CreatePersonDto, UpdatePersonDto } from './dto';
 @Controller('persons')
 @ApiTags('Person')
-@Roles('SYSTEM_ADMIN')
 export class PersonController {
   constructor(private readonly service: PersonService) {}
   @Post()
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Person' })
   @ApiBody({ type: CreatePersonDto })
   @ApiCreatedResponse({ description: 'Person created', type: SuccessDataResponseDto })
@@ -60,6 +60,7 @@ export class PersonController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Person by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiOkResponse({ description: 'Person found', type: SuccessDataResponseDto })
@@ -77,6 +78,7 @@ export class PersonController {
     return { success: true, data: person };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'List Person' })
   @ApiOkResponse({ description: 'Person list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -173,6 +175,7 @@ export class PersonController {
     }
   }
   @Put(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiBody({ type: UpdatePersonDto })
@@ -201,6 +204,7 @@ export class PersonController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiOkResponse({ description: 'Person deleted', type: SuccessMessageResponseDto })

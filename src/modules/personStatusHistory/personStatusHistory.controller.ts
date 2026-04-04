@@ -46,6 +46,7 @@ import { CreatePersonStatusHistoryDto, UpdatePersonStatusHistoryDto } from './dt
 export class PersonStatusHistoryController {
   constructor(private readonly service: PersonStatusHistoryService) {}
   @Post()
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Person Status History' })
   @ApiBody({ type: CreatePersonStatusHistoryDto })
   @ApiCreatedResponse({
@@ -72,6 +73,7 @@ export class PersonStatusHistoryController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Person Status History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
   @ApiOkResponse({ description: 'Person Status History found', type: SuccessDataResponseDto })
@@ -89,6 +91,7 @@ export class PersonStatusHistoryController {
     return { success: true, data: entry };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Person Status History' })
   @ApiOkResponse({ description: 'Person Status History list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -182,6 +185,7 @@ export class PersonStatusHistoryController {
     }
   }
   @Put(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Update Person Status History' })
   @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
   @ApiBody({ type: UpdatePersonStatusHistoryDto })
@@ -214,6 +218,7 @@ export class PersonStatusHistoryController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Person Status History' })
   @ApiParam({ name: 'id', type: Number, description: 'Person Status History id' })
   @ApiOkResponse({ description: 'Person Status History deleted', type: SuccessMessageResponseDto })

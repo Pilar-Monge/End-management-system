@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 
 import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
+import { PersonStatusHistoryRepository } from '../personStatusHistory/personStatusHistory.repository';
 
 @Injectable()
 export class PersonService {
-  constructor(private readonly repository: PersonRepository) {}
+  constructor(
+    private readonly repository: PersonRepository,
+    private readonly personStatusHistoryRepository: PersonStatusHistoryRepository,
+  ) {}
 
   async createPerson(data: CreatePersonDTO): Promise<Person> {
     const existingByIdentification = await this.repository.findByIdentificationNumber(
@@ -65,32 +69,22 @@ export class PersonService {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 
-    if (data.identificationNumber && data.identificationNumber !== existing.identificationNumber) {
-      const byIdentification = await this.repository.findByIdentificationNumber(
-        data.identificationNumber,
-      );
+    const updated = await this.repository.update(id, data);
 
-      if (byIdentification && byIdentification.id !== id) {
-        throw new Error('Another person with this identification number already exists');
-      }
+    if (data.currentStatus !== undefined && data.currentStatus !== existing.currentStatus) {
+      await this.personStatusHistoryRepository.create({
+        personId: id,
+        previousStatus: existing.currentStatus,
+        newStatus: data.currentStatus,
+        changedBy: 0,
+        reason: null,
+      });
     }
 
-    if (
-      data.admissionRequestId !== undefined &&
-      data.admissionRequestId !== existing.admissionRequestId &&
-      data.admissionRequestId !== null
-    ) {
-      const byRequest = await this.repository.findByAdmissionRequestId(data.admissionRequestId);
-
-      if (byRequest && byRequest.id !== id) {
-        throw new Error('Another person for this admission request already exists');
-      }
-    }
-
-    return await this.repository.update(id, data);
+    return updated;
   }
 
   async deletePerson(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    return false;
   }
 }

@@ -2,10 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { UserRepository } from './systemUser.repository';
 import { User, CreateUserDTO, UserResponse } from './systemUser.model';
 import { EncryptionService } from '../../services/encryption.service';
+import type { UpdateSystemUserDto } from './dto';
+import { UserRoleHistoryRepository } from '../userRoleHistory/userRoleHistory.repository';
 
 @Injectable()
 export class UserService {
-  constructor(private userRepo: UserRepository) {}
+  constructor(
+    private userRepo: UserRepository,
+    private readonly userRoleHistoryRepository: UserRoleHistoryRepository,
+  ) {}
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
     const passwordHash = await EncryptionService.hashPassword(data.password);
@@ -43,21 +48,34 @@ export class UserService {
 
   async updateUser(
     id: number,
-    data: Partial<Omit<CreateUserDTO, 'password'>> & { password?: string },
+    data: Partial<Pick<UpdateSystemUserDto, 'role' | 'status'>>,
   ): Promise<UserResponse | null> {
-    let passwordHash: string | undefined;
+    const existing = await this.userRepo.findById(id);
+    if (!existing) return null;
 
-    if (data.password) {
-      passwordHash = await EncryptionService.hashPassword(data.password);
+    const updateData: Partial<Pick<UpdateSystemUserDto, 'role' | 'status'>> = {};
+
+    if (data.role !== undefined) {
+      updateData.role = data.role;
     }
 
-    const updateData: any = { ...data };
-    delete updateData.password;
+    if (data.status !== undefined) {
+      updateData.status = data.status;
+    }
 
     const user = await this.userRepo.update(id, {
       ...updateData,
-      passwordHash,
     });
+
+    if (data.role !== undefined && data.role !== existing.role) {
+      await this.userRoleHistoryRepository.create({
+        userId: id,
+        previousRole: existing.role,
+        newRole: data.role,
+        changedBy: 0,
+        reason: null,
+      });
+    }
 
     if (!user) return null;
 
