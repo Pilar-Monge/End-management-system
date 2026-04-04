@@ -12,23 +12,15 @@ import {
   Req,
 } from '@nestjs/common';
 
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { AiAdmissionReportService } from './aiAdmissionReport.service';
@@ -37,6 +29,7 @@ import type {
   CreateAiAdmissionReportDTO,
   UpdateAiAdmissionReportDTO,
 } from './aiAdmissionReport.model';
+import { AiAdmissionReportEntity } from './aiAdmissionReport.entity';
 
 import { CreateAiAdmissionReportDto, UpdateAiAdmissionReportDto } from './dto';
 @Controller('ai-admission-reports')
@@ -47,7 +40,7 @@ export class AiAdmissionReportController {
   @Post()
   @ApiOperation({ summary: 'Create Ai Admission Report' })
   @ApiBody({ type: CreateAiAdmissionReportDto })
-  @ApiCreatedResponse({ description: 'Ai Admission Report created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateAiAdmissionReportDTO) {
     try {
@@ -66,7 +59,7 @@ export class AiAdmissionReportController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Ai Admission Report by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Ai Admission Report id' })
-  @ApiOkResponse({ description: 'Ai Admission Report found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
   async getById(@Param('id') id: string) {
@@ -82,7 +75,7 @@ export class AiAdmissionReportController {
   }
   @Get()
   @ApiOperation({ summary: 'List Ai Admission Report' })
-  @ApiOkResponse({ description: 'Ai Admission Report list', type: SuccessListResponseDto })
+  @ApiOkResponseList(AiAdmissionReportEntity, { description: 'Ai Admission Report list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -93,11 +86,8 @@ export class AiAdmissionReportController {
   })
   async getAll(
     @Query('requestId') requestId?: string,
-    @Query('solicitudId') solicitudId?: string,
     @Query('aiDecision') aiDecision?: AiDecision,
-    @Query('decisionIA') decisionIA?: AiDecision,
     @Query('suggestedOccupationId') suggestedOccupationId?: string,
-    @Query('ocupacionSugeridaId') ocupacionSugeridaId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -110,21 +100,18 @@ export class AiAdmissionReportController {
         limit?: number;
       } = {};
 
-      const resolvedRequestId = requestId ?? solicitudId;
-      if (resolvedRequestId) {
-        const parsedRequestId = Number.parseInt(resolvedRequestId, 10);
+      if (requestId) {
+        const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedDecision = aiDecision ?? decisionIA;
-      if (resolvedDecision) {
-        filters.aiDecision = resolvedDecision;
+      if (aiDecision) {
+        filters.aiDecision = aiDecision;
       }
 
-      const resolvedSuggestedOccupationId = suggestedOccupationId ?? ocupacionSugeridaId;
-      if (resolvedSuggestedOccupationId) {
-        const parsedSuggestedOccupationId = Number.parseInt(resolvedSuggestedOccupationId, 10);
+      if (suggestedOccupationId) {
+        const parsedSuggestedOccupationId = Number.parseInt(suggestedOccupationId, 10);
         if (Number.isNaN(parsedSuggestedOccupationId)) {
           throw new BadRequestException('Invalid suggestedOccupationId');
         }
@@ -171,7 +158,7 @@ export class AiAdmissionReportController {
   @ApiOperation({ summary: 'Update Ai Admission Report' })
   @ApiParam({ name: 'id', type: Number, description: 'Ai Admission Report id' })
   @ApiBody({ type: UpdateAiAdmissionReportDto })
-  @ApiOkResponse({ description: 'Ai Admission Report updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
   async update(@Param('id') id: string, @Body() body: UpdateAiAdmissionReportDTO) {
@@ -198,7 +185,7 @@ export class AiAdmissionReportController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Ai Admission Report' })
   @ApiParam({ name: 'id', type: Number, description: 'Ai Admission Report id' })
-  @ApiOkResponse({ description: 'Ai Admission Report deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Ai Admission Report deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
   async delete(@Param('id') id: string) {

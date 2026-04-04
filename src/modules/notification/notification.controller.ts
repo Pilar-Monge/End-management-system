@@ -10,28 +10,24 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
+  ApiNotFoundResponse,  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
-
 import { NotificationService } from './notification.service';
 import type {
   CreateNotificationDTO,
@@ -39,17 +35,19 @@ import type {
   UpdateNotificationDTO,
 } from './notification.model';
 import type { SystemRole } from '../systemUser/systemUser.model';
-
+import { NotificationEntity } from './notification.entity';
 import { CreateNotificationDto, UpdateNotificationDto } from './dto';
+
 @Controller('notifications')
 @ApiTags('Notification')
 export class NotificationController {
   constructor(private readonly service: NotificationService) {}
+
   @Post()
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Notification' })
   @ApiBody({ type: CreateNotificationDto })
-  @ApiCreatedResponse({ description: 'Notification created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(NotificationEntity, { description: 'Notification created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateNotificationDTO) {
     try {
@@ -69,26 +67,30 @@ export class NotificationController {
       );
     }
   }
+
   @Get(':id')
   @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'Get Notification by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
-  @ApiOkResponse({ description: 'Notification found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(NotificationEntity, { description: 'Notification found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Notification not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
+
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     const notification = await this.service.getNotificationById(parsedId);
     if (!notification) throw new NotFoundException('Notification not found');
+
     return { success: true, data: notification };
   }
+
   @Get()
   @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'List Notification' })
-  @ApiOkResponse({ description: 'Notification list', type: SuccessListResponseDto })
+  @ApiOkResponseList(NotificationEntity, { description: 'Notification list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -99,27 +101,14 @@ export class NotificationController {
   })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('userId') userId?: string,
-    @Query('usuarioId') usuarioId?: string,
     @Query('targetRole') targetRole?: SystemRole,
-    @Query('rolObjetivo') rolObjetivo?: SystemRole,
     @Query('type') type?: NotificationType,
-    @Query('tipo') tipo?: NotificationType,
     @Query('read') read?: string,
-    @Query('leida') leida?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId =
-        typeof req?.query?.campamentoId === 'string'
-          ? (req.query.campamentoId as string)
-          : undefined;
-      const legacyUsuarioId =
-        typeof req?.query?.usuarioId === 'string' ? (req.query.usuarioId as string) : undefined;
-
       const filters: {
         campId?: number;
         userId?: number;
@@ -130,34 +119,29 @@ export class NotificationController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedUserId = userId ?? legacyUsuarioId;
-      if (resolvedUserId) {
-        const parsedUserId = Number.parseInt(resolvedUserId, 10);
+      if (userId) {
+        const parsedUserId = Number.parseInt(userId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
         filters.userId = parsedUserId;
       }
 
-      const resolvedTargetRole = targetRole ?? rolObjetivo;
-      if (resolvedTargetRole) {
-        filters.targetRole = resolvedTargetRole;
+      if (targetRole) {
+        filters.targetRole = targetRole;
       }
 
-      const resolvedType = type ?? tipo;
-      if (resolvedType) {
-        filters.type = resolvedType;
+      if (type) {
+        filters.type = type;
       }
 
-      const resolvedRead = read ?? leida;
-      if (resolvedRead !== undefined) {
-        if (resolvedRead === 'true' || resolvedRead === 'false') {
-          filters.read = resolvedRead === 'true';
+      if (read !== undefined) {
+        if (read === 'true' || read === 'false') {
+          filters.read = read === 'true';
         } else {
           throw new BadRequestException('Invalid read value (use true/false)');
         }
@@ -199,11 +183,12 @@ export class NotificationController {
       );
     }
   }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update Notification' })
   @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
   @ApiBody({ type: UpdateNotificationDto })
-  @ApiOkResponse({ description: 'Notification updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(NotificationEntity, { description: 'Notification updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Notification not found' })
   async update(@Param('id') id: string, @Body() body: UpdateNotificationDTO) {
@@ -230,10 +215,11 @@ export class NotificationController {
       );
     }
   }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Notification' })
   @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
-  @ApiOkResponse({ description: 'Notification deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Notification deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Notification not found' })
   async delete(@Param('id') id: string) {

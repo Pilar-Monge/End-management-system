@@ -1,7 +1,11 @@
 import { Check, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
-import { SYSTEM_ROLE_VALUES, type SystemRole } from '../systemUser/systemUser.model';
+import { ApiProperty } from '@nestjs/swagger';
 
+import {
+  SYSTEM_ROLE_VALUES,
+  type SystemRole,
+} from '../systemUser/systemUser.model';
 import { NOTIFICATION_TYPE_VALUES, type NotificationType } from './notification.model';
 
 @Entity({ name: 'notification' })
@@ -14,12 +18,15 @@ import { NOTIFICATION_TYPE_VALUES, type NotificationType } from './notification.
 )
 export class NotificationEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'camp_id', type: 'int' })
+  @ApiProperty()
   campId!: number;
 
   @Column({ name: 'user_id', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   userId!: number | null;
 
   @Column({
@@ -29,18 +36,23 @@ export class NotificationEntity {
     enumName: 'system_role_enum',
     nullable: true,
   })
+  @ApiProperty({ enum: SYSTEM_ROLE_VALUES, nullable: true })
   targetRole!: SystemRole | null;
 
   @Column({ name: 'type', type: 'text' })
+  @ApiProperty({ enum: NOTIFICATION_TYPE_VALUES })
   type!: NotificationType;
 
   @Column({ name: 'title', type: 'text' })
+  @ApiProperty()
   title!: string;
 
   @Column({ name: 'message', type: 'text' })
+  @ApiProperty()
   message!: string;
 
   @Column({ name: 'read', type: 'boolean', default: false })
+  @ApiProperty()
   read!: boolean;
 
   @Column({
@@ -48,14 +60,18 @@ export class NotificationEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   createdDate!: Date;
 
   @Column({ name: 'read_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
   readDate!: Date | null;
 
   @Column({ name: 'source_type', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   sourceType!: string | null;
 
   @Column({ name: 'source_id', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   sourceId!: number | null;
 }

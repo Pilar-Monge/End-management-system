@@ -12,23 +12,22 @@ import {
   Req,
 } from '@nestjs/common';
 
+
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
+  ApiNotFoundResponse,  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { RequestResourceDetailService } from './requestResourceDetail.service';
@@ -36,6 +35,7 @@ import type {
   CreateRequestResourceDetailDTO,
   UpdateRequestResourceDetailDTO,
 } from './requestResourceDetail.model';
+import { RequestResourceDetailEntity } from './requestResourceDetail.entity';
 
 import { CreateRequestResourceDetailDto, UpdateRequestResourceDetailDto } from './dto';
 @Controller('request-resource-details')
@@ -46,11 +46,7 @@ export class RequestResourceDetailController {
   @Post()
   @ApiOperation({ summary: 'Create Request Resource Detail' })
   @ApiBody({ type: CreateRequestResourceDetailDto })
-  @ApiCreatedResponse({
-    description: 'Request Resource Detail created',
-    type: SuccessDataResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiCreatedResponseData(RequestResourceDetailEntity, { description: 'Request Resource Detail created' })  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestResourceDetailDTO) {
     try {
       const detail = await this.service.createDetail(body);
@@ -68,7 +64,7 @@ export class RequestResourceDetailController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Request Resource Detail by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
-  @ApiOkResponse({ description: 'Request Resource Detail found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(RequestResourceDetailEntity, { description: 'Request Resource Detail found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async getById(@Param('id') id: string) {
@@ -84,7 +80,7 @@ export class RequestResourceDetailController {
   }
   @Get()
   @ApiOperation({ summary: 'List Request Resource Detail' })
-  @ApiOkResponse({ description: 'Request Resource Detail list', type: SuccessListResponseDto })
+  @ApiOkResponseList(RequestResourceDetailEntity, { description: 'Request Resource Detail list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -95,9 +91,7 @@ export class RequestResourceDetailController {
   })
   async getAll(
     @Query('requestId') requestId?: string,
-    @Query('solicitudId') solicitudId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -109,16 +103,14 @@ export class RequestResourceDetailController {
         limit?: number;
       } = {};
 
-      const resolvedRequestId = requestId ?? solicitudId;
-      if (resolvedRequestId) {
-        const parsedRequestId = Number.parseInt(resolvedRequestId, 10);
+      if (requestId) {
+        const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resourceTypeId');
         }
@@ -165,7 +157,7 @@ export class RequestResourceDetailController {
   @ApiOperation({ summary: 'Update Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
   @ApiBody({ type: UpdateRequestResourceDetailDto })
-  @ApiOkResponse({ description: 'Request Resource Detail updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(RequestResourceDetailEntity, { description: 'Request Resource Detail updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async update(@Param('id') id: string, @Body() body: UpdateRequestResourceDetailDTO) {
@@ -192,11 +184,7 @@ export class RequestResourceDetailController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
-  @ApiOkResponse({
-    description: 'Request Resource Detail deleted',
-    type: SuccessMessageResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiOkResponseMessage({ description: 'Request Resource Detail deleted' })  @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');

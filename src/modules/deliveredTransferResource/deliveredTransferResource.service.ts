@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
+import { TransferEntity } from '../transfer/transfer.entity';
 
 import { DeliveredTransferResourceRepository } from './deliveredTransferResource.repository';
 import type {
@@ -9,11 +15,30 @@ import type {
 
 @Injectable()
 export class DeliveredTransferResourceService {
-  constructor(private readonly repository: DeliveredTransferResourceRepository) {}
+  constructor(
+    private readonly repository: DeliveredTransferResourceRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createDeliveredResource(
     data: CreateDeliveredTransferResourceDTO,
   ): Promise<DeliveredTransferResource> {
+    await assertEntityExists(this.dataSource, TransferEntity, data.transferId, 'Transfer');
+    await assertEntityExists(
+      this.dataSource,
+      ResourceTypeEntity,
+      data.resourceTypeId,
+      'Resource type',
+    );
+    if (data.movementId !== undefined && data.movementId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        InventoryMovementEntity,
+        data.movementId,
+        'Inventory movement',
+      );
+    }
+
     const existing = await this.repository.findByTransferAndResourceType(
       data.transferId,
       data.resourceTypeId,
@@ -59,6 +84,45 @@ export class DeliveredTransferResourceService {
     id: number,
     data: UpdateDeliveredTransferResourceDTO,
   ): Promise<DeliveredTransferResource | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    const resolvedTransferId = data.transferId ?? existing.transferId;
+    const resolvedResourceTypeId = data.resourceTypeId ?? existing.resourceTypeId;
+
+    if (data.transferId !== undefined) {
+      await assertEntityExists(this.dataSource, TransferEntity, resolvedTransferId, 'Transfer');
+    }
+    if (data.resourceTypeId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        ResourceTypeEntity,
+        resolvedResourceTypeId,
+        'Resource type',
+      );
+    }
+    if (data.movementId !== undefined && data.movementId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        InventoryMovementEntity,
+        data.movementId,
+        'Inventory movement',
+      );
+    }
+
+    if (
+      resolvedTransferId !== existing.transferId ||
+      resolvedResourceTypeId !== existing.resourceTypeId
+    ) {
+      const byPair = await this.repository.findByTransferAndResourceType(
+        resolvedTransferId,
+        resolvedResourceTypeId,
+      );
+      if (byPair && byPair.id !== id) {
+        throw new Error('This delivered transfer resource already exists');
+      }
+    }
+
     return await this.repository.update(id, data);
   }
 

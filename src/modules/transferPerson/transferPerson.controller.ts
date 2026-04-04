@@ -12,23 +12,22 @@ import {
   Req,
 } from '@nestjs/common';
 
+
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
+  ApiNotFoundResponse,  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { TransferPersonService } from './transferPerson.service';
@@ -37,6 +36,7 @@ import type {
   PersonTransferStatus,
   UpdateTransferPersonDTO,
 } from './transferPerson.model';
+import { TransferPersonEntity } from './transferPerson.entity';
 
 import { CreateTransferPersonDto, UpdateTransferPersonDto } from './dto';
 @Controller('transfer-persons')
@@ -47,7 +47,7 @@ export class TransferPersonController {
   @Post()
   @ApiOperation({ summary: 'Create Transfer Person' })
   @ApiBody({ type: CreateTransferPersonDto })
-  @ApiCreatedResponse({ description: 'Transfer Person created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(TransferPersonEntity, { description: 'Transfer Person created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateTransferPersonDTO) {
     try {
@@ -66,7 +66,7 @@ export class TransferPersonController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Transfer Person by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
-  @ApiOkResponse({ description: 'Transfer Person found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(TransferPersonEntity, { description: 'Transfer Person found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
   async getById(@Param('id') id: string) {
@@ -82,7 +82,7 @@ export class TransferPersonController {
   }
   @Get()
   @ApiOperation({ summary: 'List Transfer Person' })
-  @ApiOkResponse({ description: 'Transfer Person list', type: SuccessListResponseDto })
+  @ApiOkResponseList(TransferPersonEntity, { description: 'Transfer Person list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -93,19 +93,12 @@ export class TransferPersonController {
   })
   async getAll(
     @Query('transferId') transferId?: string,
-    @Query('trasladoId') trasladoId?: string,
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('status') status?: PersonTransferStatus,
-    @Query('estado') estado?: PersonTransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyEstado =
-        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         transferId?: number;
         personId?: number;
@@ -114,23 +107,20 @@ export class TransferPersonController {
         limit?: number;
       } = {};
 
-      const resolvedTransferId = transferId ?? trasladoId;
-      if (resolvedTransferId) {
-        const parsedTransferId = Number.parseInt(resolvedTransferId, 10);
+      if (transferId) {
+        const parsedTransferId = Number.parseInt(transferId, 10);
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
         filters.transferId = parsedTransferId;
       }
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
       if (page) {
@@ -173,7 +163,7 @@ export class TransferPersonController {
   @ApiOperation({ summary: 'Update Transfer Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
   @ApiBody({ type: UpdateTransferPersonDto })
-  @ApiOkResponse({ description: 'Transfer Person updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(TransferPersonEntity, { description: 'Transfer Person updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
   async update(@Param('id') id: string, @Body() body: UpdateTransferPersonDTO) {
@@ -200,7 +190,7 @@ export class TransferPersonController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Transfer Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
-  @ApiOkResponse({ description: 'Transfer Person deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Transfer Person deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
   async delete(@Param('id') id: string) {

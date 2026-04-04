@@ -4,31 +4,39 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
   Put,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
   ApiInternalServerErrorResponse,
-  ApiNoContentResponse,
   ApiNotFoundResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+
+import {
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 import { UserService } from './systemUser.service';
-import type { CreateUserDTO } from './systemUser.model';
-import { CreateSystemUserDto, SystemUserResponseDto, UpdateSystemUserDto } from './dto';
+import type { CreateUserDTO, LoginDTO } from './systemUser.model';
+import {
+  CreateSystemUserDto,
+  LoginSystemUserDto,
+  SystemUserResponseDto,
+  UpdateSystemUserDto,
+} from './dto';
 
 @Controller()
 @ApiTags('System User')
@@ -39,13 +47,18 @@ export class UserController {
   @Post('users')
   @ApiOperation({ summary: 'Create user' })
   @ApiBody({ type: CreateSystemUserDto })
-  @ApiCreatedResponse({ description: 'User created', type: SystemUserResponseDto })
+  @ApiCreatedResponseData(SystemUserResponseDto, { description: 'User created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Unexpected error' })
   async create(@Body() body: CreateUserDTO) {
     try {
-      return await this.service.createUser(body);
+      const user = await this.service.createUser(body);
+      return {
+        success: true,
+        data: user,
+        message: 'User created successfully',
+      };
     } catch (error) {
       throw new BadRequestException(error instanceof Error ? error.message : 'Error creating user');
     }
@@ -53,12 +66,12 @@ export class UserController {
 
   @Get('users')
   @ApiOperation({ summary: 'List users' })
-  @ApiOkResponse({ description: 'Users list', type: SystemUserResponseDto, isArray: true })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOkResponseList(SystemUserResponseDto, { description: 'Users list' })
   @ApiInternalServerErrorResponse({ description: 'Unexpected error' })
   async findAll() {
     try {
-      return await this.service.findAllUsers();
+      const users = await this.service.findAllUsers();
+      return { success: true, data: users };
     } catch (error) {
       throw new InternalServerErrorException(
         error instanceof Error ? error.message : 'Error getting users',
@@ -69,7 +82,7 @@ export class UserController {
   @Get('users/:id')
   @ApiOperation({ summary: 'Get user by id' })
   @ApiParam({ name: 'id', type: Number, description: 'User id' })
-  @ApiOkResponse({ description: 'User found', type: SystemUserResponseDto })
+  @ApiOkResponseData(SystemUserResponseDto, { description: 'User found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -82,14 +95,14 @@ export class UserController {
     const user = await this.service.findUserById(parsedId);
     if (!user) throw new NotFoundException('User not found');
 
-    return user;
+    return { success: true, data: user };
   }
 
   @Put('users/:id')
   @ApiOperation({ summary: 'Update user' })
   @ApiParam({ name: 'id', type: Number, description: 'User id' })
   @ApiBody({ type: UpdateSystemUserDto })
-  @ApiOkResponse({ description: 'User updated', type: SystemUserResponseDto })
+  @ApiOkResponseData(SystemUserResponseDto, { description: 'User updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -103,22 +116,25 @@ export class UserController {
     try {
       const user = await this.service.updateUser(parsedId, body);
       if (!user) throw new NotFoundException('User not found');
-      return user;
+      return {
+        success: true,
+        data: user,
+        message: 'User updated successfully',
+      };
     } catch (error) {
       throw new BadRequestException(error instanceof Error ? error.message : 'Error updating user');
     }
   }
 
   @Delete('users/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user' })
   @ApiParam({ name: 'id', type: Number, description: 'User id' })
-  @ApiNoContentResponse({ description: 'User deleted' })
+  @ApiOkResponseMessage({ description: 'User deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiInternalServerErrorResponse({ description: 'Unexpected error' })
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('ID not provided');
 
     const parsedId = Number.parseInt(id, 10);
@@ -126,5 +142,31 @@ export class UserController {
 
     const deleted = await this.service.deleteUser(parsedId);
     if (!deleted) throw new NotFoundException('User not found');
+
+    return { success: true, message: 'User deleted successfully' };
+  }
+
+  @Post('auth/login')
+  @ApiOperation({ summary: 'Login' })
+  @ApiBody({ type: LoginSystemUserDto })
+  @ApiOkResponseData(SystemUserResponseDto, { description: 'Login succeeded' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  @ApiInternalServerErrorResponse({ description: 'Unexpected error' })
+  async login(@Body() body: LoginDTO) {
+    try {
+      const user = await this.service.login(body);
+      if (!user) throw new UnauthorizedException('Invalid credentials');
+      return {
+        success: true,
+        data: user,
+        message: 'Login succeeded',
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Error logging in',
+      );
+    }
   }
 }

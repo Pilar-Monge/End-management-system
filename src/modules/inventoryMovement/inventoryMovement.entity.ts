@@ -1,5 +1,7 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 import {
   INVENTORY_MOVEMENT_TYPE_VALUES,
   type InventoryMovementType,
@@ -11,12 +13,15 @@ import {
 @Index('idx_movimiento_recurso', ['resourceTypeId'])
 export class InventoryMovementEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'camp_id', type: 'int' })
+  @ApiProperty()
   campId!: number;
 
   @Column({ name: 'resource_type_id', type: 'int' })
+  @ApiProperty()
   resourceTypeId!: number;
 
   @Column({
@@ -25,6 +30,7 @@ export class InventoryMovementEntity {
     precision: 12,
     scale: 2,
   })
+  @ApiProperty()
   amount!: string;
 
   @Column({
@@ -33,15 +39,19 @@ export class InventoryMovementEntity {
     enum: INVENTORY_MOVEMENT_TYPE_VALUES,
     enumName: 'movement_type_enum',
   })
+  @ApiProperty({ enum: INVENTORY_MOVEMENT_TYPE_VALUES })
   movementType!: InventoryMovementType;
 
   @Column({ name: 'source_id', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   sourceId!: number | null;
 
   @Column({ name: 'source_type', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   sourceType!: string | null;
 
   @Column({ name: 'recorded_by', type: 'int' })
+  @ApiProperty()
   recordedBy!: number;
 
   @Column({
@@ -49,8 +59,10 @@ export class InventoryMovementEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   date!: Date;
 
   @Column({ name: 'description', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   description!: string | null;
 }

@@ -1,5 +1,7 @@
 import { Check, Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 @Entity({ name: 'request_resource_detail' })
 @Unique('uq_solicitud_recurso', ['requestId', 'resourceTypeId'])
 @Index('idx_sol_recurso_detalle', ['requestId'])
@@ -7,12 +9,15 @@ import { Check, Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'ty
 @Check('chk_sol_rec_aprobada', `"approved_amount" IS NULL OR "approved_amount" >= 0`)
 export class RequestResourceDetailEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'request_id', type: 'int' })
+  @ApiProperty()
   requestId!: number;
 
   @Column({ name: 'resource_type_id', type: 'int' })
+  @ApiProperty()
   resourceTypeId!: number;
 
   @Column({
@@ -21,6 +26,7 @@ export class RequestResourceDetailEntity {
     precision: 10,
     scale: 2,
   })
+  @ApiProperty()
   requestedAmount!: string;
 
   @Column({
@@ -30,5 +36,6 @@ export class RequestResourceDetailEntity {
     scale: 2,
     nullable: true,
   })
+  @ApiProperty({ nullable: true })
   approvedAmount!: string | null;
 }

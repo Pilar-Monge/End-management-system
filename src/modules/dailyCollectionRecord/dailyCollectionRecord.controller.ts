@@ -10,15 +10,12 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
   ApiNotFoundResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -26,10 +23,11 @@ import {
 } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { DailyCollectionRecordService } from './dailyCollectionRecord.service';
@@ -37,6 +35,7 @@ import type {
   CreateDailyCollectionRecordDTO,
   UpdateDailyCollectionRecordDTO,
 } from './dailyCollectionRecord.model';
+import { DailyCollectionRecordEntity } from './dailyCollectionRecord.entity';
 
 import { CreateDailyCollectionRecordDto, UpdateDailyCollectionRecordDto } from './dto';
 @Controller('daily-collection-records')
@@ -47,9 +46,8 @@ export class DailyCollectionRecordController {
   @Roles('WORKER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Daily Collection Record' })
   @ApiBody({ type: CreateDailyCollectionRecordDto })
-  @ApiCreatedResponse({
+  @ApiCreatedResponseData(DailyCollectionRecordEntity, {
     description: 'Daily Collection Record created',
-    type: SuccessDataResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateDailyCollectionRecordDTO) {
@@ -74,7 +72,7 @@ export class DailyCollectionRecordController {
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Daily Collection Record by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
-  @ApiOkResponse({ description: 'Daily Collection Record found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async getById(@Param('id') id: string) {
@@ -91,7 +89,7 @@ export class DailyCollectionRecordController {
   @Get()
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Daily Collection Record' })
-  @ApiOkResponse({ description: 'Daily Collection Record list', type: SuccessListResponseDto })
+  @ApiOkResponseList(DailyCollectionRecordEntity, { description: 'Daily Collection Record list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -102,23 +100,13 @@ export class DailyCollectionRecordController {
   })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('date') date?: string,
-    @Query('fecha') fecha?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId =
-        typeof req?.query?.campamentoId === 'string'
-          ? (req.query.campamentoId as string)
-          : undefined;
-
       const filters: {
         campId?: number;
         personId?: number;
@@ -128,35 +116,31 @@ export class DailyCollectionRecordController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
         filters.campId = parsedCampId;
       }
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid person ID');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resource type ID');
         }
         filters.resourceTypeId = parsedResourceTypeId;
       }
 
-      const resolvedDate = date ?? fecha;
-      if (resolvedDate) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(resolvedDate)) {
+      if (date) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
           throw new BadRequestException('Invalid date (expected YYYY-MM-DD)');
         }
-        filters.date = resolvedDate;
+        filters.date = date;
       }
 
       if (page) {
@@ -200,7 +184,7 @@ export class DailyCollectionRecordController {
   @ApiOperation({ summary: 'Update Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiBody({ type: UpdateDailyCollectionRecordDto })
-  @ApiOkResponse({ description: 'Daily Collection Record updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async update(@Param('id') id: string, @Body() body: UpdateDailyCollectionRecordDTO) {
@@ -232,10 +216,7 @@ export class DailyCollectionRecordController {
   @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Delete Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
-  @ApiOkResponse({
-    description: 'Daily Collection Record deleted',
-    type: SuccessMessageResponseDto,
-  })
+  @ApiOkResponseMessage({ description: 'Daily Collection Record deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async delete(@Param('id') id: string) {

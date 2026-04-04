@@ -1,4 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { TransferEntity } from '../transfer/transfer.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { TransferHistoryRepository } from './transferHistory.repository';
 import type {
@@ -10,9 +15,14 @@ import type { TransferStatus } from '../transfer/transfer.model';
 
 @Injectable()
 export class TransferHistoryService {
-  constructor(private readonly repository: TransferHistoryRepository) {}
+  constructor(
+    private readonly repository: TransferHistoryRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createEntry(data: CreateTransferHistoryDTO): Promise<TransferHistory> {
+    await assertEntityExists(this.dataSource, TransferEntity, data.transferId, 'Transfer');
+    await assertEntityExists(this.dataSource, UserEntity, data.userId, 'User');
     return await this.repository.create(data);
   }
 
@@ -53,6 +63,13 @@ export class TransferHistoryService {
   }
 
   async updateEntry(id: number, data: UpdateTransferHistoryDTO): Promise<TransferHistory | null> {
+    if (data.transferId !== undefined) {
+      await assertEntityExists(this.dataSource, TransferEntity, data.transferId, 'Transfer');
+    }
+    if (data.userId !== undefined) {
+      await assertEntityExists(this.dataSource, UserEntity, data.userId, 'User');
+    }
+
     return await this.repository.update(id, data);
   }
 

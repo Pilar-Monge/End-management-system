@@ -9,8 +9,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { type TransferStatus } from './transfer.model';
+import { ApiProperty } from '@nestjs/swagger';
 
+import { TRANSFER_STATUS_VALUES, type TransferStatus } from './transfer.model';
 @Entity({ name: 'transfer' })
 @Unique('uq_transfer_request', ['requestId'])
 @Index('idx_transfer_status', ['status'])
@@ -20,21 +21,27 @@ import { type TransferStatus } from './transfer.model';
 @Check('chk_transfer_status_values', `"status" IN ('PENDING_DEPARTURE','COMPLETED','CANCELED')`)
 export class TransferEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'request_id', type: 'int' })
+  @ApiProperty()
   requestId!: number;
 
   @Column({ name: 'planned_departure_date', type: 'timestamptz' })
+  @ApiProperty()
   plannedDepartureDate!: Date;
 
   @Column({ name: 'actual_departure_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
   actualDepartureDate!: Date | null;
 
   @Column({ name: 'planned_arrival_date', type: 'timestamptz' })
+  @ApiProperty()
   plannedArrivalDate!: Date;
 
   @Column({ name: 'actual_arrival_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
   actualArrivalDate!: Date | null;
 
   @Column({
@@ -42,12 +49,15 @@ export class TransferEntity {
     type: 'text',
     default: 'PENDING_DEPARTURE',
   })
+  @ApiProperty({ enum: TRANSFER_STATUS_VALUES })
   status!: TransferStatus;
 
   @Column({ name: 'departure_approved_by', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   departureApprovedBy!: number | null;
 
   @Column({ name: 'arrival_approved_by', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   arrivalApprovedBy!: number | null;
 
   @Column({
@@ -57,9 +67,11 @@ export class TransferEntity {
     scale: 2,
     default: '0.00',
   })
+  @ApiProperty()
   rationsForTrip!: string;
 
   @Column({ name: 'reception_notes', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   receptionNotes!: string | null;
 
   @CreateDateColumn({
@@ -67,6 +79,7 @@ export class TransferEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   createdAt!: Date;
 
   @UpdateDateColumn({
@@ -74,5 +87,6 @@ export class TransferEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   updatedAt!: Date;
 }

@@ -1,25 +1,60 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
+
+import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { CampEntity } from '../camp/camp.entity';
+import { OccupationEntity } from '../occupation/occupation.entity';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
 
 import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
 
 @Injectable()
 export class PersonService {
-  constructor(private readonly repository: PersonRepository) {}
+  constructor(
+    private readonly repository: PersonRepository,
+    private readonly dataSource: DataSource,
+    @InjectRepository(AdmissionRequestEntity)
+    private readonly admissionRequestRepository: Repository<AdmissionRequestEntity>,
+  ) {}
+
+  private async assertAdmissionRequestExists(admissionRequestId: number): Promise<void> {
+    const admissionRequest = await this.admissionRequestRepository.findOne({
+      where: { id: admissionRequestId },
+      select: { id: true },
+    });
+
+    if (!admissionRequest) {
+      throw new Error('Admission request not found');
+    }
+  }
 
   async createPerson(data: CreatePersonDTO): Promise<Person> {
-    const existingByIdentification = await this.repository.findByIdentificationNumber(
-      data.identificationNumber,
-    );
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
 
+    if (data.occupationId !== undefined && data.occupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.occupationId,
+        'Occupation',
+      );
+    }
+
+    const existingByIdentification =
+      await this.repository.findByIdentificationNumber(data.identificationNumber);
     if (existingByIdentification) {
       throw new Error('A person with this identification number already exists');
     }
 
     const admissionRequestId = data.admissionRequestId ?? null;
     if (admissionRequestId !== null) {
-      const existingByRequest = await this.repository.findByAdmissionRequestId(admissionRequestId);
+      await this.assertAdmissionRequestExists(admissionRequestId);
 
+      const existingByRequest =
+        await this.repository.findByAdmissionRequestId(admissionRequestId);
       if (existingByRequest) {
         throw new Error('A person for this admission request already exists');
       }
@@ -65,11 +100,25 @@ export class PersonService {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 
-    if (data.identificationNumber && data.identificationNumber !== existing.identificationNumber) {
-      const byIdentification = await this.repository.findByIdentificationNumber(
-        data.identificationNumber,
-      );
+    if (data.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    }
 
+    if (data.occupationId !== undefined && data.occupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.occupationId,
+        'Occupation',
+      );
+    }
+
+    if (
+      data.identificationNumber &&
+      data.identificationNumber !== existing.identificationNumber
+    ) {
+      const byIdentification =
+        await this.repository.findByIdentificationNumber(data.identificationNumber);
       if (byIdentification && byIdentification.id !== id) {
         throw new Error('Another person with this identification number already exists');
       }
@@ -80,8 +129,11 @@ export class PersonService {
       data.admissionRequestId !== existing.admissionRequestId &&
       data.admissionRequestId !== null
     ) {
-      const byRequest = await this.repository.findByAdmissionRequestId(data.admissionRequestId);
+      await this.assertAdmissionRequestExists(data.admissionRequestId);
 
+      const byRequest = await this.repository.findByAdmissionRequestId(
+        data.admissionRequestId,
+      );
       if (byRequest && byRequest.id !== id) {
         throw new Error('Another person for this admission request already exists');
       }

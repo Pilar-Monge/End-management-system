@@ -1,4 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 
 import { CampInventoryRepository } from './campInventory.repository';
 import type {
@@ -9,9 +14,20 @@ import type {
 
 @Injectable()
 export class CampInventoryService {
-  constructor(private readonly repository: CampInventoryRepository) {}
+  constructor(
+    private readonly repository: CampInventoryRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createItem(data: CreateCampInventoryDTO): Promise<CampInventory> {
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    await assertEntityExists(
+      this.dataSource,
+      ResourceTypeEntity,
+      data.resourceTypeId,
+      'Resource type',
+    );
+
     const existing = await this.repository.findByKey(data.campId, data.resourceTypeId);
     if (existing) {
       throw new Error('This camp inventory item already exists');
