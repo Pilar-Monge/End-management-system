@@ -29,6 +29,7 @@ export async function runSeeder(dataSource: DataSource): Promise<void> {
       'Omega Fortress',
       'Echo Outpost',
     ];
+    const campIds: number[] = [];
 
     for (let index = 0; index < campNames.length; index += 1) {
       const campNumber = index + 1;
@@ -50,6 +51,7 @@ export async function runSeeder(dataSource: DataSource): Promise<void> {
       );
 
       const campId: number = insertedCamp[0].id;
+      campIds.push(campId);
 
       const usersForCamp: BaseCampUser[] = [
         {
@@ -174,6 +176,297 @@ export async function runSeeder(dataSource: DataSource): Promise<void> {
           ],
         );
       }
+    }
+
+    const insertedDrinkingWater = await queryRunner.query(
+      `
+        INSERT INTO resource_type (name, unit_of_measure, category, description)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      ['Drinking Water', 'liters', 'WATER', 'Potable water for daily consumption'],
+    );
+    const waterId: number = insertedDrinkingWater[0].id;
+
+    const insertedCannedFood = await queryRunner.query(
+      `
+        INSERT INTO resource_type (name, unit_of_measure, category, description)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      ['Canned Food', 'units', 'FOOD', 'Non-perishable canned food rations'],
+    );
+    const foodId: number = insertedCannedFood[0].id;
+
+    const insertedMedicalKit = await queryRunner.query(
+      `
+        INSERT INTO resource_type (name, unit_of_measure, category, description)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      ['Medical Kit', 'units', 'MEDICAL', 'First aid and essential medicine'],
+    );
+    const medicalId: number = insertedMedicalKit[0].id;
+
+    const insertedHygieneKit = await queryRunner.query(
+      `
+        INSERT INTO resource_type (name, unit_of_measure, category, description)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      ['Hygiene Kit', 'units', 'HYGIENE', 'Soap, toothpaste, and disinfectant'],
+    );
+    const hygieneId: number = insertedHygieneKit[0].id;
+
+    const insertedAmmunition = await queryRunner.query(
+      `
+        INSERT INTO resource_type (name, unit_of_measure, category, description)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      ['Ammunition', 'rounds', 'AMMUNITION', 'Bullets for defense weapons'],
+    );
+    const ammoId: number = insertedAmmunition[0].id;
+
+    const insertedTacticalHelmet = await queryRunner.query(
+      `
+        INSERT INTO resource_type (name, unit_of_measure, category, description)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      ['Tactical Helmet', 'units', 'DEFENSE', 'Protective headgear'],
+    );
+    const helmetId: number = insertedTacticalHelmet[0].id;
+
+    const insertedBulletproofVest = await queryRunner.query(
+      `
+        INSERT INTO resource_type (name, unit_of_measure, category, description)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      ['Bulletproof Vest', 'units', 'DEFENSE', 'Body armor'],
+    );
+    const vestId: number = insertedBulletproofVest[0].id;
+
+    await queryRunner.query(
+      `
+        INSERT INTO occupation (
+          name,
+          description,
+          collects_resources,
+          participates_in_expeditions,
+          resource_type_id,
+          daily_amount_produced,
+          daily_ration_consumed
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
+        'Water Collector',
+        'Collects and purifies water daily',
+        true,
+        false,
+        waterId,
+        '10.00',
+        '1.00',
+      ],
+    );
+
+    await queryRunner.query(
+      `
+        INSERT INTO occupation (
+          name,
+          description,
+          collects_resources,
+          participates_in_expeditions,
+          resource_type_id,
+          daily_amount_produced,
+          daily_ration_consumed
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      ['Food Gatherer', 'Gathers and prepares food daily', true, false, foodId, '5.00', '1.00'],
+    );
+
+    await queryRunner.query(
+      `
+        INSERT INTO occupation (
+          name,
+          description,
+          collects_resources,
+          participates_in_expeditions,
+          resource_type_id,
+          daily_amount_produced,
+          daily_ration_consumed
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
+        'Engineer',
+        'Maintains infrastructure and creates ammo',
+        true,
+        false,
+        ammoId,
+        '10.00',
+        '1.00',
+      ],
+    );
+
+    await queryRunner.query(
+      `
+        INSERT INTO occupation (
+          name,
+          description,
+          collects_resources,
+          participates_in_expeditions,
+          resource_type_id,
+          daily_amount_produced,
+          daily_ration_consumed
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
+        'Medic',
+        'Provides medical care and creates medical kits',
+        true,
+        false,
+        medicalId,
+        '1.00',
+        '1.00',
+      ],
+    );
+
+    await queryRunner.query(
+      `
+        INSERT INTO occupation (
+          name,
+          description,
+          collects_resources,
+          participates_in_expeditions,
+          resource_type_id,
+          daily_amount_produced,
+          daily_ration_consumed
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
+        'Scout',
+        'Goes on expeditions. Gathers food when at camp',
+        true,
+        true,
+        foodId,
+        '3.00',
+        '1.00',
+      ],
+    );
+
+    await queryRunner.query(
+      `
+        INSERT INTO occupation (
+          name,
+          description,
+          collects_resources,
+          participates_in_expeditions,
+          resource_type_id,
+          daily_amount_produced,
+          daily_ration_consumed
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      ['Guard', 'Protects the camp perimeter. Does not gather', false, false, null, '0.00', '1.00'],
+    );
+
+    for (const campId of campIds) {
+      await queryRunner.query(
+        `
+          INSERT INTO camp_inventory (
+            camp_id,
+            resource_type_id,
+            current_amount,
+            minimum_alert_amount
+          )
+          VALUES ($1, $2, $3, $4)
+        `,
+        [campId, waterId, '200.00', '50.00'],
+      );
+
+      await queryRunner.query(
+        `
+          INSERT INTO camp_inventory (
+            camp_id,
+            resource_type_id,
+            current_amount,
+            minimum_alert_amount
+          )
+          VALUES ($1, $2, $3, $4)
+        `,
+        [campId, foodId, '100.00', '30.00'],
+      );
+
+      await queryRunner.query(
+        `
+          INSERT INTO camp_inventory (
+            camp_id,
+            resource_type_id,
+            current_amount,
+            minimum_alert_amount
+          )
+          VALUES ($1, $2, $3, $4)
+        `,
+        [campId, medicalId, '20.00', '5.00'],
+      );
+
+      await queryRunner.query(
+        `
+          INSERT INTO camp_inventory (
+            camp_id,
+            resource_type_id,
+            current_amount,
+            minimum_alert_amount
+          )
+          VALUES ($1, $2, $3, $4)
+        `,
+        [campId, hygieneId, '30.00', '10.00'],
+      );
+
+      await queryRunner.query(
+        `
+          INSERT INTO camp_inventory (
+            camp_id,
+            resource_type_id,
+            current_amount,
+            minimum_alert_amount
+          )
+          VALUES ($1, $2, $3, $4)
+        `,
+        [campId, ammoId, '500.00', '100.00'],
+      );
+
+      await queryRunner.query(
+        `
+          INSERT INTO camp_inventory (
+            camp_id,
+            resource_type_id,
+            current_amount,
+            minimum_alert_amount
+          )
+          VALUES ($1, $2, $3, $4)
+        `,
+        [campId, helmetId, '15.00', '5.00'],
+      );
+
+      await queryRunner.query(
+        `
+          INSERT INTO camp_inventory (
+            camp_id,
+            resource_type_id,
+            current_amount,
+            minimum_alert_amount
+          )
+          VALUES ($1, $2, $3, $4)
+        `,
+        [campId, vestId, '10.00', '5.00'],
+      );
     }
 
     await queryRunner.commitTransaction();
