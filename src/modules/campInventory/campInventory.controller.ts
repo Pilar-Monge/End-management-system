@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -46,18 +47,9 @@ export class CampInventoryController {
   @ApiCreatedResponse({ description: 'Camp Inventory created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampInventoryDTO) {
-    try {
-      const item = await this.service.createItem(body);
-      return {
-        success: true,
-        data: item,
-        message: 'Camp inventory item created successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error creating camp inventory item',
-      );
-    }
+    throw new ForbiddenException(
+      'Inventory records are system-managed and cannot be created or deleted manually',
+    );
   }
 
   @Get(':campId/:resourceTypeId')
@@ -164,7 +156,7 @@ export class CampInventoryController {
   }
 
   @Put(':campId/:resourceTypeId')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   async update(
     @Param('campId') campId: string,
     @Param('resourceTypeId') resourceTypeId: string,
@@ -197,23 +189,8 @@ export class CampInventoryController {
   @Delete(':campId/:resourceTypeId')
   @Roles('SYSTEM_ADMIN')
   async delete(@Param('campId') campId: string, @Param('resourceTypeId') resourceTypeId: string) {
-    const parsedCampId = Number.parseInt(campId, 10);
-    if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
-
-    const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
-    if (Number.isNaN(parsedResourceTypeId)) {
-      throw new BadRequestException('Invalid resourceTypeId');
-    }
-
-    try {
-      const deleted = await this.service.deleteItem(parsedCampId, parsedResourceTypeId);
-      if (!deleted) throw new NotFoundException('Camp inventory item not found');
-
-      return { success: true, message: 'Camp inventory item deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting camp inventory item',
-      );
-    }
+    throw new ForbiddenException(
+      'Inventory records are system-managed and cannot be created or deleted manually',
+    );
   }
 }

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -50,18 +51,7 @@ export class ResourceTypeController {
   @ApiCreatedResponse({ description: 'Resource Type created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateResourceTypeDTO) {
-    try {
-      const resourceType = await this.service.createResourceType(body);
-      return {
-        success: true,
-        data: resourceType,
-        message: 'Resource type created successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error creating resource type',
-      );
-    }
+    throw new ForbiddenException('Resource types are system catalogs and cannot be modified via API');
   }
   @Get(':id')
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
@@ -156,25 +146,7 @@ export class ResourceTypeController {
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async update(@Param('id') id: string, @Body() body: UpdateResourceTypeDTO) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const resourceType = await this.service.updateResourceType(parsedId, body);
-      if (!resourceType) throw new NotFoundException('Resource type not found');
-
-      return {
-        success: true,
-        data: resourceType,
-        message: 'Resource type updated successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error updating resource type',
-      );
-    }
+    throw new ForbiddenException('Resource types are system catalogs and cannot be modified via API');
   }
   @Delete(':id')
   @Roles('SYSTEM_ADMIN')
@@ -184,20 +156,6 @@ export class ResourceTypeController {
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteResourceType(parsedId);
-      if (!deleted) throw new NotFoundException('Resource type not found');
-
-      return { success: true, message: 'Resource type deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting resource type',
-      );
-    }
+    throw new ForbiddenException('Resource types are system catalogs and cannot be modified via API');
   }
 }

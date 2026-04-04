@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -41,10 +42,10 @@ import type {
 import { CreateInventoryMovementDto, UpdateInventoryMovementDto } from './dto';
 @Controller('inventory-movements')
 @ApiTags('Inventory Movement')
-@Roles('SYSTEM_ADMIN')
 export class InventoryMovementController {
   constructor(private readonly service: InventoryMovementService) {}
   @Post()
+  @Roles('WORKER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Inventory Movement' })
   @ApiBody({ type: CreateInventoryMovementDto })
   @ApiCreatedResponse({ description: 'Inventory Movement created', type: SuccessDataResponseDto })
@@ -64,6 +65,7 @@ export class InventoryMovementController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
   @ApiOperation({ summary: 'Get Inventory Movement by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
   @ApiOkResponse({ description: 'Inventory Movement found', type: SuccessDataResponseDto })
@@ -81,6 +83,7 @@ export class InventoryMovementController {
     return { success: true, data: movement };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
   @ApiOperation({ summary: 'List Inventory Movement' })
   @ApiOkResponse({ description: 'Inventory Movement list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -186,6 +189,7 @@ export class InventoryMovementController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Update Inventory Movement' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
   @ApiBody({ type: UpdateInventoryMovementDto })
@@ -214,26 +218,13 @@ export class InventoryMovementController {
     }
   }
   @Delete(':id')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Inventory Movement' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
   @ApiOkResponse({ description: 'Inventory Movement deleted', type: SuccessMessageResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteMovement(parsedId);
-      if (!deleted) throw new NotFoundException('Inventory movement not found');
-
-      return { success: true, message: 'Inventory movement deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting inventory movement',
-      );
-    }
+    throw new ForbiddenException('Inventory movements cannot be deleted for audit reasons');
   }
 }

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpException,
   NotFoundException,
@@ -71,7 +72,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
   @ApiOperation({ summary: 'Get Daily Collection Record by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiOkResponse({ description: 'Daily Collection Record found', type: SuccessDataResponseDto })
@@ -89,7 +90,7 @@ export class DailyCollectionRecordController {
     return { success: true, data: record };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
   @ApiOperation({ summary: 'List Daily Collection Record' })
   @ApiOkResponse({ description: 'Daily Collection Record list', type: SuccessListResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -196,7 +197,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Put(':id')
-  @Roles('RESOURCE_MANAGEMENT')
+  @Roles('WORKER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Update Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiBody({ type: UpdateDailyCollectionRecordDto })
@@ -229,7 +230,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Delete(':id')
-  @Roles('RESOURCE_MANAGEMENT')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiOkResponse({
@@ -239,20 +240,6 @@ export class DailyCollectionRecordController {
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteRecord(parsedId);
-      if (!deleted) throw new NotFoundException('Daily collection record not found');
-
-      return { success: true, message: 'Daily collection record deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting daily collection record',
-      );
-    }
+    throw new ForbiddenException('Daily collection records cannot be deleted for audit reasons');
   }
 }

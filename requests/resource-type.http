@@ -1,0 +1,145 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiMmVhZTc1NDUtN2MxZS00N2EyLTliODYtZDI0NDkyNjdhYzA4IiwiaWF0IjoxNzc1MzQ1MDc0LCJleHAiOjE3NzUzNDYyNzR9.EMJaQdVI97ZhyYegeOmnXeARbVKy1op4s7QVoho-UUs
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjFlMjEyNWM1LThlOTMtNDE2Ni1iNzEwLWFjYTU4MmFkYmUxMSIsImlhdCI6MTc3NTM0NTA4NCwiZXhwIjoxNzc1MzQ2Mjg0fQ.dvGmtHR0VjJTa16Q_W7uIBebqmnqD9ilbnZTVd_GE7k
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNjQ0NmI0MmMtZTAyMi00YzFmLWJkZTctMzI2MjliZGI5ZGFkIiwiaWF0IjoxNzc1MzQ1MDkxLCJleHAiOjE3NzUzNDYyOTF9.Gq80GdGKzEH2RahBPprSTjIuiCYcxTDcRUqgF1z6iyA
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImE0NzMxNDIxLWQ4YTktNDcwNy04ZGZkLTZiYTAzMGYyMzY3MiIsImlhdCI6MTc3NTM0NTEwMiwiZXhwIjoxNzc1MzQ2MzAyfQ.zeuq5uxYqVoXYyKZ0Sh4FIGH9mvtWa-MTS68ckjy8I8
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIxMzYyZWY4NC0zYWU4LTRiZDEtOTE0OS1iZDFlZTFkMmU3ZjEiLCJpYXQiOjE3NzUzNDUxMTEsImV4cCI6MTc3NTM0NjMxMX0.7qiCjQeIx8mw_T8qAjIpV6hkQ272gdrY3mWT0KVKeEk
+
+### 1.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.2 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.3 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.4 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.5 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.6 GET Resource Types - Admin (Expect 200)
+GET {{baseUrl}}/api/resource-types
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.7 GET Resource Types - Resource Management (Expect 200)
+GET {{baseUrl}}/api/resource-types
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 1.8 GET Resource Types - Worker (Expect 403)
+GET {{baseUrl}}/api/resource-types
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 1.9 GET Resource Type By Id - Admin (Expect 200)
+GET {{baseUrl}}/api/resource-types/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.10 GET Resource Type By Id - Resource Management (Expect 200)
+GET {{baseUrl}}/api/resource-types/1
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 1.11 POST Resource Type - Admin (Expect 403 ForbiddenException System Catalog)
+POST {{baseUrl}}/api/resource-types
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "string",
+  "unitOfMeasure": "kg",
+  "category": "FOOD",
+  "description": "string"
+}
+
+###
+
+### 1.12 PUT Resource Type - Admin (Expect 403 ForbiddenException System Catalog)
+PUT {{baseUrl}}/api/resource-types/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "description": "Updated resource type description"
+}
+
+###
+
+### 1.13 DELETE Resource Type - Admin (Expect 403 ForbiddenException System Catalog)
+DELETE {{baseUrl}}/api/resource-types/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.14 POST Resource Type - Worker (Expect 403)
+POST {{baseUrl}}/api/resource-types
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "name": "worker-created-type",
+  "unitOfMeasure": "units",
+  "category": "OTHER",
+  "description": "should be blocked"
+}
+
+###
+
+### 1.15 GET Resource Types - Travel Manager (Expect 403 Forbidden)
+GET {{baseUrl}}/api/resource-types
+Authorization: Bearer {{travelToken}}

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -46,18 +47,9 @@ export class InventoryAlertController {
   @ApiCreatedResponse({ description: 'Inventory Alert created', type: SuccessDataResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateInventoryAlertDTO) {
-    try {
-      const alert = await this.service.createAlert(body);
-      return {
-        success: true,
-        data: alert,
-        message: 'Inventory alert created successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error creating inventory alert',
-      );
-    }
+    throw new ForbiddenException(
+      'Inventory alerts are system-generated and cannot be created or deleted manually',
+    );
   }
   @Get(':id')
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
@@ -175,7 +167,7 @@ export class InventoryAlertController {
     }
   }
   @Put(':id')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Update Inventory Alert' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
   @ApiBody({ type: UpdateInventoryAlertDto })
@@ -211,20 +203,8 @@ export class InventoryAlertController {
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteAlert(parsedId);
-      if (!deleted) throw new NotFoundException('Inventory alert not found');
-
-      return { success: true, message: 'Inventory alert deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting inventory alert',
-      );
-    }
+    throw new ForbiddenException(
+      'Inventory alerts are system-generated and cannot be created or deleted manually',
+    );
   }
 }
