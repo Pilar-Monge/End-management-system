@@ -1,9 +1,11 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
+import { assertEntityExists } from '../../common/validation/assert-exists';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { ExpeditionResourceObtainedRepository } from './expeditionResourceObtained.repository';
 import type {
@@ -16,6 +18,7 @@ import type {
 export class ExpeditionResourceObtainedService {
   constructor(
     private readonly repository: ExpeditionResourceObtainedRepository,
+    private readonly dataSource: DataSource,
     @InjectRepository(ExpeditionEntity)
     private readonly expeditionRepo: Repository<ExpeditionEntity>,
     @InjectRepository(InventoryMovementEntity)
@@ -30,6 +33,13 @@ export class ExpeditionResourceObtainedService {
     resourceTypeId: number,
     movementId?: number | null,
   ): Promise<void> {
+    await assertEntityExists(
+      this.dataSource,
+      ResourceTypeEntity,
+      resourceTypeId,
+      'Resource type',
+    );
+
     const expedition = await this.expeditionRepo.findOne({ where: { id: expeditionId } });
     if (!expedition) {
       throw new NotFoundException('Expedition not found');

@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { InventoryMovementRepository } from './inventoryMovement.repository';
 import type {
@@ -10,9 +16,21 @@ import type {
 
 @Injectable()
 export class InventoryMovementService {
-  constructor(private readonly repository: InventoryMovementRepository) {}
+  constructor(
+    private readonly repository: InventoryMovementRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createMovement(data: CreateInventoryMovementDTO): Promise<InventoryMovement> {
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    await assertEntityExists(
+      this.dataSource,
+      ResourceTypeEntity,
+      data.resourceTypeId,
+      'Resource type',
+    );
+    await assertEntityExists(this.dataSource, UserEntity, data.recordedBy, 'User');
+
     return await this.repository.create(data);
   }
 
@@ -56,6 +74,21 @@ export class InventoryMovementService {
     id: number,
     data: UpdateInventoryMovementDTO,
   ): Promise<InventoryMovement | null> {
+    if (data.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    }
+    if (data.resourceTypeId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        ResourceTypeEntity,
+        data.resourceTypeId,
+        'Resource type',
+      );
+    }
+    if (data.recordedBy !== undefined) {
+      await assertEntityExists(this.dataSource, UserEntity, data.recordedBy, 'User');
+    }
+
     return await this.repository.update(id, data);
   }
 

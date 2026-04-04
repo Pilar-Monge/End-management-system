@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
+import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 
 import { InventoryAlertRepository } from './inventoryAlert.repository';
 import type {
@@ -9,9 +15,28 @@ import type {
 
 @Injectable()
 export class InventoryAlertService {
-  constructor(private readonly repository: InventoryAlertRepository) {}
+  constructor(
+    private readonly repository: InventoryAlertRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createAlert(data: CreateInventoryAlertDTO): Promise<InventoryAlert> {
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    await assertEntityExists(
+      this.dataSource,
+      ResourceTypeEntity,
+      data.resourceTypeId,
+      'Resource type',
+    );
+    if (data.movementId !== undefined && data.movementId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        InventoryMovementEntity,
+        data.movementId,
+        'Inventory movement',
+      );
+    }
+
     return await this.repository.create(data);
   }
 
@@ -49,6 +74,26 @@ export class InventoryAlertService {
   }
 
   async updateAlert(id: number, data: UpdateInventoryAlertDTO): Promise<InventoryAlert | null> {
+    if (data.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    }
+    if (data.resourceTypeId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        ResourceTypeEntity,
+        data.resourceTypeId,
+        'Resource type',
+      );
+    }
+    if (data.movementId !== undefined && data.movementId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        InventoryMovementEntity,
+        data.movementId,
+        'Inventory movement',
+      );
+    }
+
     return await this.repository.update(id, data);
   }
 

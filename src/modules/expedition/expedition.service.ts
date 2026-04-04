@@ -1,4 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
 
 import { ExpeditionRepository } from './expedition.repository';
 import type {
@@ -10,9 +14,13 @@ import type {
 
 @Injectable()
 export class ExpeditionService {
-  constructor(private readonly repository: ExpeditionRepository) {}
+  constructor(
+    private readonly repository: ExpeditionRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createExpedition(data: CreateExpeditionDTO): Promise<Expedition> {
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     return await this.repository.create(data);
   }
 
@@ -47,6 +55,10 @@ export class ExpeditionService {
   }
 
   async updateExpedition(id: number, data: UpdateExpeditionDTO): Promise<Expedition | null> {
+    if (data.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    }
+
     return await this.repository.update(id, data);
   }
 

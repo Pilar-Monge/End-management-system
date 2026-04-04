@@ -1,4 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { OccupationEntity } from '../occupation/occupation.entity';
 
 import { OccupationAssignmentCriteriaRepository } from './occupationAssignmentCriteria.repository';
 import type {
@@ -12,11 +16,19 @@ import type {
 export class OccupationAssignmentCriteriaService {
   constructor(
     private readonly repository: OccupationAssignmentCriteriaRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createCriteria(
     data: CreateOccupationAssignmentCriteriaDTO,
   ): Promise<OccupationAssignmentCriteria> {
+    await assertEntityExists(
+      this.dataSource,
+      OccupationEntity,
+      data.occupationId,
+      'Occupation',
+    );
+
     const normalizedData = this.normalizeAndValidateWeight(data);
     return await this.repository.create(normalizedData);
   }
@@ -58,6 +70,15 @@ export class OccupationAssignmentCriteriaService {
     id: number,
     data: UpdateOccupationAssignmentCriteriaDTO,
   ): Promise<OccupationAssignmentCriteria | null> {
+    if (data.occupationId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.occupationId,
+        'Occupation',
+      );
+    }
+
     const normalizedData = this.normalizeAndValidateWeight(data);
     return await this.repository.update(id, normalizedData);
   }

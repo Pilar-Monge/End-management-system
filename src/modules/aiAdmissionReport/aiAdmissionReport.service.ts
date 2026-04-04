@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { AiAdmissionReportRepository } from './aiAdmissionReport.repository';
 import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { OccupationEntity } from '../occupation/occupation.entity';
+import { assertEntityExists } from '../../common/validation/assert-exists';
 import type {
   AiAdmissionReport,
   AiDecision,
@@ -15,6 +17,7 @@ import type {
 export class AiAdmissionReportService {
   constructor(
     private readonly repository: AiAdmissionReportRepository,
+    private readonly dataSource: DataSource,
     @InjectRepository(AdmissionRequestEntity)
     private readonly admissionRequestRepo: Repository<AdmissionRequestEntity>,
   ) {}
@@ -31,6 +34,15 @@ export class AiAdmissionReportService {
     const existing = await this.repository.findByRequestId(data.requestId);
     if (existing) {
       throw new Error('An AI admission report already exists for this request');
+    }
+
+    if (data.suggestedOccupationId !== undefined && data.suggestedOccupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.suggestedOccupationId,
+        'Occupation',
+      );
     }
 
     return await this.repository.create(data);
@@ -76,6 +88,33 @@ export class AiAdmissionReportService {
   }
 
   async updateReport(id: number, data: UpdateAiAdmissionReportDTO): Promise<AiAdmissionReport | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    if (data.requestId !== undefined && data.requestId !== existing.requestId) {
+      const admissionRequestExists = await this.admissionRequestRepo.exist({
+        where: { id: data.requestId },
+      });
+
+      if (!admissionRequestExists) {
+        throw new Error('Admission request not found');
+      }
+
+      const byRequest = await this.repository.findByRequestId(data.requestId);
+      if (byRequest && byRequest.id !== id) {
+        throw new Error('An AI admission report already exists for this request');
+      }
+    }
+
+    if (data.suggestedOccupationId !== undefined && data.suggestedOccupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.suggestedOccupationId,
+        'Occupation',
+      );
+    }
+
     return await this.repository.update(id, data);
   }
 

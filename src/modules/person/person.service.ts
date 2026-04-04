@@ -1,4 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
+
+import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { CampEntity } from '../camp/camp.entity';
+import { OccupationEntity } from '../occupation/occupation.entity';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
 
 import { PersonRepository } from './person.repository';
 import type {
@@ -10,9 +18,36 @@ import type {
 
 @Injectable()
 export class PersonService {
-  constructor(private readonly repository: PersonRepository) {}
+  constructor(
+    private readonly repository: PersonRepository,
+    private readonly dataSource: DataSource,
+    @InjectRepository(AdmissionRequestEntity)
+    private readonly admissionRequestRepository: Repository<AdmissionRequestEntity>,
+  ) {}
+
+  private async assertAdmissionRequestExists(admissionRequestId: number): Promise<void> {
+    const admissionRequest = await this.admissionRequestRepository.findOne({
+      where: { id: admissionRequestId },
+      select: { id: true },
+    });
+
+    if (!admissionRequest) {
+      throw new Error('Admission request not found');
+    }
+  }
 
   async createPerson(data: CreatePersonDTO): Promise<Person> {
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+
+    if (data.occupationId !== undefined && data.occupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.occupationId,
+        'Occupation',
+      );
+    }
+
     const existingByIdentification =
       await this.repository.findByIdentificationNumber(data.identificationNumber);
 
@@ -22,6 +57,8 @@ export class PersonService {
 
     const admissionRequestId = data.admissionRequestId ?? null;
     if (admissionRequestId !== null) {
+      await this.assertAdmissionRequestExists(admissionRequestId);
+
       const existingByRequest =
         await this.repository.findByAdmissionRequestId(admissionRequestId);
 
@@ -70,6 +107,19 @@ export class PersonService {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 
+    if (data.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    }
+
+    if (data.occupationId !== undefined && data.occupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.occupationId,
+        'Occupation',
+      );
+    }
+
     if (
       data.identificationNumber &&
       data.identificationNumber !== existing.identificationNumber
@@ -89,6 +139,8 @@ export class PersonService {
       data.admissionRequestId !== existing.admissionRequestId &&
       data.admissionRequestId !== null
     ) {
+      await this.assertAdmissionRequestExists(data.admissionRequestId);
+
       const byRequest = await this.repository.findByAdmissionRequestId(
         data.admissionRequestId,
       );

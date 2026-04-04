@@ -1,4 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { AiAdmissionReportEntity } from '../aiAdmissionReport/aiAdmissionReport.entity';
 
 import { EvaluatedCriteriaReportRepository } from './evaluatedCriteriaReport.repository';
 import type {
@@ -9,9 +13,19 @@ import type {
 
 @Injectable()
 export class EvaluatedCriteriaReportService {
-  constructor(private readonly repository: EvaluatedCriteriaReportRepository) {}
+  constructor(
+    private readonly repository: EvaluatedCriteriaReportRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createItem(data: CreateEvaluatedCriteriaReportDTO): Promise<EvaluatedCriteriaReport> {
+    await assertEntityExists(
+      this.dataSource,
+      AiAdmissionReportEntity,
+      data.reportId,
+      'AI admission report',
+    );
+
     const existing = await this.repository.findByReportAndCriteria(data.reportId, data.criteriaId);
     if (existing) {
       throw new Error('This evaluated criteria report item already exists');
@@ -50,7 +64,19 @@ export class EvaluatedCriteriaReportService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
-  async updateItem(id: number, data: UpdateEvaluatedCriteriaReportDTO): Promise<EvaluatedCriteriaReport | null> {
+  async updateItem(
+    id: number,
+    data: UpdateEvaluatedCriteriaReportDTO,
+  ): Promise<EvaluatedCriteriaReport | null> {
+    if (data.reportId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        AiAdmissionReportEntity,
+        data.reportId,
+        'AI admission report',
+      );
+    }
+
     return await this.repository.update(id, data);
   }
 

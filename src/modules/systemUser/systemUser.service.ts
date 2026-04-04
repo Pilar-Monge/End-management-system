@@ -1,13 +1,31 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { CampEntity } from '../camp/camp.entity';
+import { PersonEntity } from '../person/person.entity';
 import { UserRepository } from "./systemUser.repository";
 import { User, CreateUserDTO, UserResponse, LoginDTO } from "./systemUser.model";
 import { EncryptionService } from "../../services/encryption.service";
 
 @Injectable()
 export class UserService {
-  constructor(private userRepo: UserRepository) {}
+  constructor(
+    private userRepo: UserRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
+    await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
+    await assertEntityExists(
+      this.dataSource,
+      AdmissionRequestEntity,
+      data.requestId,
+      'Admission request',
+    );
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+
     const passwordHash = await EncryptionService.hashPassword(data.password);
     
     const user = await this.userRepo.create({
@@ -53,6 +71,21 @@ export class UserService {
 
     const updateData: any = { ...data };
     delete updateData.password;
+
+    if (updateData.personId !== undefined) {
+      await assertEntityExists(this.dataSource, PersonEntity, updateData.personId, 'Person');
+    }
+    if (updateData.requestId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        AdmissionRequestEntity,
+        updateData.requestId,
+        'Admission request',
+      );
+    }
+    if (updateData.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, updateData.campId, 'Camp');
+    }
     
     const user = await this.userRepo.update(id, {
       ...updateData,

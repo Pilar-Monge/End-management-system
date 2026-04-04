@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
 import { PersonEntity } from '../person/person.entity';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { DailyCollectionRecordRepository } from './dailyCollectionRecord.repository';
 import type {
@@ -16,6 +19,7 @@ import type {
 export class DailyCollectionRecordService {
   constructor(
     private readonly repository: DailyCollectionRecordRepository,
+    private readonly dataSource: DataSource,
     @InjectRepository(PersonEntity)
     private readonly personRepo: Repository<PersonEntity>,
     @InjectRepository(UserEntity)
@@ -31,6 +35,14 @@ export class DailyCollectionRecordService {
     resourceTypeId: number,
     movementId?: number | null,
   ): Promise<void> {
+    await assertEntityExists(this.dataSource, CampEntity, campId, 'Camp');
+    await assertEntityExists(
+      this.dataSource,
+      ResourceTypeEntity,
+      resourceTypeId,
+      'Resource type',
+    );
+
     const person = await this.personRepo.findOne({ where: { id: personId } });
     if (!person) {
       throw new NotFoundException('Person not found');

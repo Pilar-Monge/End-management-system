@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { IntercampRequestEntity } from '../intercampRequest/intercampRequest.entity';
+import { OccupationEntity } from '../occupation/occupation.entity';
+import { PersonEntity } from '../person/person.entity';
 
 import { RequestPersonDetailRepository } from './requestPersonDetail.repository';
 import type {
@@ -11,9 +17,32 @@ import type {
 
 @Injectable()
 export class RequestPersonDetailService {
-  constructor(private readonly repository: RequestPersonDetailRepository) {}
+  constructor(
+    private readonly repository: RequestPersonDetailRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createDetail(data: CreateRequestPersonDetailDTO): Promise<RequestPersonDetail> {
+    await assertEntityExists(
+      this.dataSource,
+      IntercampRequestEntity,
+      data.requestId,
+      'Intercamp request',
+    );
+
+    if (data.personId !== undefined && data.personId !== null) {
+      await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
+    }
+
+    if (data.occupationId !== undefined && data.occupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.occupationId,
+        'Occupation',
+      );
+    }
+
     return await this.repository.create(data);
   }
 
@@ -56,7 +85,32 @@ export class RequestPersonDetailService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
-  async updateDetail(id: number, data: UpdateRequestPersonDetailDTO): Promise<RequestPersonDetail | null> {
+  async updateDetail(
+    id: number,
+    data: UpdateRequestPersonDetailDTO,
+  ): Promise<RequestPersonDetail | null> {
+    if (data.requestId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        IntercampRequestEntity,
+        data.requestId,
+        'Intercamp request',
+      );
+    }
+
+    if (data.personId !== undefined && data.personId !== null) {
+      await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
+    }
+
+    if (data.occupationId !== undefined && data.occupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.occupationId,
+        'Occupation',
+      );
+    }
+
     return await this.repository.update(id, data);
   }
 
