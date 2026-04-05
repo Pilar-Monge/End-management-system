@@ -12,11 +12,11 @@ import {
   Req,
 } from '@nestjs/common';
 
-
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiNotFoundResponse,  ApiOperation,
+  ApiNotFoundResponse,
+  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
@@ -46,7 +46,10 @@ export class RequestResourceDetailController {
   @Post()
   @ApiOperation({ summary: 'Create Request Resource Detail' })
   @ApiBody({ type: CreateRequestResourceDetailDto })
-  @ApiCreatedResponseData(RequestResourceDetailEntity, { description: 'Request Resource Detail created' })  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiCreatedResponseData(RequestResourceDetailEntity, {
+    description: 'Request Resource Detail created',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestResourceDetailDTO) {
     try {
       const detail = await this.service.createDetail(body);
@@ -157,7 +160,9 @@ export class RequestResourceDetailController {
   @ApiOperation({ summary: 'Update Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
   @ApiBody({ type: UpdateRequestResourceDetailDto })
-  @ApiOkResponseData(RequestResourceDetailEntity, { description: 'Request Resource Detail updated' })
+  @ApiOkResponseData(RequestResourceDetailEntity, {
+    description: 'Request Resource Detail updated',
+  })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async update(@Param('id') id: string, @Body() body: UpdateRequestResourceDetailDTO) {
@@ -184,7 +189,8 @@ export class RequestResourceDetailController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
-  @ApiOkResponseMessage({ description: 'Request Resource Detail deleted' })  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiOkResponseMessage({ description: 'Request Resource Detail deleted' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');

@@ -22,12 +22,7 @@ export class OccupationAssignmentCriteriaService {
   async createCriteria(
     data: CreateOccupationAssignmentCriteriaDTO,
   ): Promise<OccupationAssignmentCriteria> {
-    await assertEntityExists(
-      this.dataSource,
-      OccupationEntity,
-      data.occupationId,
-      'Occupation',
-    );
+    await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
 
     const normalizedData = this.normalizeAndValidateWeight(data);
     return await this.repository.create(normalizedData);
@@ -71,12 +66,7 @@ export class OccupationAssignmentCriteriaService {
     data: UpdateOccupationAssignmentCriteriaDTO,
   ): Promise<OccupationAssignmentCriteria | null> {
     if (data.occupationId !== undefined) {
-      await assertEntityExists(
-        this.dataSource,
-        OccupationEntity,
-        data.occupationId,
-        'Occupation',
-      );
+      await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
     }
 
     const normalizedData = this.normalizeAndValidateWeight(data);

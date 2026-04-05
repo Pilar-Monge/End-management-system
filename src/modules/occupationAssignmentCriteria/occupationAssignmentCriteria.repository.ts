@@ -17,9 +17,7 @@ export class OccupationAssignmentCriteriaRepository {
     private readonly repo: Repository<OccupationAssignmentCriteriaEntity>,
   ) {}
 
-  async create(
-    data: CreateOccupationAssignmentCriteriaDTO,
-  ): Promise<OccupationAssignmentCriteria> {
+  async create(data: CreateOccupationAssignmentCriteriaDTO): Promise<OccupationAssignmentCriteria> {
     const entity = this.repo.create({
       occupationId: data.occupationId,
       criteriaDescription: data.criteriaDescription,

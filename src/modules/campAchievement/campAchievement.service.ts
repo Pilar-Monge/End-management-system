@@ -22,12 +22,7 @@ export class CampAchievementService {
 
   async createCampAchievement(data: CreateCampAchievementDTO): Promise<CampAchievement> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
-    await assertEntityExists(
-      this.dataSource,
-      AchievementEntity,
-      data.achievementId,
-      'Achievement',
-    );
+    await assertEntityExists(this.dataSource, AchievementEntity, data.achievementId, 'Achievement');
     await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
 
     const existing = await this.repository.findByKey(data.campId, data.achievementId);

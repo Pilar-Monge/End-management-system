@@ -71,7 +71,9 @@ export class UserController {
       const users = await this.service.findAllUsers();
       return { success: true, data: users };
     } catch (error) {
-      throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error getting users');
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Error getting users',
+      );
     }
   }
 
@@ -149,7 +151,9 @@ export class UserController {
       return { success: true, data: user, message: 'Login succeeded' };
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
-      throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error logging in');
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Error logging in',
+      );
     }
   }
 }

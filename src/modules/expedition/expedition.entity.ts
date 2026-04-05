@@ -10,10 +10,7 @@ import {
 
 import { ApiProperty } from '@nestjs/swagger';
 
-import {
-  EXPEDITION_STATUS_VALUES,
-  type ExpeditionStatus,
-} from './expedition.model';
+import { EXPEDITION_STATUS_VALUES, type ExpeditionStatus } from './expedition.model';
 @Entity({ name: 'expedition' })
 @Index('idx_expedition_camp', ['campId'])
 @Index('idx_expedition_status', ['status'])

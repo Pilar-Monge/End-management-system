@@ -35,12 +35,7 @@ export class RequestPersonDetailService {
     }
 
     if (data.occupationId !== undefined && data.occupationId !== null) {
-      await assertEntityExists(
-        this.dataSource,
-        OccupationEntity,
-        data.occupationId,
-        'Occupation',
-      );
+      await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
     }
 
     return await this.repository.create(data);
@@ -103,12 +98,7 @@ export class RequestPersonDetailService {
     }
 
     if (data.occupationId !== undefined && data.occupationId !== null) {
-      await assertEntityExists(
-        this.dataSource,
-        OccupationEntity,
-        data.occupationId,
-        'Occupation',
-      );
+      await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
     }
     return await this.repository.update(id, data);
   }

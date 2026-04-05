@@ -78,7 +78,9 @@ export class DecisionTreeController {
   @Post('predict')
   @ApiOperation({ summary: 'Predict using a decision tree model' })
   @ApiBody({ type: PredictDecisionTreeDto })
-  @ApiOkResponseData(DecisionTreePredictResultDto, { description: 'Prediction generated successfully' })
+  @ApiOkResponseData(DecisionTreePredictResultDto, {
+    description: 'Prediction generated successfully',
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async predict(@Body() body: PredictDecisionTreeDTO) {
     try {
@@ -98,7 +100,9 @@ export class DecisionTreeController {
   @Post('explain')
   @ApiOperation({ summary: 'Explain a prediction for a decision tree model' })
   @ApiBody({ type: ExplainDecisionTreeDto })
-  @ApiOkResponseData(DecisionTreeExplainResultDto, { description: 'Prediction explanation generated successfully' })
+  @ApiOkResponseData(DecisionTreeExplainResultDto, {
+    description: 'Prediction explanation generated successfully',
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async explain(@Body() body: ExplainDecisionTreeDTO) {
     try {
@@ -151,10 +155,25 @@ export class DecisionTreeController {
   @ApiOperation({ summary: 'List decision tree models' })
   @ApiOkResponseList(DecisionTreeModelDto, { description: 'Decision tree models list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
-  @ApiQuery({ name: 'modelName', required: false, type: String, description: 'Filter by modelName' })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by isActive (true/false)' })
+  @ApiQuery({
+    name: 'modelName',
+    required: false,
+    type: String,
+    description: 'Filter by modelName',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    description: 'Filter by isActive (true/false)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async listModels(
     @Query('modelName') modelName?: string,
     @Query('isActive') isActive?: string,

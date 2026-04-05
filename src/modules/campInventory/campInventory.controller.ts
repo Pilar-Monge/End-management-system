@@ -13,8 +13,15 @@ import {
   Req,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   ApiCreatedResponseData,
@@ -22,12 +29,8 @@ import {
 } from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
-
 import { CampInventoryService } from './campInventory.service';
-import type {
-  CreateCampInventoryDTO,
-  UpdateCampInventoryDTO,
-} from './campInventory.model';
+import type { CreateCampInventoryDTO, UpdateCampInventoryDTO } from './campInventory.model';
 import { CampInventoryEntity } from './campInventory.entity';
 import { CreateCampInventoryDto, UpdateCampInventoryDto } from './dto';
 @Controller('camp-inventory')

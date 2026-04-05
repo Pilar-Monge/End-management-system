@@ -114,7 +114,7 @@ export class PersonService {
     return updated;
   }
 
-  async deletePerson(id: number): Promise<boolean> {
+  async deletePerson(_id: number): Promise<boolean> {
     return false;
   }
 }

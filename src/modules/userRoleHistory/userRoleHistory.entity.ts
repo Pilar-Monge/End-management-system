@@ -2,10 +2,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
 
-import {
-  SYSTEM_ROLE_VALUES,
-  type SystemRole,
-} from '../systemUser/systemUser.model';
+import { SYSTEM_ROLE_VALUES, type SystemRole } from '../systemUser/systemUser.model';
 @Entity({ name: 'user_role_history' })
 @Index('idx_historial_rol_usuario', ['userId', 'changeDate'])
 @Index('idx_historial_rol_usuario_por', ['changedBy'])

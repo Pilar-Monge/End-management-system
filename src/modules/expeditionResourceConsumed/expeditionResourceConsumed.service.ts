@@ -38,12 +38,7 @@ export class ExpeditionResourceConsumedService {
     resourceTypeId: number,
     movementId?: number | null,
   ): Promise<void> {
-    await assertEntityExists(
-      this.dataSource,
-      ResourceTypeEntity,
-      resourceTypeId,
-      'Resource type',
-    );
+    await assertEntityExists(this.dataSource, ResourceTypeEntity, resourceTypeId, 'Resource type');
 
     const expedition = await this.expeditionRepo.findOne({ where: { id: expeditionId } });
     if (!expedition) {

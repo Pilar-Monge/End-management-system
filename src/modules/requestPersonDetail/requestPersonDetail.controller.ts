@@ -11,11 +11,11 @@ import {
   Query,
 } from '@nestjs/common';
 
-
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiNotFoundResponse,  ApiOperation,
+  ApiNotFoundResponse,
+  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
@@ -47,7 +47,10 @@ export class RequestPersonDetailController {
   @Post()
   @ApiOperation({ summary: 'Create Request Person Detail' })
   @ApiBody({ type: CreateRequestPersonDetailDto })
-  @ApiCreatedResponseData(RequestPersonDetailEntity, { description: 'Request Person Detail created' })  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiCreatedResponseData(RequestPersonDetailEntity, {
+    description: 'Request Person Detail created',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestPersonDetailDTO) {
     try {
       const detail = await this.service.createDetail(body);

@@ -12,8 +12,15 @@ import {
   Query,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   ApiCreatedResponseData,
@@ -43,7 +50,9 @@ export class ResourceTypeController {
   @ApiCreatedResponseData(ResourceTypeEntity, { description: 'Resource Type created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateResourceTypeDTO) {
-    throw new ForbiddenException('Resource types are system catalogs and cannot be modified via API');
+    throw new ForbiddenException(
+      'Resource types are system catalogs and cannot be modified via API',
+    );
   }
   @Get(':id')
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
@@ -136,7 +145,9 @@ export class ResourceTypeController {
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async update(@Param('id') id: string, @Body() body: UpdateResourceTypeDTO) {
-    throw new ForbiddenException('Resource types are system catalogs and cannot be modified via API');
+    throw new ForbiddenException(
+      'Resource types are system catalogs and cannot be modified via API',
+    );
   }
   @Delete(':id')
   @Roles('SYSTEM_ADMIN')
@@ -146,6 +157,8 @@ export class ResourceTypeController {
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
   async delete(@Param('id') id: string) {
-    throw new ForbiddenException('Resource types are system catalogs and cannot be modified via API');
+    throw new ForbiddenException(
+      'Resource types are system catalogs and cannot be modified via API',
+    );
   }
 }

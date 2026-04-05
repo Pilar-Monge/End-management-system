@@ -20,7 +20,12 @@ export class UserService {
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
     await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
-    await assertEntityExists(this.dataSource, AdmissionRequestEntity, data.requestId, 'Admission request');
+    await assertEntityExists(
+      this.dataSource,
+      AdmissionRequestEntity,
+      data.requestId,
+      'Admission request',
+    );
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     const passwordHash = await EncryptionService.hashPassword(data.password);
     const user = await this.userRepo.create({
@@ -61,7 +66,10 @@ export class UserService {
     return userResponse;
   }
 
-  async updateUser(id: number, data: Partial<Pick<UpdateSystemUserDto, 'role' | 'status'>>): Promise<UserResponse | null> {
+  async updateUser(
+    id: number,
+    data: Partial<Pick<UpdateSystemUserDto, 'role' | 'status'>>,
+  ): Promise<UserResponse | null> {
     const existing = await this.userRepo.findById(id);
     if (!existing) return null;
     const user = await this.userRepo.update(id, data);

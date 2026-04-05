@@ -24,10 +24,8 @@ export class TransferPersonService {
     await assertEntityExists(this.dataSource, TransferEntity, data.transferId, 'Transfer');
     await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
 
-    const existing = await this.repository.findByTransferAndPerson(
-      data.transferId,
-      data.personId,
-    );    if (existing) {
+    const existing = await this.repository.findByTransferAndPerson(data.transferId, data.personId);
+    if (existing) {
       throw new Error('This person is already assigned to this transfer');
     }
 
@@ -84,10 +82,7 @@ export class TransferPersonService {
       await assertEntityExists(this.dataSource, PersonEntity, resolvedPersonId, 'Person');
     }
 
-    if (
-      resolvedTransferId !== existing.transferId ||
-      resolvedPersonId !== existing.personId
-    ) {
+    if (resolvedTransferId !== existing.transferId || resolvedPersonId !== existing.personId) {
       const byPair = await this.repository.findByTransferAndPerson(
         resolvedTransferId,
         resolvedPersonId,

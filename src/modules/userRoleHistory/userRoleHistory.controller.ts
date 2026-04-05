@@ -13,11 +13,11 @@ import {
   Req,
 } from '@nestjs/common';
 
-
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiNotFoundResponse,  ApiOperation,
+  ApiNotFoundResponse,
+  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
@@ -31,12 +31,8 @@ import {
 } from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
-
 import { UserRoleHistoryService } from './userRoleHistory.service';
-import type {
-  CreateUserRoleHistoryDTO,
-  UpdateUserRoleHistoryDTO,
-} from './userRoleHistory.model';
+import type { CreateUserRoleHistoryDTO, UpdateUserRoleHistoryDTO } from './userRoleHistory.model';
 import { UserRoleHistoryEntity } from './userRoleHistory.entity';
 import { CreateUserRoleHistoryDto, UpdateUserRoleHistoryDto } from './dto';
 @Controller('user-role-history')

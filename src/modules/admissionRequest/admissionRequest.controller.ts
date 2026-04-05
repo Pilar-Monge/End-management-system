@@ -69,7 +69,9 @@ export class AdmissionRequestController {
       const request = await this.service.createRequest(body);
       return { success: true, data: request, message: 'Request created successfully' };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating request');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error creating request',
+      );
     }
   }
 
@@ -95,7 +97,12 @@ export class AdmissionRequestController {
   @Get()
   @Roles('SYSTEM_ADMIN')
   @ApiQuery({ name: 'campId', required: false, type: String, description: 'Camp ID' })
-  @ApiQuery({ name: 'status', required: false, enum: ADMISSION_REQUEST_STATUS_VALUES, description: 'Request status' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ADMISSION_REQUEST_STATUS_VALUES,
+    description: 'Request status',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiOperation({ summary: 'List admission requests' })
@@ -108,7 +115,12 @@ export class AdmissionRequestController {
     @Query('limit') limit?: string,
   ) {
     try {
-      const filters: { campId?: number; status?: AdmissionRequestStatus; page?: number; limit?: number } = {};
+      const filters: {
+        campId?: number;
+        status?: AdmissionRequestStatus;
+        page?: number;
+        limit?: number;
+      } = {};
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
@@ -131,7 +143,9 @@ export class AdmissionRequestController {
         },
       };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error getting requests');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error getting requests',
+      );
     }
   }
 
@@ -150,7 +164,9 @@ export class AdmissionRequestController {
       const request = await this.service.updateRequest(parsedId, body);
       return { success: true, data: request, message: 'Request updated successfully' };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error updating request');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error updating request',
+      );
     }
   }
 
@@ -168,7 +184,9 @@ export class AdmissionRequestController {
       await this.service.deleteRequest(parsedId);
       return { success: true, message: 'Request deleted successfully' };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error deleting request');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error deleting request',
+      );
     }
   }
 
@@ -188,7 +206,9 @@ export class AdmissionRequestController {
       const request = await this.service.processWithAI(parsedId, oficioSugeridoId, decision);
       return { success: true, data: request, message: `Request processed by AI: ${decision}` };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error processing with AI');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error processing with AI',
+      );
     }
   }
 
@@ -205,10 +225,21 @@ export class AdmissionRequestController {
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
     const { adminUserId, approved, rejectionReason } = body;
     try {
-      const request = await this.service.reviewByAdmin(parsedId, adminUserId, approved, rejectionReason);
-      return { success: true, data: request, message: `Request ${approved ? 'approved' : 'rejected'} by admin` };
+      const request = await this.service.reviewByAdmin(
+        parsedId,
+        adminUserId,
+        approved,
+        rejectionReason,
+      );
+      return {
+        success: true,
+        data: request,
+        message: `Request ${approved ? 'approved' : 'rejected'} by admin`,
+      };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error in admin review');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error in admin review',
+      );
     }
   }
 
@@ -226,7 +257,9 @@ export class AdmissionRequestController {
       const requests = await this.service.getPendingByCamp(parsedCampId);
       return { success: true, data: requests, count: requests.length };
     } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error getting pending requests');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error getting pending requests',
+      );
     }
   }
 }

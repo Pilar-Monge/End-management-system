@@ -13,11 +13,11 @@ import {
   Req,
 } from '@nestjs/common';
 
-
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiNotFoundResponse,  ApiOperation,
+  ApiNotFoundResponse,
+  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
@@ -49,7 +49,10 @@ export class PersonStatusHistoryController {
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Person Status History' })
   @ApiBody({ type: CreatePersonStatusHistoryDto })
-  @ApiCreatedResponseData(PersonStatusHistoryEntity, { description: 'Person Status History created' })  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiCreatedResponseData(PersonStatusHistoryEntity, {
+    description: 'Person Status History created',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreatePersonStatusHistoryDTO) {
     try {
       const entry = await this.service.createEntry(body);

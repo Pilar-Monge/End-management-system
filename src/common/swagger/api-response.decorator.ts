@@ -1,10 +1,5 @@
 import { applyDecorators, type Type } from '@nestjs/common';
-import {
-  ApiCreatedResponse,
-  ApiExtraModels,
-  ApiOkResponse,
-  getSchemaPath,
-} from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
 
 import {
   SuccessDataResponseDto,

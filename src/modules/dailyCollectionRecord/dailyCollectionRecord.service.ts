@@ -36,12 +36,7 @@ export class DailyCollectionRecordService {
     movementId?: number | null,
   ): Promise<void> {
     await assertEntityExists(this.dataSource, CampEntity, campId, 'Camp');
-    await assertEntityExists(
-      this.dataSource,
-      ResourceTypeEntity,
-      resourceTypeId,
-      'Resource type',
-    );
+    await assertEntityExists(this.dataSource, ResourceTypeEntity, resourceTypeId, 'Resource type');
 
     const person = await this.personRepo.findOne({ where: { id: personId } });
     if (!person) {

@@ -137,3 +137,14 @@ Check which process is using port 3000:
 netstat -ano | findstr :3000
 
 taskkill /PID XXXX /F
+
+### Code Formatting and Linting
+
+To maintain a clean code standard and prevent style conflicts among team members, please run these commands before committing your changes:
+
+```bash
+# Applies standard formatting to all files (spacing, commas, line breaks)
+npm run format
+
+# Analyzes the code and automatically fixes syntax issues and bad practices
+npm run lint -- --fix

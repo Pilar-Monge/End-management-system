@@ -11,8 +11,15 @@ import {
   Query,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   ApiCreatedResponseData,
@@ -23,11 +30,7 @@ import {
 import { Roles } from '../../common/decorators';
 
 import { PersonService } from './person.service';
-import type {
-  CreatePersonDTO,
-  PersonStatus,
-  UpdatePersonDTO,
-} from './person.model';
+import type { CreatePersonDTO, PersonStatus, UpdatePersonDTO } from './person.model';
 import { PersonEntity } from './person.entity';
 import { CreatePersonDto, UpdatePersonDto } from './dto';
 @Controller('persons')

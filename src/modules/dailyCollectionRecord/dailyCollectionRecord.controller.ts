@@ -185,7 +185,9 @@ export class DailyCollectionRecordController {
   @ApiOperation({ summary: 'Update Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiBody({ type: UpdateDailyCollectionRecordDto })
-  @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record updated' })
+  @ApiOkResponseData(DailyCollectionRecordEntity, {
+    description: 'Daily Collection Record updated',
+  })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
   async update(@Param('id') id: string, @Body() body: UpdateDailyCollectionRecordDTO) {

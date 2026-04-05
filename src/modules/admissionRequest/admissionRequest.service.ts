@@ -129,7 +129,7 @@ export class AdmissionRequestService {
     }
 
     const updatedRequest = await this.repository.update(id, data);
-        if (!updatedRequest) {
+    if (!updatedRequest) {
       throw new Error('Error updating request');
     }
 

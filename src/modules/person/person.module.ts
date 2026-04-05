@@ -9,7 +9,9 @@ import { PersonStatusHistoryRepository } from '../personStatusHistory/personStat
 import { PersonService } from './person.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PersonEntity, AdmissionRequestEntity, PersonStatusHistoryEntity])],
+  imports: [
+    TypeOrmModule.forFeature([PersonEntity, AdmissionRequestEntity, PersonStatusHistoryEntity]),
+  ],
   controllers: [PersonController],
   providers: [PersonRepository, PersonStatusHistoryRepository, PersonService],
 })

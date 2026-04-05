@@ -22,7 +22,7 @@ export class EvaluatedCriteriaReportRepository {
       criteriaId: data.criteriaId,
       evaluatedValue: data.evaluatedValue,
       scoreObtained:
-        data.scoreObtained === undefined ? null : (data.scoreObtained as any) ?? null,
+        data.scoreObtained === undefined ? null : ((data.scoreObtained as any) ?? null),
       observation: data.observation ?? null,
     });
 

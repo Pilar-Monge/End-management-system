@@ -87,7 +87,10 @@ export class AiAdmissionReportService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
-  async updateReport(id: number, data: UpdateAiAdmissionReportDTO): Promise<AiAdmissionReport | null> {
+  async updateReport(
+    id: number,
+    data: UpdateAiAdmissionReportDTO,
+  ): Promise<AiAdmissionReport | null> {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 

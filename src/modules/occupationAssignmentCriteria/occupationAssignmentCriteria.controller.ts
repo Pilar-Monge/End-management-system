@@ -12,7 +12,6 @@ import {
   Req,
 } from '@nestjs/common';
 
-
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -30,7 +29,6 @@ import {
   ApiOkResponseMessage,
 } from '../../common/swagger/api-response.decorator';
 
-
 import { OccupationAssignmentCriteriaService } from './occupationAssignmentCriteria.service';
 import type {
   CreateOccupationAssignmentCriteriaDTO,
@@ -39,7 +37,10 @@ import type {
 } from './occupationAssignmentCriteria.model';
 import { OccupationAssignmentCriteriaEntity } from './occupationAssignmentCriteria.entity';
 
-import { CreateOccupationAssignmentCriteriaDto, UpdateOccupationAssignmentCriteriaDto } from './dto';
+import {
+  CreateOccupationAssignmentCriteriaDto,
+  UpdateOccupationAssignmentCriteriaDto,
+} from './dto';
 @Controller('occupation-assignment-criteria')
 @ApiTags('Occupation Assignment Criteria')
 export class OccupationAssignmentCriteriaController {
@@ -47,7 +48,9 @@ export class OccupationAssignmentCriteriaController {
   @Post()
   @ApiOperation({ summary: 'Create Occupation Assignment Criteria' })
   @ApiBody({ type: CreateOccupationAssignmentCriteriaDto })
-  @ApiCreatedResponseData(OccupationAssignmentCriteriaEntity, { description: 'Occupation Assignment Criteria created' })
+  @ApiCreatedResponseData(OccupationAssignmentCriteriaEntity, {
+    description: 'Occupation Assignment Criteria created',
+  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateOccupationAssignmentCriteriaDTO) {
     try {
@@ -66,7 +69,9 @@ export class OccupationAssignmentCriteriaController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Occupation Assignment Criteria by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation Assignment Criteria id' })
-  @ApiOkResponseData(OccupationAssignmentCriteriaEntity, { description: 'Occupation Assignment Criteria found' })
+  @ApiOkResponseData(OccupationAssignmentCriteriaEntity, {
+    description: 'Occupation Assignment Criteria found',
+  })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Occupation Assignment Criteria not found' })
   async getById(@Param('id') id: string) {
@@ -82,10 +87,17 @@ export class OccupationAssignmentCriteriaController {
   }
   @Get()
   @ApiOperation({ summary: 'List Occupation Assignment Criteria' })
-  @ApiOkResponseList(OccupationAssignmentCriteriaEntity, { description: 'Occupation Assignment Criteria list' })
+  @ApiOkResponseList(OccupationAssignmentCriteriaEntity, {
+    description: 'Occupation Assignment Criteria list',
+  })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (pagination)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (pagination)',
+  })
   async getAll(
     @Query('occupationId') occupationId?: string,
     @Query('ocupacionId') ocupacionId?: string,
@@ -167,13 +179,12 @@ export class OccupationAssignmentCriteriaController {
   @ApiOperation({ summary: 'Update Occupation Assignment Criteria' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation Assignment Criteria id' })
   @ApiBody({ type: UpdateOccupationAssignmentCriteriaDto })
-  @ApiOkResponseData(OccupationAssignmentCriteriaEntity, { description: 'Occupation Assignment Criteria updated' })
+  @ApiOkResponseData(OccupationAssignmentCriteriaEntity, {
+    description: 'Occupation Assignment Criteria updated',
+  })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Occupation Assignment Criteria not found' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateOccupationAssignmentCriteriaDTO,
-  ) {
+  async update(@Param('id') id: string, @Body() body: UpdateOccupationAssignmentCriteriaDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);

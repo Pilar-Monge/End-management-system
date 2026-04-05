@@ -12,8 +12,15 @@ import {
   Query,
 } from '@nestjs/common';
 
-
-import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   ApiCreatedResponseData,
@@ -24,11 +31,7 @@ import {
 import { Roles } from '../../common/decorators';
 
 import { AccessLogService } from './accessLog.service';
-import type {
-  AccessLogEventType,
-  CreateAccessLogDTO,
-  UpdateAccessLogDTO,
-} from './accessLog.model';
+import type { AccessLogEventType, CreateAccessLogDTO, UpdateAccessLogDTO } from './accessLog.model';
 import { AccessLogEntity } from './accessLog.entity';
 import { CreateAccessLogDto, UpdateAccessLogDto } from './dto';
 @Controller('access-logs')
