@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -23,7 +24,6 @@ import {
   ApiCreatedResponseData,
   ApiOkResponseData,
   ApiOkResponseList,
-  ApiOkResponseMessage,
 } from '../../common/swagger/api-response.decorator';
 import { Public, Roles } from '../../common/decorators';
 import { AdmissionRequestService } from './admissionRequest.service';
@@ -171,23 +171,14 @@ export class AdmissionRequestController {
   }
 
   @Delete(':id')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete an admission request' })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
-  @ApiOkResponseMessage({ description: 'Admission request deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id or request cannot be deleted' })
-  async deleteRequest(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-    try {
-      await this.service.deleteRequest(parsedId);
-      return { success: true, message: 'Request deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting request',
-      );
-    }
+  async deleteRequest(@Param('id') _id: string) {
+    throw new ForbiddenException(
+      'Admission requests cannot be deleted. Change status to REJECTED instead for audit purposes.',
+    );
   }
 
   @Post(':id/process-ai')

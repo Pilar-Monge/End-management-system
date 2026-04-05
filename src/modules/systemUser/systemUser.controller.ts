@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   InternalServerErrorException,
   NotFoundException,
@@ -45,20 +46,17 @@ export class UserController {
   constructor(private readonly service: UserService) {}
 
   @Post('users')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create user' })
   @ApiBody({ type: CreateSystemUserDto })
   @ApiCreatedResponseData(SystemUserResponseDto)
   @ApiBadRequestResponse()
   @ApiUnauthorizedResponse()
   @ApiInternalServerErrorResponse()
-  async create(@Body() body: CreateUserDTO) {
-    try {
-      const user = await this.service.createUser(body);
-      return { success: true, data: user, message: 'User created successfully' };
-    } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating user');
-    }
+  async create(@Body() _body: CreateUserDTO) {
+    throw new ForbiddenException(
+      'Manual user creation is disabled. Users must be created through the automated Admission Request flow.',
+    );
   }
 
   @Get('users')

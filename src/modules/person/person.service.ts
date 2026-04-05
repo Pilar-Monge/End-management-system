@@ -34,7 +34,9 @@ export class PersonService {
     if (data.occupationId !== undefined && data.occupationId !== null) {
       await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
     }
-    const existingByIdentification = await this.repository.findByIdentificationNumber(data.identificationNumber);
+    const existingByIdentification = await this.repository.findByIdentificationNumber(
+      data.identificationNumber,
+    );
     if (existingByIdentification) {
       throw new Error('A person with this identification number already exists');
     }
@@ -89,12 +91,18 @@ export class PersonService {
       await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
     }
     if (data.identificationNumber && data.identificationNumber !== existing.identificationNumber) {
-      const byIdentification = await this.repository.findByIdentificationNumber(data.identificationNumber);
+      const byIdentification = await this.repository.findByIdentificationNumber(
+        data.identificationNumber,
+      );
       if (byIdentification && byIdentification.id !== id) {
         throw new Error('Another person with this identification number already exists');
       }
     }
-    if (data.admissionRequestId !== undefined && data.admissionRequestId !== existing.admissionRequestId && data.admissionRequestId !== null) {
+    if (
+      data.admissionRequestId !== undefined &&
+      data.admissionRequestId !== existing.admissionRequestId &&
+      data.admissionRequestId !== null
+    ) {
       await this.assertAdmissionRequestExists(data.admissionRequestId);
       const byRequest = await this.repository.findByAdmissionRequestId(data.admissionRequestId);
       if (byRequest && byRequest.id !== id) {
