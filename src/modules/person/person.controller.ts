@@ -9,31 +9,26 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { PersonService } from './person.service';
-import type { CreatePersonDTO, PersonStatus, UpdatePersonDTO } from './person.model';
-
+import type {
+  CreatePersonDTO,
+  PersonStatus,
+  UpdatePersonDTO,
+} from './person.model';
+import { PersonEntity } from './person.entity';
 import { CreatePersonDto, UpdatePersonDto } from './dto';
 @Controller('persons')
 @ApiTags('Person')
@@ -43,7 +38,7 @@ export class PersonController {
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Person' })
   @ApiBody({ type: CreatePersonDto })
-  @ApiCreatedResponse({ description: 'Person created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(PersonEntity, { description: 'Person created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreatePersonDTO) {
     try {
@@ -63,7 +58,7 @@ export class PersonController {
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Person by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
-  @ApiOkResponse({ description: 'Person found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(PersonEntity, { description: 'Person found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person not found' })
   async getById(@Param('id') id: string) {
@@ -80,7 +75,7 @@ export class PersonController {
   @Get()
   @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'List Person' })
-  @ApiOkResponse({ description: 'Person list', type: SuccessListResponseDto })
+  @ApiOkResponseList(PersonEntity, { description: 'Person list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -90,24 +85,13 @@ export class PersonController {
     description: 'Items per page (pagination)',
   })
   async getAll(
-    @Query('campamentoId') campamentoId?: string,
     @Query('campId') campId?: string,
-    @Query('estado') estado?: PersonStatus,
-    @Query('status') status?: PersonStatus,
     @Query('currentStatus') currentStatus?: PersonStatus,
     @Query('occupationId') occupationId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId =
-        typeof req?.query?.campamentoId === 'string'
-          ? (req.query.campamentoId as string)
-          : undefined;
-      const legacyEstado =
-        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         campId?: number;
         currentStatus?: PersonStatus;
@@ -116,18 +100,16 @@ export class PersonController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) {
           throw new BadRequestException('Invalid camp ID');
         }
         filters.campId = parsedCampId;
       }
 
-      const resolvedStatus = currentStatus ?? status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.currentStatus = resolvedStatus;
+      if (currentStatus) {
+        filters.currentStatus = currentStatus;
       }
 
       if (occupationId) {
@@ -179,7 +161,7 @@ export class PersonController {
   @ApiOperation({ summary: 'Update Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiBody({ type: UpdatePersonDto })
-  @ApiOkResponse({ description: 'Person updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(PersonEntity, { description: 'Person updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Person not found' })
   async update(@Param('id') id: string, @Body() body: UpdatePersonDTO) {
@@ -207,7 +189,7 @@ export class PersonController {
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
-  @ApiOkResponse({ description: 'Person deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Person deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person not found' })
   async delete(@Param('id') id: string) {

@@ -12,27 +12,20 @@ import {
   Req,
 } from '@nestjs/common';
 
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { OccupationService } from './occupation.service';
 import type { CreateOccupationDTO, UpdateOccupationDTO } from './occupation.model';
+import { OccupationEntity } from './occupation.entity';
 
 import { CreateOccupationDto, UpdateOccupationDto } from './dto';
 @Controller('occupations')
@@ -43,7 +36,7 @@ export class OccupationController {
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create Occupation' })
   @ApiBody({ type: CreateOccupationDto })
-  @ApiCreatedResponse({ description: 'Occupation created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(OccupationEntity, { description: 'Occupation created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateOccupationDTO) {
     try {
@@ -63,7 +56,7 @@ export class OccupationController {
   @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'Get Occupation by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
-  @ApiOkResponse({ description: 'Occupation found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(OccupationEntity, { description: 'Occupation found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
   async getById(@Param('id') id: string) {
@@ -80,7 +73,7 @@ export class OccupationController {
   @Get()
   @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'List Occupation' })
-  @ApiOkResponse({ description: 'Occupation list', type: SuccessListResponseDto })
+  @ApiOkResponseList(OccupationEntity, { description: 'Occupation list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -91,11 +84,8 @@ export class OccupationController {
   })
   async getAll(
     @Query('collectsResources') collectsResources?: string,
-    @Query('recolectaRecursos') recolectaRecursos?: string,
     @Query('participatesInExpeditions') participatesInExpeditions?: string,
-    @Query('participaExpediciones') participaExpediciones?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -108,25 +98,22 @@ export class OccupationController {
         limit?: number;
       } = {};
 
-      const resolvedCollects = collectsResources ?? recolectaRecursos;
-      if (resolvedCollects !== undefined) {
-        if (resolvedCollects !== 'true' && resolvedCollects !== 'false') {
+      if (collectsResources !== undefined) {
+        if (collectsResources !== 'true' && collectsResources !== 'false') {
           throw new BadRequestException('Invalid collectsResources');
         }
-        filters.collectsResources = resolvedCollects === 'true';
+        filters.collectsResources = collectsResources === 'true';
       }
 
-      const resolvedParticipates = participatesInExpeditions ?? participaExpediciones;
-      if (resolvedParticipates !== undefined) {
-        if (resolvedParticipates !== 'true' && resolvedParticipates !== 'false') {
+      if (participatesInExpeditions !== undefined) {
+        if (participatesInExpeditions !== 'true' && participatesInExpeditions !== 'false') {
           throw new BadRequestException('Invalid participatesInExpeditions');
         }
-        filters.participatesInExpeditions = resolvedParticipates === 'true';
+        filters.participatesInExpeditions = participatesInExpeditions === 'true';
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resourceTypeId');
         }
@@ -174,7 +161,7 @@ export class OccupationController {
   @ApiOperation({ summary: 'Update Occupation' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
   @ApiBody({ type: UpdateOccupationDto })
-  @ApiOkResponse({ description: 'Occupation updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(OccupationEntity, { description: 'Occupation updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
   async update(@Param('id') id: string, @Body() body: UpdateOccupationDTO) {
@@ -202,7 +189,7 @@ export class OccupationController {
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Occupation' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
-  @ApiOkResponse({ description: 'Occupation deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Occupation deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
   async delete(@Param('id') id: string) {

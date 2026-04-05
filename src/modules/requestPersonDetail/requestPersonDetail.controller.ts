@@ -9,26 +9,24 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
+
 
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
+  ApiNotFoundResponse,  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { RequestPersonDetailService } from './requestPersonDetail.service';
@@ -38,6 +36,7 @@ import type {
   PersonDetailType,
   UpdateRequestPersonDetailDTO,
 } from './requestPersonDetail.model';
+import { RequestPersonDetailEntity } from './requestPersonDetail.entity';
 
 import { CreateRequestPersonDetailDto, UpdateRequestPersonDetailDto } from './dto';
 @Controller('request-person-details')
@@ -48,11 +47,7 @@ export class RequestPersonDetailController {
   @Post()
   @ApiOperation({ summary: 'Create Request Person Detail' })
   @ApiBody({ type: CreateRequestPersonDetailDto })
-  @ApiCreatedResponse({
-    description: 'Request Person Detail created',
-    type: SuccessDataResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiCreatedResponseData(RequestPersonDetailEntity, { description: 'Request Person Detail created' })  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateRequestPersonDetailDTO) {
     try {
       const detail = await this.service.createDetail(body);
@@ -70,7 +65,7 @@ export class RequestPersonDetailController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Request Person Detail by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
-  @ApiOkResponse({ description: 'Request Person Detail found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(RequestPersonDetailEntity, { description: 'Request Person Detail found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async getById(@Param('id') id: string) {
@@ -86,7 +81,7 @@ export class RequestPersonDetailController {
   }
   @Get()
   @ApiOperation({ summary: 'List Request Person Detail' })
-  @ApiOkResponse({ description: 'Request Person Detail list', type: SuccessListResponseDto })
+  @ApiOkResponseList(RequestPersonDetailEntity, { description: 'Request Person Detail list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -97,23 +92,14 @@ export class RequestPersonDetailController {
   })
   async getAll(
     @Query('requestId') requestId?: string,
-    @Query('solicitudId') solicitudId?: string,
     @Query('detailType') detailType?: PersonDetailType,
-    @Query('tipoDetalle') tipoDetalle?: PersonDetailType,
     @Query('status') status?: PersonDetailStatus,
-    @Query('estado') estado?: PersonDetailStatus,
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('occupationId') occupationId?: string,
-    @Query('ocupacionId') ocupacionId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyEstado =
-        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         requestId?: number;
         detailType?: PersonDetailType;
@@ -124,33 +110,28 @@ export class RequestPersonDetailController {
         limit?: number;
       } = {};
 
-      const resolvedRequestId = requestId ?? solicitudId;
-      if (resolvedRequestId) {
-        const parsedRequestId = Number.parseInt(resolvedRequestId, 10);
+      if (requestId) {
+        const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
         filters.requestId = parsedRequestId;
       }
 
-      const resolvedDetailType = detailType ?? tipoDetalle;
-      if (resolvedDetailType) {
-        filters.detailType = resolvedDetailType;
+      if (detailType) {
+        filters.detailType = detailType;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedOccupationId = occupationId ?? ocupacionId;
-      if (resolvedOccupationId) {
-        const parsedOccupationId = Number.parseInt(resolvedOccupationId, 10);
+      if (occupationId) {
+        const parsedOccupationId = Number.parseInt(occupationId, 10);
         if (Number.isNaN(parsedOccupationId)) {
           throw new BadRequestException('Invalid occupationId');
         }
@@ -197,7 +178,7 @@ export class RequestPersonDetailController {
   @ApiOperation({ summary: 'Update Request Person Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
   @ApiBody({ type: UpdateRequestPersonDetailDto })
-  @ApiOkResponse({ description: 'Request Person Detail updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(RequestPersonDetailEntity, { description: 'Request Person Detail updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async update(@Param('id') id: string, @Body() body: UpdateRequestPersonDetailDTO) {
@@ -224,7 +205,7 @@ export class RequestPersonDetailController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Request Person Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
-  @ApiOkResponse({ description: 'Request Person Detail deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Request Person Detail deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   async delete(@Param('id') id: string) {

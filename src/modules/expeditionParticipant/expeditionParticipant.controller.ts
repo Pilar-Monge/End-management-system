@@ -10,15 +10,12 @@ import {
   Post,
   Put,
   Query,
-  Req,
 } from '@nestjs/common';
 
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
   ApiNotFoundResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -26,10 +23,11 @@ import {
 } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { ExpeditionParticipantService } from './expeditionParticipant.service';
@@ -38,6 +36,7 @@ import type {
   ParticipantStatus,
   UpdateExpeditionParticipantDTO,
 } from './expeditionParticipant.model';
+import { ExpeditionParticipantEntity } from './expeditionParticipant.entity';
 
 import { CreateExpeditionParticipantDto, UpdateExpeditionParticipantDto } from './dto';
 @Controller('expedition-participants')
@@ -46,12 +45,11 @@ import { CreateExpeditionParticipantDto, UpdateExpeditionParticipantDto } from '
 export class ExpeditionParticipantController {
   constructor(private readonly service: ExpeditionParticipantService) {}
   @Post()
+  @ApiCreatedResponseData(ExpeditionParticipantEntity, {
+    description: 'Expedition Participant created',
+  })
   @ApiOperation({ summary: 'Create Expedition Participant' })
   @ApiBody({ type: CreateExpeditionParticipantDto })
-  @ApiCreatedResponse({
-    description: 'Expedition Participant created',
-    type: SuccessDataResponseDto,
-  })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateExpeditionParticipantDTO) {
     try {
@@ -74,7 +72,7 @@ export class ExpeditionParticipantController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Expedition Participant by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Participant id' })
-  @ApiOkResponse({ description: 'Expedition Participant found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
   async getById(@Param('id') id: string) {
@@ -90,7 +88,7 @@ export class ExpeditionParticipantController {
   }
   @Get()
   @ApiOperation({ summary: 'List Expedition Participant' })
-  @ApiOkResponse({ description: 'Expedition Participant list', type: SuccessListResponseDto })
+  @ApiOkResponseList(ExpeditionParticipantEntity, { description: 'Expedition Participant list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -101,19 +99,12 @@ export class ExpeditionParticipantController {
   })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
-    @Query('expedicionId') expedicionId?: string,
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('status') status?: ParticipantStatus,
-    @Query('estado') estado?: ParticipantStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyEstado =
-        typeof req?.query?.estado === 'string' ? (req.query.estado as string) : undefined;
-
       const filters: {
         expeditionId?: number;
         personId?: number;
@@ -122,25 +113,22 @@ export class ExpeditionParticipantController {
         limit?: number;
       } = {};
 
-      const resolvedExpeditionId = expeditionId ?? expedicionId;
-      if (resolvedExpeditionId) {
-        const parsedExpeditionId = Number.parseInt(resolvedExpeditionId, 10);
+      if (expeditionId) {
+        const parsedExpeditionId = Number.parseInt(expeditionId, 10);
         if (Number.isNaN(parsedExpeditionId)) {
           throw new BadRequestException('Invalid expeditionId');
         }
         filters.expeditionId = parsedExpeditionId;
       }
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedStatus = status ?? (legacyEstado as any);
-      if (resolvedStatus) {
-        filters.status = resolvedStatus;
+      if (status) {
+        filters.status = status;
       }
 
       if (page) {
@@ -183,7 +171,7 @@ export class ExpeditionParticipantController {
   @ApiOperation({ summary: 'Update Expedition Participant' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Participant id' })
   @ApiBody({ type: UpdateExpeditionParticipantDto })
-  @ApiOkResponse({ description: 'Expedition Participant updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
   async update(@Param('id') id: string, @Body() body: UpdateExpeditionParticipantDTO) {
@@ -214,7 +202,7 @@ export class ExpeditionParticipantController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Expedition Participant' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Participant id' })
-  @ApiOkResponse({ description: 'Expedition Participant deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Expedition Participant deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
   async delete(@Param('id') id: string) {

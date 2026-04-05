@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
+import { OccupationEntity } from '../occupation/occupation.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { AdmissionRequestRepository } from './admissionRequest.repository';
 import {
   CreateAdmissionRequestDTO,
@@ -12,11 +18,16 @@ import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admission
 export class AdmissionRequestService {
   private repository: AdmissionRequestRepository;
 
-  constructor(repository: AdmissionRequestRepository) {
+  constructor(
+    repository: AdmissionRequestRepository,
+    private readonly dataSource: DataSource,
+  ) {
     this.repository = repository;
   }
 
   async createRequest(data: CreateAdmissionRequestDTO): Promise<AdmissionRequest> {
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+
     const existingRequest = await this.repository.findByEmail(data.email);
 
     if (existingRequest) {
@@ -91,10 +102,34 @@ export class AdmissionRequestService {
       }
     }
 
-    const normalizedData = this.normalizeAiFieldsForUpdate(data, existingRequest);
-    const updatedRequest = await this.repository.update(id, normalizedData);
+    if (data.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    }
 
-    if (!updatedRequest) {
+    if (data.suggestedOccupationId !== undefined && data.suggestedOccupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.suggestedOccupationId,
+        'Occupation',
+      );
+    }
+
+    if (data.finalOccupationId !== undefined && data.finalOccupationId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.finalOccupationId,
+        'Occupation',
+      );
+    }
+
+    if (data.reviewedBy !== undefined && data.reviewedBy !== null) {
+      await assertEntityExists(this.dataSource, UserEntity, data.reviewedBy, 'User');
+    }
+
+    const updatedRequest = await this.repository.update(id, data);
+        if (!updatedRequest) {
       throw new Error('Error updating request');
     }
 
@@ -134,6 +169,13 @@ export class AdmissionRequestService {
       throw new Error('This request is not pending AI analysis');
     }
 
+    await assertEntityExists(
+      this.dataSource,
+      OccupationEntity,
+      suggestedOccupationId,
+      'Occupation',
+    );
+
     const updateData: UpdateAdmissionRequestDTO = {
       suggestedOccupationId,
       status: decision === 'ACCEPT' ? 'PENDING_ADMIN' : 'REJECTED',
@@ -163,6 +205,8 @@ export class AdmissionRequestService {
     if (request.status !== 'PENDING_ADMIN') {
       throw new Error('This request is not pending admin review');
     }
+
+    await assertEntityExists(this.dataSource, UserEntity, adminUserId, 'User');
 
     const updateData: UpdateAdmissionRequestDTO = {
       reviewedBy: adminUserId,

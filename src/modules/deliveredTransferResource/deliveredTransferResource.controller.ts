@@ -12,23 +12,15 @@ import {
   Req,
 } from '@nestjs/common';
 
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { DeliveredTransferResourceService } from './deliveredTransferResource.service';
@@ -36,6 +28,7 @@ import type {
   CreateDeliveredTransferResourceDTO,
   UpdateDeliveredTransferResourceDTO,
 } from './deliveredTransferResource.model';
+import { DeliveredTransferResourceEntity } from './deliveredTransferResource.entity';
 
 import { CreateDeliveredTransferResourceDto, UpdateDeliveredTransferResourceDto } from './dto';
 @Controller('delivered-transfer-resources')
@@ -46,11 +39,7 @@ export class DeliveredTransferResourceController {
   @Post()
   @ApiOperation({ summary: 'Create Delivered Transfer Resource' })
   @ApiBody({ type: CreateDeliveredTransferResourceDto })
-  @ApiCreatedResponse({
-    description: 'Delivered Transfer Resource created',
-    type: SuccessDataResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiCreatedResponseData(DeliveredTransferResourceEntity, { description: 'Delivered Transfer Resource created' })  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateDeliveredTransferResourceDTO) {
     try {
       const delivered = await this.service.createDeliveredResource(body);
@@ -68,7 +57,7 @@ export class DeliveredTransferResourceController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Delivered Transfer Resource by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
-  @ApiOkResponse({ description: 'Delivered Transfer Resource found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(DeliveredTransferResourceEntity, { description: 'Delivered Transfer Resource found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
   async getById(@Param('id') id: string) {
@@ -84,7 +73,7 @@ export class DeliveredTransferResourceController {
   }
   @Get()
   @ApiOperation({ summary: 'List Delivered Transfer Resource' })
-  @ApiOkResponse({ description: 'Delivered Transfer Resource list', type: SuccessListResponseDto })
+  @ApiOkResponseList(DeliveredTransferResourceEntity, { description: 'Delivered Transfer Resource list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -95,9 +84,7 @@ export class DeliveredTransferResourceController {
   })
   async getAll(
     @Query('transferId') transferId?: string,
-    @Query('trasladoId') trasladoId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -109,16 +96,14 @@ export class DeliveredTransferResourceController {
         limit?: number;
       } = {};
 
-      const resolvedTransferId = transferId ?? trasladoId;
-      if (resolvedTransferId) {
-        const parsedTransferId = Number.parseInt(resolvedTransferId, 10);
+      if (transferId) {
+        const parsedTransferId = Number.parseInt(transferId, 10);
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
         filters.transferId = parsedTransferId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resourceTypeId');
         }
@@ -165,11 +150,7 @@ export class DeliveredTransferResourceController {
   @ApiOperation({ summary: 'Update Delivered Transfer Resource' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
   @ApiBody({ type: UpdateDeliveredTransferResourceDto })
-  @ApiOkResponse({
-    description: 'Delivered Transfer Resource updated',
-    type: SuccessDataResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiOkResponseData(DeliveredTransferResourceEntity, { description: 'Delivered Transfer Resource updated' })  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
   async update(@Param('id') id: string, @Body() body: UpdateDeliveredTransferResourceDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
@@ -197,11 +178,7 @@ export class DeliveredTransferResourceController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Delivered Transfer Resource' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
-  @ApiOkResponse({
-    description: 'Delivered Transfer Resource deleted',
-    type: SuccessMessageResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiOkResponseMessage({ description: 'Delivered Transfer Resource deleted' })  @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');

@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { OccupationEntity } from '../occupation/occupation.entity';
+import { PersonEntity } from '../person/person.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { TemporaryOccupationAssignmentRepository } from './temporaryOccupationAssignment.repository';
 import type {
@@ -9,11 +15,23 @@ import type {
 
 @Injectable()
 export class TemporaryOccupationAssignmentService {
-  constructor(private readonly repository: TemporaryOccupationAssignmentRepository) {}
+  constructor(
+    private readonly repository: TemporaryOccupationAssignmentRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createAssignment(
     data: CreateTemporaryOccupationAssignmentDTO,
   ): Promise<TemporaryOccupationAssignment> {
+    await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
+    await assertEntityExists(
+      this.dataSource,
+      OccupationEntity,
+      data.temporaryOccupationId,
+      'Occupation',
+    );
+    await assertEntityExists(this.dataSource, UserEntity, data.assignedBy, 'User');
+
     return await this.repository.create(data);
   }
 
@@ -56,6 +74,21 @@ export class TemporaryOccupationAssignmentService {
     id: number,
     data: UpdateTemporaryOccupationAssignmentDTO,
   ): Promise<TemporaryOccupationAssignment | null> {
+    if (data.personId !== undefined) {
+      await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
+    }
+    if (data.temporaryOccupationId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        data.temporaryOccupationId,
+        'Occupation',
+      );
+    }
+    if (data.assignedBy !== undefined) {
+      await assertEntityExists(this.dataSource, UserEntity, data.assignedBy, 'User');
+    }
+
     return await this.repository.update(id, data);
   }
 

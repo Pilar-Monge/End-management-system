@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
 import { NotificationRepository } from './notification.repository';
 import type {
   CreateNotificationDTO,
@@ -16,6 +18,7 @@ import { UserEntity } from '../systemUser/systemUser.entity';
 export class NotificationService {
   constructor(
     private readonly repository: NotificationRepository,
+    private readonly dataSource: DataSource,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
   ) {}
@@ -42,6 +45,7 @@ export class NotificationService {
       throw new Error('Notification must target a userId or a targetRole');
     }
 
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     await this.validateUserCamp(data.campId, data.userId);
 
     return await this.repository.create(data);
@@ -97,6 +101,7 @@ export class NotificationService {
     const finalCampId = data.campId ?? existing.campId;
     const finalUserId = data.userId !== undefined ? data.userId : existing.userId;
 
+    await assertEntityExists(this.dataSource, CampEntity, finalCampId, 'Camp');
     await this.validateUserCamp(finalCampId, finalUserId);
 
     return await this.repository.update(id, data);

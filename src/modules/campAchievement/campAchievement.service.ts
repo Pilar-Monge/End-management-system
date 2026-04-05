@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { AchievementEntity } from '../achievement/achievement.entity';
+import { CampEntity } from '../camp/camp.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { CampAchievementRepository } from './campAchievement.repository';
 import type {
@@ -9,9 +15,21 @@ import type {
 
 @Injectable()
 export class CampAchievementService {
-  constructor(private readonly repository: CampAchievementRepository) {}
+  constructor(
+    private readonly repository: CampAchievementRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createCampAchievement(data: CreateCampAchievementDTO): Promise<CampAchievement> {
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    await assertEntityExists(
+      this.dataSource,
+      AchievementEntity,
+      data.achievementId,
+      'Achievement',
+    );
+    await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
+
     const existing = await this.repository.findByKey(data.campId, data.achievementId);
     if (existing) {
       throw new Error('This camp achievement already exists');
@@ -60,6 +78,10 @@ export class CampAchievementService {
     achievementId: number,
     data: UpdateCampAchievementDTO,
   ): Promise<CampAchievement | null> {
+    if (data.unlockedBy !== undefined) {
+      await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
+    }
+
     return await this.repository.update(campId, achievementId, data);
   }
 

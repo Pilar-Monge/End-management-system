@@ -12,28 +12,22 @@ import {
   Req,
 } from '@nestjs/common';
 
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseList,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
-import { CampAchievementService } from './campAchievement.service';
-import type { CreateCampAchievementDTO, UpdateCampAchievementDTO } from './campAchievement.model';
 
+import { CampAchievementService } from './campAchievement.service';
+import type {
+  CreateCampAchievementDTO,
+  UpdateCampAchievementDTO,
+} from './campAchievement.model';
+import { CampAchievementEntity } from './campAchievement.entity';
 import { CreateCampAchievementDto, UpdateCampAchievementDto } from './dto';
 @Controller('camp-achievements')
 @ApiTags('Camp Achievement')
@@ -43,7 +37,7 @@ export class CampAchievementController {
   @Post()
   @ApiOperation({ summary: 'Create Camp Achievement' })
   @ApiBody({ type: CreateCampAchievementDto })
-  @ApiCreatedResponse({ description: 'Camp Achievement created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(CampAchievementEntity, { description: 'Camp Achievement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampAchievementDTO) {
     try {
@@ -78,7 +72,7 @@ export class CampAchievementController {
   }
   @Get()
   @ApiOperation({ summary: 'List Camp Achievement' })
-  @ApiOkResponse({ description: 'Camp Achievement list', type: SuccessListResponseDto })
+  @ApiOkResponseList(CampAchievementEntity, { description: 'Camp Achievement list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -89,21 +83,12 @@ export class CampAchievementController {
   })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('achievementId') achievementId?: string,
-    @Query('logroId') logroId?: string,
     @Query('unlockedBy') unlockedBy?: string,
-    @Query('desbloqueadoPor') desbloqueadoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId =
-        typeof req?.query?.campamentoId === 'string'
-          ? (req.query.campamentoId as string)
-          : undefined;
-
       const filters: {
         campId?: number;
         achievementId?: number;
@@ -112,25 +97,22 @@ export class CampAchievementController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
         filters.campId = parsedCampId;
       }
 
-      const resolvedAchievementId = achievementId ?? logroId;
-      if (resolvedAchievementId) {
-        const parsedAchievementId = Number.parseInt(resolvedAchievementId, 10);
+      if (achievementId) {
+        const parsedAchievementId = Number.parseInt(achievementId, 10);
         if (Number.isNaN(parsedAchievementId)) {
           throw new BadRequestException('Invalid achievementId');
         }
         filters.achievementId = parsedAchievementId;
       }
 
-      const resolvedUnlockedBy = unlockedBy ?? desbloqueadoPor;
-      if (resolvedUnlockedBy) {
-        const parsedUnlockedBy = Number.parseInt(resolvedUnlockedBy, 10);
+      if (unlockedBy) {
+        const parsedUnlockedBy = Number.parseInt(unlockedBy, 10);
         if (Number.isNaN(parsedUnlockedBy)) {
           throw new BadRequestException('Invalid unlockedBy');
         }

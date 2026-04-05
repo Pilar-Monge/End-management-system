@@ -12,23 +12,22 @@ import {
   Req,
 } from '@nestjs/common';
 
+
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
+  ApiNotFoundResponse,  ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { TemporaryOccupationAssignmentService } from './temporaryOccupationAssignment.service';
@@ -36,6 +35,7 @@ import type {
   CreateTemporaryOccupationAssignmentDTO,
   UpdateTemporaryOccupationAssignmentDTO,
 } from './temporaryOccupationAssignment.model';
+import { TemporaryOccupationAssignmentEntity } from './temporaryOccupationAssignment.entity';
 
 import {
   CreateTemporaryOccupationAssignmentDto,
@@ -49,11 +49,7 @@ export class TemporaryOccupationAssignmentController {
   @Post()
   @ApiOperation({ summary: 'Create Temporary Occupation Assignment' })
   @ApiBody({ type: CreateTemporaryOccupationAssignmentDto })
-  @ApiCreatedResponse({
-    description: 'Temporary Occupation Assignment created',
-    type: SuccessDataResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiCreatedResponseData(TemporaryOccupationAssignmentEntity, { description: 'Temporary Occupation Assignment created' })  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateTemporaryOccupationAssignmentDTO) {
     try {
       const assignment = await this.service.createAssignment(body);
@@ -71,11 +67,7 @@ export class TemporaryOccupationAssignmentController {
   @Get(':id')
   @ApiOperation({ summary: 'Get Temporary Occupation Assignment by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Temporary Occupation Assignment id' })
-  @ApiOkResponse({
-    description: 'Temporary Occupation Assignment found',
-    type: SuccessDataResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiOkResponseData(TemporaryOccupationAssignmentEntity, { description: 'Temporary Occupation Assignment found' })  @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
@@ -90,11 +82,7 @@ export class TemporaryOccupationAssignmentController {
   }
   @Get()
   @ApiOperation({ summary: 'List Temporary Occupation Assignment' })
-  @ApiOkResponse({
-    description: 'Temporary Occupation Assignment list',
-    type: SuccessListResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiOkResponseList(TemporaryOccupationAssignmentEntity, { description: 'Temporary Occupation Assignment list' })  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
     name: 'limit',
@@ -104,11 +92,8 @@ export class TemporaryOccupationAssignmentController {
   })
   async getAll(
     @Query('personId') personId?: string,
-    @Query('personaId') personaId?: string,
     @Query('temporaryOccupationId') temporaryOccupationId?: string,
-    @Query('ocupacionTemporalId') ocupacionTemporalId?: string,
     @Query('assignedBy') assignedBy?: string,
-    @Query('asignadoPor') asignadoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -121,25 +106,22 @@ export class TemporaryOccupationAssignmentController {
         limit?: number;
       } = {};
 
-      const resolvedPersonId = personId ?? personaId;
-      if (resolvedPersonId) {
-        const parsedPersonId = Number.parseInt(resolvedPersonId, 10);
+      if (personId) {
+        const parsedPersonId = Number.parseInt(personId, 10);
         if (Number.isNaN(parsedPersonId)) throw new BadRequestException('Invalid personId');
         filters.personId = parsedPersonId;
       }
 
-      const resolvedTemporaryOccupationId = temporaryOccupationId ?? ocupacionTemporalId;
-      if (resolvedTemporaryOccupationId) {
-        const parsedTemporaryOccupationId = Number.parseInt(resolvedTemporaryOccupationId, 10);
+      if (temporaryOccupationId) {
+        const parsedTemporaryOccupationId = Number.parseInt(temporaryOccupationId, 10);
         if (Number.isNaN(parsedTemporaryOccupationId)) {
           throw new BadRequestException('Invalid temporaryOccupationId');
         }
         filters.temporaryOccupationId = parsedTemporaryOccupationId;
       }
 
-      const resolvedAssignedBy = assignedBy ?? asignadoPor;
-      if (resolvedAssignedBy) {
-        const parsedAssignedBy = Number.parseInt(resolvedAssignedBy, 10);
+      if (assignedBy) {
+        const parsedAssignedBy = Number.parseInt(assignedBy, 10);
         if (Number.isNaN(parsedAssignedBy)) throw new BadRequestException('Invalid assignedBy');
         filters.assignedBy = parsedAssignedBy;
       }
@@ -184,11 +166,7 @@ export class TemporaryOccupationAssignmentController {
   @ApiOperation({ summary: 'Update Temporary Occupation Assignment' })
   @ApiParam({ name: 'id', type: Number, description: 'Temporary Occupation Assignment id' })
   @ApiBody({ type: UpdateTemporaryOccupationAssignmentDto })
-  @ApiOkResponse({
-    description: 'Temporary Occupation Assignment updated',
-    type: SuccessDataResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiOkResponseData(TemporaryOccupationAssignmentEntity, { description: 'Temporary Occupation Assignment updated' })  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
   async update(@Param('id') id: string, @Body() body: UpdateTemporaryOccupationAssignmentDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
@@ -216,11 +194,7 @@ export class TemporaryOccupationAssignmentController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Temporary Occupation Assignment' })
   @ApiParam({ name: 'id', type: Number, description: 'Temporary Occupation Assignment id' })
-  @ApiOkResponse({
-    description: 'Temporary Occupation Assignment deleted',
-    type: SuccessMessageResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiOkResponseMessage({ description: 'Temporary Occupation Assignment deleted' })  @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');

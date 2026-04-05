@@ -8,8 +8,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { EXPEDITION_STATUS_VALUES, type ExpeditionStatus } from './expedition.model';
+import { ApiProperty } from '@nestjs/swagger';
 
+import {
+  EXPEDITION_STATUS_VALUES,
+  type ExpeditionStatus,
+} from './expedition.model';
 @Entity({ name: 'expedition' })
 @Index('idx_expedition_camp', ['campId'])
 @Index('idx_expedition_status', ['status'])
@@ -19,18 +23,23 @@ import { EXPEDITION_STATUS_VALUES, type ExpeditionStatus } from './expedition.mo
 @Check('chk_dias_extra_coherencia', `"extra_days_used" <= "extra_days_available"`)
 export class ExpeditionEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'camp_id', type: 'int' })
+  @ApiProperty()
   campId!: number;
 
   @Column({ name: 'name', type: 'text' })
+  @ApiProperty()
   name!: string;
 
   @Column({ name: 'objective', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   objective!: string | null;
 
   @Column({ name: 'destination_description', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   destinationDescription!: string | null;
 
   @Column({
@@ -40,6 +49,7 @@ export class ExpeditionEntity {
     scale: 6,
     nullable: true,
   })
+  @ApiProperty({ nullable: true })
   destinationLatitude!: string | null;
 
   @Column({
@@ -49,24 +59,31 @@ export class ExpeditionEntity {
     scale: 6,
     nullable: true,
   })
+  @ApiProperty({ nullable: true })
   destinationLongitude!: string | null;
 
   @Column({ name: 'planned_departure_date', type: 'timestamptz' })
+  @ApiProperty()
   plannedDepartureDate!: Date;
 
   @Column({ name: 'actual_departure_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
   actualDepartureDate!: Date | null;
 
   @Column({ name: 'planned_return_date', type: 'timestamptz' })
+  @ApiProperty()
   plannedReturnDate!: Date;
 
   @Column({ name: 'actual_return_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
   actualReturnDate!: Date | null;
 
   @Column({ name: 'extra_days_available', type: 'int', default: 0 })
+  @ApiProperty()
   extraDaysAvailable!: number;
 
   @Column({ name: 'extra_days_used', type: 'int', default: 0 })
+  @ApiProperty()
   extraDaysUsed!: number;
 
   @Column({
@@ -76,6 +93,7 @@ export class ExpeditionEntity {
     enumName: 'expedition_status_enum',
     default: 'PLANNED',
   })
+  @ApiProperty({ enum: EXPEDITION_STATUS_VALUES })
   status!: ExpeditionStatus;
 
   @CreateDateColumn({
@@ -83,6 +101,7 @@ export class ExpeditionEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   createdAt!: Date;
 
   @UpdateDateColumn({
@@ -90,5 +109,6 @@ export class ExpeditionEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   updatedAt!: Date;
 }

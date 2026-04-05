@@ -1,13 +1,29 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 
 import { OccupationRepository } from './occupation.repository';
 import type { CreateOccupationDTO, Occupation, UpdateOccupationDTO } from './occupation.model';
 
 @Injectable()
 export class OccupationService {
-  constructor(private readonly repository: OccupationRepository) {}
+  constructor(
+    private readonly repository: OccupationRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createOccupation(data: CreateOccupationDTO): Promise<Occupation> {
+    if (data.resourceTypeId !== undefined && data.resourceTypeId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        ResourceTypeEntity,
+        data.resourceTypeId,
+        'Resource type',
+      );
+    }
+
     const existing = await this.repository.findByName(data.name);
     if (existing) {
       throw new Error('An occupation with this name already exists');
@@ -60,6 +76,15 @@ export class OccupationService {
   async updateOccupation(id: number, data: UpdateOccupationDTO): Promise<Occupation | null> {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
+
+    if (data.resourceTypeId !== undefined && data.resourceTypeId !== null) {
+      await assertEntityExists(
+        this.dataSource,
+        ResourceTypeEntity,
+        data.resourceTypeId,
+        'Resource type',
+      );
+    }
 
     if (data.name && data.name !== existing.name) {
       const byName = await this.repository.findByName(data.name);

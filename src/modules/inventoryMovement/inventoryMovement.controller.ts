@@ -13,23 +13,15 @@ import {
   Req,
 } from '@nestjs/common';
 
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import {
-  SuccessDataResponseDto,
-  SuccessListResponseDto,
-  SuccessMessageResponseDto,
-} from '../../common/dto/api-response.dto';
+  ApiCreatedResponseData,
+  ApiOkResponseData,
+  ApiOkResponseList,
+  ApiOkResponseMessage,
+} from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 
 import { InventoryMovementService } from './inventoryMovement.service';
@@ -38,6 +30,7 @@ import type {
   InventoryMovementType,
   UpdateInventoryMovementDTO,
 } from './inventoryMovement.model';
+import { InventoryMovementEntity } from './inventoryMovement.entity';
 
 import { CreateInventoryMovementDto, UpdateInventoryMovementDto } from './dto';
 @Controller('inventory-movements')
@@ -48,7 +41,7 @@ export class InventoryMovementController {
   @Roles('WORKER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Inventory Movement' })
   @ApiBody({ type: CreateInventoryMovementDto })
-  @ApiCreatedResponse({ description: 'Inventory Movement created', type: SuccessDataResponseDto })
+  @ApiCreatedResponseData(InventoryMovementEntity, { description: 'Inventory Movement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateInventoryMovementDTO) {
     try {
@@ -68,7 +61,7 @@ export class InventoryMovementController {
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
   @ApiOperation({ summary: 'Get Inventory Movement by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
-  @ApiOkResponse({ description: 'Inventory Movement found', type: SuccessDataResponseDto })
+  @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async getById(@Param('id') id: string) {
@@ -85,7 +78,7 @@ export class InventoryMovementController {
   @Get()
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
   @ApiOperation({ summary: 'List Inventory Movement' })
-  @ApiOkResponse({ description: 'Inventory Movement list', type: SuccessListResponseDto })
+  @ApiOkResponseList(InventoryMovementEntity, { description: 'Inventory Movement list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
   @ApiQuery({
@@ -96,23 +89,13 @@ export class InventoryMovementController {
   })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('campamentoId') campamentoId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
-    @Query('tipoRecursoId') tipoRecursoId?: string,
     @Query('movementType') movementType?: InventoryMovementType,
-    @Query('tipoMovimiento') tipoMovimiento?: InventoryMovementType,
     @Query('recordedBy') recordedBy?: string,
-    @Query('registradoPor') registradoPor?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
   ) {
     try {
-      const legacyCampamentoId =
-        typeof req?.query?.campamentoId === 'string'
-          ? (req.query.campamentoId as string)
-          : undefined;
-
       const filters: {
         campId?: number;
         resourceTypeId?: number;
@@ -122,30 +105,26 @@ export class InventoryMovementController {
         limit?: number;
       } = {};
 
-      const resolvedCampId = campId ?? legacyCampamentoId;
-      if (resolvedCampId) {
-        const parsedCampId = Number.parseInt(resolvedCampId, 10);
+      if (campId) {
+        const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
         filters.campId = parsedCampId;
       }
 
-      const resolvedResourceTypeId = resourceTypeId ?? tipoRecursoId;
-      if (resolvedResourceTypeId) {
-        const parsedResourceTypeId = Number.parseInt(resolvedResourceTypeId, 10);
+      if (resourceTypeId) {
+        const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
         if (Number.isNaN(parsedResourceTypeId)) {
           throw new BadRequestException('Invalid resource type ID');
         }
         filters.resourceTypeId = parsedResourceTypeId;
       }
 
-      const resolvedMovementType = movementType ?? tipoMovimiento;
-      if (resolvedMovementType) {
-        filters.movementType = resolvedMovementType;
+      if (movementType) {
+        filters.movementType = movementType;
       }
 
-      const resolvedRecordedBy = recordedBy ?? registradoPor;
-      if (resolvedRecordedBy) {
-        const parsedRecordedBy = Number.parseInt(resolvedRecordedBy, 10);
+      if (recordedBy) {
+        const parsedRecordedBy = Number.parseInt(recordedBy, 10);
         if (Number.isNaN(parsedRecordedBy)) {
           throw new BadRequestException('Invalid recordedBy');
         }
@@ -193,7 +172,7 @@ export class InventoryMovementController {
   @ApiOperation({ summary: 'Update Inventory Movement' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
   @ApiBody({ type: UpdateInventoryMovementDto })
-  @ApiOkResponse({ description: 'Inventory Movement updated', type: SuccessDataResponseDto })
+  @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async update(@Param('id') id: string, @Body() body: UpdateInventoryMovementDTO) {
@@ -221,7 +200,7 @@ export class InventoryMovementController {
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Inventory Movement' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
-  @ApiOkResponse({ description: 'Inventory Movement deleted', type: SuccessMessageResponseDto })
+  @ApiOkResponseMessage({ description: 'Inventory Movement deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
   async delete(@Param('id') id: string) {

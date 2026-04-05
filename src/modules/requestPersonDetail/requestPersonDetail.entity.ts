@@ -1,5 +1,7 @@
 import { Check, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 import {
   PERSON_DETAIL_STATUS_VALUES,
   PERSON_DETAIL_TYPE_VALUES,
@@ -20,9 +22,11 @@ import {
 @Check('chk_request_person_specific_amount', `"detail_type" = 'BY_OCCUPATION' OR "amount" = 1`)
 export class RequestPersonDetailEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'request_id', type: 'int' })
+  @ApiProperty()
   requestId!: number;
 
   @Column({
@@ -32,15 +36,19 @@ export class RequestPersonDetailEntity {
     enumName: 'person_detail_type_enum',
     default: 'BY_OCCUPATION',
   })
+  @ApiProperty({ enum: PERSON_DETAIL_TYPE_VALUES })
   detailType!: PersonDetailType;
 
   @Column({ name: 'person_id', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   personId!: number | null;
 
   @Column({ name: 'occupation_id', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
   occupationId!: number | null;
 
   @Column({ name: 'amount', type: 'int', default: 1 })
+  @ApiProperty()
   amount!: number;
 
   @Column({
@@ -50,5 +58,6 @@ export class RequestPersonDetailEntity {
     enumName: 'person_detail_status_enum',
     default: 'PROPOSED',
   })
+  @ApiProperty({ enum: PERSON_DETAIL_STATUS_VALUES })
   status!: PersonDetailStatus;
 }

@@ -8,6 +8,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 import { CAMP_STATUS_VALUES, type CampStatus } from './camp.model';
 
 @Entity({ name: 'camp' })
@@ -15,18 +17,23 @@ import { CAMP_STATUS_VALUES, type CampStatus } from './camp.model';
 @Index('idx_camp_status', ['status'])
 export class CampEntity {
   @PrimaryGeneratedColumn()
+  @ApiProperty()
   id!: number;
 
   @Column({ name: 'name', type: 'text' })
+  @ApiProperty()
   name!: string;
 
   @Column({ name: 'latitude', type: 'numeric', precision: 9, scale: 6 })
+  @ApiProperty()
   latitude!: string;
 
   @Column({ name: 'longitude', type: 'numeric', precision: 9, scale: 6 })
+  @ApiProperty()
   longitude!: string;
 
   @Column({ name: 'description', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
   description!: string | null;
 
   @Column({
@@ -36,9 +43,11 @@ export class CampEntity {
     enumName: 'camp_status_enum',
     default: 'ACTIVE',
   })
+  @ApiProperty({ enum: CAMP_STATUS_VALUES })
   status!: CampStatus;
 
   @Column({ name: 'foundation_date', type: 'date' })
+  @ApiProperty()
   foundationDate!: Date;
 
   @Column({
@@ -46,6 +55,7 @@ export class CampEntity {
     type: 'int',
     default: 100,
   })
+  @ApiProperty()
   maxPersonCapacity!: number;
 
   @Column({
@@ -53,6 +63,7 @@ export class CampEntity {
     type: 'int',
     default: 20,
   })
+  @ApiProperty()
   sessionInactivityMinutes!: number;
 
   @Column({
@@ -62,6 +73,7 @@ export class CampEntity {
     scale: 2,
     default: '1.00',
   })
+  @ApiProperty()
   minimumDailyRationPerPerson!: string;
 
   @Column({
@@ -71,6 +83,7 @@ export class CampEntity {
     scale: 2,
     default: '20.00',
   })
+  @ApiProperty()
   stockAlertThresholdPercentage!: string;
 
   @CreateDateColumn({
@@ -78,6 +91,7 @@ export class CampEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   createdAt!: Date;
 
   @UpdateDateColumn({
@@ -85,5 +99,6 @@ export class CampEntity {
     type: 'timestamptz',
     default: () => 'NOW()',
   })
+  @ApiProperty()
   updatedAt!: Date;
 }

@@ -1,4 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { IntercampRequestEntity } from '../intercampRequest/intercampRequest.entity';
+import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 
 import { RequestResourceDetailRepository } from './requestResourceDetail.repository';
 import type {
@@ -9,9 +14,25 @@ import type {
 
 @Injectable()
 export class RequestResourceDetailService {
-  constructor(private readonly repository: RequestResourceDetailRepository) {}
+  constructor(
+    private readonly repository: RequestResourceDetailRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createDetail(data: CreateRequestResourceDetailDTO): Promise<RequestResourceDetail> {
+    await assertEntityExists(
+      this.dataSource,
+      IntercampRequestEntity,
+      data.requestId,
+      'Intercamp request',
+    );
+    await assertEntityExists(
+      this.dataSource,
+      ResourceTypeEntity,
+      data.resourceTypeId,
+      'Resource type',
+    );
+
     const existing = await this.repository.findByRequestAndResourceType(
       data.requestId,
       data.resourceTypeId,
@@ -57,6 +78,42 @@ export class RequestResourceDetailService {
     id: number,
     data: UpdateRequestResourceDetailDTO,
   ): Promise<RequestResourceDetail | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    const resolvedRequestId = data.requestId ?? existing.requestId;
+    const resolvedResourceTypeId = data.resourceTypeId ?? existing.resourceTypeId;
+
+    if (data.requestId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        IntercampRequestEntity,
+        resolvedRequestId,
+        'Intercamp request',
+      );
+    }
+    if (data.resourceTypeId !== undefined) {
+      await assertEntityExists(
+        this.dataSource,
+        ResourceTypeEntity,
+        resolvedResourceTypeId,
+        'Resource type',
+      );
+    }
+
+    if (
+      resolvedRequestId !== existing.requestId ||
+      resolvedResourceTypeId !== existing.resourceTypeId
+    ) {
+      const byPair = await this.repository.findByRequestAndResourceType(
+        resolvedRequestId,
+        resolvedResourceTypeId,
+      );
+      if (byPair && byPair.id !== id) {
+        throw new Error('This request resource detail already exists');
+      }
+    }
+
     return await this.repository.update(id, data);
   }
 

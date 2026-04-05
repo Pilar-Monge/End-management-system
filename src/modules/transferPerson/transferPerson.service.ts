@@ -1,4 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { PersonEntity } from '../person/person.entity';
+import { TransferEntity } from '../transfer/transfer.entity';
 
 import { TransferPersonRepository } from './transferPerson.repository';
 import type {
@@ -10,11 +15,19 @@ import type {
 
 @Injectable()
 export class TransferPersonService {
-  constructor(private readonly repository: TransferPersonRepository) {}
+  constructor(
+    private readonly repository: TransferPersonRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createTransferPerson(data: CreateTransferPersonDTO): Promise<TransferPerson> {
-    const existing = await this.repository.findByTransferAndPerson(data.transferId, data.personId);
-    if (existing) {
+    await assertEntityExists(this.dataSource, TransferEntity, data.transferId, 'Transfer');
+    await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
+
+    const existing = await this.repository.findByTransferAndPerson(
+      data.transferId,
+      data.personId,
+    );    if (existing) {
       throw new Error('This person is already assigned to this transfer');
     }
 
@@ -58,6 +71,32 @@ export class TransferPersonService {
     id: number,
     data: UpdateTransferPersonDTO,
   ): Promise<TransferPerson | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    const resolvedTransferId = data.transferId ?? existing.transferId;
+    const resolvedPersonId = data.personId ?? existing.personId;
+
+    if (data.transferId !== undefined) {
+      await assertEntityExists(this.dataSource, TransferEntity, resolvedTransferId, 'Transfer');
+    }
+    if (data.personId !== undefined) {
+      await assertEntityExists(this.dataSource, PersonEntity, resolvedPersonId, 'Person');
+    }
+
+    if (
+      resolvedTransferId !== existing.transferId ||
+      resolvedPersonId !== existing.personId
+    ) {
+      const byPair = await this.repository.findByTransferAndPerson(
+        resolvedTransferId,
+        resolvedPersonId,
+      );
+      if (byPair && byPair.id !== id) {
+        throw new Error('This person is already assigned to this transfer');
+      }
+    }
+
     return await this.repository.update(id, data);
   }
 

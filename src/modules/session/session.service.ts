@@ -1,13 +1,24 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+import { assertEntityExists } from '../../common/validation/assert-exists';
+import { CampEntity } from '../camp/camp.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { SessionRepository } from './session.repository';
 import type { CreateSessionDTO, Session, SessionStatus, UpdateSessionDTO } from './session.model';
 
 @Injectable()
 export class SessionService {
-  constructor(private readonly repository: SessionRepository) {}
+  constructor(
+    private readonly repository: SessionRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createSession(data: CreateSessionDTO): Promise<Session> {
+    await assertEntityExists(this.dataSource, UserEntity, data.userId, 'User');
+    await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+
     const existing = await this.repository.findByToken(data.token);
     if (existing) {
       throw new Error('A session with this token already exists');
@@ -54,6 +65,14 @@ export class SessionService {
   }
 
   async updateSession(id: number, data: UpdateSessionDTO): Promise<Session | null> {
+    if (data.userId !== undefined) {
+      await assertEntityExists(this.dataSource, UserEntity, data.userId, 'User');
+    }
+
+    if (data.campId !== undefined) {
+      await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    }
+
     return await this.repository.update(id, data);
   }
 
