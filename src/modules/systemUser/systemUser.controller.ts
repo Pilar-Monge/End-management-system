@@ -5,14 +5,13 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpCode,
+  HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
   Put,
-  UnauthorizedException,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -30,15 +29,9 @@ import {
   ApiOkResponseList,
   ApiOkResponseMessage,
 } from '../../common/swagger/api-response.decorator';
-import { Roles, Public } from '../../common/decorators';
+import { Roles } from '../../common/decorators';
 import { UserService } from './systemUser.service';
-import type { CreateUserDTO, LoginDTO } from './systemUser.model';
-import {
-  CreateSystemUserDto,
-  LoginSystemUserDto,
-  SystemUserResponseDto,
-  UpdateSystemUserDto,
-} from './dto';
+import { CreateSystemUserDto, SystemUserResponseDto, UpdateSystemUserDto } from './dto';
 
 @Controller()
 @ApiTags('System User')
@@ -53,7 +46,7 @@ export class UserController {
   @ApiBadRequestResponse()
   @ApiUnauthorizedResponse()
   @ApiInternalServerErrorResponse()
-  async create(@Body() _body: CreateUserDTO) {
+  async create() {
     throw new ForbiddenException(
       'Manual user creation is disabled. Users must be created through the automated Admission Request flow.',
     );
@@ -132,26 +125,5 @@ export class UserController {
     const deleted = await this.service.deleteUser(parsedId);
     if (!deleted) throw new NotFoundException('User not found');
     return { success: true, message: 'User deleted successfully' };
-  }
-
-  @Post('auth/login')
-  @Public()
-  @ApiOperation({ summary: 'Login' })
-  @ApiBody({ type: LoginSystemUserDto })
-  @ApiOkResponseData(SystemUserResponseDto)
-  @ApiBadRequestResponse()
-  @ApiUnauthorizedResponse()
-  @ApiInternalServerErrorResponse()
-  async login(@Body() body: LoginDTO) {
-    try {
-      const user = await this.service.login(body);
-      if (!user) throw new UnauthorizedException('Invalid credentials');
-      return { success: true, data: user, message: 'Login succeeded' };
-    } catch (error) {
-      if (error instanceof UnauthorizedException) throw error;
-      throw new InternalServerErrorException(
-        error instanceof Error ? error.message : 'Error logging in',
-      );
-    }
   }
 }

@@ -1,0 +1,213 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNTMwYzYwNjMtN2Q1OS00NTgzLWFiNjgtYThlMDVmOGM0ZTRkIiwiaWF0IjoxNzc1Mzc1MDczLCJleHAiOjE3NzUzNzYyNzN9.ApZ0Xelq-x-0TVGVZ5uPXImqMr7PZaqdCMRRE-KZ5Vc
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI2MDMyZWM5OC1lMmQ4LTQwNGUtOWIwNy1jNGJhYWM3OWRjZGYiLCJpYXQiOjE3NzUzNzUxMjEsImV4cCI6MTc3NTM3NjMyMX0.W92ZldPqBO8zDe5z175lNhwr-C585aqeEGvceFGLTRA
+@resourceToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImRmZjNjYjBjLTNlM2MtNDRmMi1hMDAxLWJlZDVkZmZlZGMzOCIsImlhdCI6MTc3NTM3NTE2NywiZXhwIjoxNzc1Mzc2MzY3fQ.2H-G9c5Gs2C3XOussD2Q5PIf9Ex4DfximkQAYX_0Tz0
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiY2VjNTcyM2ItMzBiYy00MThhLWI4MzMtNDZkNjk4MTAyZjE1IiwiaWF0IjoxNzc1Mzc1MTkyLCJleHAiOjE3NzUzNzYzOTJ9.IeWPzRvrdCLBJElItCHJPy9EZdQoSM1phnmloPrPZDs
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImQwZjM1OTllLWE4N2UtNDllMC1iOWUxLTA0NTUzMjE5MzA2YyIsImlhdCI6MTc3NTM3NTI0NCwiZXhwIjoxNzc1Mzc2NDQ0fQ.pqbB7viH_bxytttXJjO-UMcyQsjWQC7qvB6ikILUSCU
+
+### 3.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 3.2 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 3.3 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 3.4 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 3.5 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 3.6 GET Consumed Resources - System Admin (Expect 200)
+GET {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.7 GET Consumed Resources - Resource Management (Expect 200)
+GET {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 3.8 GET Consumed Resources - Travel Manager (Expect 200)
+GET {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 3.9 POST Consumed Resource - System Admin (Expect 201 or 200)
+POST {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "expeditionId": 1,
+  "resourceTypeId": 1,
+  "amount": "500",
+  "recordedBy": 1,
+  "recordDate": "2026-04-04T08:00:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.10 POST Consumed Resource - Resource Management (Expect 201 or 200)
+POST {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "expeditionId": 1,
+  "resourceTypeId": 1,
+  "amount": "450",
+  "recordedBy": 3,
+  "recordDate": "2026-04-04T09:00:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.11 POST Consumed Resource - Travel Manager (Expect 201 or 200)
+POST {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "expeditionId": 1,
+  "resourceTypeId": 1,
+  "amount": "420",
+  "recordedBy": 4,
+  "recordDate": "2026-04-04T10:00:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.12 PUT Consumed Resource - System Admin (Expect 200)
+PUT {{baseUrl}}/api/expedition-resources-consumed/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "amount": "410"
+}
+
+###
+
+### 3.13 PUT Consumed Resource - Resource Management (Expect 200)
+PUT {{baseUrl}}/api/expedition-resources-consumed/1
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "amount": "405"
+}
+
+###
+
+### 3.14 PUT Consumed Resource - Travel Manager (Expect 200)
+PUT {{baseUrl}}/api/expedition-resources-consumed/1
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "amount": "400"
+}
+
+###
+
+### 3.15 GET Consumed Resources - Worker (Expect 403)
+GET {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 3.16 POST Consumed Resource - Worker (Expect 403)
+POST {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "expeditionId": 1,
+  "resourceTypeId": 1,
+  "amount": "390",
+  "recordedBy": 2,
+  "recordDate": "2026-04-04T11:00:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.17 PUT Consumed Resource - Worker (Expect 403)
+PUT {{baseUrl}}/api/expedition-resources-consumed/1
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "amount": "380"
+}
+
+###
+
+### 3.18 GET Consumed Resources - Visitor (Expect 403)
+GET {{baseUrl}}/api/expedition-resources-consumed
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 3.19 DELETE Consumed Resource - System Admin (Expect 403 Audit Hard-Lock)
+DELETE {{baseUrl}}/api/expedition-resources-consumed/1
+Authorization: Bearer {{adminToken}}

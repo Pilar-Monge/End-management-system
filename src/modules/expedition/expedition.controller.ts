@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -183,27 +184,13 @@ export class ExpeditionController {
     }
   }
   @Delete(':id')
-  @Roles('TRAVEL_MANAGER')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Expedition' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseMessage({ description: 'Expedition deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteExpedition(parsedId);
-      if (!deleted) throw new NotFoundException('Expedition not found');
-
-      return { success: true, message: 'Expedition deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting expedition',
-      );
-    }
+    throw new ForbiddenException('Expedition records cannot be deleted for audit reasons.');
   }
 }

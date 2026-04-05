@@ -1,0 +1,259 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNzE5ODNiYjQtZTY0OC00MDlhLWJmNmQtMjQyMGUwM2U2YmZkIiwiaWF0IjoxNzc1NDE5MDY5LCJleHAiOjE3NzU0MjAyNjl9.b2SRgDZigV9HFSFRYI7Nz0IKt-8THuXCY9VVtdDErV4
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJjMDE0NDNiZi0zY2Q3LTQ5MTctOTBlMC0yMDgzN2VkNDllYTciLCJpYXQiOjE3NzU0MjM1ODAsImV4cCI6MTc3NTQyNDc4MH0.TYdXRCNBYGkbSW5_hYaHucN_9yEitvd_ehutDnIWItE
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjI4NTE3NWZhLTIyMTctNDkxYi1iYWY2LTE0ZmE5ZjFmNTk2MCIsImlhdCI6MTc3NTQyMzU1OCwiZXhwIjoxNzc1NDI0NzU4fQ.tv9jC2U6jMkQXzC-6gifmttEdRCA4SKiDc7e9nNjP6Q
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZGY0OWRlM2ItM2E2NC00N2U0LWJmMTAtYzJkZjAxNTM3ZTk2IiwiaWF0IjoxNzc1NDE5MTY5LCJleHAiOjE3NzU0MjAzNjl9.IJ3VnG3Wo1cyaQFZ8Z8MeQU9oUzf0Dbs4C-WVPwTStE
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZTAzNmZmMDgtYjkxYS00ZGY1LWEwNWUtNWNkMjUxMzJlZDI4IiwiaWF0IjoxNzc1NDE5MTkxLCJleHAiOjE3NzU0MjAzOTF9.PCpK38QnHOeNt-idw0BrZQGfpLRXP4uKURpQUOhml1s
+
+### 4.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 4.2 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 4.3 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 4.4 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 4.5 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 4.6 GET Transfer History - SYSTEM_ADMIN (Expect 200)
+GET {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.7 GET Transfer History - RESOURCE_MANAGEMENT (Expect 200)
+GET {{baseUrl}}/api/transfer-history/2
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 4.8 GET Transfer History - TRAVEL_MANAGER (Expect 200)
+GET {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 4.9 GET Transfer History - WORKER (Expect 403)
+GET {{baseUrl}}/api/transfer-history/2
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 4.10 GET Transfer History - VISITOR (Expect 403)
+GET {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 4.11 POST Transfer History - RESOURCE_MANAGEMENT (Expect 201 or 200)
+POST {{baseUrl}}/api/transfer-history
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "previousStatus": "PENDING_DEPARTURE",
+  "newStatus": "COMPLETED",
+  "date": "2026-04-05T14:00:00Z",
+  "userId": 3,
+  "comment": "resource update"
+}
+
+###
+
+### 4.12 POST Transfer History - TRAVEL_MANAGER (Expect 201 or 200)
+POST {{baseUrl}}/api/transfer-history
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "transferId": 6,
+  "previousStatus": "PENDING_DEPARTURE",
+  "newStatus": "COMPLETED",
+  "date": "2026-04-05T14:10:00Z",
+  "userId": 4,
+  "comment": "travel update"
+}
+
+###
+
+### 4.13 POST Transfer History - SYSTEM_ADMIN (Expect 403)
+POST {{baseUrl}}/api/transfer-history
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "previousStatus": "PENDING_DEPARTURE",
+  "newStatus": "COMPLETED",
+  "date": "2026-04-05T14:20:00Z",
+  "userId": 1,
+  "comment": "admin should fail"
+}
+
+###
+
+### 4.14 POST Transfer History - WORKER (Expect 403)
+POST {{baseUrl}}/api/transfer-history
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "previousStatus": "PENDING_DEPARTURE",
+  "newStatus": "COMPLETED",
+  "date": "2026-04-05T14:30:00Z",
+  "userId": 2,
+  "comment": "worker should fail"
+}
+
+###
+
+### 4.15 POST Transfer History - VISITOR (Expect 403)
+POST {{baseUrl}}/api/transfer-history
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "previousStatus": "PENDING_DEPARTURE",
+  "newStatus": "COMPLETED",
+  "date": "2026-04-05T14:40:00Z",
+  "userId": 5,
+  "comment": "visitor should fail"
+}
+
+###
+
+### 4.16 PUT Transfer History - RESOURCE_MANAGEMENT (Expect 200)
+PUT {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "comment": "resource corrected comment"
+}
+
+###
+
+### 4.17 PUT Transfer History - TRAVEL_MANAGER (Expect 200)
+PUT {{baseUrl}}/api/transfer-history/2
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "comment": "travel corrected comment"
+}
+
+###
+
+### 4.18 PUT Transfer History - SYSTEM_ADMIN (Expect 403)
+PUT {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "comment": "admin should fail"
+}
+
+###
+
+### 4.19 PUT Transfer History - WORKER (Expect 403)
+PUT {{baseUrl}}/api/transfer-history/2
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "comment": "worker should fail"
+}
+
+###
+
+### 4.20 PUT Transfer History - VISITOR (Expect 403)
+PUT {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "comment": "visitor should fail"
+}
+
+###
+
+### 4.21 DELETE Transfer History - SYSTEM_ADMIN (Expect 403)
+DELETE {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.22 DELETE Transfer History - RESOURCE_MANAGEMENT (Expect 403)
+DELETE {{baseUrl}}/api/transfer-history/2
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 4.23 DELETE Transfer History - TRAVEL_MANAGER (Expect 403)
+DELETE {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 4.24 DELETE Transfer History - WORKER (Expect 403)
+DELETE {{baseUrl}}/api/transfer-history/2
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 4.25 DELETE Transfer History - VISITOR (Expect 403)
+DELETE {{baseUrl}}/api/transfer-history/1
+Authorization: Bearer {{visitorToken}}

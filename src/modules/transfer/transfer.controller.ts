@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -177,27 +178,13 @@ export class TransferController {
     }
   }
   @Delete(':id')
-  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Transfer' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
   @ApiOkResponseMessage({ description: 'Transfer deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteTransfer(parsedId);
-      if (!deleted) throw new NotFoundException('Transfer not found');
-
-      return { success: true, message: 'Transfer deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting transfer',
-      );
-    }
+    throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }
 }

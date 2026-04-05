@@ -1,0 +1,269 @@
+@baseUrl = http://localhost:3000
+@adminToken =eeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZWFiZmFjZTctNThiNC00OWE0LWJlMGYtODgzMGYwNWNlNWI0IiwiaWF0IjoxNzc1NDIyMjUxLCJleHAiOjE3NzU0MjM0NTF9.U9WLnYQNVEWF5lJgt8X2S3OEGrxZR_L7OTqcQyziVQ8
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJmZjhhZTEyNi0wMWQyLTQzMDItYTgzMC01MjE0ODE2YzY3MzUiLCJpYXQiOjE3NzU0MjIyNjQsImV4cCI6MTc3NTQyMzQ2NH0.lW-ZkNyOLE6POM1Qy1ANXYeg5qz_zGPYiQcC1_bn5TE
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImUzMWI2MjY1LTI0ZDYtNDA5NC05ZmIxLTFlNzQxZjI3MmMzZSIsImlhdCI6MTc3NTQyMjI4NiwiZXhwIjoxNzc1NDIzNDg2fQ.o0WTzrGP4vXumflshTS8k_uxafCd-I7oP3zXLEnOzaU
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNmYwN2UwZTEtYzg5Zi00OTZjLWFmMjItODU0OGE3YmI2MTc0IiwiaWF0IjoxNzc1NDIyMzA4LCJleHAiOjE3NzU0MjM1MDh9.GjBSVzll_BRBzZ6C82xGiayjkIF60zjTR6hrf89jlP0
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjRkZjY1NTNhLTVjYWQtNDJmMS1iMzNiLTYzZGQ3YzYzMmNlOCIsImlhdCI6MTc3NTQyMjMyNCwiZXhwIjoxNzc1NDIzNTI0fQ.G0qbTUWgvaYfj5ZvT1P0O0QDuDwqIwsfx-YjbM5j4tQ
+
+### 1.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.2 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.3 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.4 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.5 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 1.6 GET Intercamp Requests - SYSTEM_ADMIN (Expect 200)
+GET {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.7 GET Intercamp Requests - RESOURCE_MANAGEMENT (Expect 200)
+GET {{baseUrl}}/api/intercamp-requests/4
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 1.8 GET Intercamp Requests - TRAVEL_MANAGER (Expect 200)
+GET {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 1.9 GET Intercamp Requests - WORKER (Expect 403)
+GET {{baseUrl}}/api/intercamp-requests/4
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 1.10 GET Intercamp Requests - VISITOR (Expect 403)
+GET {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 1.11 POST Intercamp Request - RESOURCE_MANAGEMENT (Expect 201 or 200)
+POST {{baseUrl}}/api/intercamp-requests
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "originCampId": 1,
+  "destinationCampId": 2,
+  "status": "PENDING",
+  "description": "rbac-resource-request",
+  "createdDate": "2026-04-05T12:00:00Z",
+  "responseDate": null,
+  "createdBy": 3,
+  "respondedBy": null
+}
+
+###
+
+### 1.12 POST Intercamp Request - TRAVEL_MANAGER (Expect 201 or 200)
+POST {{baseUrl}}/api/intercamp-requests
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "originCampId": 1,
+  "destinationCampId": 3,
+  "status": "PENDING",
+  "description": "rbac-travel-request",
+  "createdDate": "2026-04-05T12:10:00Z",
+  "responseDate": null,
+  "createdBy": 4,
+  "respondedBy": null
+}
+
+###
+
+### 1.13 POST Intercamp Request - SYSTEM_ADMIN (Expect 403)
+POST {{baseUrl}}/api/intercamp-requests
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "originCampId": 1,
+  "destinationCampId": 4,
+  "status": "PENDING",
+  "description": "admin-should-fail",
+  "createdDate": "2026-04-05T12:20:00Z",
+  "responseDate": null,
+  "createdBy": 1,
+  "respondedBy": null
+}
+
+###
+
+### 1.14 POST Intercamp Request - WORKER (Expect 403)
+POST {{baseUrl}}/api/intercamp-requests
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "originCampId": 1,
+  "destinationCampId": 5,
+  "status": "PENDING",
+  "description": "worker-should-fail",
+  "createdDate": "2026-04-05T12:30:00Z",
+  "responseDate": null,
+  "createdBy": 2,
+  "respondedBy": null
+}
+
+###
+
+### 1.15 POST Intercamp Request - VISITOR (Expect 403)
+POST {{baseUrl}}/api/intercamp-requests
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "originCampId": 1,
+  "destinationCampId": 2,
+  "status": "PENDING",
+  "description": "visitor-should-fail",
+  "createdDate": "2026-04-05T12:40:00Z",
+  "responseDate": null,
+  "createdBy": 5,
+  "respondedBy": null
+}
+
+###
+
+### 1.16 PUT Intercamp Request - RESOURCE_MANAGEMENT (Expect 200)
+PUT {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 1.17 PUT Intercamp Request - TRAVEL_MANAGER (Expect 200)
+PUT {{baseUrl}}/api/intercamp-requests/4
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "status": "REJECTED"
+}
+
+###
+
+### 1.18 PUT Intercamp Request - SYSTEM_ADMIN (Expect 403)
+PUT {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 1.19 PUT Intercamp Request - WORKER (Expect 403)
+PUT {{baseUrl}}/api/intercamp-requests/4
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 1.20 PUT Intercamp Request - VISITOR (Expect 403)
+PUT {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 1.21 DELETE Intercamp Request - SYSTEM_ADMIN (Expect 403)
+DELETE {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.22 DELETE Intercamp Request - RESOURCE_MANAGEMENT (Expect 403)
+DELETE {{baseUrl}}/api/intercamp-requests/4
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 1.23 DELETE Intercamp Request - TRAVEL_MANAGER (Expect 403)
+DELETE {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 1.24 DELETE Intercamp Request - WORKER (Expect 403)
+DELETE {{baseUrl}}/api/intercamp-requests/4
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 1.25 DELETE Intercamp Request - VISITOR (Expect 403)
+DELETE {{baseUrl}}/api/intercamp-requests/3
+Authorization: Bearer {{visitorToken}}

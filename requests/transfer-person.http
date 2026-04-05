@@ -1,0 +1,254 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNzE5ODNiYjQtZTY0OC00MDlhLWJmNmQtMjQyMGUwM2U2YmZkIiwiaWF0IjoxNzc1NDE5MDY5LCJleHAiOjE3NzU0MjAyNjl9.b2SRgDZigV9HFSFRYI7Nz0IKt-8THuXCY9VVtdDErV4
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJjMDE0NDNiZi0zY2Q3LTQ5MTctOTBlMC0yMDgzN2VkNDllYTciLCJpYXQiOjE3NzU0MjM1ODAsImV4cCI6MTc3NTQyNDc4MH0.TYdXRCNBYGkbSW5_hYaHucN_9yEitvd_ehutDnIWItE
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjI4NTE3NWZhLTIyMTctNDkxYi1iYWY2LTE0ZmE5ZjFmNTk2MCIsImlhdCI6MTc3NTQyMzU1OCwiZXhwIjoxNzc1NDI0NzU4fQ.tv9jC2U6jMkQXzC-6gifmttEdRCA4SKiDc7e9nNjP6Q
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZGY0OWRlM2ItM2E2NC00N2U0LWJmMTAtYzJkZjAxNTM3ZTk2IiwiaWF0IjoxNzc1NDE5MTY5LCJleHAiOjE3NzU0MjAzNjl9.IJ3VnG3Wo1cyaQFZ8Z8MeQU9oUzf0Dbs4C-WVPwTStE
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZTAzNmZmMDgtYjkxYS00ZGY1LWEwNWUtNWNkMjUxMzJlZDI4IiwiaWF0IjoxNzc1NDE5MTkxLCJleHAiOjE3NzU0MjAzOTF9.PCpK38QnHOeNt-idw0BrZQGfpLRXP4uKURpQUOhml1s
+
+### 5.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 5.2 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 5.3 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 5.4 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 5.5 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 5.6 GET Transfer Persons - SYSTEM_ADMIN (Expect 200)
+GET {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.7 GET Transfer Persons - RESOURCE_MANAGEMENT (Expect 200)
+GET {{baseUrl}}/api/transfer-persons/2
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 5.8 GET Transfer Persons - TRAVEL_MANAGER (Expect 200)
+GET {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 5.9 GET Transfer Persons - WORKER (Expect 403)
+GET {{baseUrl}}/api/transfer-persons/2
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 5.10 GET Transfer Persons - VISITOR (Expect 403)
+GET {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 5.11 POST Transfer Person - RESOURCE_MANAGEMENT (Expect 201 or 200)
+POST {{baseUrl}}/api/transfer-persons
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "personId": 1,
+  "status": "CONFIRMED",
+  "departureDate": null,
+  "arrivalDate": null
+}
+
+###
+
+### 5.12 POST Transfer Person - TRAVEL_MANAGER (Expect 201 or 200)
+POST {{baseUrl}}/api/transfer-persons
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "transferId": 6,
+  "personId": 2,
+  "status": "CONFIRMED",
+  "departureDate": null,
+  "arrivalDate": null
+}
+
+###
+
+### 5.13 POST Transfer Person - SYSTEM_ADMIN (Expect 403)
+POST {{baseUrl}}/api/transfer-persons
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "personId": 3,
+  "status": "CONFIRMED",
+  "departureDate": null,
+  "arrivalDate": null
+}
+
+###
+
+### 5.14 POST Transfer Person - WORKER (Expect 403)
+POST {{baseUrl}}/api/transfer-persons
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "personId": 4,
+  "status": "CONFIRMED",
+  "departureDate": null,
+  "arrivalDate": null
+}
+
+###
+
+### 5.15 POST Transfer Person - VISITOR (Expect 403)
+POST {{baseUrl}}/api/transfer-persons
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "personId": 5,
+  "status": "CONFIRMED",
+  "departureDate": null,
+  "arrivalDate": null
+}
+
+###
+
+### 5.16 PUT Transfer Person - RESOURCE_MANAGEMENT (Expect 200)
+PUT {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "status": "DELIVERED"
+}
+
+###
+
+### 5.17 PUT Transfer Person - TRAVEL_MANAGER (Expect 200)
+PUT {{baseUrl}}/api/transfer-persons/2
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "status": "CANCELED"
+}
+
+###
+
+### 5.18 PUT Transfer Person - SYSTEM_ADMIN (Expect 403)
+PUT {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "DELIVERED"
+}
+
+###
+
+### 5.19 PUT Transfer Person - WORKER (Expect 403)
+PUT {{baseUrl}}/api/transfer-persons/2
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status": "DELIVERED"
+}
+
+###
+
+### 5.20 PUT Transfer Person - VISITOR (Expect 403)
+PUT {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "status": "DELIVERED"
+}
+
+###
+
+### 5.21 DELETE Transfer Person - SYSTEM_ADMIN (Expect 403)
+DELETE {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.22 DELETE Transfer Person - RESOURCE_MANAGEMENT (Expect 403)
+DELETE {{baseUrl}}/api/transfer-persons/2
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 5.23 DELETE Transfer Person - TRAVEL_MANAGER (Expect 403)
+DELETE {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 5.24 DELETE Transfer Person - WORKER (Expect 403)
+DELETE {{baseUrl}}/api/transfer-persons/2
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 5.25 DELETE Transfer Person - VISITOR (Expect 403)
+DELETE {{baseUrl}}/api/transfer-persons/1
+Authorization: Bearer {{visitorToken}}

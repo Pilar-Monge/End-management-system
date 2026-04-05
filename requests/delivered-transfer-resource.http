@@ -1,0 +1,264 @@
+@baseUrl = http://localhost:3000
+@adminToken =eeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZWFiZmFjZTctNThiNC00OWE0LWJlMGYtODgzMGYwNWNlNWI0IiwiaWF0IjoxNzc1NDIyMjUxLCJleHAiOjE3NzU0MjM0NTF9.U9WLnYQNVEWF5lJgt8X2S3OEGrxZR_L7OTqcQyziVQ8
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJjMDE0NDNiZi0zY2Q3LTQ5MTctOTBlMC0yMDgzN2VkNDllYTciLCJpYXQiOjE3NzU0MjM1ODAsImV4cCI6MTc3NTQyNDc4MH0.TYdXRCNBYGkbSW5_hYaHucN_9yEitvd_ehutDnIWItE
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjI4NTE3NWZhLTIyMTctNDkxYi1iYWY2LTE0ZmE5ZjFmNTk2MCIsImlhdCI6MTc3NTQyMzU1OCwiZXhwIjoxNzc1NDI0NzU4fQ.tv9jC2U6jMkQXzC-6gifmttEdRCA4SKiDc7e9nNjP6Q
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNmYwN2UwZTEtYzg5Zi00OTZjLWFmMjItODU0OGE3YmI2MTc0IiwiaWF0IjoxNzc1NDIyMzA4LCJleHAiOjE3NzU0MjM1MDh9.GjBSVzll_BRBzZ6C82xGiayjkIF60zjTR6hrf89jlP0
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjRkZjY1NTNhLTVjYWQtNDJmMS1iMzNiLTYzZGQ3YzYzMmNlOCIsImlhdCI6MTc3NTQyMjMyNCwiZXhwIjoxNzc1NDIzNTI0fQ.G0qbTUWgvaYfj5ZvT1P0O0QDuDwqIwsfx-YjbM5j4tQ
+
+### 3.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 3.2 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 3.3 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 3.4 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 3.5 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 3.6 GET Delivered Transfer Resources - SYSTEM_ADMIN (Expect 200)
+GET {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.7 GET Delivered Transfer Resources - RESOURCE_MANAGEMENT (Expect 200)
+GET {{baseUrl}}/api/delivered-transfer-resources/2
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 3.8 GET Delivered Transfer Resources - TRAVEL_MANAGER (Expect 200)
+GET {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 3.9 GET Delivered Transfer Resources - WORKER (Expect 403)
+GET {{baseUrl}}/api/delivered-transfer-resources/2
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 3.10 GET Delivered Transfer Resources - VISITOR (Expect 403)
+GET {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 3.11 POST Delivered Transfer Resource - RESOURCE_MANAGEMENT (Expect 201 or 200)
+POST {{baseUrl}}/api/delivered-transfer-resources
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "resourceTypeId": 1,
+  "sentAmount": "1000",
+  "receivedAmount": "980",
+  "recordedBy": 3,
+  "recordDate": "2026-04-05T13:00:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.12 POST Delivered Transfer Resource - TRAVEL_MANAGER (Expect 201 or 200)
+POST {{baseUrl}}/api/delivered-transfer-resources
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "transferId": 6,
+  "resourceTypeId": 1,
+  "sentAmount": "900",
+  "receivedAmount": "890",
+  "recordedBy": 4,
+  "recordDate": "2026-04-05T13:10:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.13 POST Delivered Transfer Resource - SYSTEM_ADMIN (Expect 403)
+POST {{baseUrl}}/api/delivered-transfer-resources
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "resourceTypeId": 1,
+  "sentAmount": "800",
+  "receivedAmount": "780",
+  "recordedBy": 1,
+  "recordDate": "2026-04-05T13:20:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.14 POST Delivered Transfer Resource - WORKER (Expect 403)
+POST {{baseUrl}}/api/delivered-transfer-resources
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "resourceTypeId": 1,
+  "sentAmount": "700",
+  "receivedAmount": "690",
+  "recordedBy": 2,
+  "recordDate": "2026-04-05T13:30:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.15 POST Delivered Transfer Resource - VISITOR (Expect 403)
+POST {{baseUrl}}/api/delivered-transfer-resources
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "transferId": 5,
+  "resourceTypeId": 1,
+  "sentAmount": "600",
+  "receivedAmount": "590",
+  "recordedBy": 5,
+  "recordDate": "2026-04-05T13:40:00Z",
+  "movementId": null
+}
+
+###
+
+### 3.16 PUT Delivered Transfer Resource - RESOURCE_MANAGEMENT (Expect 200)
+PUT {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "receivedAmount": "995"
+}
+
+###
+
+### 3.17 PUT Delivered Transfer Resource - TRAVEL_MANAGER (Expect 200)
+PUT {{baseUrl}}/api/delivered-transfer-resources/2
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "receivedAmount": "996"
+}
+
+###
+
+### 3.18 PUT Delivered Transfer Resource - SYSTEM_ADMIN (Expect 403)
+PUT {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "receivedAmount": "997"
+}
+
+###
+
+### 3.19 PUT Delivered Transfer Resource - WORKER (Expect 403)
+PUT {{baseUrl}}/api/delivered-transfer-resources/2
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "receivedAmount": "998"
+}
+
+###
+
+### 3.20 PUT Delivered Transfer Resource - VISITOR (Expect 403)
+PUT {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "receivedAmount": "999"
+}
+
+###
+
+### 3.21 DELETE Delivered Transfer Resource - SYSTEM_ADMIN (Expect 403)
+DELETE {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.22 DELETE Delivered Transfer Resource - RESOURCE_MANAGEMENT (Expect 403)
+DELETE {{baseUrl}}/api/delivered-transfer-resources/2
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 3.23 DELETE Delivered Transfer Resource - TRAVEL_MANAGER (Expect 403)
+DELETE {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 3.24 DELETE Delivered Transfer Resource - WORKER (Expect 403)
+DELETE {{baseUrl}}/api/delivered-transfer-resources/2
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 3.25 DELETE Delivered Transfer Resource - VISITOR (Expect 403)
+DELETE {{baseUrl}}/api/delivered-transfer-resources/1
+Authorization: Bearer {{visitorToken}}

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpException,
   NotFoundException,
@@ -41,7 +42,7 @@ import { ExpeditionResourceObtainedEntity } from './expeditionResourceObtained.e
 import { CreateExpeditionResourceObtainedDto, UpdateExpeditionResourceObtainedDto } from './dto';
 @Controller('expedition-resources-obtained')
 @ApiTags('Expedition Resource Obtained')
-@Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+@Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
 export class ExpeditionResourceObtainedController {
   constructor(private readonly service: ExpeditionResourceObtainedService) {}
   @Post()
@@ -218,28 +219,13 @@ export class ExpeditionResourceObtainedController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Expedition Resource Obtained' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Resource Obtained id' })
   @ApiOkResponseMessage({ description: 'Expedition Resource Obtained deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteRecord(parsedId);
-      if (!deleted) throw new NotFoundException('Record not found');
-
-      return { success: true, message: 'Record deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error
-          ? error.message
-          : 'Error deleting expedition resource obtained record',
-      );
-    }
+    throw new ForbiddenException('Resource records cannot be deleted for audit reasons.');
   }
 }

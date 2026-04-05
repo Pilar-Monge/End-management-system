@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpException,
   NotFoundException,
@@ -41,10 +42,10 @@ import { ExpeditionParticipantEntity } from './expeditionParticipant.entity';
 import { CreateExpeditionParticipantDto, UpdateExpeditionParticipantDto } from './dto';
 @Controller('expedition-participants')
 @ApiTags('Expedition Participant')
-@Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
 export class ExpeditionParticipantController {
   constructor(private readonly service: ExpeditionParticipantService) {}
   @Post()
+  @Roles('TRAVEL_MANAGER')
   @ApiCreatedResponseData(ExpeditionParticipantEntity, {
     description: 'Expedition Participant created',
   })
@@ -70,6 +71,7 @@ export class ExpeditionParticipantController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Expedition Participant by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Participant id' })
   @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant found' })
@@ -87,6 +89,7 @@ export class ExpeditionParticipantController {
     return { success: true, data: participant };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Expedition Participant' })
   @ApiOkResponseList(ExpeditionParticipantEntity, { description: 'Expedition Participant list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -168,6 +171,7 @@ export class ExpeditionParticipantController {
     }
   }
   @Put(':id')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Expedition Participant' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Participant id' })
   @ApiBody({ type: UpdateExpeditionParticipantDto })
@@ -200,29 +204,13 @@ export class ExpeditionParticipantController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Expedition Participant' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Participant id' })
   @ApiOkResponseMessage({ description: 'Expedition Participant deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteParticipant(parsedId);
-      if (!deleted) throw new NotFoundException('Expedition participant not found');
-
-      return {
-        success: true,
-        message: 'Expedition participant deleted successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting expedition participant',
-      );
-    }
+    throw new ForbiddenException('Expedition records cannot be deleted for audit reasons.');
   }
 }

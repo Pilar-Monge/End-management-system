@@ -1,0 +1,207 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiYmM0MDkzMzEtOTlmYi00YmIwLWEwYjEtZjMzMTk4YTQwZDViIiwiaWF0IjoxNzc1NDA5NjczLCJleHAiOjE3NzU0MTA4NzN9.34KPhXcqUCXpF02loLFbjhMa08gkEHw72JrTJ8bFbZc
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI2MTJjYWUwMS04YzFkLTRlZjItYWM1Mi00NDMxZTIxYWNiNWMiLCJpYXQiOjE3NzU0MDk2OTEsImV4cCI6MTc3NTQxMDg5MX0.7KjUwqFwFsvBzSsRRzMD67670IYHm7IMsa3BeGTtuCs
+@resourceToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImIyMzIwOWM2LWIzMDMtNGMxZi05ODVmLTcyNTUyMjUzMGMyNSIsImlhdCI6MTc3NTQwOTcyOCwiZXhwIjoxNzc1NDEwOTI4fQ.Cnspg3F3cZBJtTduXdp7J3PPUHQRT6gDrb5l8evJoGw
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNzk2MWJlNTUtMWFmMi00YWE2LTk0MzUtNDJhYzdhOTM0MmVjIiwiaWF0IjoxNzc1NDA5NzQ0LCJleHAiOjE3NzU0MTA5NDR9.uwGlXvhAbTIXRi03oy4vOP8W4LPKYQr1Xa7NwikGVBI
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjRmZmEzNDA2LWM1ZDUtNDFjMC1hM2FmLTJkMDg3MDg3ZjBiMyIsImlhdCI6MTc3NTQwOTc2MCwiZXhwIjoxNzc1NDEwOTYwfQ.vFBUE26BeLJmyGAGNI-d6wni-TCMaEonWVhjyJInuCc
+
+### 1.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 1.2 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 1.3 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 1.4 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 1.5 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+
+###
+
+### 1.6 GET Expeditions - System Admin (Expect 200)
+GET {{baseUrl}}/api/expeditions
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.7 GET Expedition By Id - System Admin (Expect 200)
+GET {{baseUrl}}/api/expeditions/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 1.8 GET Expeditions - Travel Manager (Expect 200)
+GET {{baseUrl}}/api/expeditions
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 1.9 POST Expedition - Travel Manager (Expect 201 or 200)
+POST {{baseUrl}}/api/expeditions
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "campId": 1,
+  "name": "expedition-rbac-test",
+  "objective": "RBAC validation",
+  "destinationDescription": "Zone A",
+  "destinationLatitude": "0.0000",
+  "destinationLongitude": "0.0000",
+  "plannedDepartureDate": "2026-04-10T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedReturnDate": "2026-04-12T08:00:00Z",
+  "actualReturnDate": null,
+  "extraDaysAvailable": 1,
+  "extraDaysUsed": 0,
+  "status": "PLANNED"
+}
+
+###
+
+### 1.10 PUT Expedition - Travel Manager (Expect 200)
+PUT {{baseUrl}}/api/expeditions/1
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "status": "IN_PROGRESS"
+}
+
+###
+
+### 1.11 POST Expedition - System Admin (Expect 403)
+POST {{baseUrl}}/api/expeditions
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "campId": 1,
+  "name": "admin-should-fail",
+  "objective": "Unauthorized create",
+  "destinationDescription": "Zone B",
+  "destinationLatitude": "0.0000",
+  "destinationLongitude": "0.0000",
+  "plannedDepartureDate": "2026-04-15T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedReturnDate": "2026-04-17T08:00:00Z",
+  "actualReturnDate": null,
+  "extraDaysAvailable": 1,
+  "extraDaysUsed": 0,
+  "status": "PLANNED"
+}
+
+###
+
+### 1.12 PUT Expedition - System Admin (Expect 403)
+PUT {{baseUrl}}/api/expeditions/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+
+###
+
+### 1.13 GET Expeditions - Worker (Expect 403)
+GET {{baseUrl}}/api/expeditions
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 1.14 POST Expedition - Worker (Expect 403)
+POST {{baseUrl}}/api/expeditions
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "campId": 1,
+  "name": "worker-should-fail",
+  "objective": "Unauthorized create",
+  "destinationDescription": "Zone C",
+  "destinationLatitude": "0.0000",
+  "destinationLongitude": "0.0000",
+  "plannedDepartureDate": "2026-04-20T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedReturnDate": "2026-04-22T08:00:00Z",
+  "actualReturnDate": null,
+  "extraDaysAvailable": 1,
+  "extraDaysUsed": 0,
+  "status": "PLANNED"
+}
+
+###
+
+### 1.15 PUT Expedition - Worker (Expect 403)
+PUT {{baseUrl}}/api/expeditions/1
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status": "CANCELLED"
+}
+
+###
+
+### 1.16 GET Expeditions - Visitor (Expect 403)
+GET {{baseUrl}}/api/expeditions
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 1.17 DELETE Expedition - Travel Manager (Expect 403 Audit Hard-Lock)
+DELETE {{baseUrl}}/api/expeditions/1
+Authorization: Bearer {{travelToken}}

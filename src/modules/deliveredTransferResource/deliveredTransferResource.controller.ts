@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -40,10 +41,10 @@ import { DeliveredTransferResourceEntity } from './deliveredTransferResource.ent
 import { CreateDeliveredTransferResourceDto, UpdateDeliveredTransferResourceDto } from './dto';
 @Controller('delivered-transfer-resources')
 @ApiTags('Delivered Transfer Resource')
-@Roles('SYSTEM_ADMIN')
 export class DeliveredTransferResourceController {
   constructor(private readonly service: DeliveredTransferResourceService) {}
   @Post()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Delivered Transfer Resource' })
   @ApiBody({ type: CreateDeliveredTransferResourceDto })
   @ApiCreatedResponseData(DeliveredTransferResourceEntity, {
@@ -65,6 +66,7 @@ export class DeliveredTransferResourceController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Delivered Transfer Resource by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
   @ApiOkResponseData(DeliveredTransferResourceEntity, {
@@ -84,6 +86,7 @@ export class DeliveredTransferResourceController {
     return { success: true, data: delivered };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Delivered Transfer Resource' })
   @ApiOkResponseList(DeliveredTransferResourceEntity, {
     description: 'Delivered Transfer Resource list',
@@ -161,6 +164,7 @@ export class DeliveredTransferResourceController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Delivered Transfer Resource' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
   @ApiBody({ type: UpdateDeliveredTransferResourceDto })
@@ -193,31 +197,13 @@ export class DeliveredTransferResourceController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Delivered Transfer Resource' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
   @ApiOkResponseMessage({ description: 'Delivered Transfer Resource deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteDeliveredResource(parsedId);
-      if (!deleted) {
-        throw new NotFoundException('Delivered transfer resource not found');
-      }
-
-      return {
-        success: true,
-        message: 'Delivered transfer resource deleted successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting delivered transfer resource',
-      );
-    }
+    throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }
 }

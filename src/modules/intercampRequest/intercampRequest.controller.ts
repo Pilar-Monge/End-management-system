@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpException,
   NotFoundException,
@@ -224,26 +225,13 @@ export class IntercampRequestController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Intercamp Request' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
   @ApiOkResponseMessage({ description: 'Intercamp Request deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteRequest(parsedId);
-      if (!deleted) throw new NotFoundException('Intercamp request not found');
-
-      return { success: true, message: 'Intercamp request deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting intercamp request',
-      );
-    }
+    throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }
 }

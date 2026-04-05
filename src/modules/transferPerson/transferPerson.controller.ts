@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -41,10 +42,10 @@ import { TransferPersonEntity } from './transferPerson.entity';
 import { CreateTransferPersonDto, UpdateTransferPersonDto } from './dto';
 @Controller('transfer-persons')
 @ApiTags('Transfer Person')
-@Roles('SYSTEM_ADMIN')
 export class TransferPersonController {
   constructor(private readonly service: TransferPersonService) {}
   @Post()
+  @Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Transfer Person' })
   @ApiBody({ type: CreateTransferPersonDto })
   @ApiCreatedResponseData(TransferPersonEntity, { description: 'Transfer Person created' })
@@ -64,6 +65,7 @@ export class TransferPersonController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Transfer Person by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
   @ApiOkResponseData(TransferPersonEntity, { description: 'Transfer Person found' })
@@ -81,6 +83,7 @@ export class TransferPersonController {
     return { success: true, data: transferPerson };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Transfer Person' })
   @ApiOkResponseList(TransferPersonEntity, { description: 'Transfer Person list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -160,6 +163,7 @@ export class TransferPersonController {
     }
   }
   @Put(':id')
+  @Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Update Transfer Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
   @ApiBody({ type: UpdateTransferPersonDto })
@@ -188,26 +192,13 @@ export class TransferPersonController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Transfer Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer Person id' })
   @ApiOkResponseMessage({ description: 'Transfer Person deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteTransferPerson(parsedId);
-      if (!deleted) throw new NotFoundException('Transfer person not found');
-
-      return { success: true, message: 'Transfer person deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting transfer person',
-      );
-    }
+    throw new ForbiddenException('Transfer person records cannot be deleted for audit reasons.');
   }
 }

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -37,10 +38,10 @@ import { TransferHistoryEntity } from './transferHistory.entity';
 import { CreateTransferHistoryDto, UpdateTransferHistoryDto } from './dto';
 @Controller('transfer-history')
 @ApiTags('Transfer History')
-@Roles('SYSTEM_ADMIN')
 export class TransferHistoryController {
   constructor(private readonly service: TransferHistoryService) {}
   @Post()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Transfer History' })
   @ApiBody({ type: CreateTransferHistoryDto })
   @ApiCreatedResponseData(TransferHistoryEntity, { description: 'Transfer History created' })
@@ -60,6 +61,7 @@ export class TransferHistoryController {
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Transfer History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History found' })
@@ -77,6 +79,7 @@ export class TransferHistoryController {
     return { success: true, data: entry };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Transfer History' })
   @ApiOkResponseList(TransferHistoryEntity, { description: 'Transfer History list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -162,6 +165,7 @@ export class TransferHistoryController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Transfer History' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
   @ApiBody({ type: UpdateTransferHistoryDto })
@@ -190,26 +194,13 @@ export class TransferHistoryController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Transfer History' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
   @ApiOkResponseMessage({ description: 'Transfer History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteEntry(parsedId);
-      if (!deleted) throw new NotFoundException('Transfer history entry not found');
-
-      return { success: true, message: 'Transfer history entry deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting transfer history entry',
-      );
-    }
+    throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }
 }

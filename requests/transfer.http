@@ -1,0 +1,280 @@
+@baseUrl = http://localhost:3000
+@adminToken =eeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZWFiZmFjZTctNThiNC00OWE0LWJlMGYtODgzMGYwNWNlNWI0IiwiaWF0IjoxNzc1NDIyMjUxLCJleHAiOjE3NzU0MjM0NTF9.U9WLnYQNVEWF5lJgt8X2S3OEGrxZR_L7OTqcQyziVQ8
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJmZjhhZTEyNi0wMWQyLTQzMDItYTgzMC01MjE0ODE2YzY3MzUiLCJpYXQiOjE3NzU0MjIyNjQsImV4cCI6MTc3NTQyMzQ2NH0.lW-ZkNyOLE6POM1Qy1ANXYeg5qz_zGPYiQcC1_bn5TE
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImUzMWI2MjY1LTI0ZDYtNDA5NC05ZmIxLTFlNzQxZjI3MmMzZSIsImlhdCI6MTc3NTQyMjI4NiwiZXhwIjoxNzc1NDIzNDg2fQ.o0WTzrGP4vXumflshTS8k_uxafCd-I7oP3zXLEnOzaU
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNmYwN2UwZTEtYzg5Zi00OTZjLWFmMjItODU0OGE3YmI2MTc0IiwiaWF0IjoxNzc1NDIyMzA4LCJleHAiOjE3NzU0MjM1MDh9.GjBSVzll_BRBzZ6C82xGiayjkIF60zjTR6hrf89jlP0
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjRkZjY1NTNhLTVjYWQtNDJmMS1iMzNiLTYzZGQ3YzYzMmNlOCIsImlhdCI6MTc3NTQyMjMyNCwiZXhwIjoxNzc1NDIzNTI0fQ.G0qbTUWgvaYfj5ZvT1P0O0QDuDwqIwsfx-YjbM5j4tQ
+
+
+### 2.1 [LOGIN] SYSTEM_ADMIN
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 2.2 [LOGIN] TRAVEL_MANAGER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "travel_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 2.3 [LOGIN] RESOURCE_MANAGEMENT
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "resource_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 2.4 [LOGIN] WORKER
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "worker_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 2.5 [LOGIN] VISITOR
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "visitor_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+### 2.6 GET Transfers - SYSTEM_ADMIN (Expect 200)
+GET {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.7 GET Transfers - RESOURCE_MANAGEMENT (Expect 200)
+GET {{baseUrl}}/api/transfers/6
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 2.8 GET Transfers - TRAVEL_MANAGER (Expect 200)
+GET {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 2.9 GET Transfers - WORKER (Expect 403)
+GET {{baseUrl}}/api/transfers/6
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 2.10 GET Transfers - VISITOR (Expect 403)
+GET {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{visitorToken}}
+
+###
+
+### 2.11 POST Transfer - RESOURCE_MANAGEMENT (Expect 201 or 200)
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "requestId": 3,
+  "plannedDepartureDate": "2026-04-06T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedArrivalDate": "2026-04-07T08:00:00Z",
+  "actualArrivalDate": null,
+  "status": "PENDING_DEPARTURE",
+  "departureApprovedBy": null,
+  "arrivalApprovedBy": null,
+  "rationsForTrip": "1000",
+  "receptionNotes": "resource-created-transfer"
+}
+
+###
+
+### 2.12 POST Transfer - TRAVEL_MANAGER (Expect 201 or 200)
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "requestId": 4,
+  "plannedDepartureDate": "2026-04-08T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedArrivalDate": "2026-04-09T08:00:00Z",
+  "actualArrivalDate": null,
+  "status": "PENDING_DEPARTURE",
+  "departureApprovedBy": null,
+  "arrivalApprovedBy": null,
+  "rationsForTrip": "900",
+  "receptionNotes": "travel-created-transfer"
+}
+
+###
+
+### 2.13 POST Transfer - SYSTEM_ADMIN (Expect 403)
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "requestId": 3,
+  "plannedDepartureDate": "2026-04-10T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedArrivalDate": "2026-04-11T08:00:00Z",
+  "actualArrivalDate": null,
+  "status": "PENDING_DEPARTURE",
+  "departureApprovedBy": null,
+  "arrivalApprovedBy": null,
+  "rationsForTrip": "800",
+  "receptionNotes": "admin-should-fail"
+}
+
+###
+
+### 2.14 POST Transfer - WORKER (Expect 403)
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "requestId": 3,
+  "plannedDepartureDate": "2026-04-12T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedArrivalDate": "2026-04-13T08:00:00Z",
+  "actualArrivalDate": null,
+  "status": "PENDING_DEPARTURE",
+  "departureApprovedBy": null,
+  "arrivalApprovedBy": null,
+  "rationsForTrip": "700",
+  "receptionNotes": "worker-should-fail"
+}
+
+###
+
+### 2.15 POST Transfer - VISITOR (Expect 403)
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "requestId": 3,
+  "plannedDepartureDate": "2026-04-14T08:00:00Z",
+  "actualDepartureDate": null,
+  "plannedArrivalDate": "2026-04-15T08:00:00Z",
+  "actualArrivalDate": null,
+  "status": "PENDING_DEPARTURE",
+  "departureApprovedBy": null,
+  "arrivalApprovedBy": null,
+  "rationsForTrip": "600",
+  "receptionNotes": "visitor-should-fail"
+}
+
+###
+
+### 2.16 PUT Transfer - RESOURCE_MANAGEMENT (Expect 200)
+PUT {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{resourceToken}}
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+
+###
+
+### 2.17 PUT Transfer - TRAVEL_MANAGER (Expect 200)
+PUT {{baseUrl}}/api/transfers/6
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "status": "CANCELED"
+}
+
+###
+
+### 2.18 PUT Transfer - SYSTEM_ADMIN (Expect 403)
+PUT {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+
+###
+
+### 2.19 PUT Transfer - WORKER (Expect 403)
+PUT {{baseUrl}}/api/transfers/6
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+
+###
+
+### 2.20 PUT Transfer - VISITOR (Expect 403)
+PUT {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{visitorToken}}
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+
+###
+
+### 2.21 DELETE Transfer - SYSTEM_ADMIN (Expect 403)
+DELETE {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.22 DELETE Transfer - RESOURCE_MANAGEMENT (Expect 403)
+DELETE {{baseUrl}}/api/transfers/6
+Authorization: Bearer {{resourceToken}}
+
+###
+
+### 2.23 DELETE Transfer - TRAVEL_MANAGER (Expect 403)
+DELETE {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{travelToken}}
+
+###
+
+### 2.24 DELETE Transfer - WORKER (Expect 403)
+DELETE {{baseUrl}}/api/transfers/6
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 2.25 DELETE Transfer - VISITOR (Expect 403)
+DELETE {{baseUrl}}/api/transfers/5
+Authorization: Bearer {{visitorToken}}
