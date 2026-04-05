@@ -97,126 +97,114 @@ Connection: close
  |
 | 1.6 | GET | /api/intercamp-requests | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNmU2ODE3M2MtYWZhOS00ZGEwLTk5YWUtNjYxZTk5YmJiZGZlIiwiaWF0IjoxNzc1NDE5MjQxLCJleHAiOjE3NzU0MjA0NDF9.g70pgY_U5jTxSYAdcmSc_5KPBuPbw8ShFzAdyUOpyLU
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNjE0YWEwNTEtZDM5ZC00Y2VkLWJlMjItZDFlNTJiMmRjZjdmIiwiaWF0IjoxNzc1NDI0NDg3LCJleHAiOjE3NzU0MjU2ODd9.7zLxdGBsJ49eFlg3UDoMdh8_kzGEJuMUsNuOakXj0-c
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:00:41 GMT
-Connection: close
-
-{
-  "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
-  }
-}
- |
-| 1.7 | GET | /api/intercamp-requests | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
-X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImIxOGVlOWU5LWZmYzYtNDg4NC04YzAzLWYwZWNmM2JmNGQ3YiIsImlhdCI6MTc3NTQxOTI1NCwiZXhwIjoxNzc1NDIwNDU0fQ.KaJRQwckh1-TvenrPiMPm8yeRl44SxptPwomy6GOciI
-Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:00:54 GMT
-Connection: close
-HTTP/1.1 200 OK
-X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI5MjJjZGQxMi0zNmUzLTQ2M2QtYTgyNS1iN2ZhYzg1YWNiN2QiLCJpYXQiOjE3NzU0MTkyNjYsImV4cCI6MTc3NTQyMDQ2Nn0.9eqMn6XYbRWI8XF2dQHjKbAOiqN9AWvofMpjpyVK5kA
-Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:01:06 GMT
-Connection: close
-
-{
-  "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
-  }
-}
-
-{
-  "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
-  }
-}
- |
-| 1.8 | GET | /api/intercamp-requests | TRAVEL_MANAGER | 200 OK |HTTP/1.1 200 OK
-X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI5MjJjZGQxMi0zNmUzLTQ2M2QtYTgyNS1iN2ZhYzg1YWNiN2QiLCJpYXQiOjE3NzU0MTkyNjYsImV4cCI6MTc3NTQyMDQ2Nn0.9eqMn6XYbRWI8XF2dQHjKbAOiqN9AWvofMpjpyVK5kA
-Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:01:06 GMT
-Connection: close
-
-{
-  "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
-  }
-}
- |
-| 1.9 | GET | /api/intercamp-requests | WORKER | 403 Forbidden | HTTP/1.1 403 Forbidden
-X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiMDA3NTlmMjctZWIxOC00OWEyLWJlMTgtOGMwODM2ZjI3YzYzIiwiaWF0IjoxNzc1NDE5MjgwLCJleHAiOjE3NzU0MjA0ODB9.ylnGTQUC8HUljHC_JQln3W3-33OgmvLfbFU6f9jrWMI
-Content-Type: application/json; charset=utf-8
-Content-Length: 66
-ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:01:20 GMT
-Connection: close
-
-{
-  "message": "Acceso denegado",
-  "error": "Forbidden",
-  "statusCode": 403
-}
-|
-| 1.10 | GET | /api/intercamp-requests | VISITOR | 403 Forbidden |HTTP/1.1 403 Forbidden
-X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNmFjZTQ5MmYtZGYwMi00YjliLWE5MDUtOTJjMzBhYWRmYzIyIiwiaWF0IjoxNzc1NDE5Mjk1LCJleHAiOjE3NzU0MjA0OTV9.8yCu7wLSKFFbNaZKDgHjI6umGdavZAuzxfwvHt_AnuA
-Content-Type: application/json; charset=utf-8
-Content-Length: 66
-ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:01:35 GMT
-Connection: close
-
-{
-  "message": "Acceso denegado",
-  "error": "Forbidden",
-  "statusCode": 403
-}
- |
-| 1.11 | POST | /api/intercamp-requests | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 201 Created
-X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjgzYWU5NjEyLTg3MDMtNDI1Mi1iN2RkLTRhY2FiMDYzY2I2NSIsImlhdCI6MTc3NTQxOTMwNiwiZXhwIjoxNzc1NDIwNTA2fQ.c0nqt6wPrA68pjkltm3zo406gXi6OWUuBqEYo6M1Xf4
-Content-Type: application/json; charset=utf-8
-Content-Length: 273
-ETag: W/"111-4QbIhqNL2TXNToYeWVw4hH4cWn4"
-Date: Sun, 05 Apr 2026 20:01:47 GMT
+Content-Length: 222
+ETag: W/"de-ohEtbsbjbD94/OK6eFppaYHO2oI"
+Date: Sun, 05 Apr 2026 21:28:07 GMT
 Connection: close
 
 {
   "success": true,
   "data": {
-    "id": 1,
+    "id": 3,
+    "originCampId": 1,
+    "destinationCampId": 2,
+    "status": "PENDING",
+    "description": "rbac-resource-request",
+    "createdDate": "2026-04-05T12:00:00.000Z",
+    "responseDate": null,
+    "createdBy": 3,
+    "respondedBy": null
+  }
+}
+
+ |
+| 1.7 | GET | /api/intercamp-requests | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
+X-Powered-By: Express
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjcyN2M1ZmM0LThmNTctNDk2Mi1iYzRmLTVjYjRlZDUzOWJmMSIsImlhdCI6MTc3NTQyNDQ5OCwiZXhwIjoxNzc1NDI1Njk4fQ.4FHuTNzCBFlx53HEg0EirNHYY1RWXHdtFml_TVymwq4
+Content-Type: application/json; charset=utf-8
+Content-Length: 220
+ETag: W/"dc-QUUYUq8pidlb+3cpGEu+JKZi8q4"
+Date: Sun, 05 Apr 2026 21:28:18 GMT
+Connection: close
+
+{
+  "success": true,
+  "data": {
+    "id": 4,
+    "originCampId": 1,
+    "destinationCampId": 3,
+    "status": "PENDING",
+    "description": "rbac-travel-request",
+    "createdDate": "2026-04-05T12:10:00.000Z",
+    "responseDate": null,
+    "createdBy": 4,
+    "respondedBy": null
+  }
+}
+
+ |
+| 1.8 | GET | /api/intercamp-requests | TRAVEL_MANAGER | 200 OK |HTTP/1.1 401 Unauthorized
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 69
+ETag: W/"45-B1Q3SBt1ZeaNvigPSVYs7wqtkGY"
+Date: Sun, 05 Apr 2026 21:28:31 GMT
+Connection: close
+
+{
+  "message": "Token inválido",
+  "error": "Unauthorized",
+  "statusCode": 401
+}
+
+ |
+| 1.9 | GET | /api/intercamp-requests | WORKER | 403 Forbidden | HTTP/1.1 403 Forbidden
+X-Powered-By: Express
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNjU2N2IzNjYtMTQxYy00MDAwLWIzYjQtYzVlMDM5OWUxZDg3IiwiaWF0IjoxNzc1NDI0NTIzLCJleHAiOjE3NzU0MjU3MjN9.6P-SZmivTFvlWhY8hwxX2_O_n6FCDwT8Yjl1zYHOtQ8
+Content-Type: application/json; charset=utf-8
+Content-Length: 66
+ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
+Date: Sun, 05 Apr 2026 21:28:43 GMT
+Connection: close
+
+{
+  "message": "Acceso denegado",
+  "error": "Forbidden",
+  "statusCode": 403
+}
+
+|
+| 1.10 | GET | /api/intercamp-requests | VISITOR | 403 Forbidden |HTTP/1.1 403 Forbidden
+X-Powered-By: Express
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjQ1MTcyNjgxLTBlNTUtNGU3Mi1iNWRmLTAyN2M2ODg5M2YwMyIsImlhdCI6MTc3NTQyNDUzNywiZXhwIjoxNzc1NDI1NzM3fQ.YR2EN15bFuTnn6nQbT6DyXfD6oxmglmMangNwzDeCGU
+Content-Type: application/json; charset=utf-8
+Content-Length: 66
+ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
+Date: Sun, 05 Apr 2026 21:28:57 GMT
+Connection: close
+
+{
+  "message": "Acceso denegado",
+  "error": "Forbidden",
+  "statusCode": 403
+}
+
+ |
+| 1.11 | POST | /api/intercamp-requests | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 201 Created
+X-Powered-By: Express
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjMwMzhhZjlmLTkzZmEtNDIzMC1hOTYyLWQyYTg3ZmYzNTQxNSIsImlhdCI6MTc3NTQyMjc0OCwiZXhwIjoxNzc1NDIzOTQ4fQ.p8s66rrdPwefIYlvmSLFotX0BLC2zgRmvdIT3Cm9asA
+Content-Type: application/json; charset=utf-8
+Content-Length: 273
+ETag: W/"111-UWJFRZLaGcqybgdrjn3mtm0rZPI"
+Date: Sun, 05 Apr 2026 20:59:08 GMT
+Connection: close
+
+{
+  "success": true,
+  "data": {
+    "id": 3,
     "originCampId": 1,
     "destinationCampId": 2,
     "status": "PENDING",
@@ -231,17 +219,17 @@ Connection: close
  |
 | 1.12 | POST | /api/intercamp-requests | TRAVEL_MANAGER | 201 Created / 200 OK |HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0YmFjOTZkOC1jZDE4LTRlZTktOWNhNy1lYWQwNDY2MTU0MzIiLCJpYXQiOjE3NzU0MTkzMjYsImV4cCI6MTc3NTQyMDUyNn0.Fs7CdQR63m6NmOqL81-hpZDQvUkHSSTzBl2dO7yc-Pk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIwMDQ5NjE0NC1mZGE5LTRhMmMtODEwZS05ZDVhOGNjODVhYmYiLCJpYXQiOjE3NzU0MjI3ODEsImV4cCI6MTc3NTQyMzk4MX0.UC65yfNuNYcNwnGEZEoNgY7ew97-5W1_c0SxIJ0BoSo
 Content-Type: application/json; charset=utf-8
 Content-Length: 271
-ETag: W/"10f-MFAD2ZiYtg2dVj0PT5cD1/oDINY"
-Date: Sun, 05 Apr 2026 20:02:06 GMT
+ETag: W/"10f-hE9O0iK9aYNHhFaDalgdSNhHUpo"
+Date: Sun, 05 Apr 2026 20:59:41 GMT
 Connection: close
 
 {
   "success": true,
   "data": {
-    "id": 2,
+    "id": 4,
     "originCampId": 1,
     "destinationCampId": 3,
     "status": "PENDING",
@@ -253,6 +241,7 @@ Connection: close
   },
   "message": "Intercamp request created successfully"
 }
+
  |
 | 1.13 | POST | /api/intercamp-requests | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -301,17 +290,17 @@ Connection: close
  |
 | 1.16 | PUT | /api/intercamp-requests/1 | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImJlM2RjZjg0LWZmY2MtNGYyYi04ZGVkLTZlMGNiYmUxYWIzNyIsImlhdCI6MTc3NTQxOTM2MywiZXhwIjoxNzc1NDIwNTYzfQ.wk8yBCTHjb8CcWfXAjzK__YfIYu6qdXnKxbsh3slDkk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjBjZTM1ZjUxLWRjZDUtNDM0Ny1iNjYzLWQ2ODllMmExY2Y4YyIsImlhdCI6MTc3NTQyNDU1NiwiZXhwIjoxNzc1NDI1NzU2fQ.G9ld5-BNAS89DdSOr58oF1VnMjXqygGlYXAenBfskuY
 Content-Type: application/json; charset=utf-8
 Content-Length: 274
-ETag: W/"112-78iLvRsBGrLs/tHlpWjSJLPgDl8"
-Date: Sun, 05 Apr 2026 20:02:43 GMT
+ETag: W/"112-4/s1/37cqw7LNwUUMaxwDCWlkVA"
+Date: Sun, 05 Apr 2026 21:29:16 GMT
 Connection: close
 
 {
   "success": true,
   "data": {
-    "id": 1,
+    "id": 3,
     "originCampId": 1,
     "destinationCampId": 2,
     "status": "APPROVED",
@@ -323,31 +312,33 @@ Connection: close
   },
   "message": "Intercamp request updated successfully"
 }
+
  |
 | 1.17 | PUT | /api/intercamp-requests/1 | TRAVEL_MANAGER | 200 OK | HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0NDJlOGNiOS0xYzg2LTQ4NmUtOWIwYi0wZjA4MjY5NjRkMDkiLCJpYXQiOjE3NzU0MTkzNzEsImV4cCI6MTc3NTQyMDU3MX0.0ngr8Ni5RpAfpGqMOF1-5KAeABjqjcVcQ5m9wrdTL2c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJjMzM3NmZlMy05MzJjLTRjZGYtYjMwYS0zZjg5ZGUzMThkMmIiLCJpYXQiOjE3NzU0MjQ2NjksImV4cCI6MTc3NTQyNTg2OX0.AfIg9656I7eL80nDYgRXIpebkazwUsJn8cf7RJJuPqg
 Content-Type: application/json; charset=utf-8
-Content-Length: 274
-ETag: W/"112-J6QIHQWD7UqeyfyCaR3A0/gujMA"
-Date: Sun, 05 Apr 2026 20:02:51 GMT
+Content-Length: 272
+ETag: W/"110-yfrur7+1uf4+bc/VOLkbGSyq4Bk"
+Date: Sun, 05 Apr 2026 21:31:09 GMT
 Connection: close
 
 {
   "success": true,
   "data": {
-    "id": 1,
+    "id": 4,
     "originCampId": 1,
-    "destinationCampId": 2,
+    "destinationCampId": 3,
     "status": "REJECTED",
-    "description": "rbac-resource-request",
-    "createdDate": "2026-04-05T12:00:00.000Z",
+    "description": "rbac-travel-request",
+    "createdDate": "2026-04-05T12:10:00.000Z",
     "responseDate": null,
-    "createdBy": 3,
+    "createdBy": 4,
     "respondedBy": null
   },
   "message": "Intercamp request updated successfully"
 }
+
 |
 | 1.18 | PUT | /api/intercamp-requests/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -396,11 +387,11 @@ Connection: close
  |
 | 1.21 | DELETE | /api/intercamp-requests/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiODM3ZGI5YmEtOTMxYy00YzNkLWIwZWEtZjAwN2JiYTRmOGUxIiwiaWF0IjoxNzc1NDE5NDE4LCJleHAiOjE3NzU0MjA2MTh9.fg1FyWiNROtzV92Qw9GUqb5EefyY8iH53UkgnozB_6M
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiN2M2MDg4MGQtMDA2OC00ZGFiLWE3NTktMGM4OTdiNTgzYzZiIiwiaWF0IjoxNzc1NDI0Njg2LCJleHAiOjE3NzU0MjU4ODZ9.LZr0amFZrTYeDdHUAPgMUsVOcP7AkoXIwu-Si8LULqE
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:03:38 GMT
+Date: Sun, 05 Apr 2026 21:31:26 GMT
 Connection: close
 
 {
@@ -408,6 +399,7 @@ Connection: close
   "error": "Forbidden",
   "statusCode": 403
 }
+
  |
 | 1.22 | DELETE | /api/intercamp-requests/1 | RESOURCE_MANAGEMENT | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -480,71 +472,98 @@ Connection: close
 | 2.5 | POST | /api/auth/login | VISITOR | 200 OK | |
 | 2.6 | GET | /api/transfers | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNzNlYjc5YmItZjYwMi00MjU4LWJlNmItNjMyNGI1NzUwNTk3IiwiaWF0IjoxNzc1NDE5NjE5LCJleHAiOjE3NzU0MjA4MTl9.kQ5Vs_1OB8_xbPEQ27zvSinKIuIp7GGc_tn6klOuIWg
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZDkwYmUzMTUtM2YzOC00NTkxLWI4OWMtMmIyZjliMDk0ZThiIiwiaWF0IjoxNzc1NDI0NzUxLCJleHAiOjE3NzU0MjU5NTF9.ekWd99BScOkpyfmPMFInXbFtChaPYNH9DiyybWKQUUA
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:06:59 GMT
+Content-Length: 427
+ETag: W/"1ab-myGnFHYvwP4n5vMZMxQ1Q+DSBv4"
+Date: Sun, 05 Apr 2026 21:32:31 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 5,
+    "requestId": 3,
+    "plannedDepartureDate": "2026-04-06T08:00:00.000Z",
+    "actualDepartureDate": null,
+    "plannedArrivalDate": "2026-04-07T08:00:00.000Z",
+    "actualArrivalDate": null,
+    "status": "PENDING_DEPARTURE",
+    "departureApprovedBy": null,
+    "arrivalApprovedBy": null,
+    "rationsForTrip": "1000.00",
+    "receptionNotes": "resource-created-transfer",
+    "createdAt": "2026-04-05T21:08:18.211Z",
+    "updatedAt": "2026-04-05T21:08:18.211Z"
   }
 }
+
  |
 | 2.7 | GET | /api/transfers | RESOURCE_MANAGEMENT | 200 OK | HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImJiMmQ1ZjE5LWZkNjMtNDRiZS1iYjNiLTAyYzhmOTg4N2YzYiIsImlhdCI6MTc3NTQxOTYyOSwiZXhwIjoxNzc1NDIwODI5fQ.I3ZnjRtl43WWHHOFJKsWcV3_ZtrJXymKBQUUfjtkTNE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjEzYWM2MzcyLTEyNzYtNGI2NS04NDU5LTU5Mjc4YmIyOTFhYyIsImlhdCI6MTc3NTQyNDc2MywiZXhwIjoxNzc1NDI1OTYzfQ.RGgXRO6V5stg6YIovEVKQq4TrLyfF8kxkRRNpmGVUZw
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:07:09 GMT
+Content-Length: 424
+ETag: W/"1a8-fZojxTMbVQujoG7K3Dxb7s0Gcco"
+Date: Sun, 05 Apr 2026 21:32:43 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 6,
+    "requestId": 4,
+    "plannedDepartureDate": "2026-04-08T08:00:00.000Z",
+    "actualDepartureDate": null,
+    "plannedArrivalDate": "2026-04-09T08:00:00.000Z",
+    "actualArrivalDate": null,
+    "status": "PENDING_DEPARTURE",
+    "departureApprovedBy": null,
+    "arrivalApprovedBy": null,
+    "rationsForTrip": "900.00",
+    "receptionNotes": "travel-created-transfer",
+    "createdAt": "2026-04-05T21:08:33.653Z",
+    "updatedAt": "2026-04-05T21:08:33.653Z"
   }
 }
+
 |
 | 2.8 | GET | /api/transfers | TRAVEL_MANAGER | 200 OK | HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJmYjFiM2RmYy0zMTRlLTRhOGYtYTcwYS05ZjcxMTQ2ODUyNGMiLCJpYXQiOjE3NzU0MTk2MzUsImV4cCI6MTc3NTQyMDgzNX0.6pSrLE2yukQbYRHMNzakx8oSZvCAxCyuAVVXs6a7k4c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0NDMzMDViMC1mMzgwLTRhZGYtOTYzMC1kYzA3NmJmYThjY2EiLCJpYXQiOjE3NzU0MjQ3NzUsImV4cCI6MTc3NTQyNTk3NX0.QLBB5wnwW-oyMgi7IAX30SKqTxr5k32iAzqRsUsjjUU
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:07:15 GMT
+Content-Length: 427
+ETag: W/"1ab-myGnFHYvwP4n5vMZMxQ1Q+DSBv4"
+Date: Sun, 05 Apr 2026 21:32:55 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 5,
+    "requestId": 3,
+    "plannedDepartureDate": "2026-04-06T08:00:00.000Z",
+    "actualDepartureDate": null,
+    "plannedArrivalDate": "2026-04-07T08:00:00.000Z",
+    "actualArrivalDate": null,
+    "status": "PENDING_DEPARTURE",
+    "departureApprovedBy": null,
+    "arrivalApprovedBy": null,
+    "rationsForTrip": "1000.00",
+    "receptionNotes": "resource-created-transfer",
+    "createdAt": "2026-04-05T21:08:18.211Z",
+    "updatedAt": "2026-04-05T21:08:18.211Z"
   }
 }
+
 |
 | 2.9 | GET | /api/transfers | WORKER | 403 Forbidden | HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiN2RlYzIwZGYtZDkzZC00YzZkLWFiYjUtMzNkOWFhMjZkZDAyIiwiaWF0IjoxNzc1NDE5NjQyLCJleHAiOjE3NzU0MjA4NDJ9.yZsgNaxLeuhYIyDwSCoGniYc3Wc0z9eyzMpY_BXbIZQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNTgzYmFiZjItYjk5OS00YTY5LTliMTMtODgzOTdmMThkMTgzIiwiaWF0IjoxNzc1NDI0NzkxLCJleHAiOjE3NzU0MjU5OTF9.cfCS6Dm_yZ8TUVncjenWiWMyn6GO6uMkclRtJZOOv-g
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:07:22 GMT
+Date: Sun, 05 Apr 2026 21:33:11 GMT
 Connection: close
 
 {
@@ -552,14 +571,15 @@ Connection: close
   "error": "Forbidden",
   "statusCode": 403
 }
+
 |
 | 2.10 | GET | /api/transfers | VISITOR | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNWE4NGYyZjQtNTIxMC00MzMxLWIwNDctOGJiYmE2M2UzZjE4IiwiaWF0IjoxNzc1NDE5NjQ5LCJleHAiOjE3NzU0MjA4NDl9.16J4tr6sxg4vmXkXH7z_37Vi5BSxond7Cps3U0b4E4E
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjBhODliMzI2LWVhMmItNDExYS1hYjQyLTA0MTFmMzYzNGI3NSIsImlhdCI6MTc3NTQyNDgwMiwiZXhwIjoxNzc1NDI2MDAyfQ.hzDZJPzG6mhY1umtPd17d3aJna1xdTGy3rn49ZbxAfY
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:07:29 GMT
+Date: Sun, 05 Apr 2026 21:33:22 GMT
 Connection: close
 
 {
@@ -567,36 +587,39 @@ Connection: close
   "error": "Forbidden",
   "statusCode": 403
 }
+
  |
-| 2.11 | POST | /api/transfers | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 400 Bad Request
+| 2.11 | POST | /api/transfers | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 201 CreatedX-Powered-By: ExpressAuthorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjQ4ZWZlZDRkLTU4YjUtNGUwNC1hNmUzLTkzOWU3YmI4ZDZjMiIsImlhdCI6MTc3NTQyMzI5OCwiZXhwIjoxNzc1NDI0NDk4fQ.f0l2W-pvdB7RPJwpks8VtleyIG5vPleAT5sbo__P4x0Content-Type: application/json; charset=utf-8Content-Length: 461ETag: W/"1cd-T8TNg5Swm0Qbr39Qqx8wf16ozb0"Date: Sun, 05 Apr 2026 21:08:18 GMTConnection: close{  "success": true,  "data": {    "id": 5,    "requestId": 3,    "plannedDepartureDate": "2026-04-06T08:00:00Z",    "actualDepartureDate": null,    "plannedArrivalDate": "2026-04-07T08:00:00Z",    "actualArrivalDate": null,    "status": "PENDING_DEPARTURE",    "departureApprovedBy": null,    "arrivalApprovedBy": null,    "rationsForTrip": "1000.00",    "receptionNotes": "resource-created-transfer",    "createdAt": "2026-04-05T21:08:18.211Z",    "updatedAt": "2026-04-05T21:08:18.211Z"  },  "message": "Transfer created successfully"}
+ |
+| 2.12 | POST | /api/transfers | TRAVEL_MANAGER | 201 Created / 200 OK |HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImNmMWY4YTc3LTFiNDMtNGE0YS1iMDc0LTBiMGNjYWVmMWM2NyIsImlhdCI6MTc3NTQxOTY1NSwiZXhwIjoxNzc1NDIwODU1fQ.Eq44p2NEmprTxzrOv-49C24uUu1Y5kjRvicyP29fSVI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIyMWRjZGI4My1kMTFlLTQyZjQtOTM2Zi1jNjkyZmM4NTMyYzIiLCJpYXQiOjE3NzU0MjMzMTMsImV4cCI6MTc3NTQyNDUxM30.CcwCJAavLgApY3cBRrNybK41U_FPXIiW7rBxGbI4-Bw
 Content-Type: application/json; charset=utf-8
-Content-Length: 143
-ETag: W/"8f-dZpJjLWuXxBVsh0u55UCIzkIrwo"
-Date: Sun, 05 Apr 2026 20:07:35 GMT
+Content-Length: 458
+ETag: W/"1ca-ecl4jdH51SKDWa1lKUWktVXcNnw"
+Date: Sun, 05 Apr 2026 21:08:33 GMT
 Connection: close
 
 {
-  "message": "new row for relation \"transfer\" violates check constraint \"chk_transfer_status_values\"",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 6,
+    "requestId": 4,
+    "plannedDepartureDate": "2026-04-08T08:00:00Z",
+    "actualDepartureDate": null,
+    "plannedArrivalDate": "2026-04-09T08:00:00Z",
+    "actualArrivalDate": null,
+    "status": "PENDING_DEPARTURE",
+    "departureApprovedBy": null,
+    "arrivalApprovedBy": null,
+    "rationsForTrip": "900.00",
+    "receptionNotes": "travel-created-transfer",
+    "createdAt": "2026-04-05T21:08:33.653Z",
+    "updatedAt": "2026-04-05T21:08:33.653Z"
+  },
+  "message": "Transfer created successfully"
 }
- |
-| 2.12 | POST | /api/transfers | TRAVEL_MANAGER | 201 Created / 200 OK |HTTP/1.1 400 Bad Request
-X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJhYTM1MmU1NS01MmM0LTQ3NzItYTA4Zi1iM2NkZDNlZGRkMzciLCJpYXQiOjE3NzU0MTk2NjQsImV4cCI6MTc3NTQyMDg2NH0.oOso0XrbZQm8mRdE-ZK44BFC6xImsqVyOrtL863IwkA
-Content-Type: application/json; charset=utf-8
-Content-Length: 143
-ETag: W/"8f-dZpJjLWuXxBVsh0u55UCIzkIrwo"
-Date: Sun, 05 Apr 2026 20:07:44 GMT
-Connection: close
 
-{
-  "message": "new row for relation \"transfer\" violates check constraint \"chk_transfer_status_values\"",
-  "error": "Bad Request",
-  "statusCode": 400
-}
  |
 | 2.13 | POST | /api/transfers | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -643,35 +666,65 @@ Connection: close
   "statusCode": 403
 }
  |
-| 2.16 | PUT | /api/transfers/1 | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 400 Bad Request
+| 2.16 | PUT | /api/transfers/1 | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjRlZjQ5ZmM3LWUyNGYtNDIyNy05ZmU1LWZlOGI1ZmY3ZWFmOCIsImlhdCI6MTc3NTQxOTY5MywiZXhwIjoxNzc1NDIwODkzfQ.r5khgzo_6VerapVXum_FyH-m1LrsK_lFx0gbophqlY0
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImM5YWRlM2QwLTQxZmEtNDViZC05MmVkLWY4ZDQwNDBjZDRkNCIsImlhdCI6MTc3NTQyNDgxNywiZXhwIjoxNzc1NDI2MDE3fQ.7wsZdQa_31zBmRy4i-_I5td85BZ3rYjVJcv6-qZa3zs
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:08:13 GMT
+Content-Length: 461
+ETag: W/"1cd-4BB+qCC7zTvhtosnAzAJs45/ED8"
+Date: Sun, 05 Apr 2026 21:33:37 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 5,
+    "requestId": 3,
+    "plannedDepartureDate": "2026-04-06T08:00:00.000Z",
+    "actualDepartureDate": null,
+    "plannedArrivalDate": "2026-04-07T08:00:00.000Z",
+    "actualArrivalDate": null,
+    "status": "COMPLETED",
+    "departureApprovedBy": null,
+    "arrivalApprovedBy": null,
+    "rationsForTrip": "1000.00",
+    "receptionNotes": "resource-created-transfer",
+    "createdAt": "2026-04-05T21:08:18.211Z",
+    "updatedAt": "2026-04-05T21:33:36.833Z"
+  },
+  "message": "Transfer updated successfully"
 }
+
  |
-| 2.17 | PUT | /api/transfers/1 | TRAVEL_MANAGER | 200 OK |HTTP/1.1 400 Bad Request
+| 2.17 | PUT | /api/transfers/1 | TRAVEL_MANAGER | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI5OGRlYjI5MC1lYmRjLTRlNGItYWU4NC1mMGFiZDk0ODQ1NTIiLCJpYXQiOjE3NzU0MTk3MDEsImV4cCI6MTc3NTQyMDkwMX0.W82bIlP4O--f7ZnB6UBQpFuccJG8MJYj5y99cWgftuA
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0OTFkN2UxMS01ZWQxLTRlYmYtYmI5ZS00NjgzOGE5YmE5YjkiLCJpYXQiOjE3NzU0MjQ4MzEsImV4cCI6MTc3NTQyNjAzMX0.yPvTwJV8lUYm11r6NzXUueIiupMHBDFWbFsMYxobH1E
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:08:21 GMT
+Content-Length: 457
+ETag: W/"1c9-mS7NQSTrxAVT7/brSWNeenUOGOg"
+Date: Sun, 05 Apr 2026 21:33:51 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 6,
+    "requestId": 4,
+    "plannedDepartureDate": "2026-04-08T08:00:00.000Z",
+    "actualDepartureDate": null,
+    "plannedArrivalDate": "2026-04-09T08:00:00.000Z",
+    "actualArrivalDate": null,
+    "status": "CANCELED",
+    "departureApprovedBy": null,
+    "arrivalApprovedBy": null,
+    "rationsForTrip": "900.00",
+    "receptionNotes": "travel-created-transfer",
+    "createdAt": "2026-04-05T21:08:33.653Z",
+    "updatedAt": "2026-04-05T21:33:51.556Z"
+  },
+  "message": "Transfer updated successfully"
 }
+
  |
 | 2.18 | PUT | /api/transfers/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -718,13 +771,13 @@ Connection: close
   "statusCode": 403
 }
  |
-| 2.21 | DELETE | /api/transfers/1 | SYSTEM_ADMIN | 403 Forbidden | HTTP/1.1 403 Forbidden
+| 2.21 | DELETE | /api/transfers/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiMTJjZGQyMDAtYjc3Ni00NjIyLWI4OWYtNTNmYjlkYWE5NzE1IiwiaWF0IjoxNzc1NDE5NzI2LCJleHAiOjE3NzU0MjA5MjZ9.yaNR8cgt5k7VAtb2vxMf-Ajwp2eKCkKDEMpoBbUmwSU
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiMDg4ZWE1MzUtYzNhOC00OGU1LTkxMWYtYTg3NDRmNGExMDU1IiwiaWF0IjoxNzc1NDI0ODQ3LCJleHAiOjE3NzU0MjYwNDd9.Jt1BC2oUKSh_paQfnMd9K2aDVCdAVYljQ3WufoHR0Bg
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:08:46 GMT
+Date: Sun, 05 Apr 2026 21:34:07 GMT
 Connection: close
 
 {
@@ -732,6 +785,7 @@ Connection: close
   "error": "Forbidden",
   "statusCode": 403
 }
+
 |
 | 2.22 | DELETE | /api/transfers/1 | RESOURCE_MANAGEMENT | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -804,63 +858,75 @@ Connection: close
 | 3.5 | POST | /api/auth/login | VISITOR | 200 OK | |
 | 3.6 | GET | /api/delivered-transfer-resources | SYSTEM_ADMIN | 200 OK | HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiYjUxZGUwZTYtYWIyMS00MThmLWI3NWEtNDgyN2IyODE2ZGY3IiwiaWF0IjoxNzc1NDE5ODA1LCJleHAiOjE3NzU0MjEwMDV9.XCK0GdMca6bWL2DiZCJ81EAcBHryoqmnTUZCzLjcqDk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiM2VhYzNiZjktYWQ0MS00ZjFjLWE0MTUtZjA2NGU4ZTIyNmZiIiwiaWF0IjoxNzc1NDI0OTMyLCJleHAiOjE3NzU0MjYxMzJ9.AjCrjyv6kigEChruBPikulomUS4l0zuDR7iXGOYo4Tk
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:10:05 GMT
+Content-Length: 188
+ETag: W/"bc-yDTYP8ySjAQWQYtOzOBBivR4tGM"
+Date: Sun, 05 Apr 2026 21:35:32 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "resourceTypeId": 1,
+    "sentAmount": "1000.00",
+    "receivedAmount": "980.00",
+    "recordedBy": 3,
+    "recordDate": "2026-04-05T13:00:00.000Z",
+    "movementId": null
   }
 }
+
 |
 | 3.7 | GET | /api/delivered-transfer-resources | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjhmZmY5NWY1LWQxOTMtNGUyYS1hMjA1LTJiNDIxY2U4MTQ0MSIsImlhdCI6MTc3NTQxOTgxMiwiZXhwIjoxNzc1NDIxMDEyfQ._1a5nK8pf7_A7afN0btAvTfZC3jcoJiONylVmKHrzsQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImU1YWFkZTJhLTI5M2QtNDY2OS05MzZkLWQzNjA4OWYwMDFhZCIsImlhdCI6MTc3NTQyNDk0MywiZXhwIjoxNzc1NDI2MTQzfQ.MgKxsb2GL5ToGtBRgEcCSafwK9ceoZFwz_QzfN5u1Es
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:10:12 GMT
+Content-Length: 187
+ETag: W/"bb-+I/LrYi6KnMsHtLDDSE0TfRHxu8"
+Date: Sun, 05 Apr 2026 21:35:43 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 2,
+    "transferId": 6,
+    "resourceTypeId": 1,
+    "sentAmount": "900.00",
+    "receivedAmount": "890.00",
+    "recordedBy": 4,
+    "recordDate": "2026-04-05T13:10:00.000Z",
+    "movementId": null
   }
 }
+
  |
 | 3.8 | GET | /api/delivered-transfer-resources | TRAVEL_MANAGER | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJmYjE1NThjZS03NmI5LTRiNzUtOGQwYS03YmEyMjQxNDNlZmQiLCJpYXQiOjE3NzU0MTk4MTgsImV4cCI6MTc3NTQyMTAxOH0.SFTjEG5lxtPHw4WXBIPdOBdSzgyF1CX4N3-jZMRO9SE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI1ZmQxY2Y3MS1mMTY3LTQyM2QtOGVmOS0yZjI4ZjExZTQyZDEiLCJpYXQiOjE3NzU0MjQ5NTgsImV4cCI6MTc3NTQyNjE1OH0.gl6FMgA-ILVIF8nJ83SXABtgaN2wer1_NR4mtexIMkk
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:10:18 GMT
+Content-Length: 188
+ETag: W/"bc-yDTYP8ySjAQWQYtOzOBBivR4tGM"
+Date: Sun, 05 Apr 2026 21:35:58 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "resourceTypeId": 1,
+    "sentAmount": "1000.00",
+    "receivedAmount": "980.00",
+    "recordedBy": 3,
+    "recordDate": "2026-04-05T13:00:00.000Z",
+    "movementId": null
   }
 }
+
  |
 | 3.9 | GET | /api/delivered-transfer-resources | WORKER | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -892,35 +958,55 @@ Connection: close
   "statusCode": 403
 }
  |
-| 3.11 | POST | /api/delivered-transfer-resources | RESOURCE_MANAGEMENT | 201 Created / 200 OK | HTTP/1.1 400 Bad Request
+| 3.11 | POST | /api/delivered-transfer-resources | RESOURCE_MANAGEMENT | 201 Created / 200 OK | HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjFhYTI2NGM1LTU2MjYtNDRlZC1hYzllLTMxYzVlOWYzMDAxMSIsImlhdCI6MTc3NTQxOTg0NCwiZXhwIjoxNzc1NDIxMDQ0fQ.XjfTfMG8BfnXumYF4yJfYQUz_cCFMYRWKDxKsEAdb0k
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6Ijg0ZDBkNmJmLTI1YjMtNDljMS04OGZiLWI0YzUzNzk2YWY3MiIsImlhdCI6MTc3NTQyMzYwMSwiZXhwIjoxNzc1NDI0ODAxfQ.Cb_PEc5iu02FF-UIDtuAfKkigklAU_SZPx_N7KtngBA
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:10:44 GMT
+Content-Length: 243
+ETag: W/"f3-rOhBMvn49G9f+CBKpVzI6D7AAHU"
+Date: Sun, 05 Apr 2026 21:13:22 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "resourceTypeId": 1,
+    "sentAmount": "1000",
+    "receivedAmount": "980",
+    "recordedBy": 3,
+    "recordDate": "2026-04-05T13:00:00.000Z",
+    "movementId": null
+  },
+  "message": "Delivered transfer resource created successfully"
 }
+
 |
-| 3.12 | POST | /api/delivered-transfer-resources | TRAVEL_MANAGER | 201 Created / 200 OK | HTTP/1.1 400 Bad Request
+| 3.12 | POST | /api/delivered-transfer-resources | TRAVEL_MANAGER | 201 Created / 200 OK | HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIwMjM4YjdiMi1lOTU1LTQ2NWYtYmYxZS05NGFhZGUxOGVjMmQiLCJpYXQiOjE3NzU0MTk4NTIsImV4cCI6MTc3NTQyMTA1Mn0.IalY_JcC15KeSVQdTCBFaajSxSwLbciF7eR14jHPJOg
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIxNzc1YWIzNy01ZTVkLTRmYTktYTk2MC1iOTYxY2RhMzlmNjAiLCJpYXQiOjE3NzU0MjM2MjIsImV4cCI6MTc3NTQyNDgyMn0.J0TrZNhLSN02d9aoihlFohJnoMcC75rPfUijGv0Tyn4
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:10:52 GMT
+Content-Length: 242
+ETag: W/"f2-ojN7MEcWnqZ4fgwqgEYLyAOtqn0"
+Date: Sun, 05 Apr 2026 21:13:42 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 2,
+    "transferId": 6,
+    "resourceTypeId": 1,
+    "sentAmount": "900",
+    "receivedAmount": "890",
+    "recordedBy": 4,
+    "recordDate": "2026-04-05T13:10:00.000Z",
+    "movementId": null
+  },
+  "message": "Delivered transfer resource created successfully"
 }
+
 |
 | 3.13 | POST | /api/delivered-transfer-resources | SYSTEM_ADMIN | 403 Forbidden | HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -967,20 +1053,30 @@ Connection: close
   "statusCode": 403
 }
 |
-| 3.16 | PUT | /api/delivered-transfer-resources/1 | RESOURCE_MANAGEMENT | 200 OK | HTTP/1.1 400 Bad Request
+| 3.16 | PUT | /api/delivered-transfer-resources/1 | RESOURCE_MANAGEMENT | 200 OK | HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjY1ZDc1ODExLWNiNTQtNDRmYi1hNDdlLWYyZDNlN2I0N2NkMSIsImlhdCI6MTc3NTQxOTg4NywiZXhwIjoxNzc1NDIxMDg3fQ.UxEfNd6r12alvGpE3dnRVY7T1tfAGaKtOekQB7uAjp8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjA4ODFkMjIwLTYxMjUtNDEzMi1iMzZhLWZiZjA5OTY2MzZjYiIsImlhdCI6MTc3NTQyNDk3OSwiZXhwIjoxNzc1NDI2MTc5fQ.p_OIn2LIvBg60srH2kWEeELYpvBIs1n5_XOMx3uvDiU
 Content-Type: application/json; charset=utf-8
-Content-Length: 90
-ETag: W/"5a-bHDcJ2jjk3tPMn/5tBTTE9vxFkw"
-Date: Sun, 05 Apr 2026 20:11:27 GMT
+Content-Length: 246
+ETag: W/"f6-+2qANOr98Rc+6cJ3R9lIoJYZoKU"
+Date: Sun, 05 Apr 2026 21:36:19 GMT
 Connection: close
 
 {
-  "message": "Delivered transfer resource not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "resourceTypeId": 1,
+    "sentAmount": "1000.00",
+    "receivedAmount": "995",
+    "recordedBy": 3,
+    "recordDate": "2026-04-05T13:00:00.000Z",
+    "movementId": null
+  },
+  "message": "Delivered transfer resource updated successfully"
 }
+
 |
 | 3.17 | PUT | /api/delivered-transfer-resources/1 | TRAVEL_MANAGER | 200 OK |HTTP/1.1 400 Bad Request
 X-Powered-By: Express
@@ -1044,11 +1140,11 @@ Connection: close
  |
 | 3.21 | DELETE | /api/delivered-transfer-resources/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiYWRjZjBlNzEtNDhiNi00YTEzLTk3MzQtMTJkZDU0ZjMzMzhlIiwiaWF0IjoxNzc1NDE5OTIxLCJleHAiOjE3NzU0MjExMjF9.V5PGho_9yLNDH-fy27pK8DX73FTkEMJ9LN9_1aQLE7o
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiYWY0MmJlYmEtOWU0ZS00MTdhLWFjZjItMzc0NDdkYTQ1YzEyIiwiaWF0IjoxNzc1NDI1MDAxLCJleHAiOjE3NzU0MjYyMDF9.qNMhuA7uVD79cnclJOrERzKAVzyaDFuEFiuGDzHOTO8
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:12:01 GMT
+Date: Sun, 05 Apr 2026 21:36:41 GMT
 Connection: close
 
 {
@@ -1056,6 +1152,7 @@ Connection: close
   "error": "Forbidden",
   "statusCode": 403
 }
+
  |
 | 3.22 | DELETE | /api/delivered-transfer-resources/1 | RESOURCE_MANAGEMENT | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -1128,63 +1225,72 @@ Connection: close
 | 4.5 | POST | /api/auth/login | VISITOR | 200 OK | |
 | 4.6 | GET | /api/transfer-history | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiMDM1MzdhY2YtZjMxYy00ZWYyLTliZWQtOGI1MWM3ZjMyMGFkIiwiaWF0IjoxNzc1NDIwMDE1LCJleHAiOjE3NzU0MjEyMTV9.NDy8HiMyPEtW7JDiFwqJi5EOl9-QwBoaSmzNa7AflWI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiY2JlMDQ4MTUtNmY3MS00OTYyLWJlMDAtODViNWExMmExODNjIiwiaWF0IjoxNzc1NDI1MDU1LCJleHAiOjE3NzU0MjYyNTV9.c1-_tqXyRePWIHT2n0obQI2bUxUdBTKFi44BQxA0ys0
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:13:35 GMT
+Content-Length: 181
+ETag: W/"b5-uUpkXRAUBhPtN/VBTNkC5VNlubg"
+Date: Sun, 05 Apr 2026 21:37:35 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "previousStatus": "PENDING_DEPARTURE",
+    "newStatus": "COMPLETED",
+    "date": "2026-04-05T14:00:00.000Z",
+    "userId": 3,
+    "comment": "resource update"
   }
 }
+
  |
 | 4.7 | GET | /api/transfer-history | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6Ijc5YTdmY2VjLTQ3OWQtNDJiMy04MzMwLWZkZmFjMGFhYjg3MyIsImlhdCI6MTc3NTQyMDAyMiwiZXhwIjoxNzc1NDIxMjIyfQ.jDvoOCAWdn5eezWNLqpd_qya_0HJ7WSKaPAxPuwS0ls
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjNjM2FhMWUxLWJiZTAtNDZjMC1iZjMwLTZjODRjZTY5YzRkMyIsImlhdCI6MTc3NTQyNTA2NywiZXhwIjoxNzc1NDI2MjY3fQ.JRLdr8HNWbfLRiHekg59GUi_GzNatcFRFuQz7IyXzNw
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:13:42 GMT
+Content-Length: 179
+ETag: W/"b3-QvRaW36ISMghrVSGGVbt3emqzVw"
+Date: Sun, 05 Apr 2026 21:37:47 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 2,
+    "transferId": 6,
+    "previousStatus": "PENDING_DEPARTURE",
+    "newStatus": "COMPLETED",
+    "date": "2026-04-05T14:10:00.000Z",
+    "userId": 4,
+    "comment": "travel update"
   }
 }
+
  |
 | 4.8 | GET | /api/transfer-history | TRAVEL_MANAGER | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI5OTY4ZWEzYS0zNGFiLTQ1MWMtODdkYy0wZmY4ZmRmNzRjZjUiLCJpYXQiOjE3NzU0MjAwMjgsImV4cCI6MTc3NTQyMTIyOH0.Hf3GTXaQqPS-rgT8oke-rJ52CbL_yTiwOwvXH0HQ_nY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0MzMwZTBmZC00NjBiLTQ1OGYtOTY2Ny1lZjkyZGRlMTM0OWMiLCJpYXQiOjE3NzU0MjUwNzcsImV4cCI6MTc3NTQyNjI3N30.Oko6ecfHPlb1Nt9vrD4Y-0sBM567HyQz6jzPxsdV1Ys
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:13:48 GMT
+Content-Length: 181
+ETag: W/"b5-uUpkXRAUBhPtN/VBTNkC5VNlubg"
+Date: Sun, 05 Apr 2026 21:37:57 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "previousStatus": "PENDING_DEPARTURE",
+    "newStatus": "COMPLETED",
+    "date": "2026-04-05T14:00:00.000Z",
+    "userId": 3,
+    "comment": "resource update"
   }
 }
+
  |
 | 4.9 | GET | /api/transfer-history | WORKER | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -1216,35 +1322,53 @@ Connection: close
   "statusCode": 403
 }
  |
-| 4.11 | POST | /api/transfer-history | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 400 Bad Request
+| 4.11 | POST | /api/transfer-history | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjA2ZDJmMzhlLTBjZWMtNDk3OS1hM2ZjLTlmZDQxNmU5NDFhZCIsImlhdCI6MTc3NTQyMDA0OCwiZXhwIjoxNzc1NDIxMjQ4fQ.R03v-P9-013XMl14DAdlaBsMtg4EFwmkIGGUGg8srI4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjlkMzE3NDk5LWMxNGQtNDAyZi1hZWRiLTYxNTUzOWJiZDdkNyIsImlhdCI6MTc3NTQyMzY5NCwiZXhwIjoxNzc1NDI0ODk0fQ.lOP2DsYJuv5qtf_7wTZmLR4z3zgTHjmAojpsenjqhQo
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:14:08 GMT
+Content-Length: 237
+ETag: W/"ed-1h/14DpJ6qrz8L4XRxMm2ktiEBQ"
+Date: Sun, 05 Apr 2026 21:14:54 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "previousStatus": "PENDING_DEPARTURE",
+    "newStatus": "COMPLETED",
+    "date": "2026-04-05T14:00:00.000Z",
+    "userId": 3,
+    "comment": "resource update"
+  },
+  "message": "Transfer history entry created successfully"
 }
+
  |
-| 4.12 | POST | /api/transfer-history | TRAVEL_MANAGER | 201 Created / 200 OK |HTTP/1.1 400 Bad Request
+| 4.12 | POST | /api/transfer-history | TRAVEL_MANAGER | 201 Created / 200 OK |HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJiOTdkMzRiNi0yY2ZlLTQxN2YtOGY0OC03ZGFhZjMxNTI3NmYiLCJpYXQiOjE3NzU0MjAwNTUsImV4cCI6MTc3NTQyMTI1NX0.8QLT7WJrko-liIQauGoys1WYhXYJcKLl0CXIKUWZK1k
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI3YmIxZWY0Yi0xNWU2LTRiOGEtYWY5Zi04MDQ4MTY1ZmNmYjkiLCJpYXQiOjE3NzU0MjM3MjAsImV4cCI6MTc3NTQyNDkyMH0.QREdwQVbgyWXOT6IY4zlWDJhzO-2qycIMvCRhi6M0U8
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:14:15 GMT
+Content-Length: 235
+ETag: W/"eb-nrQFcCus+oeaSYEsGwtSaVDAMYM"
+Date: Sun, 05 Apr 2026 21:15:20 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 2,
+    "transferId": 6,
+    "previousStatus": "PENDING_DEPARTURE",
+    "newStatus": "COMPLETED",
+    "date": "2026-04-05T14:10:00.000Z",
+    "userId": 4,
+    "comment": "travel update"
+  },
+  "message": "Transfer history entry created successfully"
 }
+
  |
 | 4.13 | POST | /api/transfer-history | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -1291,20 +1415,29 @@ Connection: close
   "statusCode": 403
 }
  |
-| 4.16 | PUT | /api/transfer-history/1 | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 400 Bad Request
+| 4.16 | PUT | /api/transfer-history/1 | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjI5NjBhMjY1LTdhZDYtNGI2My1hMThmLTBlMDM0M2E2MGE2NCIsImlhdCI6MTc3NTQyMDA4MywiZXhwIjoxNzc1NDIxMjgzfQ.Ql6BEuG9Pb06EaSKJIwYYfib2ZTX_RkN-sVk_osEu30
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImVlODM4MjNhLTAwMzMtNDMzNC1hYThkLTgwNTFiMTBhNTBmNSIsImlhdCI6MTc3NTQyNTA5MywiZXhwIjoxNzc1NDI2MjkzfQ.r1WKPJNCiHTnFMoACZ-u8B6IhQvWyf49HKqKH9pYqOc
 Content-Type: application/json; charset=utf-8
-Content-Length: 85
-ETag: W/"55-gj5YL8abhzmkKD01VPZFXL6kVfo"
-Date: Sun, 05 Apr 2026 20:14:43 GMT
+Content-Length: 248
+ETag: W/"f8-JonGW9EcrFNTEHqf4hrSbj753oI"
+Date: Sun, 05 Apr 2026 21:38:13 GMT
 Connection: close
 
 {
-  "message": "Transfer history entry not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "previousStatus": "PENDING_DEPARTURE",
+    "newStatus": "COMPLETED",
+    "date": "2026-04-05T14:00:00.000Z",
+    "userId": 3,
+    "comment": "resource corrected comment"
+  },
+  "message": "Transfer history entry updated successfully"
 }
+
  |
 | 4.17 | PUT | /api/transfer-history/1 | TRAVEL_MANAGER | 200 OK |HTTP/1.1 400 Bad Request
 X-Powered-By: Express
@@ -1368,11 +1501,11 @@ Connection: close
  |
 | 4.21 | DELETE | /api/transfer-history/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNzU4YTA1NzktMGU0My00NWI4LTgwYTctNmFmNmFkZDJhYjI2IiwiaWF0IjoxNzc1NDIwMTIyLCJleHAiOjE3NzU0MjEzMjJ9.1EXy7NtTiwQ5Y8cA7WGR5eoK1UKXV73Em5I4ivK7f-U
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiY2QzMTI2YjgtYzk0ZS00ODI0LTlkNmItMmE5NWVkZTgwMzNmIiwiaWF0IjoxNzc1NDI1MTE1LCJleHAiOjE3NzU0MjYzMTV9.WZI_AbuVlWz048bTbZX7IuX9I_K3EsGYXSgp2l0CAII
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
-Date: Sun, 05 Apr 2026 20:15:22 GMT
+Date: Sun, 05 Apr 2026 21:38:35 GMT
 Connection: close
 
 {
@@ -1380,6 +1513,7 @@ Connection: close
   "error": "Forbidden",
   "statusCode": 403
 }
+
  |
 | 4.22 | DELETE | /api/transfer-history/1 | RESOURCE_MANAGEMENT | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -1452,63 +1586,69 @@ Connection: close
 | 5.5 | POST | /api/auth/login | VISITOR | 200 OK | |
 | 5.6 | GET | /api/transfer-persons | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNDY2OGRkMmEtYWZhMi00M2FjLWExOGMtYmZjY2U5YjVjOTlhIiwiaWF0IjoxNzc1NDIwMTc4LCJleHAiOjE3NzU0MjEzNzh9.gk5yii1_K7UZvlXgdDdMDDCvBgHATA9J2m6W4XlvxeE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiMGJlZDM2MTQtODdjMy00MTA1LThlZDYtNGVmNTVlODYzMTkyIiwiaWF0IjoxNzc1NDI1MTY5LCJleHAiOjE3NzU0MjYzNjl9.sPYriJBRgRT-_wVg8OolsT9IrjTajdWGZYBD77lKbYw
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:16:18 GMT
+Content-Length: 121
+ETag: W/"79-EABmF14SJ/BgMH35+3gODPpQFC8"
+Date: Sun, 05 Apr 2026 21:39:29 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "personId": 1,
+    "status": "CONFIRMED",
+    "departureDate": null,
+    "arrivalDate": null
   }
 }
+
  |
 | 5.7 | GET | /api/transfer-persons | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjBjMmI0MWQzLWU3NWUtNGUyNC1iYjExLWRkMmIyN2ZiYmI5YSIsImlhdCI6MTc3NTQyMDE4NywiZXhwIjoxNzc1NDIxMzg3fQ.t_50QLTjR3qNQLN0aQz6ZCQrMaYMYrd3cm6ATlJklQA
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjMyNzhjODYwLWNiMDEtNDFjOC1hMDBlLTQ0NmU2ZjA0ZWFiZiIsImlhdCI6MTc3NTQyNTE4MiwiZXhwIjoxNzc1NDI2MzgyfQ.67IKieVj7Q9vHM8kiaDJUUnHNX62iebn5BVpPg8BZuI
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:16:27 GMT
+Content-Length: 121
+ETag: W/"79-1oJN8IGQyCTscrnMwsUMRLh2ADA"
+Date: Sun, 05 Apr 2026 21:39:42 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 2,
+    "transferId": 6,
+    "personId": 2,
+    "status": "CONFIRMED",
+    "departureDate": null,
+    "arrivalDate": null
   }
 }
+
  |
 | 5.8 | GET | /api/transfer-persons | TRAVEL_MANAGER | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIwZTFlNjU5Zi01MzA2LTQyMmQtYjU0OC0wZWY2YTFmMTdhNWUiLCJpYXQiOjE3NzU0MjAxOTMsImV4cCI6MTc3NTQyMTM5M30.7fLZijGbso7PZ6hfT4fu4eyllpgNv9sTZUUoPI5Aaxs
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJiY2UwNmZlMi02ZmM0LTQ1ZGEtYTE4Yy1hNjVmNDkwNDFhOGEiLCJpYXQiOjE3NzU0MjUxOTQsImV4cCI6MTc3NTQyNjM5NH0.ewOLclnA8f-B243EAwOE20DWf9L_U0kfD_2ngzYb5Ps
 Content-Type: application/json; charset=utf-8
-Content-Length: 81
-ETag: W/"51-djTSw5YAj5hIxxMcRJk5k+iTBdw"
-Date: Sun, 05 Apr 2026 20:16:33 GMT
+Content-Length: 121
+ETag: W/"79-EABmF14SJ/BgMH35+3gODPpQFC8"
+Date: Sun, 05 Apr 2026 21:39:54 GMT
 Connection: close
 
 {
   "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 0,
-    "pages": 0
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "personId": 1,
+    "status": "CONFIRMED",
+    "departureDate": null,
+    "arrivalDate": null
   }
 }
+
  |
 | 5.9 | GET | /api/transfer-persons | WORKER | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -1540,35 +1680,51 @@ Connection: close
   "statusCode": 403
 }
 |
-| 5.11 | POST | /api/transfer-persons | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 400 Bad Request
+| 5.11 | POST | /api/transfer-persons | RESOURCE_MANAGEMENT | 201 Created / 200 OK |HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjRmZjhmZGQwLWM3YzUtNDU4MC04YjUzLWY2NGM4YzAzZDhiYiIsImlhdCI6MTc3NTQyMDIxMCwiZXhwIjoxNzc1NDIxNDEwfQ.5DP5IVw8Ygq-3AUx3LhplJeRbvnIWLbm9qezfEbErgc
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImEzMjk0Y2M1LTM5NzgtNGRlMC1iNDk2LWM3NzhkYTg0NTdhNyIsImlhdCI6MTc3NTQyMzc4OCwiZXhwIjoxNzc1NDI0OTg4fQ.Kv_dlcCN3eipZ3Oqt1drtplsDy1yENe_kUCu9mxvwcM
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:16:50 GMT
+Content-Length: 170
+ETag: W/"aa-LQxYGwOW6E0Ewv1/JsZZvtSpY3Y"
+Date: Sun, 05 Apr 2026 21:16:28 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "personId": 1,
+    "status": "CONFIRMED",
+    "departureDate": null,
+    "arrivalDate": null
+  },
+  "message": "Transfer person created successfully"
 }
+
  |
-| 5.12 | POST | /api/transfer-persons | TRAVEL_MANAGER | 201 Created / 200 OK | HTTP/1.1 400 Bad Request
+| 5.12 | POST | /api/transfer-persons | TRAVEL_MANAGER | 201 Created / 200 OK | HTTP/1.1 201 Created
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI5ZjllYjkyYS05YzJjLTQ0ZjMtYjRlNi1mZjY4Y2FmMGUzNDgiLCJpYXQiOjE3NzU0MjAyMTcsImV4cCI6MTc3NTQyMTQxN30.j-LdHwC5ZxltIi6TjpJCzn_v_19tYHY05zTo_6q8PBw
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJkNDNlYjRjNS04ODhjLTRlMTQtYTZiNy1hYmY5YjNhYzQ0YzkiLCJpYXQiOjE3NzU0MjM4MDcsImV4cCI6MTc3NTQyNTAwN30.SHDfbpUh-1h8yuJzDrMp-W8XTGbitMVYR_KMnUH_9uY
 Content-Type: application/json; charset=utf-8
-Content-Length: 71
-ETag: W/"47-C63h4X3JwF6fA/8Po7naB2rYraA"
-Date: Sun, 05 Apr 2026 20:16:57 GMT
+Content-Length: 170
+ETag: W/"aa-ZoqWlgVdxHRuc8SFCpz+hpQX19E"
+Date: Sun, 05 Apr 2026 21:16:47 GMT
 Connection: close
 
 {
-  "message": "Transfer not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 2,
+    "transferId": 6,
+    "personId": 2,
+    "status": "CONFIRMED",
+    "departureDate": null,
+    "arrivalDate": null
+  },
+  "message": "Transfer person created successfully"
 }
+
 |
 | 5.13 | POST | /api/transfer-persons | SYSTEM_ADMIN | 403 Forbidden | HTTP/1.1 403 Forbidden
 X-Powered-By: Express
@@ -1615,20 +1771,28 @@ Connection: close
   "statusCode": 403
 }
  |
-| 5.16 | PUT | /api/transfer-persons/1 | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 400 Bad Request
+| 5.16 | PUT | /api/transfer-persons/1 | RESOURCE_MANAGEMENT | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjY5OGRjYTljLWUyZjQtNDY4Ni1iY2M4LWRjMDhlOWRiZGJhOSIsImlhdCI6MTc3NTQyMDI1NCwiZXhwIjoxNzc1NDIxNDU0fQ.iNWv9zMaHnhUk4A5lQ7x6UkMyyuARu0FOACJlRHMo-k
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjJjZjAwOTQyLTM2MmYtNDExNS1iZjBlLTM5YzkzOTU1ZWM1MSIsImlhdCI6MTc3NTQyNTIwOCwiZXhwIjoxNzc1NDI2NDA4fQ.XxrvhA4phVwNtPVElqxpeFw8tXm9zmg8VQTBcX6u9lU
 Content-Type: application/json; charset=utf-8
-Content-Length: 78
-ETag: W/"4e-+W5BvdfgJWpBS135qmDPDCh3Azc"
-Date: Sun, 05 Apr 2026 20:17:34 GMT
+Content-Length: 170
+ETag: W/"aa-0dm2pgCqRsdIpelHGLRZRQWogbE"
+Date: Sun, 05 Apr 2026 21:40:08 GMT
 Connection: close
 
 {
-  "message": "Transfer person not found",
-  "error": "Bad Request",
-  "statusCode": 400
+  "success": true,
+  "data": {
+    "id": 1,
+    "transferId": 5,
+    "personId": 1,
+    "status": "DELIVERED",
+    "departureDate": null,
+    "arrivalDate": null
+  },
+  "message": "Transfer person updated successfully"
 }
+
  |
 | 5.17 | PUT | /api/transfer-persons/1 | TRAVEL_MANAGER | 200 OK |HTTP/1.1 400 Bad Request
 X-Powered-By: Express
@@ -1690,19 +1854,21 @@ Connection: close
   "statusCode": 403
 }
  |
-| 5.21 | DELETE | /api/transfer-persons/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 401 Unauthorized
+| 5.21 | DELETE | /api/transfer-persons/1 | SYSTEM_ADMIN | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZjY4ZDY2MTYtNDAwMi00MDUxLWI4NzItZGI3ZWM3ZTllYTBkIiwiaWF0IjoxNzc1NDI1MjMwLCJleHAiOjE3NzU0MjY0MzB9.BAZz-yR7fnmNFvKwsiUdotBzooPksf17-daTj_CTTUE
 Content-Type: application/json; charset=utf-8
-Content-Length: 69
-ETag: W/"45-B1Q3SBt1ZeaNvigPSVYs7wqtkGY"
-Date: Sun, 05 Apr 2026 20:18:07 GMT
+Content-Length: 66
+ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
+Date: Sun, 05 Apr 2026 21:40:30 GMT
 Connection: close
 
 {
-  "message": "Token inválido",
-  "error": "Unauthorized",
-  "statusCode": 401
+  "message": "Acceso denegado",
+  "error": "Forbidden",
+  "statusCode": 403
 }
+
  |
 | 5.22 | DELETE | /api/transfer-persons/1 | RESOURCE_MANAGEMENT | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
