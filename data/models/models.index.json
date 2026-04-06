@@ -1,31 +1,31 @@
 [
   {
     "id": 1,
-    "modelName": "occupation-v1",
+    "modelName": "admission-acceptance-v1",
     "featureNames": [
-      "age",
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
       "experience_years",
-      "health_score"
+      "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/occupation-v1-1774167910898.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1775439507336.json",
     "trainingMetrics": {
-      "sampleCount": 10,
-      "featureCount": 3,
-      "trainAccuracy": 1,
+      "sampleCount": 20,
+      "featureCount": 5,
+      "trainAccuracy": 0.95,
       "labelDistribution": {
-        "VOLUNTEER": 3,
-        "LEADER": 3,
-        "WORKER": 4
+        "ACCEPT": 10,
+        "REJECT": 10
       },
       "labelClasses": [
-        "VOLUNTEER",
-        "LEADER",
-        "WORKER"
+        "ACCEPT",
+        "REJECT"
       ]
     },
     "isActive": true,
-    "createdAt": "2026-03-22T08:25:10.899Z",
-    "updatedAt": "2026-03-22T08:25:10.899Z"
+    "createdAt": "2026-04-06T01:38:27.338Z",
+    "updatedAt": "2026-04-06T01:38:27.338Z"
   }
 ]

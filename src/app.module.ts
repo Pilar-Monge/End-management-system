@@ -35,6 +35,7 @@ import { TransferHistoryModule } from './modules/transferHistory/transferHistory
 import { TransferPersonModule } from './modules/transferPerson/transferPerson.module';
 import { UserRoleHistoryModule } from './modules/userRoleHistory/userRoleHistory.module';
 import { UserModule } from './modules/systemUser/systemUser.module';
+import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { UserModule } from './modules/systemUser/systemUser.module';
     TransferPersonModule,
     DeliveredTransferResourceModule,
     NotificationModule,
+    DecisionTreeModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,13 +1,15 @@
 import 'reflect-metadata';
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppDataSource } from './data-source';
 import { runSeeder } from './seeds/seeder';
+import { DecisionTreeService } from './modules/decisionTree/decisionTree.service';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -40,11 +42,29 @@ async function bootstrap(): Promise<void> {
   }
 
   try {
+    await AppDataSource.runMigrations();
     await runSeeder(AppDataSource);
   } finally {
     if (AppDataSource.isInitialized) {
       await AppDataSource.destroy();
     }
+  }
+
+  try {
+    const decisionTreeService = app.get(DecisionTreeService);
+    const result = await decisionTreeService.trainFromFileIfMissingModel();
+
+    if (result.trained) {
+      logger.log(`AI model "${result.modelName}" trained automatically from train.json`);
+    } else {
+      logger.log(`AI model "${result.modelName}" already exists; skipping auto-training`);
+    }
+  } catch (error) {
+    logger.warn(
+      `Could not run AI auto-training on startup: ${
+        error instanceof Error ? error.message : 'unknown error'
+      }`,
+    );
   }
 
   const port = Number(process.env.PORT) || 3000;
