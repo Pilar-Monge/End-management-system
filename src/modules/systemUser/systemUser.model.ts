@@ -6,6 +6,14 @@ export const SYSTEM_ROLE_VALUES = [
   'SYSTEM_ADMIN',
 ] as const;
 
+export const SystemRole = {
+  VISITOR: 'VISITOR',
+  WORKER: 'WORKER',
+  RESOURCE_MANAGEMENT: 'RESOURCE_MANAGEMENT',
+  TRAVEL_MANAGER: 'TRAVEL_MANAGER',
+  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
+} as const;
+
 export type SystemRole = (typeof SYSTEM_ROLE_VALUES)[number];
 
 export const USER_STATUS_VALUES = ['ACTIVE', 'BLOCKED', 'INACTIVE'] as const;

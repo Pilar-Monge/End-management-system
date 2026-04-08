@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -36,7 +37,6 @@ import { CampEntity } from './camp.entity';
 import { CreateCampDto, UpdateCampDto } from './dto';
 @Controller('camps')
 @ApiTags('Camp')
-@Roles('SYSTEM_ADMIN')
 export class CampController {
   constructor(private readonly service: CampService) {}
   @Post()
@@ -45,6 +45,9 @@ export class CampController {
   @ApiCreatedResponseData(CampEntity, { description: 'Camp created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateCampDTO) {
+    throw new ForbiddenException(
+      'Creating, updating, or deleting camps is strictly disabled via API endpoints for auditing and system integrity purposes. Use seeders instead.',
+    );
     try {
       const camp = await this.service.createCamp(body);
       return {
@@ -52,11 +55,15 @@ export class CampController {
         data: camp,
         message: 'Camp created successfully',
       };
-    } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating camp');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException((error as Error).message);
+      }
+      throw new BadRequestException('Error creating camp');
     }
   }
   @Get(':id')
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'Get Camp by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
   @ApiOkResponseData(CampEntity, { description: 'Camp found' })
@@ -74,6 +81,7 @@ export class CampController {
     return { success: true, data: camp };
   }
   @Get()
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'List Camp' })
   @ApiOkResponseList(CampEntity, { description: 'Camp list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -142,6 +150,9 @@ export class CampController {
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Camp not found' })
   async update(@Param('id') id: string, @Body() body: UpdateCampDTO) {
+    throw new ForbiddenException(
+      'Creating, updating, or deleting camps is strictly disabled via API endpoints for auditing and system integrity purposes',
+    );
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -156,8 +167,11 @@ export class CampController {
         data: camp,
         message: 'Camp updated successfully',
       };
-    } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error updating camp');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException((error as Error).message);
+      }
+      throw new BadRequestException('Error updating camp');
     }
   }
   @Delete(':id')
@@ -167,6 +181,9 @@ export class CampController {
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Camp not found' })
   async delete(@Param('id') id: string) {
+    throw new ForbiddenException(
+      'Creating, updating, or deleting camps is strictly disabled via API endpoints for auditing and system integrity purposes. Use seeders instead.',
+    );
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -177,8 +194,11 @@ export class CampController {
       if (!deleted) throw new NotFoundException('Camp not found');
 
       return { success: true, message: 'Camp deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error deleting camp');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException((error as Error).message);
+      }
+      throw new BadRequestException('Error deleting camp');
     }
   }
 }

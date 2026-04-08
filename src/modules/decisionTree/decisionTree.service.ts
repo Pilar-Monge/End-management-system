@@ -271,7 +271,12 @@ export class DecisionTreeService {
     return model;
   }
 
-  private async loadModelFromModel(model: DecisionTreeModel): Promise<{ loaded: { predict: (rows: number[][]) => number[]; root?: unknown }; payload: unknown | null }> {
+  private async loadModelFromModel(
+    model: DecisionTreeModel,
+  ): Promise<{
+    loaded: { predict: (rows: number[][]) => number[]; root?: unknown };
+    payload: unknown | null;
+  }> {
     let payload: unknown | null = null;
 
     if ((model as any).modelFilePath) {

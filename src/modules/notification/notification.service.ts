@@ -104,6 +104,12 @@ export class NotificationService {
     await assertEntityExists(this.dataSource, CampEntity, finalCampId, 'Camp');
     await this.validateUserCamp(finalCampId, finalUserId);
 
+    if (data.read === true) {
+      data.readDate = new Date();
+    } else if (data.read === false) {
+      data.readDate = null;
+    }
+
     return await this.repository.update(id, data);
   }
 

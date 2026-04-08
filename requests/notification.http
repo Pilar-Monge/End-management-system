@@ -1,0 +1,83 @@
+@baseUrl = http://localhost:3000
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiMjJhY2U5MmYtNTFjYy00NjhjLWFlYmUtYWNmMWM2MWMwYmM1IiwiaWF0IjoxNzc1NjM0MDk3LCJleHAiOjE3NzU2MzUyOTd9.MDhtz6-JIaAcXvkwE_7c6bJKTB1RrEMhfYt0rOdFOgE
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiOTFhOWRkN2EtMDFjYi00NzZiLWI2MDctMTkyMGJkZDBiYzBhIiwiaWF0IjoxNzc1NjM0MTE3LCJleHAiOjE3NzU2MzUzMTd9.Rf9dlmUuvnSKTN2gcwW8Vinq8At4eKFAt03bqNyAZ2Y
+@resourceToken =eeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjA3ZWNhZjQ1LWQwZDYtNGFiYy04MjczLWEzYjIwZGNiNWZjNSIsImlhdCI6MTc3NTYzNDEzMCwiZXhwIjoxNzc1NjM1MzMwfQ.pEKehIH8PX0t8A3nL1yc1Uuj9Af7njCwa9Ng7txHVGI
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI2YWVjMzg4OC0zMTc0LTRlYTktYTgwYi05MmMyZGM2ZDQyMWEiLCJpYXQiOjE3NzU2MzQxNDUsImV4cCI6MTc3NTYzNTM0NX0.ykGLA0KJvOE7v7WCbVdnup8S35OIuoxvyMiy02V5Ydw
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjNjNzExNmNjLWQyMzYtNDJkYy05NGFlLTVlZTA4M2NlYjJiMiIsImlhdCI6MTc3NTYzNDE1NywiZXhwIjoxNzc1NjM1MzU3fQ.X7-9QJBRbSvQIF2F0auHHorZlEsUNZRXbH_OmMmVBDI
+@notificationId = 5
+
+### SECTION 1: NOTIFICATIONS RBAC
+
+### 1. [SHOULD 201] POST: Admin creates a notification
+POST {{baseUrl}}/api/notifications
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "campId": 1,
+  "userId": null,
+  "targetRole": "WORKER",
+  "type": "INVENTORY_ALERT",
+  "title": "RBAC notification test",
+  "message": "Admin-created notification for RBAC validation",
+  "read": false,
+  "createdDate": "2026-04-06T00:00:00Z",
+  "readDate": null,
+  "sourceType": "RBAC_TEST",
+  "sourceId": null
+}
+
+###
+
+### 2. [SHOULD 403] POST: Worker attempts to create a notification
+POST {{baseUrl}}/api/notifications
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "campId": 1,
+  "userId": null,
+  "targetRole": "WORKER",
+  "type": "INVENTORY_ALERT",
+  "title": "RBAC forbidden test",
+  "message": "Worker create attempt should be forbidden",
+  "read": false,
+  "createdDate": "2026-04-06T00:00:00Z",
+  "readDate": null,
+  "sourceType": "RBAC_TEST",
+  "sourceId": null
+}
+
+###
+
+### 3. [SHOULD 200] GET: Worker gets all notifications
+GET {{baseUrl}}/api/notifications
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 4. [SHOULD 200] PUT: Worker marks their OWN notification as read
+PUT {{baseUrl}}/api/notifications/{{notificationId}}
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "read": true
+}
+
+###
+
+### 5. [SHOULD 403] PUT: Worker tries to mark someone ELSE'S notification as read
+PUT {{baseUrl}}/api/notifications/999999
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "read": true
+}
+
+###
+
+### 6. [SHOULD 403] DELETE: Admin tries to delete a notification
+DELETE {{baseUrl}}/api/notifications/{{notificationId}}
+Authorization: Bearer {{adminToken}}

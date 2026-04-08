@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { CreateDecisionTreeModelDTO, DecisionTreeModel, DecisionTreeTrainingMetrics } from './decisionTree.model';
+import type {
+  CreateDecisionTreeModelDTO,
+  DecisionTreeModel,
+  DecisionTreeTrainingMetrics,
+} from './decisionTree.model';
 import * as fs from 'fs/promises';
 import * as nodePath from 'path';
 

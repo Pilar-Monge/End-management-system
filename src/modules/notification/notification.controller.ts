@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpException,
   NotFoundException,
@@ -10,8 +11,9 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
-
+import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -21,12 +23,10 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-
 import {
   ApiCreatedResponseData,
   ApiOkResponseData,
   ApiOkResponseList,
-  ApiOkResponseMessage,
 } from '../../common/swagger/api-response.decorator';
 import { Roles } from '../../common/decorators';
 import { NotificationService } from './notification.service';
@@ -35,7 +35,7 @@ import type {
   NotificationType,
   UpdateNotificationDTO,
 } from './notification.model';
-import type { SystemRole } from '../systemUser/systemUser.model';
+import { SystemRole, type SystemRole as SystemRoleType } from '../systemUser/systemUser.model';
 import { NotificationEntity } from './notification.entity';
 import { CreateNotificationDto, UpdateNotificationDto } from './dto';
 
@@ -45,24 +45,16 @@ export class NotificationController {
   constructor(private readonly service: NotificationService) {}
 
   @Post()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
-  @ApiOperation({ summary: 'Create Notification' })
+  @Roles(SystemRole.SYSTEM_ADMIN, SystemRole.RESOURCE_MANAGEMENT, SystemRole.TRAVEL_MANAGER)
+  @ApiOperation({ summary: 'Create Notification manually' })
   @ApiBody({ type: CreateNotificationDto })
   @ApiCreatedResponseData(NotificationEntity, { description: 'Notification created' })
-  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async create(@Body() body: CreateNotificationDTO) {
     try {
       const notification = await this.service.createNotification(body);
-      return {
-        success: true,
-        data: notification,
-        message: 'Notification created successfully',
-      };
+      return { success: true, data: notification, message: 'Notification created successfully' };
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
+      if (error instanceof HttpException) throw error;
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating notification',
       );
@@ -70,98 +62,77 @@ export class NotificationController {
   }
 
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles(
+    SystemRole.SYSTEM_ADMIN,
+    SystemRole.WORKER,
+    SystemRole.RESOURCE_MANAGEMENT,
+    SystemRole.TRAVEL_MANAGER,
+    SystemRole.VISITOR,
+  )
   @ApiOperation({ summary: 'Get Notification by id' })
-  @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
-  @ApiOkResponseData(NotificationEntity, { description: 'Notification found' })
-  @ApiBadRequestResponse({ description: 'Invalid id' })
-  @ApiNotFoundResponse({ description: 'Notification not found' })
-  async getById(@Param('id') id: string) {
+  @ApiParam({ name: 'id', type: Number })
+  @ApiOkResponseData(NotificationEntity)
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
-
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     const notification = await this.service.getNotificationById(parsedId);
     if (!notification) throw new NotFoundException('Notification not found');
 
+    const currentUser = req.user as any;
+    // STRICT OWNERSHIP CHECK: Applies to EVERYONE including ADMIN
+    if (notification.userId && notification.userId !== currentUser.sub) {
+      throw new BadRequestException('You do not have permission to view this notification');
+    }
     return { success: true, data: notification };
   }
 
   @Get()
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles(
+    SystemRole.SYSTEM_ADMIN,
+    SystemRole.WORKER,
+    SystemRole.RESOURCE_MANAGEMENT,
+    SystemRole.TRAVEL_MANAGER,
+    SystemRole.VISITOR,
+  )
   @ApiOperation({ summary: 'List Notification' })
-  @ApiOkResponseList(NotificationEntity, { description: 'Notification list' })
-  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page (pagination)' })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page (pagination)',
-  })
+  @ApiOkResponseList(NotificationEntity)
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   async getAll(
     @Query('campId') campId?: string,
-    @Query('userId') userId?: string,
-    @Query('targetRole') targetRole?: SystemRole,
+    @Query('targetRole') targetRole?: SystemRoleType,
     @Query('type') type?: NotificationType,
     @Query('read') read?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
-      const filters: {
-        campId?: number;
-        userId?: number;
-        targetRole?: SystemRole;
-        type?: NotificationType;
-        read?: boolean;
-        page?: number;
-        limit?: number;
-      } = {};
+      const filters: any = {};
+      const currentUser = req?.user as any;
+
+      // STRICT FILTER: Users can ONLY see their own notifications, NO EXCEPTIONS
+      if (currentUser) {
+        filters.userId = currentUser.sub;
+      }
 
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
-        if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
-        filters.campId = parsedCampId;
+        if (!Number.isNaN(parsedCampId)) filters.campId = parsedCampId;
       }
-
-      if (userId) {
-        const parsedUserId = Number.parseInt(userId, 10);
-        if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
-        filters.userId = parsedUserId;
-      }
-
-      if (targetRole) {
-        filters.targetRole = targetRole;
-      }
-
-      if (type) {
-        filters.type = type;
-      }
-
-      if (read !== undefined) {
-        if (read === 'true' || read === 'false') {
-          filters.read = read === 'true';
-        } else {
-          throw new BadRequestException('Invalid read value (use true/false)');
-        }
-      }
+      if (targetRole) filters.targetRole = targetRole;
+      if (type) filters.type = type;
+      if (read !== undefined) filters.read = read === 'true';
 
       if (page) {
         const parsedPage = Number.parseInt(page, 10);
-        if (Number.isNaN(parsedPage) || parsedPage < 1) {
-          throw new BadRequestException('Invalid page');
-        }
-        filters.page = parsedPage;
+        if (!Number.isNaN(parsedPage) && parsedPage > 0) filters.page = parsedPage;
       }
-
       if (limit) {
         const parsedLimit = Number.parseInt(limit, 10);
-        if (Number.isNaN(parsedLimit) || parsedLimit < 1) {
-          throw new BadRequestException('Invalid limit');
-        }
-        filters.limit = parsedLimit;
+        if (!Number.isNaN(parsedLimit) && parsedLimit > 0) filters.limit = parsedLimit;
       }
 
       const result = await this.service.getAllNotifications(filters);
@@ -186,31 +157,36 @@ export class NotificationController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update Notification' })
-  @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
+  @Roles(
+    SystemRole.SYSTEM_ADMIN,
+    SystemRole.WORKER,
+    SystemRole.RESOURCE_MANAGEMENT,
+    SystemRole.TRAVEL_MANAGER,
+    SystemRole.VISITOR,
+  )
+  @ApiOperation({ summary: 'Update/Mark Notification as read' })
+  @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateNotificationDto })
-  @ApiOkResponseData(NotificationEntity, { description: 'Notification updated' })
-  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  @ApiNotFoundResponse({ description: 'Notification not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateNotificationDTO) {
+  @ApiOkResponseData(NotificationEntity)
+  async update(@Param('id') id: string, @Body() body: UpdateNotificationDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
-      const notification = await this.service.updateNotification(parsedId, body);
-      if (!notification) throw new NotFoundException('Notification not found');
+      const existingNotification = await this.service.getNotificationById(parsedId);
+      if (!existingNotification) throw new NotFoundException('Notification not found');
 
-      return {
-        success: true,
-        data: notification,
-        message: 'Notification updated successfully',
-      };
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
+      const currentUser = req.user as any;
+      // STRICT OWNERSHIP CHECK: Applies to EVERYONE including ADMIN
+      if (existingNotification.userId && existingNotification.userId !== currentUser.sub) {
+        throw new BadRequestException('You can only update your own notifications');
       }
 
+      const notification = await this.service.updateNotification(parsedId, body);
+      return { success: true, data: notification, message: 'Notification updated successfully' };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating notification',
       );
@@ -218,25 +194,13 @@ export class NotificationController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete Notification' })
-  @ApiParam({ name: 'id', type: Number, description: 'Notification id' })
-  @ApiOkResponseMessage({ description: 'Notification deleted' })
-  @ApiBadRequestResponse({ description: 'Invalid id' })
-  @ApiNotFoundResponse({ description: 'Notification not found' })
+  @Roles(SystemRole.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Delete Notification (DISABLED)' })
+  @ApiParam({ name: 'id', type: Number })
   async delete(@Param('id') id: string) {
-    if (!id) throw new BadRequestException('Invalid ID');
-    const parsedId = Number.parseInt(id, 10);
-    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-
-    try {
-      const deleted = await this.service.deleteNotification(parsedId);
-      if (!deleted) throw new NotFoundException('Notification not found');
-
-      return { success: true, message: 'Notification deleted successfully' };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error deleting notification',
-      );
-    }
+    // HARD LOCK: Endpoint exists for API completeness but throws 403 Forbidden for everyone.
+    throw new ForbiddenException(
+      'Deleting notifications is strictly disabled for auditing and compliance purposes.',
+    );
   }
 }

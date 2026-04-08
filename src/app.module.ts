@@ -11,6 +11,7 @@ import { AccessLogModule } from './modules/accessLog/accessLog.module';
 import { CampModule } from './modules/camp/camp.module';
 import { CampAchievementModule } from './modules/campAchievement/campAchievement.module';
 import { CampInventoryModule } from './modules/campInventory/campInventory.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DailyCollectionRecordModule } from './modules/dailyCollectionRecord/dailyCollectionRecord.module';
 import { ExpeditionModule } from './modules/expedition/expedition.module';
 import { ExpeditionParticipantModule } from './modules/expeditionParticipant/expeditionParticipant.module';
@@ -100,6 +101,7 @@ import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
     TransferPersonModule,
     DeliveredTransferResourceModule,
     NotificationModule,
+    DashboardModule,
     DecisionTreeModule,
   ],
   controllers: [AppController],
