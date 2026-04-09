@@ -255,27 +255,26 @@ export class DecisionTreeService {
     };
   }> {
     const model = await this.getModelOrThrow(data.modelId);
-    const row = this.buildSingleRow(model.featureNames, data.features);
+    return await this.explainWithModel(model, data.features);
+  }
 
-    const { loaded, payload } = await this.loadModelFromModel(model);
-    const rawPrediction = loaded.predict([row])[0];
-    const prediction = this.decodePrediction(model, rawPrediction);
-    const rules = this.extractRulePath(model.featureNames, data.features, payload, loaded.root);
-    const roleAssignment = await this.predictRoleAssignment(data.features);
-    const explanation = {
-      admissionSummary: this.buildTreeSummary('Admisión', prediction, rules),
-      roleSummary: this.buildRoleSummary(roleAssignment),
-      admissionReason: this.buildAdmissionReason(prediction, rules),
-      roleReason: roleAssignment.reason,
+  async explainByModelName(
+    modelName: string,
+    features: Record<string, number>,
+  ): Promise<{
+    model: Omit<DecisionTreeModel, 'modelPayload'>;
+    prediction: string;
+    rules: string[];
+    roleAssignment: RoleAssignment;
+    explanation: {
+      admissionSummary: string;
+      roleSummary: string;
+      admissionReason: string;
+      roleReason: string;
     };
-
-    return {
-      model: this.repository.sanitize(model),
-      prediction,
-      rules,
-      roleAssignment,
-      explanation,
-    };
+  }> {
+    const model = await this.getActiveModelByNameOrThrow(modelName);
+    return await this.explainWithModel(model, features);
   }
 
   async getModelById(id: number): Promise<DecisionTreeModel | null> {
@@ -386,6 +385,45 @@ export class DecisionTreeService {
     }
 
     return model;
+  }
+
+  private async explainWithModel(
+    model: DecisionTreeModel,
+    features: Record<string, number>,
+  ): Promise<{
+    model: Omit<DecisionTreeModel, 'modelPayload'>;
+    prediction: string;
+    rules: string[];
+    roleAssignment: RoleAssignment;
+    explanation: {
+      admissionSummary: string;
+      roleSummary: string;
+      admissionReason: string;
+      roleReason: string;
+    };
+  }> {
+    const row = this.buildSingleRow(model.featureNames, features);
+
+    const { loaded, payload } = await this.loadModelFromModel(model);
+    const rawPrediction = loaded.predict([row])[0];
+    const prediction = this.decodePrediction(model, rawPrediction);
+    const rules = this.extractRulePath(model.featureNames, features, payload, loaded.root);
+    const roleAssignment = await this.predictRoleAssignment(features);
+
+    const explanation = {
+      admissionSummary: this.buildTreeSummary('Admisión', prediction, rules),
+      roleSummary: this.buildRoleSummary(roleAssignment),
+      admissionReason: this.buildAdmissionReason(prediction, rules),
+      roleReason: roleAssignment.reason,
+    };
+
+    return {
+      model: this.repository.sanitize(model),
+      prediction,
+      rules,
+      roleAssignment,
+      explanation,
+    };
   }
 
   private async predictRoleAssignment(features: Record<string, number>): Promise<RoleAssignment> {

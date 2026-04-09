@@ -7,5 +7,6 @@ import { DecisionTreeService } from './decisionTree.service';
 @Module({
   controllers: [DecisionTreeController],
   providers: [DecisionTreeRepository, DecisionTreeService],
+  exports: [DecisionTreeService],
 })
 export class DecisionTreeModule {}

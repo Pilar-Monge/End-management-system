@@ -4,7 +4,10 @@ import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
 import { OccupationEntity } from '../occupation/occupation.entity';
+import { AiAdmissionReportEntity } from '../aiAdmissionReport/aiAdmissionReport.entity';
+import { AI_DECISION_VALUES } from '../aiAdmissionReport/aiAdmissionReport.model';
 import { UserEntity } from '../systemUser/systemUser.entity';
+import { DecisionTreeService } from '../decisionTree/decisionTree.service';
 import { AdmissionRequestRepository } from './admissionRequest.repository';
 import {
   CreateAdmissionRequestDTO,
@@ -14,6 +17,8 @@ import {
 } from './admissionRequest.model';
 import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admissionFeatures.util';
 
+const ADMISSION_MODEL_NAME = 'admission-acceptance-v1';
+
 @Injectable()
 export class AdmissionRequestService {
   private repository: AdmissionRequestRepository;
@@ -21,6 +26,7 @@ export class AdmissionRequestService {
   constructor(
     repository: AdmissionRequestRepository,
     private readonly dataSource: DataSource,
+    private readonly decisionTreeService: DecisionTreeService,
   ) {
     this.repository = repository;
   }
@@ -35,7 +41,69 @@ export class AdmissionRequestService {
     }
 
     const normalizedData = this.normalizeAiFieldsForCreate(data);
-    return await this.repository.create(normalizedData);
+    const createdRequest = await this.repository.create(normalizedData);
+
+    try {
+      const features = buildAdmissionFeatures(normalizedData);
+      const aiExplain = await this.decisionTreeService.explainByModelName(ADMISSION_MODEL_NAME, {
+        age_years: features.age_years,
+        health_level_score: features.health_level_score,
+        physical_condition_score: features.physical_condition_score,
+        experience_years: features.experience_years,
+        skills_score: features.skills_score,
+      });
+
+      const mappedOccupationName = aiExplain.roleAssignment.mappedOccupationName;
+      const occupationRepo = this.dataSource.getRepository(OccupationEntity);
+      const assignedOccupation = await occupationRepo.findOne({
+        where: { name: mappedOccupationName },
+      });
+
+      const aiDecision = this.normalizeAiDecision(aiExplain.prediction);
+
+      const updatedByAi = await this.repository.update(createdRequest.id, {
+        status: 'PENDING_ADMIN',
+        suggestedOccupationId: assignedOccupation?.id ?? null,
+      });
+
+      const aiReportRepo = this.dataSource.getRepository(AiAdmissionReportEntity);
+      await aiReportRepo.save(
+        aiReportRepo.create({
+          requestId: createdRequest.id,
+          submittedData: {
+            features,
+          },
+          aiResponse: {
+            admission: {
+              prediction: aiExplain.prediction,
+              rules: aiExplain.rules,
+              summary: aiExplain.explanation.admissionSummary,
+              reason: aiExplain.explanation.admissionReason,
+            },
+            roleAssignment: {
+              suggestedRole: aiExplain.roleAssignment.suggestedRole,
+              mappedOccupationName,
+              suggestedOccupationId: assignedOccupation?.id ?? null,
+              rules: aiExplain.roleAssignment.rules,
+              summary: aiExplain.roleAssignment.summary,
+              reason: aiExplain.roleAssignment.reason,
+              recommendedAttributes: aiExplain.roleAssignment.recommendedAttributes,
+            },
+          },
+          aiDecision,
+          aiJustification: aiExplain.explanation.admissionReason,
+          suggestedOccupationId: assignedOccupation?.id ?? null,
+        }),
+      );
+
+      if (updatedByAi) {
+        return updatedByAi;
+      }
+    } catch {
+      // If auto-recommendation fails, keep the request in PENDING_AI for manual fallback.
+    }
+
+    return createdRequest;
   }
 
   async getRequestById(id: number): Promise<AdmissionRequest> {
@@ -208,10 +276,15 @@ export class AdmissionRequestService {
 
     await assertEntityExists(this.dataSource, UserEntity, adminUserId, 'User');
 
+    const assignedOccupationIdOnApproval = approved
+      ? (request.finalOccupationId ?? request.suggestedOccupationId ?? null)
+      : null;
+
     const updateData: UpdateAdmissionRequestDTO = {
       reviewedBy: adminUserId,
       reviewDate: new Date(),
       status: approved ? 'APPROVED' : 'REJECTED',
+      finalOccupationId: assignedOccupationIdOnApproval,
       rejectionReason: approved ? null : rejectionReason || 'Request rejected',
     };
 
@@ -266,6 +339,18 @@ export class AdmissionRequestService {
       experienceYears: data.experienceYears ?? features.experience_years,
       skillsScore: data.skillsScore ?? features.skills_score,
     };
+  }
+
+  private normalizeAiDecision(prediction: string): (typeof AI_DECISION_VALUES)[number] {
+    if (prediction === 'ACCEPT') {
+      return 'ACCEPT';
+    }
+
+    if (prediction === 'REJECT') {
+      return 'REJECT';
+    }
+
+    throw new Error(`Invalid admission prediction for AI report: ${prediction}`);
   }
 
   private normalizeAiFieldsForUpdate(
