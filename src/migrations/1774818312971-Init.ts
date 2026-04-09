@@ -131,9 +131,6 @@ export class Init1774818312971 implements MigrationInterface {
     );
     await queryRunner.query(`CREATE INDEX "idx_person_camp_id" ON "person" ("camp_id") `);
     await queryRunner.query(
-      `CREATE TABLE "occupation_assignment_criteria" ("id" SERIAL NOT NULL, "occupation_id" integer NOT NULL, "criteria_description" text NOT NULL, "evaluated_field" text NOT NULL, "weight" numeric(3,2) NOT NULL DEFAULT '1.00', "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "PK_3fa788c72cd8a038a388c851505" PRIMARY KEY ("id"))`,
-    );
-    await queryRunner.query(
       `CREATE TABLE "occupation" ("id" SERIAL NOT NULL, "name" text NOT NULL, "description" text, "collects_resources" boolean NOT NULL DEFAULT false, "participates_in_expeditions" boolean NOT NULL DEFAULT false, "resource_type_id" integer, "daily_amount_produced" numeric(8,2) NOT NULL DEFAULT '0.00', "daily_ration_consumed" numeric(8,2) NOT NULL DEFAULT '1.00', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), CONSTRAINT "uq_occupation_name" UNIQUE ("name"), CONSTRAINT "PK_07cfcefef555693d96dce8805c5" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
@@ -196,15 +193,6 @@ export class Init1774818312971 implements MigrationInterface {
     );
     await queryRunner.query(`CREATE INDEX "idx_expedition_status" ON "expedition" ("status") `);
     await queryRunner.query(`CREATE INDEX "idx_expedition_camp" ON "expedition" ("camp_id") `);
-    await queryRunner.query(
-      `CREATE TABLE "evaluated_criteria_report" ("id" SERIAL NOT NULL, "report_id" integer NOT NULL, "criteria_id" integer NOT NULL, "evaluated_value" text NOT NULL, "score_obtained" numeric(5,2), "observation" text, CONSTRAINT "uq_reporte_criterio" UNIQUE ("report_id", "criteria_id"), CONSTRAINT "PK_83dedd2e84f53f43ab35ebb9e83" PRIMARY KEY ("id"))`,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "idx_reporte_criterio_criterio" ON "evaluated_criteria_report" ("criteria_id") `,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "idx_reporte_criterio_reporte" ON "evaluated_criteria_report" ("report_id") `,
-    );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'participant_status_enum') THEN CREATE TYPE "public"."participant_status_enum" AS ENUM('ACTIVE', 'WITHDRAWN'); END IF; END $$;`,
     );
@@ -343,9 +331,6 @@ export class Init1774818312971 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX "public"."idx_exp_participant_person"`);
     await queryRunner.query(`DROP TABLE "expedition_participant"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "public"."participant_status_enum"`);
-    await queryRunner.query(`DROP INDEX "public"."idx_reporte_criterio_reporte"`);
-    await queryRunner.query(`DROP INDEX "public"."idx_reporte_criterio_criterio"`);
-    await queryRunner.query(`DROP TABLE "evaluated_criteria_report"`);
     await queryRunner.query(`DROP INDEX "public"."idx_expedition_camp"`);
     await queryRunner.query(`DROP INDEX "public"."idx_expedition_status"`);
     await queryRunner.query(`DROP TABLE "expedition"`);
@@ -369,7 +354,6 @@ export class Init1774818312971 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "inventory_movement"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "public"."movement_type_enum"`);
     await queryRunner.query(`DROP TABLE "occupation"`);
-    await queryRunner.query(`DROP TABLE "occupation_assignment_criteria"`);
     await queryRunner.query(`DROP INDEX "public"."idx_person_camp_id"`);
     await queryRunner.query(`DROP INDEX "public"."idx_person_current_status"`);
     await queryRunner.query(`DROP INDEX "public"."idx_person_occupation_id"`);

@@ -226,19 +226,21 @@ export class DecisionTreeService {
     model: Omit<DecisionTreeModel, 'modelPayload'>;
     prediction: string;
     roleAssignment: RoleAssignment;
+    explanation: {
+      admissionSummary: string;
+      roleSummary: string;
+      admissionReason: string;
+      roleReason: string;
+    };
   }> {
     const model = await this.getModelOrThrow(data.modelId);
-    const row = this.buildSingleRow(model.featureNames, data.features);
-
-    const { loaded, payload } = await this.loadModelFromModel(model);
-    const rawPrediction = loaded.predict([row])[0];
-    const prediction = this.decodePrediction(model, rawPrediction);
-    const roleAssignment = await this.predictRoleAssignment(data.features);
+    const explained = await this.explainWithModel(model, data.features);
 
     return {
-      model: this.repository.sanitize(model),
-      prediction,
-      roleAssignment,
+      model: explained.model,
+      prediction: explained.prediction,
+      roleAssignment: explained.roleAssignment,
+      explanation: explained.explanation,
     };
   }
 
