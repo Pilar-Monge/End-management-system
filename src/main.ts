@@ -52,12 +52,19 @@ async function bootstrap(): Promise<void> {
 
   try {
     const decisionTreeService = app.get(DecisionTreeService);
-    const result = await decisionTreeService.trainFromFileIfMissingModel();
+    const trainingJobs = [
+      { filePath: 'train.json', label: 'admission' },
+      { filePath: 'train-role.json', label: 'role assignment' },
+    ] as const;
 
-    if (result.trained) {
-      logger.log(`AI model "${result.modelName}" trained automatically from train.json`);
-    } else {
-      logger.log(`AI model "${result.modelName}" already exists; skipping auto-training`);
+    for (const job of trainingJobs) {
+      const result = await decisionTreeService.trainFromFileIfMissingModel(job.filePath);
+
+      if (result.trained) {
+        logger.log(`AI model "${result.modelName}" trained automatically from ${job.filePath}`);
+      } else {
+        logger.log(`AI model "${result.modelName}" already exists; skipping auto-training`);
+      }
     }
   } catch (error) {
     logger.warn(
