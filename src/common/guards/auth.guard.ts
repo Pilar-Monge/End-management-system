@@ -21,8 +21,8 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<Request & { user?: unknown }>();
     const response = context.switchToHttp().getResponse<Response>();
+    const request = context.switchToHttp().getRequest<Request & { user?: unknown }>();
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token requerido');

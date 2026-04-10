@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { Public } from '../common/decorators';
@@ -30,5 +30,29 @@ export class AuthController {
 
     await this.service.logout(token, req.ip ?? 'unknown');
     return { success: true, message: 'Logged out successfully' };
+  }
+
+  @Get('check-session')
+  async checkSession(@Req() req: Request) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new BadRequestException('Missing or invalid Authorization header');
+    }
+
+    const token = authHeader.slice('Bearer '.length).trim();
+    if (!token) {
+      throw new BadRequestException('Missing token');
+    }
+
+    await this.service.validateSession(token, req.ip ?? 'unknown', {
+      updateLastActivity: false,
+    });
+
+    return {
+      success: true,
+      data: {
+        active: true,
+      },
+    };
   }
 }

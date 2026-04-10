@@ -19,3 +19,7 @@ export interface JwtPayload {
   campId: number;
   rol: string;
 }
+
+export interface SessionValidationOptions {
+  updateLastActivity?: boolean;
+}

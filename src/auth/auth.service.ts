@@ -4,14 +4,18 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
 import { UserRepository } from '../modules/systemUser/systemUser.repository';
+import { SystemTimeService } from '../modules/systemTime/systemTime.service';
 import { AuthRepository } from './auth.repository';
-import type { JwtPayload, LoginDTO, LoginResponse } from './auth.model';
+import type { JwtPayload, LoginDTO, LoginResponse, SessionValidationOptions } from './auth.model';
+
+const SESSION_INACTIVITY_MINUTES = 20;
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly systemUserRepository: UserRepository,
+    private readonly systemTimeService: SystemTimeService,
   ) {}
 
   async login(dto: LoginDTO, ip: string): Promise<LoginResponse> {
@@ -54,10 +58,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
-      user.campId,
-    );
-
     const secret = process.env.JWT_SECRET;
     if (!secret) {
       throw new Error('JWT_SECRET is not configured');
@@ -70,11 +70,11 @@ export class AuthService {
     };
 
     const token = jwt.sign({ ...payload, jti: randomUUID() }, secret, {
-      expiresIn: `${sessionInactivityMinutes}m`,
+      expiresIn: `${SESSION_INACTIVITY_MINUTES}m`,
     });
 
-    const now = new Date();
-    const expirationDate = new Date(now.getTime() + sessionInactivityMinutes * 60 * 1000);
+    const now = this.systemTimeService.now();
+    const expirationDate = new Date(now.getTime() + SESSION_INACTIVITY_MINUTES * 60 * 1000);
 
     const session = await this.authRepository.createSession({
       token,
@@ -118,7 +118,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid session');
     }
 
-    await this.authRepository.closeSession(session.id);
+    await this.authRepository.closeSession(session.id, this.systemTimeService.now());
 
     await this.authRepository.createAccessLog({
       sessionId: session.id,
@@ -130,7 +130,7 @@ export class AuthService {
     });
   }
 
-  async validateSession(token: string, ip: string): Promise<JwtPayload> {
+  decodeAndVerifyToken(token: string): JwtPayload {
     const normalizedToken = typeof token === 'string' ? token.trim() : '';
     const secret = process.env.JWT_SECRET;
 
@@ -158,38 +158,47 @@ export class AuthService {
       throw new UnauthorizedException('Token inválido');
     }
 
-    const payload: JwtPayload = {
+    return {
       userId: decodedToken.userId,
       campId: decodedToken.campId,
       rol: decodedToken.rol,
     };
+  }
+
+  async validateSession(
+    token: string,
+    ip: string,
+    options?: SessionValidationOptions,
+  ): Promise<JwtPayload> {
+    const normalizedToken = typeof token === 'string' ? token.trim() : '';
+    const payload = this.decodeAndVerifyToken(normalizedToken);
 
     const session = await this.authRepository.findActiveSessionByToken(normalizedToken);
     if (!session) {
       throw new UnauthorizedException('Sesión no encontrada');
     }
 
-    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
-      session.campId,
-    );
-
-    const now = new Date();
+    const now = this.systemTimeService.now();
     const inactiveMilliseconds = now.getTime() - session.lastActivityDate.getTime();
 
-    if (inactiveMilliseconds > sessionInactivityMinutes * 60000) {
-      await this.authRepository.expireSession(session.id);
+    if (inactiveMilliseconds >= SESSION_INACTIVITY_MINUTES * 60000) {
+      await this.authRepository.expireSession(session.id, now);
       await this.authRepository.createAccessLog({
         sessionId: session.id,
         userId: session.userId,
         campId: session.campId,
         eventType: 'INACTIVITY_EXPIRATION',
+        eventDate: now,
         sourceIp: ip,
         detail: 'EXPIRACION_INACTIVIDAD',
       });
       throw new UnauthorizedException('Sesión expirada por inactividad');
     }
 
-    await this.authRepository.updateSessionLastActivity(session.id);
+    if (options?.updateLastActivity === true) {
+      await this.authRepository.updateSessionLastActivity(session.id, now);
+    }
+
     return payload;
   }
 
@@ -199,12 +208,8 @@ export class AuthService {
       throw new Error('JWT_SECRET is not configured');
     }
 
-    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
-      payload.campId,
-    );
-
     const token = jwt.sign({ ...payload, jti: randomUUID() }, secret, {
-      expiresIn: `${sessionInactivityMinutes}m`,
+      expiresIn: `${SESSION_INACTIVITY_MINUTES}m`,
     });
 
     return token;
