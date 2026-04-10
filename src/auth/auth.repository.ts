@@ -50,31 +50,31 @@ export class AuthRepository {
     });
   }
 
-  async expireSession(id: number): Promise<void> {
+  async expireSession(id: number, now?: Date): Promise<void> {
     await this.sessionRepo.update(
       { id },
       {
         status: 'EXPIRED',
-        lastActivityDate: new Date(),
+        lastActivityDate: now ?? new Date(),
       },
     );
   }
 
-  async closeSession(id: number): Promise<void> {
+  async closeSession(id: number, now?: Date): Promise<void> {
     await this.sessionRepo.update(
       { id },
       {
         status: 'CLOSED',
-        lastActivityDate: new Date(),
+        lastActivityDate: now ?? new Date(),
       },
     );
   }
 
-  async updateSessionLastActivity(id: number): Promise<void> {
+  async updateSessionLastActivity(id: number, now?: Date): Promise<void> {
     await this.sessionRepo.update(
       { id },
       {
-        lastActivityDate: new Date(),
+        lastActivityDate: now ?? new Date(),
       },
     );
   }

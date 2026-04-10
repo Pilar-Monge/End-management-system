@@ -1,8 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { SessionActivityMiddleware } from './common/middleware/session-activity.middleware';
 import { AuthGuard, RolesGuard } from './common/guards';
 import { AdmissionRequestModule } from './modules/admissionRequest/admissionRequest.module';
 import { AchievementModule } from './modules/achievement/achievement.module';
@@ -37,6 +39,8 @@ import { TransferPersonModule } from './modules/transferPerson/transferPerson.mo
 import { UserRoleHistoryModule } from './modules/userRoleHistory/userRoleHistory.module';
 import { UserModule } from './modules/systemUser/systemUser.module';
 import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
+import { SystemTimeModule } from './modules/systemTime/systemTime.module';
+import { TemporalAutomationModule } from './modules/temporalAutomation/temporalAutomation.module';
 
 @Module({
   imports: [
@@ -44,6 +48,7 @@ import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
@@ -103,6 +108,8 @@ import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
     NotificationModule,
     DashboardModule,
     DecisionTreeModule,
+    SystemTimeModule,
+    TemporalAutomationModule,
   ],
   controllers: [AppController],
   providers: [
@@ -116,4 +123,17 @@ import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(SessionActivityMiddleware)
+      .exclude(
+        { path: 'api/auth/login', method: RequestMethod.POST },
+        { path: 'api/system/time', method: RequestMethod.GET },
+        { path: '', method: RequestMethod.GET },
+        { path: 'docs', method: RequestMethod.ALL },
+        { path: 'api/docs', method: RequestMethod.ALL },
+      )
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
 import { CampEntity } from '../camp/camp.entity';
 import { OccupationEntity } from '../occupation/occupation.entity';
@@ -48,7 +48,12 @@ export class PersonService {
         throw new Error('A person for this admission request already exists');
       }
     }
-    return await this.repository.create(data);
+    try {
+      return await this.repository.create(data);
+    } catch (error) {
+      this.rethrowFriendlyUniqueErrors(error);
+      throw error;
+    }
   }
 
   async getPersonById(id: number): Promise<Person | null> {
@@ -109,7 +114,15 @@ export class PersonService {
         throw new Error('Another person for this admission request already exists');
       }
     }
-    const updated = await this.repository.update(id, data);
+    let updated: Person | null;
+
+    try {
+      updated = await this.repository.update(id, data);
+    } catch (error) {
+      this.rethrowFriendlyUniqueErrors(error);
+      throw error;
+    }
+
     if (data.currentStatus !== undefined && data.currentStatus !== existing.currentStatus) {
       await this.personStatusHistoryRepository.create({
         personId: id,
@@ -124,5 +137,28 @@ export class PersonService {
 
   async deletePerson(_id: number): Promise<boolean> {
     return false;
+  }
+
+  private rethrowFriendlyUniqueErrors(error: unknown): never | void {
+    if (!(error instanceof QueryFailedError)) {
+      return;
+    }
+
+    const driverError = error.driverError as {
+      code?: string;
+      constraint?: string;
+    };
+
+    if (driverError?.code !== '23505') {
+      return;
+    }
+
+    if (driverError.constraint === 'uq_person_request') {
+      throw new Error('Ya existe una persona asociada a esta solicitud de admision');
+    }
+
+    if (driverError.constraint === 'uq_person_identification') {
+      throw new Error('Ya existe una persona con este numero de identificacion');
+    }
   }
 }

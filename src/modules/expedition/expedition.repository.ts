@@ -25,9 +25,11 @@ export class ExpeditionRepository {
       destinationDescription: data.destinationDescription ?? null,
       destinationLatitude: data.destinationLatitude ?? null,
       destinationLongitude: data.destinationLongitude ?? null,
-      plannedDepartureDate: data.plannedDepartureDate,
+      ...(data.plannedDepartureDate !== undefined
+        ? { plannedDepartureDate: data.plannedDepartureDate }
+        : {}),
       actualDepartureDate: data.actualDepartureDate ?? null,
-      plannedReturnDate: data.plannedReturnDate,
+      ...(data.plannedReturnDate !== undefined ? { plannedReturnDate: data.plannedReturnDate } : {}),
       actualReturnDate: data.actualReturnDate ?? null,
       extraDaysAvailable: data.extraDaysAvailable ?? 0,
       extraDaysUsed: data.extraDaysUsed ?? 0,

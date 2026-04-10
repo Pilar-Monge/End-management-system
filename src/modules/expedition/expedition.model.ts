@@ -1,4 +1,11 @@
-export const EXPEDITION_STATUS_VALUES = ['PLANNED', 'COMPLETED', 'CANCELED'] as const;
+export const EXPEDITION_STATUS_VALUES = [
+  'PLANNED',
+  'IN_PROGRESS',
+  'DELAYED',
+  'COMPLETED',
+  'LOST',
+  'CANCELED',
+] as const;
 
 export type ExpeditionStatus = (typeof EXPEDITION_STATUS_VALUES)[number];
 
@@ -28,13 +35,16 @@ export interface CreateExpeditionDTO {
   destinationDescription?: string | null;
   destinationLatitude?: string | null;
   destinationLongitude?: string | null;
-  plannedDepartureDate: Date;
+  plannedDepartureDate?: Date;
   actualDepartureDate?: Date | null;
-  plannedReturnDate: Date;
+  plannedReturnDate?: Date;
   actualReturnDate?: Date | null;
   extraDaysAvailable?: number;
   extraDaysUsed?: number;
   status?: ExpeditionStatus;
+  fechaSalida?: Date;
+  duracionEstimadaDias?: number;
+  diasExtrasMaximos?: number;
 }
 
 export interface UpdateExpeditionDTO {
@@ -51,4 +61,6 @@ export interface UpdateExpeditionDTO {
   extraDaysAvailable?: number;
   extraDaysUsed?: number;
   status?: ExpeditionStatus;
+  duracionEstimadaDias?: number;
+  diasExtrasMaximos?: number;
 }
