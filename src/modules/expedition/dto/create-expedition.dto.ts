@@ -43,11 +43,8 @@ export class CreateExpeditionDto {
   status?: ExpeditionStatus;
 
   @ApiPropertyOptional()
-  fechaSalida?: Date;
+  estimatedDurationDays?: number;
 
   @ApiPropertyOptional()
-  duracionEstimadaDias?: number;
-
-  @ApiPropertyOptional()
-  diasExtrasMaximos?: number;
+  maxExtraDays?: number;
 }

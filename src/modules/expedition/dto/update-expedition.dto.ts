@@ -43,8 +43,8 @@ export class UpdateExpeditionDto {
   status?: ExpeditionStatus;
 
   @ApiPropertyOptional()
-  duracionEstimadaDias?: number;
+  estimatedDurationDays?: number;
 
   @ApiPropertyOptional()
-  diasExtrasMaximos?: number;
+  maxExtraDays?: number;
 }
