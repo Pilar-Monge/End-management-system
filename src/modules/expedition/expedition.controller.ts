@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -40,7 +41,7 @@ import type {
 import { ExpeditionEntity } from './expedition.entity';
 
 import { CreateExpeditionDto, UpdateExpeditionDto } from './dto';
-@Controller('expeditions')
+@Controller(['expeditions', 'explorations'])
 @ApiTags('Expedition')
 export class ExpeditionController {
   constructor(private readonly service: ExpeditionService) {}
@@ -63,6 +64,24 @@ export class ExpeditionController {
         error instanceof Error ? error.message : 'Error creating expedition',
       );
     }
+  }
+
+  @Get('active')
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @ApiOperation({ summary: 'List active explorations' })
+  @ApiOkResponseList(ExpeditionEntity, { description: 'Active explorations' })
+  async getActive(@Query('campId') campId?: string) {
+    let parsedCampId: number | undefined;
+
+    if (campId !== undefined) {
+      parsedCampId = Number.parseInt(campId, 10);
+      if (Number.isNaN(parsedCampId)) {
+        throw new BadRequestException('Invalid campId');
+      }
+    }
+
+    const data = await this.service.getActiveExplorations(parsedCampId);
+    return { success: true, data };
   }
   @Get(':id')
   @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
@@ -183,6 +202,36 @@ export class ExpeditionController {
       );
     }
   }
+
+  @Post(':id/complete')
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @ApiOperation({ summary: 'Complete exploration' })
+  @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
+  @ApiOkResponseData(ExpeditionEntity, { description: 'Exploration completed' })
+  async complete(@Param('id') id: string, @Req() req: Request & { user?: { userId?: number } }) {
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid ID');
+    }
+
+    try {
+      const completed = await this.service.completeExploration(parsedId, req.user?.userId ?? 0);
+      if (!completed) {
+        throw new NotFoundException('Expedition not found');
+      }
+
+      return {
+        success: true,
+        data: completed,
+        message: 'Exploration completed successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error completing exploration',
+      );
+    }
+  }
+
   @Delete(':id')
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Expedition' })

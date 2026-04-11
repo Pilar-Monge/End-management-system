@@ -52,7 +52,7 @@ export class TemporalAutomationService {
     const waterResource = await this.resourceTypeRepo.findOne({ where: { category: 'WATER' } });
 
     if (!foodResource || !waterResource) {
-      this.logger.warn('No se encontraron recursos FOOD/WATER para el ciclo diario');
+      this.logger.warn('No FOOD/WATER resources were found for the daily cycle');
       return;
     }
 

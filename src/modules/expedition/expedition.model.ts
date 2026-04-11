@@ -42,9 +42,8 @@ export interface CreateExpeditionDTO {
   extraDaysAvailable?: number;
   extraDaysUsed?: number;
   status?: ExpeditionStatus;
-  fechaSalida?: Date;
-  duracionEstimadaDias?: number;
-  diasExtrasMaximos?: number;
+  estimatedDurationDays?: number;
+  maxExtraDays?: number;
 }
 
 export interface UpdateExpeditionDTO {
@@ -61,6 +60,6 @@ export interface UpdateExpeditionDTO {
   extraDaysAvailable?: number;
   extraDaysUsed?: number;
   status?: ExpeditionStatus;
-  duracionEstimadaDias?: number;
-  diasExtrasMaximos?: number;
+  estimatedDurationDays?: number;
+  maxExtraDays?: number;
 }
