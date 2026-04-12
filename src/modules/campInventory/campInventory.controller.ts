@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -37,6 +38,31 @@ import { CreateCampInventoryDto, UpdateCampInventoryDto } from './dto';
 @ApiTags('Camp Inventory')
 export class CampInventoryController {
   constructor(private readonly service: CampInventoryService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
   @Post()
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create Camp Inventory' })
@@ -51,9 +77,18 @@ export class CampInventoryController {
 
   @Get(':campId/:resourceTypeId')
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
-  async getByKey(@Param('campId') campId: string, @Param('resourceTypeId') resourceTypeId: string) {
+  async getByKey(
+    @Param('campId') campId: string,
+    @Param('resourceTypeId') resourceTypeId: string,
+    @Req() req: Request,
+  ) {
     const parsedCampId = Number.parseInt(campId, 10);
     if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && parsedCampId !== currentUser.campId) {
+      throw new BadRequestException('You cannot view inventory from another camp');
+    }
 
     const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
     if (Number.isNaN(parsedResourceTypeId)) {
@@ -82,6 +117,7 @@ export class CampInventoryController {
     @Query('resourceTypeId') resourceTypeId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -91,9 +127,25 @@ export class CampInventoryController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.campId = currentUser.campId;
+      }
+
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
+
+        if (!isAdmin && parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query inventory from another camp');
+        }
+
         filters.campId = parsedCampId;
       }
 
@@ -148,9 +200,15 @@ export class CampInventoryController {
     @Param('campId') campId: string,
     @Param('resourceTypeId') resourceTypeId: string,
     @Body() body: UpdateCampInventoryDTO,
+    @Req() req: Request,
   ) {
     const parsedCampId = Number.parseInt(campId, 10);
     if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && parsedCampId !== currentUser.campId) {
+      throw new BadRequestException('You cannot update inventory from another camp');
+    }
 
     const parsedResourceTypeId = Number.parseInt(resourceTypeId, 10);
     if (Number.isNaN(parsedResourceTypeId)) {

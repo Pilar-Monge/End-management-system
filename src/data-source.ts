@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
 
 function requiredEnv(name: string): string {
@@ -8,6 +9,10 @@ function requiredEnv(name: string): string {
   }
 
   return value.trim();
+}
+
+function isTrue(value: string | undefined): boolean {
+  return value?.toLowerCase() === 'true';
 }
 
 const dbHost = requiredEnv('DB_HOST');
@@ -21,6 +26,7 @@ if (Number.isNaN(dbPort)) {
 const dbUser = requiredEnv('DB_USER');
 const dbPassword = requiredEnv('DB_PASSWORD');
 const dbName = requiredEnv('DB_NAME');
+const useSsl = isTrue(process.env.DB_SSL);
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -29,6 +35,7 @@ export const AppDataSource = new DataSource({
   username: dbUser,
   password: dbPassword,
   database: dbName,
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   synchronize: false,

@@ -12,6 +12,8 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -43,15 +45,90 @@ import { CreateTransferPersonDto, UpdateTransferPersonDto } from './dto';
 @Controller('transfer-persons')
 @ApiTags('Transfer Person')
 export class TransferPersonController {
-  constructor(private readonly service: TransferPersonService) {}
+  constructor(
+    private readonly service: TransferPersonService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
+  private async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer t
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE t.id = $1
+       LIMIT 1`,
+      [transferId],
+    );
+
+    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!scope) {
+      throw new NotFoundException('Transfer not found');
+    }
+
+    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access transfer persons involving your camp');
+    }
+  }
+
+  private async assertTransferPersonCampAccess(id: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer_person tp
+       JOIN public.transfer t ON t.id = tp.transfer_id
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE tp.id = $1
+       LIMIT 1`,
+      [id],
+    );
+
+    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!scope) {
+      throw new NotFoundException('Transfer person not found');
+    }
+
+    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access transfer persons involving your camp');
+    }
+  }
+
   @Post()
   @Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Transfer Person' })
   @ApiBody({ type: CreateTransferPersonDto })
   @ApiCreatedResponseData(TransferPersonEntity, { description: 'Transfer Person created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateTransferPersonDTO) {
+  async create(@Body() body: CreateTransferPersonDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+      }
+
       const transferPerson = await this.service.createTransferPerson(body);
       return {
         success: true,
@@ -71,11 +148,16 @@ export class TransferPersonController {
   @ApiOkResponseData(TransferPersonEntity, { description: 'Transfer Person found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol)) {
+      await this.assertTransferPersonCampAccess(parsedId, currentUser.campId);
+    }
 
     const transferPerson = await this.service.getTransferPersonById(parsedId);
     if (!transferPerson) throw new NotFoundException('Transfer person not found');
@@ -100,6 +182,7 @@ export class TransferPersonController {
     @Query('status') status?: PersonTransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -110,9 +193,25 @@ export class TransferPersonController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin && !transferId) {
+        throw new BadRequestException('Non-admin users must provide transferId');
+      }
+
       if (transferId) {
         const parsedTransferId = Number.parseInt(transferId, 10);
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
+
+        if (!isAdmin) {
+          await this.assertTransferCampAccess(parsedTransferId, currentUser.campId);
+        }
+
         filters.transferId = parsedTransferId;
       }
 
@@ -170,13 +269,25 @@ export class TransferPersonController {
   @ApiOkResponseData(TransferPersonEntity, { description: 'Transfer Person updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateTransferPersonDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateTransferPersonDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertTransferPersonCampAccess(parsedId, currentUser.campId);
+        if (body.transferId !== undefined) {
+          await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+        }
+      }
+
       const transferPerson = await this.service.updateTransferPerson(parsedId, body);
       if (!transferPerson) throw new NotFoundException('Transfer person not found');
 
@@ -198,7 +309,7 @@ export class TransferPersonController {
   @ApiOkResponseMessage({ description: 'Transfer Person deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
-  async delete(@Param('id') id: string) {
+  async delete() {
     throw new ForbiddenException('Transfer person records cannot be deleted for audit reasons.');
   }
 }

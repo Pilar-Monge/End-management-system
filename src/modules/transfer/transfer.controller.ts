@@ -10,7 +10,10 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -37,15 +40,88 @@ import { CreateTransferDto, UpdateTransferDto } from './dto';
 @Controller('transfers')
 @ApiTags('Transfer')
 export class TransferController {
-  constructor(private readonly service: TransferService) {}
+  constructor(
+    private readonly service: TransferService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
+  private async assertRequestCampAccess(requestId: number, currentCampId: number): Promise<void> {
+    const request = await this.dataSource.query(
+      `SELECT id, origin_camp_id, destination_camp_id FROM public.intercamp_request WHERE id = $1 LIMIT 1`,
+      [requestId],
+    );
+
+    const record = request[0] as
+      | { id: number; origin_camp_id: number; destination_camp_id: number }
+      | undefined;
+
+    if (!record) {
+      throw new NotFoundException('Intercamp request not found');
+    }
+
+    if (record.origin_camp_id !== currentCampId && record.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access transfers involving your camp');
+    }
+  }
+
+  private async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer t
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE t.id = $1
+       LIMIT 1`,
+      [transferId],
+    );
+
+    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!scope) {
+      throw new NotFoundException('Transfer not found');
+    }
+
+    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access transfers involving your camp');
+    }
+  }
+
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Transfer' })
   @ApiBody({ type: CreateTransferDto })
   @ApiCreatedResponseData(TransferEntity, { description: 'Transfer created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateTransferDTO) {
+  async create(@Body() body: CreateTransferDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+      }
+
       const transfer = await this.service.createTransfer(body);
       return {
         success: true,
@@ -65,11 +141,16 @@ export class TransferController {
   @ApiOkResponseData(TransferEntity, { description: 'Transfer found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol)) {
+      await this.assertTransferCampAccess(parsedId, currentUser.campId);
+    }
 
     const transfer = await this.service.getTransferById(parsedId);
     if (!transfer) throw new NotFoundException('Transfer not found');
@@ -93,6 +174,7 @@ export class TransferController {
     @Query('status') status?: TransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -102,9 +184,25 @@ export class TransferController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin && !requestId) {
+        throw new BadRequestException('Non-admin users must provide requestId');
+      }
+
       if (requestId) {
         const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
+
+        if (!isAdmin) {
+          await this.assertRequestCampAccess(parsedRequestId, currentUser.campId);
+        }
+
         filters.requestId = parsedRequestId;
       }
 
@@ -156,13 +254,21 @@ export class TransferController {
   @ApiOkResponseData(TransferEntity, { description: 'Transfer updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Transfer not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateTransferDTO) {
+  async update(@Param('id') id: string, @Body() body: UpdateTransferDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertTransferCampAccess(parsedId, currentUser.campId);
+        if (body.requestId !== undefined) {
+          await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+        }
+      }
+
       const transfer = await this.service.updateTransfer(parsedId, body);
       if (!transfer) throw new NotFoundException('Transfer not found');
 

@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -39,6 +40,32 @@ import { CreateCampDto, UpdateCampDto } from './dto';
 @ApiTags('Camp')
 export class CampController {
   constructor(private readonly service: CampService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create Camp' })
   @ApiBody({ type: CreateCampDto })
@@ -69,11 +96,16 @@ export class CampController {
   @ApiOkResponseData(CampEntity, { description: 'Camp found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Camp not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && parsedId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this camp');
+    }
 
     const camp = await this.service.getCampById(parsedId);
     if (!camp) throw new NotFoundException('Camp not found');
@@ -96,8 +128,34 @@ export class CampController {
     @Query('status') status?: CampStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        const ownCamp = await this.service.getCampById(currentUser.campId);
+        if (!ownCamp) {
+          throw new NotFoundException('Camp not found');
+        }
+
+        return {
+          success: true,
+          data: [ownCamp],
+          pagination: {
+            page: 1,
+            limit: 1,
+            total: 1,
+            pages: 1,
+          },
+        };
+      }
+
       const filters: {
         status?: CampStatus;
         page?: number;

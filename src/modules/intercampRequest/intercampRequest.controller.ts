@@ -13,6 +13,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -45,14 +46,50 @@ import { CreateIntercampRequestDto, UpdateIntercampRequestDto } from './dto';
 @ApiTags('Intercamp Request')
 export class IntercampRequestController {
   constructor(private readonly service: IntercampRequestService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Intercamp Request' })
   @ApiBody({ type: CreateIntercampRequestDto })
   @ApiCreatedResponseData(IntercampRequestEntity, { description: 'Intercamp Request created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateIntercampRequestDTO) {
+  async create(@Body() body: CreateIntercampRequestDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        if (body.originCampId !== currentUser.campId) {
+          throw new BadRequestException('originCampId must match your authenticated camp');
+        }
+
+        if (body.createdBy !== currentUser.userId) {
+          throw new BadRequestException('createdBy must match the authenticated user');
+        }
+      }
+
       const request = await this.service.createRequest(body);
       return {
         success: true,
@@ -76,7 +113,7 @@ export class IntercampRequestController {
   @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -84,6 +121,15 @@ export class IntercampRequestController {
 
     const request = await this.service.getRequestById(parsedId);
     if (!request) throw new NotFoundException('Intercamp request not found');
+
+    const currentUser = this.getCurrentUser(req);
+    if (
+      !this.isSystemAdmin(currentUser.rol) &&
+      request.originCampId !== currentUser.campId &&
+      request.destinationCampId !== currentUser.campId
+    ) {
+      throw new BadRequestException('You do not have permission to view this intercamp request');
+    }
 
     return { success: true, data: request };
   }
@@ -107,17 +153,26 @@ export class IntercampRequestController {
     @Query('respondedBy') respondedBy?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
         originCampId?: number;
         destinationCampId?: number;
+        involvedCampId?: number;
         status?: IntercampRequestStatus;
         createdBy?: number;
         respondedBy?: number;
         page?: number;
         limit?: number;
       } = {};
+
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
 
       if (originCampId) {
         const parsedOriginCampId = Number.parseInt(originCampId, 10);
@@ -145,6 +200,14 @@ export class IntercampRequestController {
           throw new BadRequestException('Invalid createdBy');
         }
         filters.createdBy = parsedCreatedBy;
+      }
+
+      if (!isAdmin) {
+        filters.involvedCampId = currentUser.campId;
+
+        if (filters.createdBy !== undefined && filters.createdBy !== currentUser.userId) {
+          throw new BadRequestException('createdBy filter must match the authenticated user');
+        }
       }
 
       if (respondedBy) {
@@ -199,13 +262,41 @@ export class IntercampRequestController {
   @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateIntercampRequestDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateIntercampRequestDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingRequest = await this.service.getRequestById(parsedId);
+      if (!existingRequest) {
+        throw new NotFoundException('Intercamp request not found');
+      }
+
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        existingRequest.originCampId !== currentUser.campId &&
+        existingRequest.destinationCampId !== currentUser.campId
+      ) {
+        throw new BadRequestException('You can only update requests involving your camp');
+      }
+
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        if (body.originCampId !== undefined && body.originCampId !== currentUser.campId) {
+          throw new BadRequestException('originCampId must match your authenticated camp');
+        }
+
+        if (body.createdBy !== undefined && body.createdBy !== currentUser.userId) {
+          throw new BadRequestException('createdBy must match the authenticated user');
+        }
+      }
+
       const request = await this.service.updateRequest(parsedId, body);
       if (!request) throw new NotFoundException('Intercamp request not found');
 

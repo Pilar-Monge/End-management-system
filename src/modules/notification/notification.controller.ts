@@ -14,15 +14,7 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiNotFoundResponse,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   ApiCreatedResponseData,
   ApiOkResponseData,
@@ -39,10 +31,37 @@ import { SystemRole, type SystemRole as SystemRoleType } from '../systemUser/sys
 import { NotificationEntity } from './notification.entity';
 import { CreateNotificationDto, UpdateNotificationDto } from './dto';
 
+type NotificationFilters = {
+  campId?: number;
+  userId?: number;
+  targetRole?: SystemRoleType;
+  type?: NotificationType;
+  read?: boolean;
+  page?: number;
+  limit?: number;
+};
+
 @Controller('notifications')
 @ApiTags('Notification')
 export class NotificationController {
   constructor(private readonly service: NotificationService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number } {
+    const currentUser = req.user as { userId?: number; campId?: number } | undefined;
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+    };
+  }
 
   @Post()
   @Roles(SystemRole.SYSTEM_ADMIN, SystemRole.RESOURCE_MANAGEMENT, SystemRole.TRAVEL_MANAGER)
@@ -80,11 +99,16 @@ export class NotificationController {
     const notification = await this.service.getNotificationById(parsedId);
     if (!notification) throw new NotFoundException('Notification not found');
 
-    const currentUser = req.user as any;
+    const currentUser = this.getCurrentUser(req);
     // STRICT OWNERSHIP CHECK: Applies to EVERYONE including ADMIN
-    if (notification.userId && notification.userId !== currentUser.sub) {
+    if (notification.userId && notification.userId !== currentUser.userId) {
       throw new BadRequestException('You do not have permission to view this notification');
     }
+
+    if (notification.campId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this notification');
+    }
+
     return { success: true, data: notification };
   }
 
@@ -110,17 +134,21 @@ export class NotificationController {
     @Req() req?: Request,
   ) {
     try {
-      const filters: any = {};
-      const currentUser = req?.user as any;
+      const filters: NotificationFilters = {};
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+      const currentUser = this.getCurrentUser(req);
 
       // STRICT FILTER: Users can ONLY see their own notifications, NO EXCEPTIONS
-      if (currentUser) {
-        filters.userId = currentUser.sub;
-      }
+      filters.userId = currentUser.userId;
+      filters.campId = currentUser.campId;
 
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
-        if (!Number.isNaN(parsedCampId)) filters.campId = parsedCampId;
+        if (!Number.isNaN(parsedCampId) && parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query notifications from another camp');
+        }
       }
       if (targetRole) filters.targetRole = targetRole;
       if (type) filters.type = type;
@@ -177,10 +205,14 @@ export class NotificationController {
       const existingNotification = await this.service.getNotificationById(parsedId);
       if (!existingNotification) throw new NotFoundException('Notification not found');
 
-      const currentUser = req.user as any;
+      const currentUser = this.getCurrentUser(req);
       // STRICT OWNERSHIP CHECK: Applies to EVERYONE including ADMIN
-      if (existingNotification.userId && existingNotification.userId !== currentUser.sub) {
+      if (existingNotification.userId && existingNotification.userId !== currentUser.userId) {
         throw new BadRequestException('You can only update your own notifications');
+      }
+
+      if (existingNotification.campId !== currentUser.campId) {
+        throw new BadRequestException('You can only update notifications from your camp');
       }
 
       const notification = await this.service.updateNotification(parsedId, body);
@@ -197,7 +229,7 @@ export class NotificationController {
   @Roles(SystemRole.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Delete Notification (DISABLED)' })
   @ApiParam({ name: 'id', type: Number })
-  async delete(@Param('id') id: string) {
+  async delete() {
     // HARD LOCK: Endpoint exists for API completeness but throws 403 Forbidden for everyone.
     throw new ForbiddenException(
       'Deleting notifications is strictly disabled for auditing and compliance purposes.',
