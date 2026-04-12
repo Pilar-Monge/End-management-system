@@ -24,19 +24,21 @@ export class ExpeditionService {
   async createExpedition(data: CreateExpeditionDTO): Promise<Expedition> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
 
-    const departure = this.systemTimeService.now();
+    const now = this.systemTimeService.now();
+    const departure = this.resolveDepartureDate(data, now);
     const estimatedDays = this.resolveEstimatedDays(data);
     const extraDays = this.resolveExtraDays(data);
     const plannedReturnDate = new Date(departure.getTime() + estimatedDays * 24 * 60 * 60 * 1000);
+    const shouldStartNow = departure.getTime() <= now.getTime();
 
     return await this.repository.create({
       ...data,
       plannedDepartureDate: departure,
-      actualDepartureDate: null,
+      actualDepartureDate: shouldStartNow ? departure : null,
       plannedReturnDate,
       extraDaysAvailable: extraDays,
       extraDaysUsed: 0,
-      status: 'PLANNED',
+      status: shouldStartNow ? 'IN_PROGRESS' : 'PLANNED',
     });
   }
 
@@ -70,6 +72,30 @@ export class ExpeditionService {
     return await this.repository.findAllAndCount(repoFilters);
   }
 
+  async getActiveExplorations(campId?: number): Promise<Expedition[]> {
+    return await this.repository.findByStatuses(['IN_PROGRESS', 'DELAYED'], campId);
+  }
+
+  async completeExploration(id: number, completedBy: number): Promise<Expedition | null> {
+    const expedition = await this.repository.findById(id);
+    if (!expedition) {
+      return null;
+    }
+
+    const now = this.systemTimeService.now();
+    if (now.getTime() < expedition.plannedReturnDate.getTime()) {
+      throw new Error('Expedition can only be completed after the estimated return date');
+    }
+
+    if (['COMPLETED', 'CANCELED', 'LOST'].includes(expedition.status)) {
+      throw new Error('Expedition cannot be completed from its current status');
+    }
+
+    await this.repository.completeExplorationWithLoot(expedition, completedBy, now);
+
+    return await this.repository.findById(id);
+  }
+
   async updateExpedition(id: number, data: UpdateExpeditionDTO): Promise<Expedition | null> {
     if (data.campId !== undefined) {
       await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
@@ -77,30 +103,27 @@ export class ExpeditionService {
 
     const normalized: UpdateExpeditionDTO = { ...data };
 
-    if (normalized.duracionEstimadaDias !== undefined) {
+    if (normalized.estimatedDurationDays !== undefined) {
       const expedition = await this.repository.findById(id);
       if (!expedition) {
         return null;
       }
 
-      if (
-        !Number.isInteger(normalized.duracionEstimadaDias) ||
-        normalized.duracionEstimadaDias <= 0
-      ) {
-        throw new Error('duracionEstimadaDias debe ser un entero mayor que 0');
+      if (!Number.isInteger(normalized.estimatedDurationDays) || normalized.estimatedDurationDays <= 0) {
+        throw new Error('estimatedDurationDays must be an integer greater than 0');
       }
 
       normalized.plannedReturnDate = new Date(
         expedition.plannedDepartureDate.getTime() +
-          normalized.duracionEstimadaDias * 24 * 60 * 60 * 1000,
+          normalized.estimatedDurationDays * 24 * 60 * 60 * 1000,
       );
     }
 
-    if (normalized.diasExtrasMaximos !== undefined) {
-      if (!Number.isInteger(normalized.diasExtrasMaximos) || normalized.diasExtrasMaximos < 0) {
-        throw new Error('diasExtrasMaximos debe ser un entero mayor o igual a 0');
+    if (normalized.maxExtraDays !== undefined) {
+      if (!Number.isInteger(normalized.maxExtraDays) || normalized.maxExtraDays < 0) {
+        throw new Error('maxExtraDays must be an integer greater than or equal to 0');
       }
-      normalized.extraDaysAvailable = normalized.diasExtrasMaximos;
+      normalized.extraDaysAvailable = normalized.maxExtraDays;
     }
 
     return await this.repository.update(id, normalized);
@@ -111,16 +134,16 @@ export class ExpeditionService {
   }
 
   private resolveEstimatedDays(data: CreateExpeditionDTO): number {
-    if (data.duracionEstimadaDias !== undefined) {
-      if (!Number.isInteger(data.duracionEstimadaDias) || data.duracionEstimadaDias <= 0) {
-        throw new Error('duracionEstimadaDias debe ser un entero mayor que 0');
+    if (data.estimatedDurationDays !== undefined) {
+      if (!Number.isInteger(data.estimatedDurationDays) || data.estimatedDurationDays <= 0) {
+        throw new Error('estimatedDurationDays must be an integer greater than 0');
       }
 
-      return data.duracionEstimadaDias;
+      return data.estimatedDurationDays;
     }
 
     if (!data.plannedDepartureDate || !data.plannedReturnDate) {
-      throw new Error('Debe enviar duracionEstimadaDias o fechas planificadas validas');
+      throw new Error('You must provide estimatedDurationDays or valid planned dates');
     }
 
     const departureMs = new Date(data.plannedDepartureDate).getTime();
@@ -129,17 +152,34 @@ export class ExpeditionService {
     const days = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
 
     if (!Number.isFinite(days) || days <= 0) {
-      throw new Error('No se pudo calcular duracionEstimadaDias con las fechas enviadas');
+      throw new Error('Could not calculate estimatedDurationDays from the provided dates');
     }
 
     return days;
   }
 
+  private resolveDepartureDate(data: CreateExpeditionDTO, now: Date): Date {
+    if (data.plannedDepartureDate === undefined) {
+      return now;
+    }
+
+    const departure = new Date(data.plannedDepartureDate);
+    if (Number.isNaN(departure.getTime())) {
+      throw new Error('plannedDepartureDate must be a valid timestamp');
+    }
+
+    if (departure.getTime() < now.getTime()) {
+      throw new Error('plannedDepartureDate must be current or future server time');
+    }
+
+    return departure;
+  }
+
   private resolveExtraDays(data: CreateExpeditionDTO): number {
-    const value = data.diasExtrasMaximos ?? data.extraDaysAvailable ?? 0;
+    const value = data.maxExtraDays ?? data.extraDaysAvailable ?? 0;
 
     if (!Number.isInteger(value) || value < 0) {
-      throw new Error('diasExtrasMaximos debe ser un entero mayor o igual a 0');
+      throw new Error('maxExtraDays must be an integer greater than or equal to 0');
     }
 
     return value;
