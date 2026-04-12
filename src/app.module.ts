@@ -52,12 +52,14 @@ import { TemporalAutomationModule } from './modules/temporalAutomation/temporalA
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const isTrue = (value: string | undefined): boolean => value?.toLowerCase() === 'true';
         const host = configService.get<string>('DB_HOST');
         const port = configService.get<number>('DB_PORT');
         const username = configService.get<string>('DB_USER');
         const password = configService.get<string>('DB_PASSWORD');
         const database = configService.get<string>('DB_NAME');
-        const synchronize = configService.get<string>('DB_SYNC') == 'true';
+        const synchronize = isTrue(configService.get<string>('DB_SYNC'));
+        const useSsl = isTrue(configService.get<string>('DB_SSL'));
 
         if (!host || !port || !username || !password || !database) {
           throw new Error('Faltan variables de entorno de base de datos');
@@ -70,6 +72,7 @@ import { TemporalAutomationModule } from './modules/temporalAutomation/temporalA
           username,
           password,
           database,
+          ssl: useSsl ? { rejectUnauthorized: false } : false,
           autoLoadEntities: true,
           synchronize,
         };
