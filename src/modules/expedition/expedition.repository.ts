@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
+import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
+
 import { ExpeditionEntity } from './expedition.entity';
 import type {
   CreateExpeditionDTO,
@@ -42,6 +45,19 @@ export class ExpeditionRepository {
 
   async findById(id: number): Promise<Expedition | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async isUserActiveParticipant(expeditionId: number, userId: number): Promise<boolean> {
+    const count = await this.dataSource
+      .getRepository(ExpeditionParticipantEntity)
+      .createQueryBuilder('ep')
+      .innerJoin(UserEntity, 'su', 'su.personId = ep.personId')
+      .where('ep.expeditionId = :expeditionId', { expeditionId })
+      .andWhere('su.id = :userId', { userId })
+      .andWhere('ep.status = :status', { status: 'ACTIVE' })
+      .getCount();
+
+    return count > 0;
   }
 
   async findByStatuses(statuses: ExpeditionStatus[], campId?: number): Promise<Expedition[]> {

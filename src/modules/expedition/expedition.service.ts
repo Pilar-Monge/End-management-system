@@ -82,6 +82,15 @@ export class ExpeditionService {
       return null;
     }
 
+    if (!Number.isInteger(completedBy) || completedBy <= 0) {
+      throw new Error('Invalid authenticated user');
+    }
+
+    const isParticipant = await this.repository.isUserActiveParticipant(id, completedBy);
+    if (!isParticipant) {
+      throw new Error('Only active expedition participants can complete this expedition');
+    }
+
     const now = this.systemTimeService.now();
     if (now.getTime() < expedition.plannedReturnDate.getTime()) {
       throw new Error('Expedition can only be completed after the estimated return date');
