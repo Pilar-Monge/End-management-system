@@ -1,10 +1,7 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
-import {
-  DAILY_CONSUMPTION_TYPE_VALUES,
-  type DailyConsumptionType,
-} from './dailyConsumption.model';
+import { DAILY_CONSUMPTION_TYPE_VALUES, type DailyConsumptionType } from './dailyConsumption.model';
 
 @Entity({ name: 'consumos_diarios' })
 @Index('idx_consumos_diarios_fecha', ['fecha'])

@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { ExpeditionEntity } from '../expedition/expedition.entity';
 import { PersonEntity } from '../person/person.entity';
+import { NotificationService } from '../notification/notification.service';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { ExpeditionParticipantRepository } from './expeditionParticipant.repository';
 import type {
   CreateExpeditionParticipantDTO,
@@ -16,16 +18,35 @@ import type {
 export class ExpeditionParticipantService {
   constructor(
     private readonly repository: ExpeditionParticipantRepository,
+    private readonly notificationService: NotificationService,
+    private readonly dataSource: DataSource,
     @InjectRepository(ExpeditionEntity)
     private readonly expeditionRepo: Repository<ExpeditionEntity>,
     @InjectRepository(PersonEntity)
     private readonly personRepo: Repository<PersonEntity>,
   ) {}
 
-  private async validateParticipantCamp(expeditionId: number, personId: number): Promise<void> {
+  private validateCreateParticipantPreconditions(expeditionId: number, personId: number): void {
+    if (!Number.isInteger(expeditionId) || expeditionId <= 0) {
+      throw new BadRequestException('expeditionId must be a positive integer');
+    }
+
+    if (!Number.isInteger(personId) || personId <= 0) {
+      throw new BadRequestException('personId must be a positive integer');
+    }
+  }
+
+  private async validateParticipantCamp(
+    expeditionId: number,
+    personId: number,
+  ): Promise<{ expedition: ExpeditionEntity; person: PersonEntity }> {
     const expedition = await this.expeditionRepo.findOne({ where: { id: expeditionId } });
     if (!expedition) {
       throw new NotFoundException('Expedition not found');
+    }
+
+    if (expedition.status !== 'PLANNED') {
+      throw new BadRequestException('Only planned expeditions can receive new participants');
     }
 
     const person = await this.personRepo.findOne({ where: { id: personId } });
@@ -33,23 +54,59 @@ export class ExpeditionParticipantService {
       throw new NotFoundException('Person not found');
     }
 
+    if (person.currentStatus === 'INACTIVE') {
+      throw new BadRequestException('Inactive people cannot be assigned to expeditions');
+    }
+
     if (person.campId !== expedition.campId) {
       throw new BadRequestException('Person does not belong to the same camp as the expedition');
     }
+
+    return { expedition, person };
   }
 
   async createParticipant(data: CreateExpeditionParticipantDTO): Promise<ExpeditionParticipant> {
-    await this.validateParticipantCamp(data.expeditionId, data.personId);
+    this.validateCreateParticipantPreconditions(data.expeditionId, data.personId);
+
+    const { expedition } = await this.validateParticipantCamp(data.expeditionId, data.personId);
 
     const existing = await this.repository.findByExpeditionAndPerson(
       data.expeditionId,
       data.personId,
     );
     if (existing) {
-      throw new Error('This expedition participant already exists');
+      throw new BadRequestException('This expedition participant already exists');
     }
 
-    return await this.repository.create(data);
+    const participant = await this.repository.create(data);
+
+    if (participant.status !== 'ACTIVE') {
+      return participant;
+    }
+
+    if (expedition.status !== 'PLANNED') {
+      return participant;
+    }
+
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    const assignedUser = await userRepo.findOne({
+      select: { id: true, campId: true },
+      where: { personId: data.personId },
+    });
+
+    if (assignedUser && assignedUser.campId === expedition.campId) {
+      await this.notificationService.createNotification({
+        campId: expedition.campId,
+        userId: assignedUser.id,
+        type: 'EXPEDITION_RETURN',
+        title: 'Asignacion de expedicion',
+        message: `Has sido asignado a una nueva expedicion: ${expedition.name}. Revisa los detalles en tu panel.`,
+        sourceType: 'expedition',
+        sourceId: expedition.id,
+      });
+    }
+
+    return participant;
   }
 
   async getParticipantById(id: number): Promise<ExpeditionParticipant | null> {

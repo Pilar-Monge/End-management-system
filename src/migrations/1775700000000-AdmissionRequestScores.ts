@@ -19,9 +19,7 @@ export class AdmissionRequestScores1775700000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "admission_request" DROP COLUMN IF EXISTS "skills_score"`,
-    );
+    await queryRunner.query(`ALTER TABLE "admission_request" DROP COLUMN IF EXISTS "skills_score"`);
     await queryRunner.query(
       `ALTER TABLE "admission_request" DROP COLUMN IF EXISTS "experience_years"`,
     );

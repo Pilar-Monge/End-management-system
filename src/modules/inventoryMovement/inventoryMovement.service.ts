@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { DataSource, In } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
+import { NotificationService } from '../notification/notification.service';
+import { UserEntity } from '../systemUser/systemUser.entity';
+import { SystemRole } from '../systemUser/systemUser.model';
+import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { CampEntity } from '../camp/camp.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { InventoryMovementRepository } from './inventoryMovement.repository';
 import type {
@@ -18,10 +21,62 @@ import type {
 export class InventoryMovementService {
   constructor(
     private readonly repository: InventoryMovementRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
 
+  private isConsumptionMovement(type: InventoryMovementType): boolean {
+    return type === 'DAILY_RATION' || type === 'EXPEDITION_DEPARTURE' || type === 'TRANSFER_SENT';
+  }
+
+  private async notifyLowInventory(
+    campId: number,
+    resourceTypeId: number,
+    movementId: number,
+  ): Promise<void> {
+    const campInventoryRepo = this.dataSource.getRepository(CampInventoryEntity);
+    const inventory = await campInventoryRepo.findOne({
+      where: { campId, resourceTypeId },
+    });
+
+    if (!inventory) return;
+
+    const currentAmount = Number.parseFloat(inventory.currentAmount);
+    const minimumAlertAmount = Number.parseFloat(inventory.minimumAlertAmount);
+
+    if (Number.isNaN(currentAmount) || Number.isNaN(minimumAlertAmount)) return;
+    if (currentAmount > minimumAlertAmount) return;
+
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    const alertRecipients = await userRepo.find({
+      select: { id: true, role: true },
+      where: {
+        campId,
+        role: In([SystemRole.RESOURCE_MANAGEMENT, SystemRole.SYSTEM_ADMIN]),
+      },
+    });
+
+    if (alertRecipients.length === 0) return;
+
+    for (const recipient of alertRecipients) {
+      await this.notificationService.createNotification({
+        campId,
+        userId: recipient.id,
+        type: 'INVENTORY_ALERT',
+        title: 'Alerta de inventario bajo',
+        message: `El recurso ${resourceTypeId} esta en o por debajo del minimo (${inventory.currentAmount} <= ${inventory.minimumAlertAmount}).`,
+        sourceType: 'inventory_movement',
+        sourceId: movementId,
+      });
+    }
+  }
+
   async createMovement(data: CreateInventoryMovementDTO): Promise<InventoryMovement> {
+    const amount = Number.parseFloat(`${data.amount}`);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     await assertEntityExists(
       this.dataSource,
@@ -31,7 +86,13 @@ export class InventoryMovementService {
     );
     await assertEntityExists(this.dataSource, UserEntity, data.recordedBy, 'User');
 
-    return await this.repository.create(data);
+    const movement = await this.repository.create(data);
+
+    if (this.isConsumptionMovement(data.movementType)) {
+      await this.notifyLowInventory(data.campId, data.resourceTypeId, movement.id);
+    }
+
+    return movement;
   }
 
   async getMovementById(id: number): Promise<InventoryMovement | null> {

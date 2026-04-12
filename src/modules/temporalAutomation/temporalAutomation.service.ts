@@ -69,8 +69,20 @@ export class TemporalAutomationService {
 
       const totalRation = this.roundTo2(peopleCount * rationPerPerson);
 
-      await this.applyDailyConsumption(camp.id, foodResource.id, totalRation, now, touchedResourceIds);
-      await this.applyDailyConsumption(camp.id, waterResource.id, totalRation, now, touchedResourceIds);
+      await this.applyDailyConsumption(
+        camp.id,
+        foodResource.id,
+        totalRation,
+        now,
+        touchedResourceIds,
+      );
+      await this.applyDailyConsumption(
+        camp.id,
+        waterResource.id,
+        totalRation,
+        now,
+        touchedResourceIds,
+      );
 
       const productionByResource = await this.getProductionByResource(camp.id, now);
 

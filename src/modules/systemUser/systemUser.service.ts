@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
@@ -8,6 +8,7 @@ import { UserRepository } from './systemUser.repository';
 import { User, CreateUserDTO, UserResponse, LoginDTO } from './systemUser.model';
 import { EncryptionService } from '../../services/encryption.service';
 import { UserRoleHistoryRepository } from '../userRoleHistory/userRoleHistory.repository';
+import { NotificationService } from '../notification/notification.service';
 import type { UpdateSystemUserDto } from './dto';
 
 @Injectable()
@@ -15,8 +16,33 @@ export class UserService {
   constructor(
     private userRepo: UserRepository,
     private readonly userRoleHistoryRepository: UserRoleHistoryRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async handleRoleChange(
+    existing: User,
+    newRole: User['role'],
+    reason: string | null = null,
+  ): Promise<void> {
+    await this.userRoleHistoryRepository.create({
+      userId: existing.id,
+      previousRole: existing.role,
+      newRole,
+      changedBy: existing.id,
+      reason,
+    });
+
+    await this.notificationService.createNotification({
+      campId: existing.campId,
+      userId: existing.id,
+      type: 'ROLE_UPDATED',
+      title: 'Rol actualizado',
+      message: `Tu rol del sistema ha sido actualizado a ${newRole}`,
+      sourceType: 'system_user',
+      sourceId: existing.id,
+    });
+  }
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
     await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
@@ -72,15 +98,23 @@ export class UserService {
   ): Promise<UserResponse | null> {
     const existing = await this.userRepo.findById(id);
     if (!existing) return null;
+
+    const newRole = data.role;
+    if (newRole !== undefined && existing.role === newRole) {
+      throw new BadRequestException(`El usuario ya tiene asignado el rol ${newRole}`);
+    }
+
+    const hasRoleChange = data.role !== undefined;
+    const hasStatusChange = data.status !== undefined && data.status !== existing.status;
+
+    if (!hasRoleChange && !hasStatusChange) {
+      const { passwordHash: _, ...userResponse } = existing;
+      return userResponse;
+    }
+
     const user = await this.userRepo.update(id, data);
-    if (data.role !== undefined && data.role !== existing.role) {
-      await this.userRoleHistoryRepository.create({
-        userId: id,
-        previousRole: existing.role,
-        newRole: data.role,
-        changedBy: 0,
-        reason: null,
-      });
+    if (hasRoleChange) {
+      await this.handleRoleChange(existing, data.role as User['role']);
     }
     if (!user) return null;
     const { passwordHash: _, ...userResponse } = user;
@@ -96,8 +130,18 @@ export class UserService {
   }
 
   async changeUserRole(id: number, newRole: User['role']): Promise<UserResponse | null> {
+    const existing = await this.userRepo.findById(id);
+    if (!existing) return null;
+
+    if (existing.role === newRole) {
+      throw new BadRequestException(`El usuario ya tiene asignado el rol ${newRole}`);
+    }
+
     const user = await this.userRepo.update(id, { role: newRole });
     if (!user) return null;
+
+    await this.handleRoleChange(existing, newRole);
+
     const { passwordHash: _, ...userResponse } = user;
     return userResponse;
   }

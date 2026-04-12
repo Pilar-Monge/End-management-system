@@ -5,9 +5,10 @@ import { InventoryMovementController } from './inventoryMovement.controller';
 import { InventoryMovementEntity } from './inventoryMovement.entity';
 import { InventoryMovementRepository } from './inventoryMovement.repository';
 import { InventoryMovementService } from './inventoryMovement.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([InventoryMovementEntity])],
+  imports: [TypeOrmModule.forFeature([InventoryMovementEntity]), NotificationModule],
   controllers: [InventoryMovementController],
   providers: [InventoryMovementRepository, InventoryMovementService],
 })

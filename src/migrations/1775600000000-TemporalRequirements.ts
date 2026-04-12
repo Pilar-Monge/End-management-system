@@ -10,7 +10,9 @@ export class TemporalRequirements1775600000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TYPE "public"."expedition_status_enum" ADD VALUE IF NOT EXISTS 'DELAYED'`,
     );
-    await queryRunner.query(`ALTER TYPE "public"."expedition_status_enum" ADD VALUE IF NOT EXISTS 'LOST'`);
+    await queryRunner.query(
+      `ALTER TYPE "public"."expedition_status_enum" ADD VALUE IF NOT EXISTS 'LOST'`,
+    );
 
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' AND t.typname = 'daily_consumption_type_enum') THEN CREATE TYPE "public"."daily_consumption_type_enum" AS ENUM('consumo_racion'); END IF; END $$;`,

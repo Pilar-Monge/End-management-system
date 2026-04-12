@@ -29,7 +29,9 @@ export class ExpeditionRepository {
         ? { plannedDepartureDate: data.plannedDepartureDate }
         : {}),
       actualDepartureDate: data.actualDepartureDate ?? null,
-      ...(data.plannedReturnDate !== undefined ? { plannedReturnDate: data.plannedReturnDate } : {}),
+      ...(data.plannedReturnDate !== undefined
+        ? { plannedReturnDate: data.plannedReturnDate }
+        : {}),
       actualReturnDate: data.actualReturnDate ?? null,
       extraDaysAvailable: data.extraDaysAvailable ?? 0,
       extraDaysUsed: data.extraDaysUsed ?? 0,

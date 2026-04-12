@@ -6,9 +6,10 @@ import { UserRepository } from './systemUser.repository';
 import { UserRoleHistoryEntity } from '../userRoleHistory/userRoleHistory.entity';
 import { UserRoleHistoryRepository } from '../userRoleHistory/userRoleHistory.repository';
 import { UserService } from './systemUser.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, UserRoleHistoryEntity])],
+  imports: [TypeOrmModule.forFeature([UserEntity, UserRoleHistoryEntity]), NotificationModule],
   controllers: [UserController],
   providers: [UserRepository, UserRoleHistoryRepository, UserService],
 })

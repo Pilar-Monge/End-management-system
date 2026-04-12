@@ -7,10 +7,12 @@ import { ExpeditionParticipantController } from './expeditionParticipant.control
 import { ExpeditionParticipantEntity } from './expeditionParticipant.entity';
 import { ExpeditionParticipantRepository } from './expeditionParticipant.repository';
 import { ExpeditionParticipantService } from './expeditionParticipant.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ExpeditionParticipantEntity, ExpeditionEntity, PersonEntity]),
+    NotificationModule,
   ],
   controllers: [ExpeditionParticipantController],
   providers: [ExpeditionParticipantRepository, ExpeditionParticipantService],

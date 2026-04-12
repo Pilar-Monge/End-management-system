@@ -453,9 +453,7 @@ export class DecisionTreeService {
     };
   }
 
-  private async loadModelFromModel(
-    model: DecisionTreeModel,
-  ): Promise<{
+  private async loadModelFromModel(model: DecisionTreeModel): Promise<{
     loaded: { predict: (rows: number[][]) => number[]; root?: unknown };
     payload: unknown | null;
   }> {

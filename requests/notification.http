@@ -81,3 +81,19 @@ Content-Type: application/json
 ### 6. [SHOULD 403] DELETE: Admin tries to delete a notification
 DELETE {{baseUrl}}/api/notifications/{{notificationId}}
 Authorization: Bearer {{adminToken}}
+
+###
+
+### =========================================
+### AUTOMATION - GLOBAL NOTIFICATION AUDIT
+### =========================================
+
+### [NOTIF-AUTO-01] List automated notifications for message validation
+### Validate the following titles in results:
+### - "Alerta de inventario bajo"
+### - "Asignacion de expedicion"
+### - "Role Updated"
+GET {{baseUrl}}/api/notifications?page=1&limit=100
+Authorization: Bearer {{adminToken}}
+
+###

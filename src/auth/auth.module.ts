@@ -11,7 +11,10 @@ import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SessionEntity, AccessLogEntity, UserEntity]), SystemTimeModule],
+  imports: [
+    TypeOrmModule.forFeature([SessionEntity, AccessLogEntity, UserEntity]),
+    SystemTimeModule,
+  ],
   controllers: [AuthController],
   providers: [AuthRepository, AuthService, UserRepository],
   exports: [AuthService],

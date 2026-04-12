@@ -83,7 +83,10 @@ export class ExpeditionService {
         return null;
       }
 
-      if (!Number.isInteger(normalized.duracionEstimadaDias) || normalized.duracionEstimadaDias <= 0) {
+      if (
+        !Number.isInteger(normalized.duracionEstimadaDias) ||
+        normalized.duracionEstimadaDias <= 0
+      ) {
         throw new Error('duracionEstimadaDias debe ser un entero mayor que 0');
       }
 
