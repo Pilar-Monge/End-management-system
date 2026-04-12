@@ -9,7 +9,9 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -37,6 +39,31 @@ import { CreatePersonDto, UpdatePersonDto } from './dto';
 @ApiTags('Person')
 export class PersonController {
   constructor(private readonly service: PersonService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
   @Post()
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Person' })
@@ -64,7 +91,7 @@ export class PersonController {
   @ApiOkResponseData(PersonEntity, { description: 'Person found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -72,6 +99,11 @@ export class PersonController {
 
     const person = await this.service.getPersonById(parsedId);
     if (!person) throw new NotFoundException('Person not found');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && person.campId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this person');
+    }
 
     return { success: true, data: person };
   }
@@ -93,6 +125,7 @@ export class PersonController {
     @Query('occupationId') occupationId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -103,11 +136,27 @@ export class PersonController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.campId = currentUser.campId;
+      }
+
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) {
           throw new BadRequestException('Invalid camp ID');
         }
+
+        if (!isAdmin && parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query persons from another camp');
+        }
+
         filters.campId = parsedCampId;
       }
 

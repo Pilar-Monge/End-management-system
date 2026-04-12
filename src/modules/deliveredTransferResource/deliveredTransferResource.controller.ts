@@ -12,6 +12,8 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -42,7 +44,77 @@ import { CreateDeliveredTransferResourceDto, UpdateDeliveredTransferResourceDto 
 @Controller('delivered-transfer-resources')
 @ApiTags('Delivered Transfer Resource')
 export class DeliveredTransferResourceController {
-  constructor(private readonly service: DeliveredTransferResourceService) {}
+  constructor(
+    private readonly service: DeliveredTransferResourceService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
+  private async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer t
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE t.id = $1
+       LIMIT 1`,
+      [transferId],
+    );
+
+    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!scope) {
+      throw new NotFoundException('Transfer not found');
+    }
+
+    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access delivered resources involving your camp');
+    }
+  }
+
+  private async assertDeliveredCampAccess(id: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.delivered_transfer_resource d
+       JOIN public.transfer t ON t.id = d.transfer_id
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE d.id = $1
+       LIMIT 1`,
+      [id],
+    );
+
+    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!scope) {
+      throw new NotFoundException('Delivered transfer resource not found');
+    }
+
+    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access delivered resources involving your camp');
+    }
+  }
+
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Delivered Transfer Resource' })
@@ -51,8 +123,17 @@ export class DeliveredTransferResourceController {
     description: 'Delivered Transfer Resource created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateDeliveredTransferResourceDTO) {
+  async create(@Body() body: CreateDeliveredTransferResourceDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        if (body.recordedBy !== currentUser.userId) {
+          throw new BadRequestException('recordedBy must match the authenticated user');
+        }
+
+        await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+      }
+
       const delivered = await this.service.createDeliveredResource(body);
       return {
         success: true,
@@ -74,14 +155,23 @@ export class DeliveredTransferResourceController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol)) {
+      await this.assertDeliveredCampAccess(parsedId, currentUser.campId);
+    }
+
     const delivered = await this.service.getDeliveredResourceById(parsedId);
     if (!delivered) throw new NotFoundException('Delivered transfer resource not found');
+
+    if (!this.isSystemAdmin(currentUser.rol) && delivered.recordedBy !== currentUser.userId) {
+      throw new BadRequestException('You do not have permission to view this delivered resource');
+    }
 
     return { success: true, data: delivered };
   }
@@ -104,6 +194,7 @@ export class DeliveredTransferResourceController {
     @Query('resourceTypeId') resourceTypeId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -113,9 +204,25 @@ export class DeliveredTransferResourceController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin && !transferId) {
+        throw new BadRequestException('Non-admin users must provide transferId');
+      }
+
       if (transferId) {
         const parsedTransferId = Number.parseInt(transferId, 10);
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
+
+        if (!isAdmin) {
+          await this.assertTransferCampAccess(parsedTransferId, currentUser.campId);
+        }
+
         filters.transferId = parsedTransferId;
       }
 
@@ -147,14 +254,19 @@ export class DeliveredTransferResourceController {
       const resolvedPage = filters.page ?? 1;
       const resolvedLimit = filters.limit ?? 10;
 
+      const data = !isAdmin
+        ? result.data.filter((item) => item.recordedBy === currentUser.userId)
+        : result.data;
+      const total = !isAdmin ? data.length : result.total;
+
       return {
         success: true,
-        data: result.data,
+        data,
         pagination: {
           page: resolvedPage,
           limit: resolvedLimit,
-          total: result.total,
-          pages: Math.ceil(result.total / resolvedLimit),
+          total,
+          pages: Math.ceil(total / resolvedLimit),
         },
       };
     } catch (error) {
@@ -173,13 +285,39 @@ export class DeliveredTransferResourceController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateDeliveredTransferResourceDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateDeliveredTransferResourceDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existing = await this.service.getDeliveredResourceById(parsedId);
+      if (!existing) {
+        throw new NotFoundException('Delivered transfer resource not found');
+      }
+
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertDeliveredCampAccess(parsedId, currentUser.campId);
+
+        if (existing.recordedBy !== currentUser.userId) {
+          throw new BadRequestException('You can only update delivered resources created by your user');
+        }
+
+        if (body.transferId !== undefined) {
+          await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+        }
+
+        if (body.recordedBy !== undefined && body.recordedBy !== currentUser.userId) {
+          throw new BadRequestException('recordedBy must match the authenticated user');
+        }
+      }
+
       const delivered = await this.service.updateDeliveredResource(parsedId, body);
       if (!delivered) {
         throw new NotFoundException('Delivered transfer resource not found');

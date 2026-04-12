@@ -83,6 +83,7 @@ export class IntercampRequestService {
   async getAllRequests(filters?: {
     originCampId?: number;
     destinationCampId?: number;
+    involvedCampId?: number;
     status?: IntercampRequestStatus;
     createdBy?: number;
     respondedBy?: number;
@@ -96,6 +97,7 @@ export class IntercampRequestService {
     const repoFilters: {
       originCampId?: number;
       destinationCampId?: number;
+      involvedCampId?: number;
       status?: IntercampRequestStatus;
       createdBy?: number;
       respondedBy?: number;
@@ -109,6 +111,7 @@ export class IntercampRequestService {
     if (filters?.originCampId !== undefined) repoFilters.originCampId = filters.originCampId;
     if (filters?.destinationCampId !== undefined)
       repoFilters.destinationCampId = filters.destinationCampId;
+    if (filters?.involvedCampId !== undefined) repoFilters.involvedCampId = filters.involvedCampId;
     if (filters?.status !== undefined) repoFilters.status = filters.status;
     if (filters?.createdBy !== undefined) repoFilters.createdBy = filters.createdBy;
     if (filters?.respondedBy !== undefined) repoFilters.respondedBy = filters.respondedBy;

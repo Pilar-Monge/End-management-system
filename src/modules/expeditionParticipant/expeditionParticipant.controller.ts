@@ -11,7 +11,10 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -43,7 +46,72 @@ import { CreateExpeditionParticipantDto, UpdateExpeditionParticipantDto } from '
 @Controller('expedition-participants')
 @ApiTags('Expedition Participant')
 export class ExpeditionParticipantController {
-  constructor(private readonly service: ExpeditionParticipantService) {}
+  constructor(
+    private readonly service: ExpeditionParticipantService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
+  private async assertExpeditionCampAccess(expeditionId: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT e.camp_id FROM public.expedition e WHERE e.id = $1 LIMIT 1`,
+      [expeditionId],
+    );
+
+    const row = rows[0] as { camp_id: number } | undefined;
+    if (!row) {
+      throw new NotFoundException('Expedition not found');
+    }
+
+    if (row.camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access expedition participants from your camp');
+    }
+  }
+
+  private async assertParticipantCampAccess(id: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT e.camp_id
+       FROM public.expedition_participant ep
+       JOIN public.expedition e ON e.id = ep.expedition_id
+       WHERE ep.id = $1
+       LIMIT 1`,
+      [id],
+    );
+
+    const row = rows[0] as { camp_id: number } | undefined;
+    if (!row) {
+      throw new NotFoundException('Expedition participant not found');
+    }
+
+    if (row.camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access expedition participants from your camp');
+    }
+  }
+
   @Post()
   @Roles('TRAVEL_MANAGER')
   @ApiCreatedResponseData(ExpeditionParticipantEntity, {
@@ -52,8 +120,13 @@ export class ExpeditionParticipantController {
   @ApiOperation({ summary: 'Create Expedition Participant' })
   @ApiBody({ type: CreateExpeditionParticipantDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateExpeditionParticipantDTO) {
+  async create(@Body() body: CreateExpeditionParticipantDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertExpeditionCampAccess(body.expeditionId, currentUser.campId);
+      }
+
       const participant = await this.service.createParticipant(body);
       return {
         success: true,
@@ -77,11 +150,16 @@ export class ExpeditionParticipantController {
   @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol)) {
+      await this.assertParticipantCampAccess(parsedId, currentUser.campId);
+    }
 
     const participant = await this.service.getParticipantById(parsedId);
     if (!participant) throw new NotFoundException('Expedition participant not found');
@@ -106,6 +184,7 @@ export class ExpeditionParticipantController {
     @Query('status') status?: ParticipantStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -116,11 +195,27 @@ export class ExpeditionParticipantController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin && !expeditionId) {
+        throw new BadRequestException('Non-admin users must provide expeditionId');
+      }
+
       if (expeditionId) {
         const parsedExpeditionId = Number.parseInt(expeditionId, 10);
         if (Number.isNaN(parsedExpeditionId)) {
           throw new BadRequestException('Invalid expeditionId');
         }
+
+        if (!isAdmin) {
+          await this.assertExpeditionCampAccess(parsedExpeditionId, currentUser.campId);
+        }
+
         filters.expeditionId = parsedExpeditionId;
       }
 
@@ -178,13 +273,25 @@ export class ExpeditionParticipantController {
   @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateExpeditionParticipantDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateExpeditionParticipantDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertParticipantCampAccess(parsedId, currentUser.campId);
+        if (body.expeditionId !== undefined) {
+          await this.assertExpeditionCampAccess(body.expeditionId, currentUser.campId);
+        }
+      }
+
       const participant = await this.service.updateParticipant(parsedId, body);
       if (!participant) throw new NotFoundException('Expedition participant not found');
 

@@ -39,6 +39,7 @@ export class IntercampRequestRepository {
   async findAllAndCount(filters?: {
     originCampId?: number;
     destinationCampId?: number;
+    involvedCampId?: number;
     status?: IntercampRequestStatus;
     createdBy?: number;
     respondedBy?: number;
@@ -56,6 +57,12 @@ export class IntercampRequestRepository {
     if (filters?.destinationCampId !== undefined) {
       qb.andWhere('r.destinationCampId = :destinationCampId', {
         destinationCampId: filters.destinationCampId,
+      });
+    }
+
+    if (filters?.involvedCampId !== undefined) {
+      qb.andWhere('(r.originCampId = :involvedCampId OR r.destinationCampId = :involvedCampId)', {
+        involvedCampId: filters.involvedCampId,
       });
     }
 
