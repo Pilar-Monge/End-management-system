@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 
 import { InventoryAlertRepository } from './inventoryAlert.repository';
@@ -18,6 +19,7 @@ export class InventoryAlertService {
   constructor(
     private readonly repository: InventoryAlertRepository,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createAlert(data: CreateInventoryAlertDTO): Promise<InventoryAlert> {
@@ -37,7 +39,20 @@ export class InventoryAlertService {
       );
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notificationService.notifyCampRoles(
+      created.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Nueva alerta de inventario',
+        message: `Se registro una alerta de inventario para recurso ${created.resourceTypeId}.`,
+        sourceType: 'inventory_alert',
+        sourceId: created.id,
+      },
+    );
+
+    return created;
   }
 
   async getAlertById(id: number): Promise<InventoryAlert | null> {
@@ -94,10 +109,56 @@ export class InventoryAlertService {
       );
     }
 
-    return await this.repository.update(id, data);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: updated.resolved ? 'Alerta de inventario resuelta' : 'Alerta de inventario actualizada',
+        message: updated.resolved
+          ? `La alerta ${updated.id} se marco como resuelta.`
+          : `La alerta ${updated.id} fue actualizada.`,
+        sourceType: 'inventory_alert',
+        sourceId: updated.id,
+      },
+    );
+
+    return updated;
   }
 
   async deleteAlert(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Alerta de inventario eliminada',
+        message: `La alerta ${existing.id} fue eliminada del sistema.`,
+        sourceType: 'inventory_alert',
+        sourceId: existing.id,
+      },
+    );
+
+    return true;
   }
 }

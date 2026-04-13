@@ -204,6 +204,23 @@ export class DeliveredTransferResourceService {
   }
 
   async deleteDeliveredResource(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyDeliveredResourceChange(
+      existing.transferId,
+      existing.id,
+      existing.resourceTypeId,
+      'Se elimino registro de entrega de recurso',
+    );
+
+    return true;
   }
 }

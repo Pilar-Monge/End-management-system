@@ -172,8 +172,53 @@ export class PersonService {
     return updated;
   }
 
-  async deletePerson(_id: number): Promise<boolean> {
-    return false;
+  async deletePerson(id: number): Promise<boolean> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'PERSON_STATUS_CHANGED',
+        title: 'Persona eliminada',
+        message: `La persona ${existing.id} fue eliminada del sistema.`,
+        sourceType: 'person',
+        sourceId: existing.id,
+      },
+    );
+
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    const linkedUser = await userRepo.findOne({
+      where: {
+        personId: existing.id,
+        campId: existing.campId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (linkedUser) {
+      await this.notificationService.notifyUser(linkedUser.id, {
+        campId: existing.campId,
+        type: 'PERSON_STATUS_CHANGED',
+        title: 'Registro personal eliminado',
+        message: 'Tu registro personal fue eliminado del sistema.',
+        sourceType: 'person',
+        sourceId: existing.id,
+        sendEmail: false,
+      });
+    }
+
+    return true;
   }
 
   private rethrowFriendlyUniqueErrors(error: unknown): never | void {

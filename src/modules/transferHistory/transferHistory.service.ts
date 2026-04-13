@@ -150,6 +150,17 @@ export class TransferHistoryService {
   }
 
   async deleteEntry(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyTransferHistoryChange(existing);
+    return true;
   }
 }

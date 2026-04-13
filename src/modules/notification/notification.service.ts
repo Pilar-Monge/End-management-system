@@ -29,6 +29,7 @@ interface NotificationDispatchOptions {
   sourceType?: string | null;
   sourceId?: number | null;
   email?: NotificationEmailOptions;
+  sendEmail?: boolean;
 }
 
 @Injectable()
@@ -40,6 +41,42 @@ export class NotificationService {
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
   ) {}
+
+  private resolveTemplateKeyForType(type: NotificationType): string {
+    const templateByType: Partial<Record<NotificationType, string>> = {
+      ADMISSION_REQUEST_PENDING: 'admission_request_pending',
+      ADMISSION_REQUEST_APPROVED: 'admission_request_approved',
+      ADMISSION_REQUEST_REJECTED: 'admission_request_rejected',
+      ADMISSION_REQUEST_AI_REVIEWED: 'admission_request_ai_reviewed',
+      ROLE_UPDATED: 'role_updated',
+      USER_STATUS_UPDATED: 'user_status_updated',
+      INVENTORY_ALERT: 'inventory_alert',
+      OVERPOPULATION_ALERT: 'overpopulation_alert',
+      INTERCAMP_REQUEST_RECEIVED: 'intercamp_request_received',
+      INTERCAMP_REQUEST_APPROVED: 'intercamp_request_approved',
+      INTERCAMP_REQUEST_REJECTED: 'intercamp_request_rejected',
+      INTERCAMP_REQUEST_CANCELED: 'intercamp_request_canceled',
+      EXPEDITION_RETURN: 'expedition_return',
+      EXPEDITION_STATUS_UPDATED: 'expedition_status_updated',
+      EXPEDITION_CREATED: 'expedition_created',
+      EXPEDITION_COMPLETED: 'expedition_completed',
+      EXPEDITION_RESOURCE_CONSUMED: 'expedition_resource_consumed',
+      EXPEDITION_RESOURCE_OBTAINED: 'expedition_resource_obtained',
+      TRANSFER_PENDING: 'transfer_pending',
+      TRANSFER_COMPLETED: 'transfer_completed',
+      TRANSFER_CANCELED: 'transfer_canceled',
+      TRANSFER_PERSON_UPDATED: 'transfer_person_updated',
+      REQUEST_PERSON_DETAIL_UPDATED: 'request_person_detail_updated',
+      REQUEST_RESOURCE_DETAIL_UPDATED: 'request_resource_detail_updated',
+      TRANSFER_RESOURCE_RECORDED: 'transfer_resource_recorded',
+      PERSON_STATUS_CHANGED: 'person_status_changed',
+      OCCUPATION_WITHOUT_STAFF: 'occupation_without_staff',
+      TEMPORARY_OCCUPATION_ASSIGNED: 'temporary_occupation_assigned',
+      CAMP_ACHIEVEMENT_UNLOCKED: 'camp_achievement_unlocked',
+    };
+
+    return templateByType[type] ?? 'generic_notification';
+  }
 
   private async validateUserCamp(
     campId: number,
@@ -108,6 +145,7 @@ export class NotificationService {
     user: UserEntity,
     title: string,
     message: string,
+    notificationType: NotificationType,
     email?: NotificationEmailOptions,
   ): Promise<void> {
     if (!user.email || !user.email.trim()) {
@@ -117,7 +155,7 @@ export class NotificationService {
     await this.queueEmail({
       toEmail: user.email.trim(),
       subject: email?.subject ?? title,
-      templateKey: email?.templateKey ?? 'generic_notification',
+      templateKey: email?.templateKey ?? this.resolveTemplateKeyForType(notificationType),
       payload: this.buildEmailPayload(title, message, email?.payload),
     });
   }
@@ -227,7 +265,24 @@ export class NotificationService {
 
     const notification = await this.createNotification(createData);
 
-    await this.queueEmailForUser(user, options.title, options.message, options.email);
+    if (options.sendEmail !== false) {
+      const mergedEmailOptions: NotificationEmailOptions = {
+        ...options.email,
+        payload: {
+          sourceType: options.sourceType ?? undefined,
+          sourceId: options.sourceId ?? undefined,
+          ...(options.email?.payload ?? {}),
+        },
+      };
+
+      await this.queueEmailForUser(
+        user,
+        options.title,
+        options.message,
+        options.type,
+        mergedEmailOptions,
+      );
+    }
     return notification;
   }
 

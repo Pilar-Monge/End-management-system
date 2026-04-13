@@ -300,7 +300,12 @@ export class AdmissionRequestService {
       throw new Error('Error reviewing request');
     }
 
-    await this.notifyAdminReviewResult(updatedRequest.id, updatedRequest.email, approved);
+    await this.notifyAdminReviewResult(
+      updatedRequest.id,
+      updatedRequest.campId,
+      updatedRequest.email,
+      approved,
+    );
 
     return updatedRequest;
   }
@@ -450,10 +455,18 @@ export class AdmissionRequestService {
     }
 
     if (status === 'REJECTED') {
+      await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
+        type: 'ADMISSION_REQUEST_REJECTED',
+        title: 'Solicitud rechazada por evaluacion IA',
+        message: `La solicitud ${requestId} fue rechazada durante la evaluacion automatizada.`,
+        sourceType: 'admission_request',
+        sourceId: requestId,
+      });
+
       await this.notificationService.queueEmail({
         toEmail: applicantEmail,
         subject: 'Solicitud rechazada',
-        templateKey: 'generic_notification',
+        templateKey: 'admission_request_rejected',
         payload: {
           title: 'Solicitud rechazada',
           message:
@@ -465,13 +478,24 @@ export class AdmissionRequestService {
 
   private async notifyAdminReviewResult(
     requestId: number,
+    campId: number,
     applicantEmail: string,
     approved: boolean,
   ): Promise<void> {
+    await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
+      type: approved ? 'ADMISSION_REQUEST_APPROVED' : 'ADMISSION_REQUEST_REJECTED',
+      title: approved ? 'Solicitud de admision aprobada' : 'Solicitud de admision rechazada',
+      message: approved
+        ? `La solicitud ${requestId} fue aprobada por administracion.`
+        : `La solicitud ${requestId} fue rechazada por administracion.`,
+      sourceType: 'admission_request',
+      sourceId: requestId,
+    });
+
     await this.notificationService.queueEmail({
       toEmail: applicantEmail,
       subject: approved ? 'Solicitud aprobada' : 'Solicitud rechazada',
-      templateKey: 'generic_notification',
+      templateKey: approved ? 'admission_request_approved' : 'admission_request_rejected',
       payload: {
         title: approved ? 'Solicitud aprobada' : 'Solicitud rechazada',
         message: approved

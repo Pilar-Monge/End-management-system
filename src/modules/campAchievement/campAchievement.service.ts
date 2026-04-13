@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { AchievementEntity } from '../achievement/achievement.entity';
 import { CampEntity } from '../camp/camp.entity';
+import { NotificationService } from '../notification/notification.service';
 import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { CampAchievementRepository } from './campAchievement.repository';
@@ -18,7 +19,39 @@ export class CampAchievementService {
   constructor(
     private readonly repository: CampAchievementRepository,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
   ) {}
+
+  private async notifyCampAchievement(
+    campAchievement: Pick<CampAchievement, 'campId' | 'achievementId' | 'unlockedBy'>,
+    sourceId: number,
+    title: string,
+    messagePrefix: string,
+  ): Promise<void> {
+    const achievementRepo = this.dataSource.getRepository(AchievementEntity);
+    const achievement = await achievementRepo.findOne({ where: { id: campAchievement.achievementId } });
+    if (!achievement) {
+      return;
+    }
+
+    const message = `${messagePrefix}: ${achievement.name}.`;
+    await this.notificationService.notifyCampRoles(campAchievement.campId, ['SYSTEM_ADMIN'], {
+      type: 'CAMP_ACHIEVEMENT_UNLOCKED',
+      title,
+      message,
+      sourceType: 'camp_achievement',
+      sourceId,
+    });
+
+    await this.notificationService.notifyUser(campAchievement.unlockedBy, {
+      campId: campAchievement.campId,
+      type: 'CAMP_ACHIEVEMENT_UNLOCKED',
+      title: 'Logro registrado',
+      message: `Se registro el logro ${achievement.name} para tu campamento.`,
+      sourceType: 'camp_achievement',
+      sourceId,
+    });
+  }
 
   async createCampAchievement(data: CreateCampAchievementDTO): Promise<CampAchievement> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
@@ -29,7 +62,16 @@ export class CampAchievementService {
     if (existing) {
       throw new Error('This camp achievement already exists');
     }
-    return await this.repository.create(data);
+
+    const created = await this.repository.create(data);
+    await this.notifyCampAchievement(
+      created,
+      created.achievementId,
+      'Logro desbloqueado',
+      'Se desbloqueo un logro para el campamento',
+    );
+
+    return created;
   }
 
   async getCampAchievementByKey(
@@ -77,10 +119,39 @@ export class CampAchievementService {
       await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
     }
 
-    return await this.repository.update(campId, achievementId, data);
+    const updated = await this.repository.update(campId, achievementId, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notifyCampAchievement(
+      updated,
+      updated.achievementId,
+      'Logro de campamento actualizado',
+      'Se actualizo el registro de logro del campamento',
+    );
+
+    return updated;
   }
 
   async deleteCampAchievement(campId: number, achievementId: number): Promise<boolean> {
-    return await this.repository.delete(campId, achievementId);
+    const existing = await this.repository.findByKey(campId, achievementId);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(campId, achievementId);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyCampAchievement(
+      existing,
+      existing.achievementId,
+      'Logro de campamento eliminado',
+      'Se elimino el registro de logro del campamento',
+    );
+
+    return true;
   }
 }

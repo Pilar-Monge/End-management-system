@@ -213,6 +213,43 @@ export class IntercampRequestService {
   }
 
   async deleteRequest(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    const title = 'Solicitud intercampamento eliminada';
+    const message = `La solicitud intercampamento #${id} fue eliminada del sistema.`;
+
+    await this.notificationService.notifyCampRoles(
+      existing.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'INTERCAMP_REQUEST_CANCELED',
+        title,
+        message,
+        sourceType: 'intercamp_request',
+        sourceId: id,
+      },
+    );
+
+    await this.notificationService.notifyCampRoles(
+      existing.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'INTERCAMP_REQUEST_CANCELED',
+        title,
+        message,
+        sourceType: 'intercamp_request',
+        sourceId: id,
+      },
+    );
+
+    return true;
   }
 }

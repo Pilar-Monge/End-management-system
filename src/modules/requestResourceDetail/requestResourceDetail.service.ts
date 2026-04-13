@@ -194,6 +194,23 @@ export class RequestResourceDetailService {
   }
 
   async deleteDetail(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyRequestResourceChange(
+      existing.requestId,
+      existing.id,
+      existing.resourceTypeId,
+      'Se elimino un detalle de recurso',
+    );
+
+    return true;
   }
 }

@@ -131,7 +131,27 @@ export class UserService {
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    return this.userRepo.delete(id);
+    const existing = await this.userRepo.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.userRepo.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyUser(existing.id, {
+      campId: existing.campId,
+      type: 'USER_STATUS_UPDATED',
+      title: 'Cuenta de usuario eliminada',
+      message: 'Tu cuenta de usuario del sistema fue eliminada.',
+      sourceType: 'system_user',
+      sourceId: existing.id,
+      sendEmail: false,
+    });
+
+    return true;
   }
 
   async countUsersByCamp(campId: number): Promise<number> {

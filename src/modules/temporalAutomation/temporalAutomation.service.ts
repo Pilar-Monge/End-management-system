@@ -54,7 +54,9 @@ export class TemporalAutomationService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async runDailyResourceCycle(): Promise<void> {
     const now = this.systemTimeService.now();
-    const camps = await this.campRepo.find({ select: ['id', 'minimumDailyRationPerPerson'] });
+    const camps = await this.campRepo.find({
+      select: ['id', 'name', 'minimumDailyRationPerPerson', 'maxPersonCapacity'],
+    });
 
     const foodResource = await this.resourceTypeRepo.findOne({ where: { category: 'FOOD' } });
     const waterResource = await this.resourceTypeRepo.findOne({ where: { category: 'WATER' } });
@@ -123,6 +125,8 @@ export class TemporalAutomationService {
       }
 
       await this.generateAlertsIfNeeded(camp.id, [...touchedResourceIds], now);
+      await this.notifyCampOverpopulationIfNeeded(camp, peopleCount);
+      await this.notifyOccupationsWithoutStaff(camp.id);
     }
   }
 
@@ -333,7 +337,7 @@ export class TemporalAutomationService {
         continue;
       }
 
-      await this.inventoryAlertRepo.save(
+      const createdAlert = await this.inventoryAlertRepo.save(
         this.inventoryAlertRepo.create({
           campId,
           resourceTypeId: inventory.resourceTypeId,
@@ -344,6 +348,96 @@ export class TemporalAutomationService {
           resolutionDate: null,
           resolvedBy: null,
         }),
+      );
+
+      await this.notificationService.notifyCampRoles(
+        campId,
+        ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+        {
+          type: 'INVENTORY_ALERT',
+          title: 'Alerta de inventario bajo',
+          message: `El recurso ${inventory.resourceTypeId} esta bajo el minimo permitido (${inventory.currentAmount} < ${inventory.minimumAlertAmount}).`,
+          sourceType: 'inventory_alert',
+          sourceId: createdAlert.id,
+        },
+      );
+    }
+  }
+
+  private async notifyCampOverpopulationIfNeeded(
+    camp: Pick<CampEntity, 'id' | 'name' | 'maxPersonCapacity'>,
+    peopleCount: number,
+  ): Promise<void> {
+    if (!Number.isInteger(camp.maxPersonCapacity) || camp.maxPersonCapacity <= 0) {
+      return;
+    }
+
+    if (peopleCount <= camp.maxPersonCapacity) {
+      return;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      camp.id,
+      ['SYSTEM_ADMIN'],
+      {
+        type: 'OVERPOPULATION_ALERT',
+        title: 'Alerta de sobrepoblacion',
+        message: `El campamento ${camp.name} excedio su capacidad (${peopleCount}/${camp.maxPersonCapacity}).`,
+        sourceType: 'camp',
+        sourceId: camp.id,
+      },
+    );
+  }
+
+  private async notifyOccupationsWithoutStaff(campId: number): Promise<void> {
+    const relevantOccupations = await this.occupationRepo.find({
+      where: [
+        { collectsResources: true },
+        { participatesInExpeditions: true },
+      ],
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (relevantOccupations.length === 0) {
+      return;
+    }
+
+    const occupationIds = relevantOccupations.map((occupation) => occupation.id);
+    const activePeople = await this.personRepo.find({
+      where: {
+        campId,
+        currentStatus: 'ACTIVE',
+        occupationId: In(occupationIds),
+      },
+      select: {
+        occupationId: true,
+      },
+    });
+
+    const staffedOccupationIds = new Set(
+      activePeople
+        .map((person) => person.occupationId)
+        .filter((occupationId): occupationId is number => occupationId !== null),
+    );
+
+    for (const occupation of relevantOccupations) {
+      if (staffedOccupationIds.has(occupation.id)) {
+        continue;
+      }
+
+      await this.notificationService.notifyCampRoles(
+        campId,
+        ['SYSTEM_ADMIN'],
+        {
+          type: 'OCCUPATION_WITHOUT_STAFF',
+          title: 'Ocupacion sin personal asignado',
+          message: `La ocupacion ${occupation.name} no tiene personal activo asignado en el campamento.`,
+          sourceType: 'occupation',
+          sourceId: occupation.id,
+        },
       );
     }
   }

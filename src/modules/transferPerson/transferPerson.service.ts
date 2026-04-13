@@ -193,6 +193,23 @@ export class TransferPersonService {
   }
 
   async deleteTransferPerson(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyTransferPersonEvent(
+      existing.transferId,
+      existing.personId,
+      existing.status,
+      existing.id,
+    );
+
+    return true;
   }
 }

@@ -169,6 +169,17 @@ export class RequestPersonDetailService {
   }
 
   async deleteDetail(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyRequestPersonChange(existing, 'Se elimino un detalle de persona');
+    return true;
   }
 }

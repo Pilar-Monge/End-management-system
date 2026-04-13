@@ -123,6 +123,11 @@ export class InventoryMovementService {
     id: number,
     data: UpdateInventoryMovementDTO,
   ): Promise<InventoryMovement | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return null;
+    }
+
     if (data.campId !== undefined) {
       await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     }
@@ -138,10 +143,49 @@ export class InventoryMovementService {
       await assertEntityExists(this.dataSource, UserEntity, data.recordedBy, 'User');
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Movimiento de inventario actualizado',
+        message: `El movimiento de inventario ${updated.id} fue actualizado.`,
+        sourceType: 'inventory_movement',
+        sourceId: updated.id,
+      },
+    );
+
+    return updated;
   }
 
   async deleteMovement(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Movimiento de inventario eliminado',
+        message: `El movimiento de inventario ${existing.id} fue eliminado.`,
+        sourceType: 'inventory_movement',
+        sourceId: existing.id,
+      },
+    );
+
+    return true;
   }
 }

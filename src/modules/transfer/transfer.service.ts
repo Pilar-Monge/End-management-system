@@ -192,6 +192,42 @@ export class TransferService {
   }
 
   async deleteTransfer(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const scope = await this.resolveRequestScope(existing.requestId);
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    const title = 'Traslado eliminado';
+    const message = `El traslado #${id} fue eliminado del sistema.`;
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_CANCELED',
+        title,
+        message,
+        sourceType: 'transfer',
+        sourceId: id,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_CANCELED',
+        title,
+        message,
+        sourceType: 'transfer',
+        sourceId: id,
+      },
+    );
+
+    return true;
   }
 }

@@ -151,12 +151,86 @@ export class ExpeditionParticipantService {
     const expeditionId = data.expeditionId ?? existing.expeditionId;
     const personId = data.personId ?? existing.personId;
 
-    await this.validateParticipantCamp(expeditionId, personId);
+    const { expedition } = await this.validateParticipantCamp(expeditionId, personId);
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    const linkedUser = await userRepo.findOne({
+      where: {
+        personId: updated.personId,
+        campId: expedition.campId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (linkedUser) {
+      await this.notificationService.notifyUser(linkedUser.id, {
+        campId: expedition.campId,
+        type: 'EXPEDITION_STATUS_UPDATED',
+        title: 'Participacion en expedicion actualizada',
+        message: `Tu participacion en la expedicion ${expedition.name} fue actualizada.`,
+        sourceType: 'expedition_participant',
+        sourceId: updated.id,
+      });
+    }
+
+    return updated;
   }
 
   async deleteParticipant(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    const expedition = await this.expeditionRepo.findOne({
+      where: {
+        id: existing.expeditionId,
+      },
+      select: {
+        id: true,
+        campId: true,
+        name: true,
+      },
+    });
+
+    if (!expedition) {
+      return true;
+    }
+
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    const linkedUser = await userRepo.findOne({
+      where: {
+        personId: existing.personId,
+        campId: expedition.campId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (linkedUser) {
+      await this.notificationService.notifyUser(linkedUser.id, {
+        campId: expedition.campId,
+        type: 'EXPEDITION_STATUS_UPDATED',
+        title: 'Participacion en expedicion removida',
+        message: `Fuiste removido de la expedicion ${expedition.name}.`,
+        sourceType: 'expedition',
+        sourceId: expedition.id,
+      });
+    }
+
+    return true;
   }
 }
