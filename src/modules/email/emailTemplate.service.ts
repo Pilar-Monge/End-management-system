@@ -127,6 +127,17 @@ export class EmailTemplateService {
         ? `<ul style="padding-left:18px;margin:8px 0 0 0;">${detailsRows.join('')}</ul>`
         : '';
 
+    const changedFields = this.getChangedFields(payload);
+    const changesBlock =
+      changedFields.length > 0
+        ? `<div style="margin-top:14px;"><p style="margin:0 0 8px 0;font-weight:600;color:#134e4a;">Datos modificados</p><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr><th style="text-align:left;padding:8px;border:1px solid #d1d5db;background:#f0fdfa;">Campo</th><th style="text-align:left;padding:8px;border:1px solid #d1d5db;background:#f0fdfa;">Antes</th><th style="text-align:left;padding:8px;border:1px solid #d1d5db;background:#f0fdfa;">Ahora</th></tr></thead><tbody>${changedFields
+            .map(
+              (field) =>
+                `<tr><td style="padding:8px;border:1px solid #d1d5db;">${this.escapeHtml(field.field)}</td><td style="padding:8px;border:1px solid #d1d5db;">${this.escapeHtml(field.previous)}</td><td style="padding:8px;border:1px solid #d1d5db;">${this.escapeHtml(field.current)}</td></tr>`,
+            )
+            .join('')}</tbody></table></div>`
+        : '';
+
     const actionBlock =
       actionLabel && actionUrl
         ? `<p style="margin-top:16px;"><a href="${this.escapeHtml(actionUrl)}" style="display:inline-block;padding:10px 14px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:6px;">${this.escapeHtml(actionLabel)}</a></p>`
@@ -137,6 +148,7 @@ export class EmailTemplateService {
       `<h2 style="margin:0 0 10px 0;color:#134e4a;">${this.escapeHtml(title)}</h2>`,
       `<p style="margin:0 0 10px 0;">${this.escapeHtml(message)}</p>`,
       detailsBlock,
+      changesBlock,
       actionBlock,
       '<p style="margin-top:18px;color:#475569;font-size:12px;">Este mensaje fue generado automaticamente por End Management System.</p>',
       '</div>',
@@ -149,11 +161,21 @@ export class EmailTemplateService {
       .filter(Boolean)
       .join('\n');
 
+    const changedFieldsText =
+      changedFields.length > 0
+        ? `\n\nDatos modificados:\n${changedFields
+            .map(
+              (field) => `- ${field.field}: ${field.previous} -> ${field.current}`,
+            )
+            .join('\n')}`
+        : '';
+
     const text = [
       title,
       '',
       message,
       detailsText,
+      changedFieldsText,
       actionLabel && actionUrl ? `${actionLabel}: ${actionUrl}` : '',
     ]
       .filter(Boolean)
@@ -164,6 +186,33 @@ export class EmailTemplateService {
       html,
       text,
     };
+  }
+
+  private getChangedFields(
+    payload: Record<string, unknown>,
+  ): Array<{ field: string; previous: string; current: string }> {
+    const details =
+      typeof payload.details === 'object' && payload.details !== null
+        ? (payload.details as Record<string, unknown>)
+        : null;
+
+    const raw = Array.isArray(payload.changedFields)
+      ? payload.changedFields
+      : Array.isArray(details?.changedFields)
+        ? details.changedFields
+        : null;
+
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+
+    return raw
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        field: this.toString(item.field, 'Campo'),
+        previous: this.toString(item.previous, '-'),
+        current: this.toString(item.current, '-'),
+      }));
   }
 
   private toString(value: unknown, fallback: string): string {
