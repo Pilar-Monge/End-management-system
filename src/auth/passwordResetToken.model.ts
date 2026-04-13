@@ -1,0 +1,14 @@
+export const PASSWORD_RESET_TOKEN_STATUS_VALUES = ['ACTIVE', 'USED', 'EXPIRED'] as const;
+
+export type PasswordResetTokenStatus = (typeof PASSWORD_RESET_TOKEN_STATUS_VALUES)[number];
+
+export interface PasswordResetToken {
+  id: number;
+  userId: number;
+  tokenHash: string;
+  status: PasswordResetTokenStatus;
+  expiresAt: Date;
+  usedAt: Date | null;
+  createdAt: Date;
+  requestIp: string | null;
+}

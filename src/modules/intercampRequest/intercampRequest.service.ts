@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { CampEntity } from '../camp/camp.entity';
+import { NotificationService } from '../notification/notification.service';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { IntercampRequestRepository } from './intercampRequest.repository';
 import type {
@@ -16,6 +17,7 @@ import type {
 export class IntercampRequestService {
   constructor(
     private readonly repository: IntercampRequestRepository,
+    private readonly notificationService: NotificationService,
     @InjectRepository(CampEntity)
     private readonly campRepo: Repository<CampEntity>,
     @InjectRepository(UserEntity)
@@ -73,7 +75,30 @@ export class IntercampRequestService {
       data.respondedBy,
     );
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+
+    await this.notificationService.notifyUser(created.createdBy, {
+      campId: created.originCampId,
+      type: 'INTERCAMP_REQUEST_RECEIVED',
+      title: 'Solicitud intercampamento creada',
+      message: `Tu solicitud intercampamento #${created.id} fue registrada y enviada al campamento ${created.destinationCampId}.`,
+      sourceType: 'intercamp_request',
+      sourceId: created.id,
+    });
+
+    await this.notificationService.notifyCampRoles(
+      created.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'INTERCAMP_REQUEST_RECEIVED',
+        title: 'Nueva solicitud intercampamento',
+        message: `Se recibio una solicitud intercampamento #${created.id} desde el campamento ${created.originCampId}.`,
+        sourceType: 'intercamp_request',
+        sourceId: created.id,
+      },
+    );
+
+    return created;
   }
 
   async getRequestById(id: number): Promise<IntercampRequest | null> {
@@ -133,7 +158,58 @@ export class IntercampRequestService {
 
     await this.validateRoutingAndOwnership(originCampId, destinationCampId, createdBy, respondedBy);
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    const statusChanged = updated.status !== existing.status;
+    if (statusChanged) {
+      const notificationType =
+        updated.status === 'APPROVED'
+          ? 'INTERCAMP_REQUEST_APPROVED'
+          : updated.status === 'REJECTED'
+            ? 'INTERCAMP_REQUEST_REJECTED'
+            : updated.status === 'CANCELED'
+              ? 'INTERCAMP_REQUEST_CANCELED'
+              : 'INTERCAMP_REQUEST_RECEIVED';
+
+      const title =
+        updated.status === 'APPROVED'
+          ? 'Solicitud intercampamento aprobada'
+          : updated.status === 'REJECTED'
+            ? 'Solicitud intercampamento rechazada'
+            : updated.status === 'CANCELED'
+              ? 'Solicitud intercampamento cancelada'
+              : 'Solicitud intercampamento actualizada';
+
+      const message = `La solicitud intercampamento #${updated.id} cambio su estado a ${updated.status}.`;
+
+      await this.notificationService.notifyCampRoles(
+        updated.originCampId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: notificationType,
+          title,
+          message,
+          sourceType: 'intercamp_request',
+          sourceId: updated.id,
+        },
+      );
+      await this.notificationService.notifyCampRoles(
+        updated.destinationCampId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: notificationType,
+          title,
+          message,
+          sourceType: 'intercamp_request',
+          sourceId: updated.id,
+        },
+      );
+    }
+
+    return updated;
   }
 
   async deleteRequest(id: number): Promise<boolean> {

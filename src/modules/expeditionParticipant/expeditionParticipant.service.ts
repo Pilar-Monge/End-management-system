@@ -95,9 +95,8 @@ export class ExpeditionParticipantService {
     });
 
     if (assignedUser && assignedUser.campId === expedition.campId) {
-      await this.notificationService.createNotification({
+      await this.notificationService.notifyUser(assignedUser.id, {
         campId: expedition.campId,
-        userId: assignedUser.id,
         type: 'EXPEDITION_RETURN',
         title: 'Asignacion de expedicion',
         message: `Has sido asignado a una nueva expedicion: ${expedition.name}. Revisa los detalles en tu panel.`,

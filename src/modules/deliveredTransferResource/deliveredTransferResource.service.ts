@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { TransferEntity } from '../transfer/transfer.entity';
 
@@ -17,8 +18,67 @@ import type {
 export class DeliveredTransferResourceService {
   constructor(
     private readonly repository: DeliveredTransferResourceRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async resolveTransferScope(transferId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  }> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer t
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE t.id = $1
+       LIMIT 1`,
+      [transferId],
+    );
+
+    const row = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!row) {
+      throw new Error('Transfer scope not found');
+    }
+
+    return {
+      originCampId: row.origin_camp_id,
+      destinationCampId: row.destination_camp_id,
+    };
+  }
+
+  private async notifyDeliveredResourceChange(
+    transferId: number,
+    detailId: number,
+    resourceTypeId: number,
+    actionLabel: string,
+  ): Promise<void> {
+    const scope = await this.resolveTransferScope(transferId);
+    const title = 'Registro de recursos entregados';
+    const message = `${actionLabel} para recurso ${resourceTypeId} en traslado ${transferId}.`;
+
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_RESOURCE_RECORDED',
+        title,
+        message,
+        sourceType: 'delivered_transfer_resource',
+        sourceId: detailId,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_RESOURCE_RECORDED',
+        title,
+        message,
+        sourceType: 'delivered_transfer_resource',
+        sourceId: detailId,
+      },
+    );
+  }
 
   async createDeliveredResource(
     data: CreateDeliveredTransferResourceDTO,
@@ -47,7 +107,14 @@ export class DeliveredTransferResourceService {
       throw new Error('This delivered transfer resource already exists');
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notifyDeliveredResourceChange(
+      created.transferId,
+      created.id,
+      created.resourceTypeId,
+      'Se registro entrega de recurso',
+    );
+    return created;
   }
 
   async getDeliveredResourceById(id: number): Promise<DeliveredTransferResource | null> {
@@ -123,7 +190,17 @@ export class DeliveredTransferResourceService {
       }
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (updated) {
+      await this.notifyDeliveredResourceChange(
+        updated.transferId,
+        updated.id,
+        updated.resourceTypeId,
+        'Se actualizo entrega de recurso',
+      );
+    }
+
+    return updated;
   }
 
   async deleteDeliveredResource(id: number): Promise<boolean> {

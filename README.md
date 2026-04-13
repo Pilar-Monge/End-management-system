@@ -90,6 +90,22 @@ The backend reads these variables (and uses default values if not provided):
 - `DB_USER` (default: `gestionfin`)
 - `DB_PASSWORD` (default: `gestionfin123`)
 
+### Email and Password Reset
+
+- `EMAIL_ENABLED`: enables SMTP delivery processor (`true`/`false`).
+- `EMAIL_FROM`: sender email address.
+- `SMTP_HOST`: SMTP server host.
+- `SMTP_PORT`: SMTP server port.
+- `SMTP_SECURE`: use TLS (`true`/`false`).
+- `SMTP_USER`: SMTP username (optional).
+- `SMTP_PASS`: SMTP password (optional).
+- `EMAIL_MAX_ATTEMPTS`: max retries per outbox item.
+- `EMAIL_BATCH_SIZE`: max emails processed per cron iteration.
+- `EMAIL_PROCESSOR_CRON`: cron expression for email processing.
+- `EMAIL_PROCESSING_LEASE_MINUTES`: lease in minutes for `PROCESSING` emails before they can be recovered.
+- `PASSWORD_RESET_TTL_MINUTES`: reset token TTL in minutes.
+- `FRONTEND_RESET_PASSWORD_URL`: base reset URL where the token is appended as query param.
+
 ---
 
 ## Running the Project

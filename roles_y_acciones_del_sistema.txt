@@ -1,0 +1,49 @@
+GUIA DE ROLES Y ACCIONES DEL SISTEMA
+
+1) Rol: SYSTEM_ADMIN
+- Puede crear, actualizar y gestionar usuarios del sistema.
+  Impacta: cambia permisos de otros usuarios y su nivel de acceso.
+- Puede hacer cambios de roles (por ejemplo, pasar de VISITOR a WORKER).
+  Impacta: define que acciones puede realizar cada usuario.
+- Puede consultar y administrar informacion global del sistema.
+  Impacta: afecta datos de varios campamentos, no solo el suyo.
+- Puede intervenir en procesos criticos (inventario, expediciones, solicitudes intercamp) cuando la politica lo permite.
+  Impacta: cambios directos en operaciones entre campamentos.
+
+2) Rol: RESOURCE_MANAGEMENT
+- Puede registrar y actualizar movimientos de inventario de su campamento.
+  Impacta: modifica cantidades disponibles y alertas de recursos.
+- Puede gestionar registros de recursos consumidos y obtenidos en expediciones.
+  Impacta: afecta historiales de consumo/obtencion y trazabilidad de recursos.
+- Puede participar en solicitudes intercamp relacionadas con recursos.
+  Impacta: afecta transferencias, salidas y entradas de recursos entre campamentos.
+- Puede registrar entregas de recursos transferidos cuando corresponde.
+  Impacta: confirma movimientos reales y actualiza evidencia operativa.
+
+3) Rol: TRAVEL_MANAGER
+- Puede crear y administrar expediciones de su campamento.
+  Impacta: define rutas de salida, estado de expediciones y equipo involucrado.
+- Puede gestionar participantes de expedicion y personas en traslados.
+  Impacta: afecta seguridad operativa y estado de personas movilizadas.
+- Puede crear y dar seguimiento a solicitudes intercamp y transferencias vinculadas a movilidad.
+  Impacta: afecta coordinacion entre campamentos de origen/destino.
+- No debe modificar modulos restringidos a gestion de recursos cuando la politica de rol no lo permite.
+  Impacta: evita cambios no autorizados en inventarios sensibles.
+
+4) Rol: WORKER
+- Puede registrar operaciones operativas permitidas en su campamento (por ejemplo, movimientos o recolecciones segun reglas del modulo).
+  Impacta: actualiza datos diarios de produccion/consumo en su propio campamento.
+- Puede consultar informacion permitida de su campamento.
+  Impacta: acceso limitado para evitar fuga de datos entre campamentos.
+- No puede cambiar roles ni administrar usuarios.
+  Impacta: conserva separacion entre operacion y administracion.
+
+5) Rol: VISITOR
+- Tiene acceso minimo de consulta segun las politicas activas.
+  Impacta: solo lectura limitada o acceso muy restringido.
+- No puede ejecutar cambios operativos ni administrativos.
+  Impacta: no altera inventario, expediciones, solicitudes ni usuarios.
+
+NOTA SOBRE ALCANCE DE IMPACTO
+- En general, la mayoria de acciones de roles no admin deben limitarse a su propio campamento.
+- En flujos intercamp (solicitudes/transferencias), el impacto se extiende a campamento origen y destino, pero siempre bajo validaciones de permisos y contexto.

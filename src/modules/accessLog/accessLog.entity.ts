@@ -13,7 +13,9 @@ import { ACCESS_LOG_EVENT_TYPE_VALUES, type AccessLogEventType } from './accessL
     'INACTIVITY_EXPIRATION',
     'LOCKOUT',
     'CAMP_CHANGE',
-    'FAILED_ATTEMPT'
+    'FAILED_ATTEMPT',
+    'PASSWORD_RESET_REQUEST',
+    'PASSWORD_RESET_COMPLETED'
   )`,
 )
 @Index('idx_log_acceso_usuario', ['userId'])

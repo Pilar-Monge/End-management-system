@@ -2,6 +2,7 @@ import { BadRequestException, Body, Controller, Get, Post, Req } from '@nestjs/c
 import type { Request } from 'express';
 
 import { Public } from '../common/decorators';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { AuthService } from './auth.service';
 import type { LoginDTO } from './auth.model';
 
@@ -53,6 +54,27 @@ export class AuthController {
       data: {
         active: true,
       },
+    };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto, @Req() req: Request) {
+    await this.service.forgotPassword(body.email, body.campId, req.ip ?? 'unknown');
+    return {
+      success: true,
+      message:
+        'Si el correo pertenece a un usuario registrado, recibiras instrucciones para restablecer la contrasena.',
+    };
+  }
+
+  @Public()
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto, @Req() req: Request) {
+    await this.service.resetPassword(body.token, body.newPassword, req.ip ?? 'unknown');
+    return {
+      success: true,
+      message: 'Contrasena actualizada correctamente',
     };
   }
 }
