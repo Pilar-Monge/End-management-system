@@ -5,6 +5,7 @@ import { DataSource, Repository } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { NotificationService } from '../notification/notification.service';
 import { PersonEntity } from '../person/person.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
@@ -19,6 +20,7 @@ import type {
 export class DailyCollectionRecordService {
   constructor(
     private readonly repository: DailyCollectionRecordRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
     @InjectRepository(PersonEntity)
     private readonly personRepo: Repository<PersonEntity>,
@@ -97,7 +99,15 @@ export class DailyCollectionRecordService {
       );
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notificationService.notifyCampRoles(created.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
+      type: 'INVENTORY_ALERT',
+      title: 'Registro diario de recoleccion creado',
+      message: `Se registro una recoleccion diaria para recurso ${created.resourceTypeId}.`,
+      sourceType: 'daily_collection_record',
+      sourceId: created.id,
+    });
+    return created;
   }
 
   async getRecordById(id: number): Promise<DailyCollectionRecord | null> {
@@ -151,10 +161,41 @@ export class DailyCollectionRecordService {
 
     await this.validateCampConsistency(campId, personId, recordedBy, resourceTypeId, movementId);
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(updated.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
+      type: 'INVENTORY_ALERT',
+      title: 'Registro diario de recoleccion actualizado',
+      message: `Se actualizo el registro diario ${updated.id}.`,
+      sourceType: 'daily_collection_record',
+      sourceId: updated.id,
+    });
+
+    return updated;
   }
 
   async deleteRecord(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(existing.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
+      type: 'INVENTORY_ALERT',
+      title: 'Registro diario de recoleccion eliminado',
+      message: `Se elimino el registro diario ${existing.id}.`,
+      sourceType: 'daily_collection_record',
+      sourceId: existing.id,
+    });
+
+    return true;
   }
 }

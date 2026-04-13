@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
+import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { PersonEntity } from '../person/person.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
@@ -18,7 +19,64 @@ export class TemporaryOccupationAssignmentService {
   constructor(
     private readonly repository: TemporaryOccupationAssignmentRepository,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
   ) {}
+
+  private async notifyAssignmentChange(
+    personId: number,
+    temporaryOccupationId: number,
+    sourceId: number,
+    messagePrefix: string,
+  ): Promise<void> {
+    const personRepo = this.dataSource.getRepository(PersonEntity);
+    const occupationRepo = this.dataSource.getRepository(OccupationEntity);
+    const userRepo = this.dataSource.getRepository(UserEntity);
+
+    const person = await personRepo.findOne({ where: { id: personId } });
+    const occupation = await occupationRepo.findOne({ where: { id: temporaryOccupationId } });
+    if (!person || !occupation) {
+      return;
+    }
+
+    const fullName = `${person.name} ${person.lastName1}`.trim();
+    const message = `${messagePrefix}: ${fullName} -> ${occupation.name}.`;
+
+    await this.notificationService.notifyCampRoles(
+      person.campId,
+      ['SYSTEM_ADMIN'],
+      {
+        type: 'TEMPORARY_OCCUPATION_ASSIGNED',
+        title: 'Asignacion temporal de ocupacion',
+        message,
+        sourceType: 'temporary_occupation_assignment',
+        sourceId,
+      },
+    );
+
+    const linkedUser = await userRepo.findOne({
+      where: {
+        personId: person.id,
+        campId: person.campId,
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!linkedUser) {
+      return;
+    }
+
+    await this.notificationService.notifyUser(linkedUser.id, {
+      campId: person.campId,
+      type: 'TEMPORARY_OCCUPATION_ASSIGNED',
+      title: 'Nueva ocupacion temporal',
+      message: `Se te asigno temporalmente la ocupacion ${occupation.name}.`,
+      sourceType: 'temporary_occupation_assignment',
+      sourceId,
+    });
+  }
 
   async createAssignment(
     data: CreateTemporaryOccupationAssignmentDTO,
@@ -32,7 +90,14 @@ export class TemporaryOccupationAssignmentService {
     );
     await assertEntityExists(this.dataSource, UserEntity, data.assignedBy, 'User');
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notifyAssignmentChange(
+      created.personId,
+      created.temporaryOccupationId,
+      created.id,
+      'Se registro una asignacion temporal',
+    );
+    return created;
   }
 
   async getAssignmentById(id: number): Promise<TemporaryOccupationAssignment | null> {
@@ -89,10 +154,39 @@ export class TemporaryOccupationAssignmentService {
       await assertEntityExists(this.dataSource, UserEntity, data.assignedBy, 'User');
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notifyAssignmentChange(
+      updated.personId,
+      updated.temporaryOccupationId,
+      updated.id,
+      'Se actualizo una asignacion temporal',
+    );
+
+    return updated;
   }
 
   async deleteAssignment(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyAssignmentChange(
+      existing.personId,
+      existing.temporaryOccupationId,
+      existing.id,
+      'Se elimino una asignacion temporal',
+    );
+
+    return true;
   }
 }

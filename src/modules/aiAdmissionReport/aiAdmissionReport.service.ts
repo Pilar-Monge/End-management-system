@@ -4,6 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 
 import { AiAdmissionReportRepository } from './aiAdmissionReport.repository';
 import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import type {
@@ -18,6 +19,7 @@ export class AiAdmissionReportService {
   constructor(
     private readonly repository: AiAdmissionReportRepository,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
     @InjectRepository(AdmissionRequestEntity)
     private readonly admissionRequestRepo: Repository<AdmissionRequestEntity>,
   ) {}
@@ -45,7 +47,26 @@ export class AiAdmissionReportService {
       );
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+
+    const request = await this.admissionRequestRepo.findOne({
+      where: { id: data.requestId },
+      select: {
+        campId: true,
+      },
+    });
+
+    if (request) {
+      await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
+        type: 'ADMISSION_REQUEST_AI_REVIEWED',
+        title: 'Reporte IA de admision creado',
+        message: `Se creo un reporte IA para la solicitud ${data.requestId}.`,
+        sourceType: 'ai_admission_report',
+        sourceId: created.id,
+      });
+    }
+
+    return created;
   }
 
   async getReportById(id: number): Promise<AiAdmissionReport | null> {
@@ -117,10 +138,59 @@ export class AiAdmissionReportService {
         'Occupation',
       );
     }
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    const request = await this.admissionRequestRepo.findOne({
+      where: { id: updated.requestId },
+      select: {
+        campId: true,
+      },
+    });
+
+    if (request) {
+      await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
+        type: 'ADMISSION_REQUEST_AI_REVIEWED',
+        title: 'Reporte IA de admision actualizado',
+        message: `Se actualizo el reporte IA para la solicitud ${updated.requestId}.`,
+        sourceType: 'ai_admission_report',
+        sourceId: updated.id,
+      });
+    }
+
+    return updated;
   }
 
   async deleteReport(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    const request = await this.admissionRequestRepo.findOne({
+      where: { id: existing.requestId },
+      select: {
+        campId: true,
+      },
+    });
+
+    if (request) {
+      await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
+        type: 'ADMISSION_REQUEST_AI_REVIEWED',
+        title: 'Reporte IA de admision eliminado',
+        message: `Se elimino el reporte IA para la solicitud ${existing.requestId}.`,
+        sourceType: 'ai_admission_report',
+        sourceId: existing.id,
+      });
+    }
+
+    return true;
   }
 }

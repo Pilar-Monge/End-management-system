@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
+import { NotificationService } from '../notification/notification.service';
 import { PersonEntity } from '../person/person.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { PersonStatusHistoryEntity } from './personStatusHistory.entity';
@@ -23,6 +24,7 @@ export class PersonStatusHistoryService {
   constructor(
     private readonly repository: PersonStatusHistoryRepository,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
     @InjectRepository(PersonEntity)
     private readonly personRepo: Repository<PersonEntity>,
     @InjectRepository(UserEntity)
@@ -50,7 +52,7 @@ export class PersonStatusHistoryService {
   }
 
   async createEntry(data: CreatePersonStatusHistoryDTO): Promise<PersonStatusHistory> {
-    return await this.dataSource.transaction(async (manager) => {
+    const created = await this.dataSource.transaction(async (manager) => {
       const personRepo = manager.getRepository(PersonEntity);
       const userRepo = manager.getRepository(UserEntity);
       const historyRepo = manager.getRepository(PersonStatusHistoryEntity);
@@ -90,6 +92,9 @@ export class PersonStatusHistoryService {
 
       return await historyRepo.save(historyEntry);
     });
+
+    await this.notifyStatusChange(data.personId, data.previousStatus, data.newStatus);
+    return created;
   }
 
   async getEntryById(id: number): Promise<PersonStatusHistory | null> {
@@ -141,10 +146,70 @@ export class PersonStatusHistoryService {
     const changedByToValidate = data.changedBy ?? existing.changedBy;
     await this.validateAdminFromSameCamp(personIdToValidate, changedByToValidate);
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (updated && updated.personId && updated.previousStatus && updated.newStatus) {
+      await this.notifyStatusChange(updated.personId, updated.previousStatus, updated.newStatus);
+    }
+
+    return updated;
   }
 
   async deleteEntry(id: number): Promise<boolean> {
     return await this.repository.delete(id);
+  }
+
+  private async notifyStatusChange(
+    personId: number,
+    previousStatus: PersonStatus,
+    newStatus: PersonStatus,
+  ): Promise<void> {
+    const person = await this.personRepo.findOne({
+      where: { id: personId },
+      select: {
+        id: true,
+        campId: true,
+      },
+    });
+
+    if (!person) {
+      return;
+    }
+
+    const message = `El estado de la persona ${personId} cambio de ${previousStatus} a ${newStatus}.`;
+
+    await this.notificationService.notifyCampRoles(
+      person.campId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'PERSON_STATUS_CHANGED',
+        title: 'Cambio de estado de persona',
+        message,
+        sourceType: 'person_status_history',
+        sourceId: personId,
+      },
+    );
+
+    const associatedUser = await this.userRepo.findOne({
+      where: {
+        personId,
+        campId: person.campId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!associatedUser) {
+      return;
+    }
+
+    await this.notificationService.notifyUser(associatedUser.id, {
+      campId: person.campId,
+      type: 'PERSON_STATUS_CHANGED',
+      title: 'Cambio de estado personal',
+      message: `Tu estado fue actualizado de ${previousStatus} a ${newStatus}.`,
+      sourceType: 'person_status_history',
+      sourceId: personId,
+    });
   }
 }

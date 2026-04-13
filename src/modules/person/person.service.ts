@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
 import { CampEntity } from '../camp/camp.entity';
+import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
@@ -14,6 +16,7 @@ export class PersonService {
   constructor(
     private readonly repository: PersonRepository,
     private readonly personStatusHistoryRepository: PersonStatusHistoryRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
     @InjectRepository(AdmissionRequestEntity)
     private readonly admissionRequestRepository: Repository<AdmissionRequestEntity>,
@@ -131,12 +134,91 @@ export class PersonService {
         changedBy: 0,
         reason: null,
       });
+
+      await this.notificationService.notifyCampRoles(
+        updated?.campId ?? existing.campId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: 'PERSON_STATUS_CHANGED',
+          title: 'Cambio de estado de persona',
+          message: `La persona ${id} cambio de estado de ${existing.currentStatus} a ${data.currentStatus}.`,
+          sourceType: 'person',
+          sourceId: id,
+        },
+      );
+
+      const userRepo = this.dataSource.getRepository(UserEntity);
+      const linkedUser = await userRepo.findOne({
+        where: {
+          personId: id,
+          campId: updated?.campId ?? existing.campId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (linkedUser) {
+        await this.notificationService.notifyUser(linkedUser.id, {
+          campId: updated?.campId ?? existing.campId,
+          type: 'PERSON_STATUS_CHANGED',
+          title: 'Cambio de estado personal',
+          message: `Tu estado fue actualizado de ${existing.currentStatus} a ${data.currentStatus}.`,
+          sourceType: 'person',
+          sourceId: id,
+        });
+      }
     }
     return updated;
   }
 
-  async deletePerson(_id: number): Promise<boolean> {
-    return false;
+  async deletePerson(id: number): Promise<boolean> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'PERSON_STATUS_CHANGED',
+        title: 'Persona eliminada',
+        message: `La persona ${existing.id} fue eliminada del sistema.`,
+        sourceType: 'person',
+        sourceId: existing.id,
+      },
+    );
+
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    const linkedUser = await userRepo.findOne({
+      where: {
+        personId: existing.id,
+        campId: existing.campId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (linkedUser) {
+      await this.notificationService.notifyUser(linkedUser.id, {
+        campId: existing.campId,
+        type: 'PERSON_STATUS_CHANGED',
+        title: 'Registro personal eliminado',
+        message: 'Tu registro personal fue eliminado del sistema.',
+        sourceType: 'person',
+        sourceId: existing.id,
+        sendEmail: false,
+      });
+    }
+
+    return true;
   }
 
   private rethrowFriendlyUniqueErrors(error: unknown): never | void {

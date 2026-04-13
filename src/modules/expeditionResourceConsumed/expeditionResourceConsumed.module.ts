@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { NotificationModule } from '../notification/notification.module';
 
 import { ExpeditionEntity } from '../expedition/expedition.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
@@ -17,6 +18,7 @@ import { ExpeditionResourceConsumedService } from './expeditionResourceConsumed.
       InventoryMovementEntity,
       UserEntity,
     ]),
+    NotificationModule,
   ],
   controllers: [ExpeditionResourceConsumedController],
   providers: [ExpeditionResourceConsumedRepository, ExpeditionResourceConsumedService],

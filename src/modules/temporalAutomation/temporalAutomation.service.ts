@@ -7,11 +7,14 @@ import { CampEntity } from '../camp/camp.entity';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { DailyConsumptionEntity } from '../dailyConsumption/dailyConsumption.entity';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
 import { InventoryAlertEntity } from '../inventoryAlert/inventoryAlert.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { PersonEntity } from '../person/person.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -30,6 +33,8 @@ export class TemporalAutomationService {
     private readonly dailyConsumptionRepo: Repository<DailyConsumptionEntity>,
     @InjectRepository(ExpeditionEntity)
     private readonly expeditionRepo: Repository<ExpeditionEntity>,
+    @InjectRepository(ExpeditionParticipantEntity)
+    private readonly expeditionParticipantRepo: Repository<ExpeditionParticipantEntity>,
     @InjectRepository(InventoryAlertEntity)
     private readonly inventoryAlertRepo: Repository<InventoryAlertEntity>,
     @InjectRepository(InventoryMovementEntity)
@@ -40,13 +45,18 @@ export class TemporalAutomationService {
     private readonly personRepo: Repository<PersonEntity>,
     @InjectRepository(ResourceTypeEntity)
     private readonly resourceTypeRepo: Repository<ResourceTypeEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+    private readonly notificationService: NotificationService,
     private readonly systemTimeService: SystemTimeService,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async runDailyResourceCycle(): Promise<void> {
     const now = this.systemTimeService.now();
-    const camps = await this.campRepo.find({ select: ['id', 'minimumDailyRationPerPerson'] });
+    const camps = await this.campRepo.find({
+      select: ['id', 'name', 'minimumDailyRationPerPerson', 'maxPersonCapacity'],
+    });
 
     const foodResource = await this.resourceTypeRepo.findOne({ where: { category: 'FOOD' } });
     const waterResource = await this.resourceTypeRepo.findOne({ where: { category: 'WATER' } });
@@ -115,6 +125,8 @@ export class TemporalAutomationService {
       }
 
       await this.generateAlertsIfNeeded(camp.id, [...touchedResourceIds], now);
+      await this.notifyCampOverpopulationIfNeeded(camp, peopleCount);
+      await this.notifyOccupationsWithoutStaff(camp.id);
     }
   }
 
@@ -158,9 +170,14 @@ export class TemporalAutomationService {
           : 0;
 
       if (nextStatus !== expedition.status || extraDaysUsed !== expedition.extraDaysUsed) {
+        const previousStatus = expedition.status;
         expedition.status = nextStatus;
         expedition.extraDaysUsed = Math.min(extraDaysUsed, expedition.extraDaysAvailable);
         await this.expeditionRepo.save(expedition);
+
+        if (previousStatus !== expedition.status) {
+          await this.notifyExpeditionStatusChange(expedition, previousStatus);
+        }
       }
     }
   }
@@ -320,7 +337,7 @@ export class TemporalAutomationService {
         continue;
       }
 
-      await this.inventoryAlertRepo.save(
+      const createdAlert = await this.inventoryAlertRepo.save(
         this.inventoryAlertRepo.create({
           campId,
           resourceTypeId: inventory.resourceTypeId,
@@ -332,6 +349,96 @@ export class TemporalAutomationService {
           resolvedBy: null,
         }),
       );
+
+      await this.notificationService.notifyCampRoles(
+        campId,
+        ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+        {
+          type: 'INVENTORY_ALERT',
+          title: 'Alerta de inventario bajo',
+          message: `El recurso ${inventory.resourceTypeId} esta bajo el minimo permitido (${inventory.currentAmount} < ${inventory.minimumAlertAmount}).`,
+          sourceType: 'inventory_alert',
+          sourceId: createdAlert.id,
+        },
+      );
+    }
+  }
+
+  private async notifyCampOverpopulationIfNeeded(
+    camp: Pick<CampEntity, 'id' | 'name' | 'maxPersonCapacity'>,
+    peopleCount: number,
+  ): Promise<void> {
+    if (!Number.isInteger(camp.maxPersonCapacity) || camp.maxPersonCapacity <= 0) {
+      return;
+    }
+
+    if (peopleCount <= camp.maxPersonCapacity) {
+      return;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      camp.id,
+      ['SYSTEM_ADMIN'],
+      {
+        type: 'OVERPOPULATION_ALERT',
+        title: 'Alerta de sobrepoblacion',
+        message: `El campamento ${camp.name} excedio su capacidad (${peopleCount}/${camp.maxPersonCapacity}).`,
+        sourceType: 'camp',
+        sourceId: camp.id,
+      },
+    );
+  }
+
+  private async notifyOccupationsWithoutStaff(campId: number): Promise<void> {
+    const relevantOccupations = await this.occupationRepo.find({
+      where: [
+        { collectsResources: true },
+        { participatesInExpeditions: true },
+      ],
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (relevantOccupations.length === 0) {
+      return;
+    }
+
+    const occupationIds = relevantOccupations.map((occupation) => occupation.id);
+    const activePeople = await this.personRepo.find({
+      where: {
+        campId,
+        currentStatus: 'ACTIVE',
+        occupationId: In(occupationIds),
+      },
+      select: {
+        occupationId: true,
+      },
+    });
+
+    const staffedOccupationIds = new Set(
+      activePeople
+        .map((person) => person.occupationId)
+        .filter((occupationId): occupationId is number => occupationId !== null),
+    );
+
+    for (const occupation of relevantOccupations) {
+      if (staffedOccupationIds.has(occupation.id)) {
+        continue;
+      }
+
+      await this.notificationService.notifyCampRoles(
+        campId,
+        ['SYSTEM_ADMIN'],
+        {
+          type: 'OCCUPATION_WITHOUT_STAFF',
+          title: 'Ocupacion sin personal asignado',
+          message: `La ocupacion ${occupation.name} no tiene personal activo asignado en el campamento.`,
+          sourceType: 'occupation',
+          sourceId: occupation.id,
+        },
+      );
     }
   }
 
@@ -342,5 +449,66 @@ export class TemporalAutomationService {
 
   private roundTo2(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  private async notifyExpeditionStatusChange(
+    expedition: ExpeditionEntity,
+    previousStatus: ExpeditionEntity['status'],
+  ): Promise<void> {
+    const message = `La expedicion ${expedition.name} cambio de estado ${previousStatus} a ${expedition.status}.`;
+
+    await this.notificationService.notifyCampRoles(
+      expedition.campId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'EXPEDITION_STATUS_UPDATED',
+        title: 'Estado de expedicion actualizado',
+        message,
+        sourceType: 'expedition',
+        sourceId: expedition.id,
+      },
+    );
+
+    const activeParticipants = await this.expeditionParticipantRepo.find({
+      where: {
+        expeditionId: expedition.id,
+        status: 'ACTIVE',
+      },
+      select: {
+        personId: true,
+      },
+    });
+
+    const personIds = [...new Set(activeParticipants.map((participant) => participant.personId))];
+    if (personIds.length === 0) {
+      return;
+    }
+
+    const participantUsers = await this.userRepo.find({
+      where: {
+        personId: In(personIds),
+        campId: expedition.campId,
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (participantUsers.length === 0) {
+      return;
+    }
+
+    await this.notificationService.notifyUsers(
+      participantUsers.map((user) => user.id),
+      {
+        campId: expedition.campId,
+        type: 'EXPEDITION_STATUS_UPDATED',
+        title: 'Estado de expedicion actualizado',
+        message: `Tu expedicion ${expedition.name} ahora esta en estado ${expedition.status}.`,
+        sourceType: 'expedition',
+        sourceId: expedition.id,
+      },
+    );
   }
 }

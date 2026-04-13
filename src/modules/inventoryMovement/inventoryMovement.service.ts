@@ -1,13 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { DataSource, In } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { NotificationService } from '../notification/notification.service';
-import { UserEntity } from '../systemUser/systemUser.entity';
-import { SystemRole } from '../systemUser/systemUser.model';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { CampEntity } from '../camp/camp.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { InventoryMovementRepository } from './inventoryMovement.repository';
 import type {
@@ -47,28 +46,17 @@ export class InventoryMovementService {
     if (Number.isNaN(currentAmount) || Number.isNaN(minimumAlertAmount)) return;
     if (currentAmount > minimumAlertAmount) return;
 
-    const userRepo = this.dataSource.getRepository(UserEntity);
-    const alertRecipients = await userRepo.find({
-      select: { id: true, role: true },
-      where: {
-        campId,
-        role: In([SystemRole.RESOURCE_MANAGEMENT, SystemRole.SYSTEM_ADMIN]),
-      },
-    });
-
-    if (alertRecipients.length === 0) return;
-
-    for (const recipient of alertRecipients) {
-      await this.notificationService.createNotification({
-        campId,
-        userId: recipient.id,
+    await this.notificationService.notifyCampRoles(
+      campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
         type: 'INVENTORY_ALERT',
         title: 'Alerta de inventario bajo',
         message: `El recurso ${resourceTypeId} esta en o por debajo del minimo (${inventory.currentAmount} <= ${inventory.minimumAlertAmount}).`,
         sourceType: 'inventory_movement',
         sourceId: movementId,
-      });
-    }
+      },
+    );
   }
 
   async createMovement(data: CreateInventoryMovementDTO): Promise<InventoryMovement> {
@@ -135,6 +123,11 @@ export class InventoryMovementService {
     id: number,
     data: UpdateInventoryMovementDTO,
   ): Promise<InventoryMovement | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return null;
+    }
+
     if (data.campId !== undefined) {
       await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     }
@@ -150,10 +143,49 @@ export class InventoryMovementService {
       await assertEntityExists(this.dataSource, UserEntity, data.recordedBy, 'User');
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Movimiento de inventario actualizado',
+        message: `El movimiento de inventario ${updated.id} fue actualizado.`,
+        sourceType: 'inventory_movement',
+        sourceId: updated.id,
+      },
+    );
+
+    return updated;
   }
 
   async deleteMovement(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Movimiento de inventario eliminado',
+        message: `El movimiento de inventario ${existing.id} fue eliminado.`,
+        sourceType: 'inventory_movement',
+        sourceId: existing.id,
+      },
+    );
+
+    return true;
   }
 }

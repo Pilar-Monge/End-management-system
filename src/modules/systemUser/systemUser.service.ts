@@ -33,9 +33,8 @@ export class UserService {
       reason,
     });
 
-    await this.notificationService.createNotification({
+    await this.notificationService.notifyUser(existing.id, {
       campId: existing.campId,
-      userId: existing.id,
       type: 'ROLE_UPDATED',
       title: 'Rol actualizado',
       message: `Tu rol del sistema ha sido actualizado a ${newRole}`,
@@ -116,13 +115,43 @@ export class UserService {
     if (hasRoleChange) {
       await this.handleRoleChange(existing, data.role as User['role']);
     }
+    if (hasStatusChange && user) {
+      await this.notificationService.notifyUser(user.id, {
+        campId: user.campId,
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `Tu estado de usuario fue cambiado a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
+      });
+    }
     if (!user) return null;
     const { passwordHash: _, ...userResponse } = user;
     return userResponse;
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    return this.userRepo.delete(id);
+    const existing = await this.userRepo.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.userRepo.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyUser(existing.id, {
+      campId: existing.campId,
+      type: 'USER_STATUS_UPDATED',
+      title: 'Cuenta de usuario eliminada',
+      message: 'Tu cuenta de usuario del sistema fue eliminada.',
+      sourceType: 'system_user',
+      sourceId: existing.id,
+      sendEmail: false,
+    });
+
+    return true;
   }
 
   async countUsersByCamp(campId: number): Promise<number> {
@@ -147,8 +176,23 @@ export class UserService {
   }
 
   async toggleUserStatus(id: number, newStatus: User['status']): Promise<UserResponse | null> {
+    const existing = await this.userRepo.findById(id);
+    if (!existing) return null;
+
     const user = await this.userRepo.update(id, { status: newStatus });
     if (!user) return null;
+
+    if (existing.status !== user.status) {
+      await this.notificationService.notifyUser(user.id, {
+        campId: user.campId,
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `Tu estado de usuario fue cambiado a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
+      });
+    }
+
     const { passwordHash: _, ...userResponse } = user;
     return userResponse;
   }

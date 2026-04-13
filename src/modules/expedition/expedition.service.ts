@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
+import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
+import { NotificationService } from '../notification/notification.service';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
 
 import { ExpeditionRepository } from './expedition.repository';
@@ -19,6 +22,7 @@ export class ExpeditionService {
     private readonly repository: ExpeditionRepository,
     private readonly dataSource: DataSource,
     private readonly systemTimeService: SystemTimeService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createExpedition(data: CreateExpeditionDTO): Promise<Expedition> {
@@ -31,7 +35,7 @@ export class ExpeditionService {
     const plannedReturnDate = new Date(departure.getTime() + estimatedDays * 24 * 60 * 60 * 1000);
     const shouldStartNow = departure.getTime() <= now.getTime();
 
-    return await this.repository.create({
+    const created = await this.repository.create({
       ...data,
       plannedDepartureDate: departure,
       actualDepartureDate: shouldStartNow ? departure : null,
@@ -40,6 +44,16 @@ export class ExpeditionService {
       extraDaysUsed: 0,
       status: shouldStartNow ? 'IN_PROGRESS' : 'PLANNED',
     });
+
+    await this.notificationService.notifyCampRoles(created.campId, ['SYSTEM_ADMIN', 'TRAVEL_MANAGER'], {
+      type: 'EXPEDITION_CREATED',
+      title: 'Nueva expedicion registrada',
+      message: `Se registro la expedicion ${created.name} con estado inicial ${created.status}.`,
+      sourceType: 'expedition',
+      sourceId: created.id,
+    });
+
+    return created;
   }
 
   async getExpeditionById(id: number): Promise<Expedition | null> {
@@ -93,10 +107,32 @@ export class ExpeditionService {
 
     await this.repository.completeExplorationWithLoot(expedition, completedBy, now);
 
-    return await this.repository.findById(id);
+    const completed = await this.repository.findById(id);
+    if (!completed) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      completed.campId,
+      ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
+      {
+        type: 'EXPEDITION_COMPLETED',
+        title: 'Expedicion completada',
+        message: `La expedicion ${completed.name} fue completada correctamente.`,
+        sourceType: 'expedition',
+        sourceId: completed.id,
+      },
+    );
+
+    return completed;
   }
 
   async updateExpedition(id: number, data: UpdateExpeditionDTO): Promise<Expedition | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return null;
+    }
+
     if (data.campId !== undefined) {
       await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     }
@@ -104,17 +140,12 @@ export class ExpeditionService {
     const normalized: UpdateExpeditionDTO = { ...data };
 
     if (normalized.estimatedDurationDays !== undefined) {
-      const expedition = await this.repository.findById(id);
-      if (!expedition) {
-        return null;
-      }
-
       if (!Number.isInteger(normalized.estimatedDurationDays) || normalized.estimatedDurationDays <= 0) {
         throw new Error('estimatedDurationDays must be an integer greater than 0');
       }
 
       normalized.plannedReturnDate = new Date(
-        expedition.plannedDepartureDate.getTime() +
+        existing.plannedDepartureDate.getTime() +
           normalized.estimatedDurationDays * 24 * 60 * 60 * 1000,
       );
     }
@@ -126,11 +157,90 @@ export class ExpeditionService {
       normalized.extraDaysAvailable = normalized.maxExtraDays;
     }
 
-    return await this.repository.update(id, normalized);
+    const updated = await this.repository.update(id, normalized);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
+      {
+        type: 'EXPEDITION_STATUS_UPDATED',
+        title: 'Expedicion actualizada',
+        message: `La expedicion ${updated.name} fue actualizada en su plan operativo.`,
+        sourceType: 'expedition',
+        sourceId: updated.id,
+      },
+    );
+
+    return updated;
   }
 
   async deleteExpedition(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
+      {
+        type: 'EXPEDITION_STATUS_UPDATED',
+        title: 'Expedicion eliminada',
+        message: `La expedicion ${existing.name} fue eliminada del sistema.`,
+        sourceType: 'expedition',
+        sourceId: existing.id,
+      },
+    );
+
+    const participantRepo = this.dataSource.getRepository(ExpeditionParticipantEntity);
+    const participants = await participantRepo.find({
+      where: {
+        expeditionId: existing.id,
+      },
+      select: {
+        personId: true,
+      },
+    });
+
+    const personIds = [...new Set(participants.map((participant) => participant.personId))];
+    if (personIds.length === 0) {
+      return true;
+    }
+
+    const userRepo = this.dataSource.getRepository(UserEntity);
+    const users = await userRepo.find({
+      where: {
+        campId: existing.campId,
+        personId: In(personIds),
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (users.length > 0) {
+      await this.notificationService.notifyUsers(
+        users.map((user) => user.id),
+        {
+          campId: existing.campId,
+          type: 'EXPEDITION_STATUS_UPDATED',
+          title: 'Expedicion cancelada',
+          message: `La expedicion ${existing.name} en la que participabas fue eliminada.`,
+          sourceType: 'expedition',
+          sourceId: existing.id,
+        },
+      );
+    }
+
+    return true;
   }
 
   private resolveEstimatedDays(data: CreateExpeditionDTO): number {

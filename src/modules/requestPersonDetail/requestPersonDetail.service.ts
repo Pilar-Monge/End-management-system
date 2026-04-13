@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { IntercampRequestEntity } from '../intercampRequest/intercampRequest.entity';
+import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { PersonEntity } from '../person/person.entity';
 
@@ -19,8 +20,65 @@ import type {
 export class RequestPersonDetailService {
   constructor(
     private readonly repository: RequestPersonDetailRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async resolveRequestScope(requestId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  }> {
+    const requestRepo = this.dataSource.getRepository(IntercampRequestEntity);
+    const request = await requestRepo.findOne({
+      where: { id: requestId },
+      select: {
+        originCampId: true,
+        destinationCampId: true,
+      },
+    });
+
+    if (!request) {
+      throw new Error('Intercamp request not found');
+    }
+
+    return {
+      originCampId: request.originCampId,
+      destinationCampId: request.destinationCampId,
+    };
+  }
+
+  private async notifyRequestPersonChange(
+    detail: RequestPersonDetail,
+    actionLabel: string,
+  ): Promise<void> {
+    const scope = await this.resolveRequestScope(detail.requestId);
+    const title = 'Detalle de personas intercampamento';
+    const personLabel = detail.personId ?? detail.occupationId ?? 0;
+    const message = `${actionLabel}: detalle ${detail.id} (${detail.detailType}) sobre referencia ${personLabel}.`;
+
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'REQUEST_PERSON_DETAIL_UPDATED',
+        title,
+        message,
+        sourceType: 'request_person_detail',
+        sourceId: detail.id,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'REQUEST_PERSON_DETAIL_UPDATED',
+        title,
+        message,
+        sourceType: 'request_person_detail',
+        sourceId: detail.id,
+      },
+    );
+  }
 
   async createDetail(data: CreateRequestPersonDetailDTO): Promise<RequestPersonDetail> {
     await assertEntityExists(
@@ -38,7 +96,9 @@ export class RequestPersonDetailService {
       await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notifyRequestPersonChange(created, 'Se agrego un detalle de persona');
+    return created;
   }
 
   async getDetailById(id: number): Promise<RequestPersonDetail | null> {
@@ -100,10 +160,26 @@ export class RequestPersonDetailService {
     if (data.occupationId !== undefined && data.occupationId !== null) {
       await assertEntityExists(this.dataSource, OccupationEntity, data.occupationId, 'Occupation');
     }
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (updated) {
+      await this.notifyRequestPersonChange(updated, 'Se actualizo un detalle de persona');
+    }
+
+    return updated;
   }
 
   async deleteDetail(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyRequestPersonChange(existing, 'Se elimino un detalle de persona');
+    return true;
   }
 }

@@ -6,6 +6,7 @@ import { CampEntity } from '../camp/camp.entity';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { AiAdmissionReportEntity } from '../aiAdmissionReport/aiAdmissionReport.entity';
 import { AI_DECISION_VALUES } from '../aiAdmissionReport/aiAdmissionReport.model';
+import { NotificationService } from '../notification/notification.service';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { DecisionTreeService } from '../decisionTree/decisionTree.service';
 import { AdmissionRequestRepository } from './admissionRequest.repository';
@@ -27,6 +28,7 @@ export class AdmissionRequestService {
     repository: AdmissionRequestRepository,
     private readonly dataSource: DataSource,
     private readonly decisionTreeService: DecisionTreeService,
+    private readonly notificationService: NotificationService,
   ) {
     this.repository = repository;
   }
@@ -42,6 +44,7 @@ export class AdmissionRequestService {
 
     const normalizedData = this.normalizeAiFieldsForCreate(data);
     const createdRequest = await this.repository.create(normalizedData);
+    await this.notifyInitialAdmissionRequest(createdRequest.id, createdRequest.campId, createdRequest.email);
 
     try {
       const features = buildAdmissionFeatures(normalizedData);
@@ -97,6 +100,7 @@ export class AdmissionRequestService {
       );
 
       if (updatedByAi) {
+        await this.notifyAiReviewResult(updatedByAi.id, updatedByAi.campId, updatedByAi.email, updatedByAi.status);
         return updatedByAi;
       }
     } catch {
@@ -255,6 +259,8 @@ export class AdmissionRequestService {
       throw new Error('Error processing request with AI');
     }
 
+    await this.notifyAiReviewResult(updatedRequest.id, updatedRequest.campId, updatedRequest.email, updatedRequest.status);
+
     return updatedRequest;
   }
 
@@ -293,6 +299,13 @@ export class AdmissionRequestService {
     if (!updatedRequest) {
       throw new Error('Error reviewing request');
     }
+
+    await this.notifyAdminReviewResult(
+      updatedRequest.id,
+      updatedRequest.campId,
+      updatedRequest.email,
+      approved,
+    );
 
     return updatedRequest;
   }
@@ -386,5 +399,109 @@ export class AdmissionRequestService {
       experienceYears: data.experienceYears ?? features.experience_years,
       skillsScore: data.skillsScore ?? features.skills_score,
     };
+  }
+
+  private async notifyInitialAdmissionRequest(
+    requestId: number,
+    campId: number,
+    applicantEmail: string,
+  ): Promise<void> {
+    await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
+      type: 'ADMISSION_REQUEST_PENDING',
+      title: 'Nueva solicitud de admision',
+      message: `Hay una nueva solicitud de admision pendiente de revision (ID: ${requestId}).`,
+      sourceType: 'admission_request',
+      sourceId: requestId,
+    });
+
+    await this.notificationService.queueEmail({
+      toEmail: applicantEmail,
+      subject: 'Solicitud de ingreso recibida',
+      templateKey: 'generic_notification',
+      payload: {
+        title: 'Solicitud de ingreso recibida',
+        message:
+          'Recibimos tu solicitud de ingreso. El proceso iniciara con analisis automatizado y revision administrativa.',
+      },
+    });
+  }
+
+  private async notifyAiReviewResult(
+    requestId: number,
+    campId: number,
+    applicantEmail: string,
+    status: AdmissionRequestStatus,
+  ): Promise<void> {
+    if (status === 'PENDING_ADMIN') {
+      await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
+        type: 'ADMISSION_REQUEST_AI_REVIEWED',
+        title: 'Solicitud evaluada por IA',
+        message: `La solicitud ${requestId} fue evaluada por IA y esta lista para revision administrativa.`,
+        sourceType: 'admission_request',
+        sourceId: requestId,
+      });
+
+      await this.notificationService.queueEmail({
+        toEmail: applicantEmail,
+        subject: 'Solicitud en revision administrativa',
+        templateKey: 'generic_notification',
+        payload: {
+          title: 'Solicitud en revision administrativa',
+          message:
+            'Tu solicitud fue evaluada por IA y ahora esta pendiente de aprobacion por administracion.',
+        },
+      });
+      return;
+    }
+
+    if (status === 'REJECTED') {
+      await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
+        type: 'ADMISSION_REQUEST_REJECTED',
+        title: 'Solicitud rechazada por evaluacion IA',
+        message: `La solicitud ${requestId} fue rechazada durante la evaluacion automatizada.`,
+        sourceType: 'admission_request',
+        sourceId: requestId,
+      });
+
+      await this.notificationService.queueEmail({
+        toEmail: applicantEmail,
+        subject: 'Solicitud rechazada',
+        templateKey: 'admission_request_rejected',
+        payload: {
+          title: 'Solicitud rechazada',
+          message:
+            'La evaluacion inicial de tu solicitud resulto en rechazo. Puedes contactar al campamento para mas informacion.',
+        },
+      });
+    }
+  }
+
+  private async notifyAdminReviewResult(
+    requestId: number,
+    campId: number,
+    applicantEmail: string,
+    approved: boolean,
+  ): Promise<void> {
+    await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
+      type: approved ? 'ADMISSION_REQUEST_APPROVED' : 'ADMISSION_REQUEST_REJECTED',
+      title: approved ? 'Solicitud de admision aprobada' : 'Solicitud de admision rechazada',
+      message: approved
+        ? `La solicitud ${requestId} fue aprobada por administracion.`
+        : `La solicitud ${requestId} fue rechazada por administracion.`,
+      sourceType: 'admission_request',
+      sourceId: requestId,
+    });
+
+    await this.notificationService.queueEmail({
+      toEmail: applicantEmail,
+      subject: approved ? 'Solicitud aprobada' : 'Solicitud rechazada',
+      templateKey: approved ? 'admission_request_approved' : 'admission_request_rejected',
+      payload: {
+        title: approved ? 'Solicitud aprobada' : 'Solicitud rechazada',
+        message: approved
+          ? `Tu solicitud de ingreso (ID: ${requestId}) fue aprobada por administracion.`
+          : `Tu solicitud de ingreso (ID: ${requestId}) fue rechazada por administracion.`,
+      },
+    });
   }
 }
