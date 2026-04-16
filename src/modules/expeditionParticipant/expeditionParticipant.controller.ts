@@ -14,7 +14,6 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -46,10 +45,7 @@ import { CreateExpeditionParticipantDto, UpdateExpeditionParticipantDto } from '
 @Controller('expedition-participants')
 @ApiTags('Expedition Participant')
 export class ExpeditionParticipantController {
-  constructor(
-    private readonly service: ExpeditionParticipantService,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly service: ExpeditionParticipantService) {}
 
   private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
     const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
@@ -76,42 +72,6 @@ export class ExpeditionParticipantController {
     return rol === 'SYSTEM_ADMIN';
   }
 
-  private async assertExpeditionCampAccess(expeditionId: number, currentCampId: number): Promise<void> {
-    const rows = await this.dataSource.query(
-      `SELECT e.camp_id FROM public.expedition e WHERE e.id = $1 LIMIT 1`,
-      [expeditionId],
-    );
-
-    const row = rows[0] as { camp_id: number } | undefined;
-    if (!row) {
-      throw new NotFoundException('Expedition not found');
-    }
-
-    if (row.camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access expedition participants from your camp');
-    }
-  }
-
-  private async assertParticipantCampAccess(id: number, currentCampId: number): Promise<void> {
-    const rows = await this.dataSource.query(
-      `SELECT e.camp_id
-       FROM public.expedition_participant ep
-       JOIN public.expedition e ON e.id = ep.expedition_id
-       WHERE ep.id = $1
-       LIMIT 1`,
-      [id],
-    );
-
-    const row = rows[0] as { camp_id: number } | undefined;
-    if (!row) {
-      throw new NotFoundException('Expedition participant not found');
-    }
-
-    if (row.camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access expedition participants from your camp');
-    }
-  }
-
   @Post()
   @Roles('TRAVEL_MANAGER')
   @ApiCreatedResponseData(ExpeditionParticipantEntity, {
@@ -124,7 +84,7 @@ export class ExpeditionParticipantController {
     try {
       const currentUser = this.getCurrentUser(req);
       if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertExpeditionCampAccess(body.expeditionId, currentUser.campId);
+        await this.service.assertExpeditionCampAccess(body.expeditionId, currentUser.campId);
       }
 
       const participant = await this.service.createParticipant(body);
@@ -158,7 +118,7 @@ export class ExpeditionParticipantController {
 
     const currentUser = this.getCurrentUser(req);
     if (!this.isSystemAdmin(currentUser.rol)) {
-      await this.assertParticipantCampAccess(parsedId, currentUser.campId);
+      await this.service.assertParticipantCampAccess(parsedId, currentUser.campId);
     }
 
     const participant = await this.service.getParticipantById(parsedId);
@@ -213,7 +173,7 @@ export class ExpeditionParticipantController {
         }
 
         if (!isAdmin) {
-          await this.assertExpeditionCampAccess(parsedExpeditionId, currentUser.campId);
+          await this.service.assertExpeditionCampAccess(parsedExpeditionId, currentUser.campId);
         }
 
         filters.expeditionId = parsedExpeditionId;
@@ -286,9 +246,9 @@ export class ExpeditionParticipantController {
     try {
       const currentUser = this.getCurrentUser(req);
       if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertParticipantCampAccess(parsedId, currentUser.campId);
+        await this.service.assertParticipantCampAccess(parsedId, currentUser.campId);
         if (body.expeditionId !== undefined) {
-          await this.assertExpeditionCampAccess(body.expeditionId, currentUser.campId);
+          await this.service.assertExpeditionCampAccess(body.expeditionId, currentUser.campId);
         }
       }
 

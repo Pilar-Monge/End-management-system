@@ -8,6 +8,7 @@ import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { DailyConsumptionEntity } from '../dailyConsumption/dailyConsumption.entity';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
 import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
+import { ExpeditionParticipantRepository } from '../expeditionParticipant/expeditionParticipant.repository';
 import { InventoryAlertEntity } from '../inventoryAlert/inventoryAlert.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
 import { NotificationService } from '../notification/notification.service';
@@ -35,6 +36,7 @@ export class TemporalAutomationService {
     private readonly expeditionRepo: Repository<ExpeditionEntity>,
     @InjectRepository(ExpeditionParticipantEntity)
     private readonly expeditionParticipantRepo: Repository<ExpeditionParticipantEntity>,
+    private readonly expeditionParticipantRepository: ExpeditionParticipantRepository,
     @InjectRepository(InventoryAlertEntity)
     private readonly inventoryAlertRepo: Repository<InventoryAlertEntity>,
     @InjectRepository(InventoryMovementEntity)
@@ -117,7 +119,7 @@ export class TemporalAutomationService {
             sourceType: 'temporal_automation',
             recordedBy: SYSTEM_RECORDED_BY,
             date: now,
-            description: 'Produccion automatica diaria',
+            description: 'Automatic daily production',
           }),
         );
 
@@ -175,6 +177,8 @@ export class TemporalAutomationService {
         expedition.extraDaysUsed = Math.min(extraDaysUsed, expedition.extraDaysAvailable);
         await this.expeditionRepo.save(expedition);
 
+        await this.syncParticipantPersonStatuses(expedition.id);
+
         if (previousStatus !== expedition.status) {
           await this.notifyExpeditionStatusChange(expedition, previousStatus);
         }
@@ -217,7 +221,7 @@ export class TemporalAutomationService {
         sourceType: 'temporal_automation',
         recordedBy: SYSTEM_RECORDED_BY,
         date: now,
-        description: 'Consumo automatico diario',
+        description: 'Automatic daily consumption',
       }),
     );
 
@@ -355,8 +359,8 @@ export class TemporalAutomationService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
         {
           type: 'INVENTORY_ALERT',
-          title: 'Alerta de inventario bajo',
-          message: `El recurso ${inventory.resourceTypeId} esta bajo el minimo permitido (${inventory.currentAmount} < ${inventory.minimumAlertAmount}).`,
+          title: 'Low inventory alert',
+          message: `Resource ${inventory.resourceTypeId} is below the allowed minimum (${inventory.currentAmount} < ${inventory.minimumAlertAmount}).`,
           sourceType: 'inventory_alert',
           sourceId: createdAlert.id,
         },
@@ -381,8 +385,8 @@ export class TemporalAutomationService {
       ['SYSTEM_ADMIN'],
       {
         type: 'OVERPOPULATION_ALERT',
-        title: 'Alerta de sobrepoblacion',
-        message: `El campamento ${camp.name} excedio su capacidad (${peopleCount}/${camp.maxPersonCapacity}).`,
+        title: 'Overpopulation alert',
+        message: `Camp ${camp.name} exceeded capacity (${peopleCount}/${camp.maxPersonCapacity}).`,
         sourceType: 'camp',
         sourceId: camp.id,
       },
@@ -433,8 +437,8 @@ export class TemporalAutomationService {
         ['SYSTEM_ADMIN'],
         {
           type: 'OCCUPATION_WITHOUT_STAFF',
-          title: 'Ocupacion sin personal asignado',
-          message: `La ocupacion ${occupation.name} no tiene personal activo asignado en el campamento.`,
+          title: 'Occupation without assigned staff',
+          message: `Occupation ${occupation.name} has no active staff assigned in the camp.`,
           sourceType: 'occupation',
           sourceId: occupation.id,
         },
@@ -451,35 +455,81 @@ export class TemporalAutomationService {
     return Math.round(value * 100) / 100;
   }
 
+  private async syncParticipantPersonStatuses(expeditionId: number): Promise<void> {
+    const personIds = await this.expeditionParticipantRepository.getActivePersonIdsByExpedition(
+      expeditionId,
+    );
+    if (personIds.length === 0) {
+      return;
+    }
+
+    for (const personId of personIds) {
+      await this.syncPersonStatusFromExpeditions(personId);
+    }
+  }
+
+  private async syncPersonStatusFromExpeditions(personId: number): Promise<void> {
+    const person = await this.personRepo.findOne({
+      where: { id: personId },
+      select: { id: true, currentStatus: true },
+    });
+
+    if (!person) {
+      return;
+    }
+
+    const statuses = new Set(
+      await this.expeditionParticipantRepository.getTrackedExpeditionStatusesByPersonId(personId),
+    );
+    let targetStatus: PersonEntity['currentStatus'] | null = null;
+
+    if (statuses.has('LOST')) {
+      targetStatus = 'OUTSIDE_CAMP';
+    } else if (statuses.has('IN_PROGRESS') || statuses.has('DELAYED')) {
+      targetStatus = 'ON_EXPEDITION';
+    }
+
+    if (targetStatus === null) {
+      if (person.currentStatus === 'ON_EXPEDITION' || person.currentStatus === 'OUTSIDE_CAMP') {
+        person.currentStatus = 'ACTIVE';
+        await this.personRepo.save(person);
+      }
+      return;
+    }
+
+    if (person.currentStatus === targetStatus) {
+      return;
+    }
+
+    if (!['ACTIVE', 'ON_EXPEDITION', 'OUTSIDE_CAMP'].includes(person.currentStatus)) {
+      return;
+    }
+
+    person.currentStatus = targetStatus;
+    await this.personRepo.save(person);
+  }
+
   private async notifyExpeditionStatusChange(
     expedition: ExpeditionEntity,
     previousStatus: ExpeditionEntity['status'],
   ): Promise<void> {
-    const message = `La expedicion ${expedition.name} cambio de estado ${previousStatus} a ${expedition.status}.`;
+    const message = `Expedition ${expedition.name} changed status from ${previousStatus} to ${expedition.status}.`;
 
     await this.notificationService.notifyCampRoles(
       expedition.campId,
       ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
       {
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Estado de expedicion actualizado',
+        title: 'Expedition status updated',
         message,
         sourceType: 'expedition',
         sourceId: expedition.id,
       },
     );
 
-    const activeParticipants = await this.expeditionParticipantRepo.find({
-      where: {
-        expeditionId: expedition.id,
-        status: 'ACTIVE',
-      },
-      select: {
-        personId: true,
-      },
-    });
-
-    const personIds = [...new Set(activeParticipants.map((participant) => participant.personId))];
+    const personIds = await this.expeditionParticipantRepository.getActivePersonIdsByExpedition(
+      expedition.id,
+    );
     if (personIds.length === 0) {
       return;
     }
@@ -504,8 +554,8 @@ export class TemporalAutomationService {
       {
         campId: expedition.campId,
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Estado de expedicion actualizado',
-        message: `Tu expedicion ${expedition.name} ahora esta en estado ${expedition.status}.`,
+        title: 'Expedition status updated',
+        message: `Your expedition ${expedition.name} is now in status ${expedition.status}.`,
         sourceType: 'expedition',
         sourceId: expedition.id,
       },

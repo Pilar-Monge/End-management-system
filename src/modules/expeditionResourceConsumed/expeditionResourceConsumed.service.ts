@@ -113,8 +113,8 @@ export class ExpeditionResourceConsumedService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_CONSUMED',
-          title: 'Consumo de recurso en expedicion',
-          message: `Se registro consumo de recurso ${data.resourceTypeId} por ${data.amount} en la expedicion ${data.expeditionId}.`,
+          title: 'Expedition resource consumption',
+          message: `Resource consumption ${data.resourceTypeId} of amount ${data.amount} was recorded in expedition ${data.expeditionId}.`,
           sourceType: 'expedition_resource_consumed',
           sourceId: created.id,
         },
@@ -182,8 +182,8 @@ export class ExpeditionResourceConsumedService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_CONSUMED',
-          title: 'Consumo de recurso en expedicion actualizado',
-          message: `Se actualizo el registro de consumo de recurso ${updated.resourceTypeId} en la expedicion ${updated.expeditionId}.`,
+          title: 'Expedition resource consumption updated',
+          message: `Resource consumption record ${updated.resourceTypeId} in expedition ${updated.expeditionId} was updated.`,
           sourceType: 'expedition_resource_consumed',
           sourceId: updated.id,
         },
@@ -211,8 +211,8 @@ export class ExpeditionResourceConsumedService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_CONSUMED',
-          title: 'Registro de consumo eliminado',
-          message: `Se elimino un registro de consumo de recurso en la expedicion ${existing.expeditionId}.`,
+          title: 'Consumption record deleted',
+          message: `A resource consumption record was deleted from expedition ${existing.expeditionId}.`,
           sourceType: 'expedition_resource_consumed',
           sourceId: existing.id,
         },

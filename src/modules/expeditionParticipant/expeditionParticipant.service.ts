@@ -26,6 +26,78 @@ export class ExpeditionParticipantService {
     private readonly personRepo: Repository<PersonEntity>,
   ) {}
 
+  async assertExpeditionCampAccess(expeditionId: number, currentCampId: number): Promise<void> {
+    const campId = await this.repository.findExpeditionCampId(expeditionId);
+    if (campId === null) {
+      throw new NotFoundException('Expedition not found');
+    }
+
+    if (campId !== currentCampId) {
+      throw new BadRequestException('You can only access expedition participants from your camp');
+    }
+  }
+
+  async assertParticipantCampAccess(id: number, currentCampId: number): Promise<void> {
+    const campId = await this.repository.findParticipantCampId(id);
+    if (campId === null) {
+      throw new NotFoundException('Expedition participant not found');
+    }
+
+    if (campId !== currentCampId) {
+      throw new BadRequestException('You can only access expedition participants from your camp');
+    }
+  }
+
+  private isStatusManagedByExpeditions(status: PersonEntity['currentStatus']): boolean {
+    return ['ACTIVE', 'ON_EXPEDITION', 'OUTSIDE_CAMP'].includes(status);
+  }
+
+  private async syncPersonStatusWithExpeditions(personId: number): Promise<void> {
+    const person = await this.personRepo.findOne({
+      where: { id: personId },
+      select: { id: true, currentStatus: true },
+    });
+
+    if (!person) {
+      return;
+    }
+
+    const hasLostExpedition = await this.repository.hasActiveParticipationInExpeditionStatuses(
+      personId,
+      ['LOST'],
+    );
+    const hasOngoingExpedition = await this.repository.hasActiveParticipationInExpeditionStatuses(
+      personId,
+      ['IN_PROGRESS', 'DELAYED'],
+    );
+
+    let targetStatus: PersonEntity['currentStatus'] | null = null;
+    if (hasLostExpedition) {
+      targetStatus = 'OUTSIDE_CAMP';
+    } else if (hasOngoingExpedition) {
+      targetStatus = 'ON_EXPEDITION';
+    }
+
+    if (targetStatus === null) {
+      if (person.currentStatus === 'ON_EXPEDITION' || person.currentStatus === 'OUTSIDE_CAMP') {
+        person.currentStatus = 'ACTIVE';
+        await this.personRepo.save(person);
+      }
+      return;
+    }
+
+    if (person.currentStatus === targetStatus) {
+      return;
+    }
+
+    if (!this.isStatusManagedByExpeditions(person.currentStatus)) {
+      return;
+    }
+
+    person.currentStatus = targetStatus;
+    await this.personRepo.save(person);
+  }
+
   private validateCreateParticipantPreconditions(expeditionId: number, personId: number): void {
     if (!Number.isInteger(expeditionId) || expeditionId <= 0) {
       throw new BadRequestException('expeditionId must be a positive integer');
@@ -98,12 +170,14 @@ export class ExpeditionParticipantService {
       await this.notificationService.notifyUser(assignedUser.id, {
         campId: expedition.campId,
         type: 'EXPEDITION_RETURN',
-        title: 'Asignacion de expedicion',
-        message: `Has sido asignado a una nueva expedicion: ${expedition.name}. Revisa los detalles en tu panel.`,
+        title: 'Expedition assignment',
+        message: `You have been assigned to a new expedition: ${expedition.name}. Check the details in your dashboard.`,
         sourceType: 'expedition',
         sourceId: expedition.id,
       });
     }
+
+    await this.syncPersonStatusWithExpeditions(participant.personId);
 
     return participant;
   }
@@ -173,12 +247,17 @@ export class ExpeditionParticipantService {
       await this.notificationService.notifyUser(linkedUser.id, {
         campId: expedition.campId,
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Participacion en expedicion actualizada',
-        message: `Tu participacion en la expedicion ${expedition.name} fue actualizada.`,
+        title: 'Expedition participation updated',
+        message: `Your participation in expedition ${expedition.name} was updated.`,
         sourceType: 'expedition_participant',
         sourceId: updated.id,
       });
     }
+
+    if (existing.personId !== updated.personId) {
+      await this.syncPersonStatusWithExpeditions(existing.personId);
+    }
+    await this.syncPersonStatusWithExpeditions(updated.personId);
 
     return updated;
   }
@@ -224,12 +303,14 @@ export class ExpeditionParticipantService {
       await this.notificationService.notifyUser(linkedUser.id, {
         campId: expedition.campId,
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Participacion en expedicion removida',
-        message: `Fuiste removido de la expedicion ${expedition.name}.`,
+        title: 'Expedition participation removed',
+        message: `You were removed from expedition ${expedition.name}.`,
         sourceType: 'expedition',
         sourceId: expedition.id,
       });
     }
+
+    await this.syncPersonStatusWithExpeditions(existing.personId);
 
     return true;
   }

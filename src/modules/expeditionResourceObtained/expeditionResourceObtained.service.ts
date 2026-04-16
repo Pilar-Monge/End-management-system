@@ -113,8 +113,8 @@ export class ExpeditionResourceObtainedService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_OBTAINED',
-          title: 'Recurso obtenido en expedicion',
-          message: `Se registro obtencion de recurso ${data.resourceTypeId} por ${data.amount} en la expedicion ${data.expeditionId}.`,
+          title: 'Expedition resource obtained',
+          message: `Obtained resource ${data.resourceTypeId} of amount ${data.amount} was recorded in expedition ${data.expeditionId}.`,
           sourceType: 'expedition_resource_obtained',
           sourceId: created.id,
         },
@@ -182,8 +182,8 @@ export class ExpeditionResourceObtainedService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_OBTAINED',
-          title: 'Recurso obtenido en expedicion actualizado',
-          message: `Se actualizo el registro de recurso obtenido ${updated.resourceTypeId} en la expedicion ${updated.expeditionId}.`,
+          title: 'Expedition resource obtained updated',
+          message: `Obtained resource record ${updated.resourceTypeId} in expedition ${updated.expeditionId} was updated.`,
           sourceType: 'expedition_resource_obtained',
           sourceId: updated.id,
         },
@@ -211,8 +211,8 @@ export class ExpeditionResourceObtainedService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_OBTAINED',
-          title: 'Registro de recurso obtenido eliminado',
-          message: `Se elimino un registro de recurso obtenido en la expedicion ${existing.expeditionId}.`,
+          title: 'Obtained resource record deleted',
+          message: `An obtained resource record was deleted from expedition ${existing.expeditionId}.`,
           sourceType: 'expedition_resource_obtained',
           sourceId: existing.id,
         },

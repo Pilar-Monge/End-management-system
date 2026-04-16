@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, In } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
-import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
+import { PersonEntity } from '../person/person.entity';
 import { NotificationService } from '../notification/notification.service';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
 
 import { ExpeditionRepository } from './expedition.repository';
@@ -24,6 +23,58 @@ export class ExpeditionService {
     private readonly systemTimeService: SystemTimeService,
     private readonly notificationService: NotificationService,
   ) {}
+
+  private async syncParticipantPersonStatuses(expeditionId: number): Promise<void> {
+    const personIds = await this.repository.getActiveParticipantPersonIds(expeditionId);
+    if (personIds.length === 0) {
+      return;
+    }
+
+    for (const personId of personIds) {
+      await this.syncPersonStatusFromExpeditions(personId);
+    }
+  }
+
+  private async syncPersonStatusFromExpeditions(personId: number): Promise<void> {
+    const personRepo = this.dataSource.getRepository(PersonEntity);
+
+    const person = await personRepo.findOne({
+      where: { id: personId },
+      select: { id: true, currentStatus: true },
+    });
+
+    if (!person) {
+      return;
+    }
+
+    const statuses = new Set(await this.repository.getTrackedExpeditionStatusesByPersonId(personId));
+    let targetStatus: PersonEntity['currentStatus'] | null = null;
+
+    if (statuses.has('LOST')) {
+      targetStatus = 'OUTSIDE_CAMP';
+    } else if (statuses.has('IN_PROGRESS') || statuses.has('DELAYED')) {
+      targetStatus = 'ON_EXPEDITION';
+    }
+
+    if (targetStatus === null) {
+      if (person.currentStatus === 'ON_EXPEDITION' || person.currentStatus === 'OUTSIDE_CAMP') {
+        person.currentStatus = 'ACTIVE';
+        await personRepo.save(person);
+      }
+      return;
+    }
+
+    if (person.currentStatus === targetStatus) {
+      return;
+    }
+
+    if (!['ACTIVE', 'ON_EXPEDITION', 'OUTSIDE_CAMP'].includes(person.currentStatus)) {
+      return;
+    }
+
+    person.currentStatus = targetStatus;
+    await personRepo.save(person);
+  }
 
   async createExpedition(data: CreateExpeditionDTO): Promise<Expedition> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
@@ -47,8 +98,8 @@ export class ExpeditionService {
 
     await this.notificationService.notifyCampRoles(created.campId, ['SYSTEM_ADMIN', 'TRAVEL_MANAGER'], {
       type: 'EXPEDITION_CREATED',
-      title: 'Nueva expedicion registrada',
-      message: `Se registro la expedicion ${created.name} con estado inicial ${created.status}.`,
+      title: 'New expedition registered',
+      message: `The expedition ${created.name} was registered with initial status ${created.status}.`,
       sourceType: 'expedition',
       sourceId: created.id,
     });
@@ -116,6 +167,8 @@ export class ExpeditionService {
 
     await this.repository.completeExplorationWithLoot(expedition, completedBy, now);
 
+    await this.syncParticipantPersonStatuses(id);
+
     const completed = await this.repository.findById(id);
     if (!completed) {
       return null;
@@ -126,8 +179,8 @@ export class ExpeditionService {
       ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
       {
         type: 'EXPEDITION_COMPLETED',
-        title: 'Expedicion completada',
-        message: `La expedicion ${completed.name} fue completada correctamente.`,
+        title: 'Expedition completed',
+        message: `The expedition ${completed.name} was completed successfully.`,
         sourceType: 'expedition',
         sourceId: completed.id,
       },
@@ -171,13 +224,17 @@ export class ExpeditionService {
       return null;
     }
 
+    if (existing.status !== updated.status) {
+      await this.syncParticipantPersonStatuses(updated.id);
+    }
+
     await this.notificationService.notifyCampRoles(
       updated.campId,
       ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
       {
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Expedicion actualizada',
-        message: `La expedicion ${updated.name} fue actualizada en su plan operativo.`,
+        title: 'Expedition updated',
+        message: `The expedition ${updated.name} was updated in its operational plan.`,
         sourceType: 'expedition',
         sourceId: updated.id,
       },
@@ -202,47 +259,28 @@ export class ExpeditionService {
       ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
       {
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Expedicion eliminada',
-        message: `La expedicion ${existing.name} fue eliminada del sistema.`,
+        title: 'Expedition deleted',
+        message: `The expedition ${existing.name} was deleted from the system.`,
         sourceType: 'expedition',
         sourceId: existing.id,
       },
     );
 
-    const participantRepo = this.dataSource.getRepository(ExpeditionParticipantEntity);
-    const participants = await participantRepo.find({
-      where: {
-        expeditionId: existing.id,
-      },
-      select: {
-        personId: true,
-      },
-    });
-
-    const personIds = [...new Set(participants.map((participant) => participant.personId))];
+    const personIds = await this.repository.getAllParticipantPersonIds(existing.id);
     if (personIds.length === 0) {
       return true;
     }
 
-    const userRepo = this.dataSource.getRepository(UserEntity);
-    const users = await userRepo.find({
-      where: {
-        campId: existing.campId,
-        personId: In(personIds),
-      },
-      select: {
-        id: true,
-      },
-    });
+    const userIds = await this.repository.findUserIdsByCampAndPersonIds(existing.campId, personIds);
 
-    if (users.length > 0) {
+    if (userIds.length > 0) {
       await this.notificationService.notifyUsers(
-        users.map((user) => user.id),
+        userIds,
         {
           campId: existing.campId,
           type: 'EXPEDITION_STATUS_UPDATED',
-          title: 'Expedicion cancelada',
-          message: `La expedicion ${existing.name} en la que participabas fue eliminada.`,
+          title: 'Expedition canceled',
+          message: `The expedition ${existing.name} you were part of was deleted.`,
           sourceType: 'expedition',
           sourceId: existing.id,
         },
