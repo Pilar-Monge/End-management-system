@@ -28,8 +28,7 @@ export class CampAchievementService {
     title: string,
     messagePrefix: string,
   ): Promise<void> {
-    const achievementRepo = this.dataSource.getRepository(AchievementEntity);
-    const achievement = await achievementRepo.findOne({ where: { id: campAchievement.achievementId } });
+    const achievement = await this.repository.findAchievementById(campAchievement.achievementId);
     if (!achievement) {
       return;
     }
@@ -47,7 +46,7 @@ export class CampAchievementService {
       campId: campAchievement.campId,
       type: 'CAMP_ACHIEVEMENT_UNLOCKED',
       title: 'Logro registrado',
-      message: `Se registro el logro ${achievement.name} para tu campamento.`,
+      message: `El logro ${achievement.name} fue registrado para tu campamento.`,
       sourceType: 'camp_achievement',
       sourceId,
     });
@@ -60,7 +59,7 @@ export class CampAchievementService {
 
     const existing = await this.repository.findByKey(data.campId, data.achievementId);
     if (existing) {
-      throw new Error('This camp achievement already exists');
+      throw new Error('Este logro de campamento ya existe');
     }
 
     const created = await this.repository.create(data);
@@ -68,7 +67,7 @@ export class CampAchievementService {
       created,
       created.achievementId,
       'Logro desbloqueado',
-      'Se desbloqueo un logro para el campamento',
+      'Se desbloqueo un logro del campamento',
     );
 
     return created;
@@ -127,8 +126,8 @@ export class CampAchievementService {
     await this.notifyCampAchievement(
       updated,
       updated.achievementId,
-      'Logro de campamento actualizado',
-      'Se actualizo el registro de logro del campamento',
+      'Logro del campamento actualizado',
+      'El registro del logro del campamento fue actualizado',
     );
 
     return updated;
@@ -148,8 +147,8 @@ export class CampAchievementService {
     await this.notifyCampAchievement(
       existing,
       existing.achievementId,
-      'Logro de campamento eliminado',
-      'Se elimino el registro de logro del campamento',
+      'Logro del campamento eliminado',
+      'El registro del logro del campamento fue eliminado',
     );
 
     return true;

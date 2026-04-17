@@ -3,13 +3,20 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EmailDeliveryProcessor } from './emailDelivery.processor';
 import { EmailOutboxEntity } from './emailOutbox.entity';
+import { EmailOutboxRepository } from './emailOutbox.repository';
 import { EmailOutboxService } from './emailOutbox.service';
 import { EmailTemplateService } from './emailTemplate.service';
 import { SmtpEmailProvider } from './smtpEmail.provider';
 
 @Module({
   imports: [TypeOrmModule.forFeature([EmailOutboxEntity])],
-  providers: [EmailOutboxService, EmailTemplateService, SmtpEmailProvider, EmailDeliveryProcessor],
+  providers: [
+    EmailOutboxRepository,
+    EmailOutboxService,
+    EmailTemplateService,
+    SmtpEmailProvider,
+    EmailDeliveryProcessor,
+  ],
   exports: [EmailOutboxService, EmailTemplateService],
 })
 export class EmailModule {}

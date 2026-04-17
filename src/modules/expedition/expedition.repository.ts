@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
 import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
+import { PersonEntity } from '../person/person.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { ExpeditionEntity } from './expedition.entity';
@@ -47,6 +48,22 @@ export class ExpeditionRepository {
 
   async findById(id: number): Promise<Expedition | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findPersonStatusById(
+    personId: number,
+  ): Promise<Pick<PersonEntity, 'id' | 'currentStatus'> | null> {
+    return await this.dataSource.getRepository(PersonEntity).findOne({
+      where: { id: personId },
+      select: {
+        id: true,
+        currentStatus: true,
+      },
+    });
+  }
+
+  async updatePersonStatus(personId: number, status: PersonEntity['currentStatus']): Promise<void> {
+    await this.dataSource.getRepository(PersonEntity).update({ id: personId }, { currentStatus: status });
   }
 
   async getActiveParticipantPersonIds(expeditionId: number): Promise<number[]> {

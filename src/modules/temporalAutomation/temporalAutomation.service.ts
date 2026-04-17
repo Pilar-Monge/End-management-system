@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { CampEntity } from '../camp/camp.entity';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
@@ -17,6 +17,7 @@ import { PersonEntity } from '../person/person.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
+import { TemporalAutomationRepository } from './temporalAutomation.repository';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const SYSTEM_RECORDED_BY = 0;
@@ -27,8 +28,6 @@ export class TemporalAutomationService {
 
   constructor(
     @InjectRepository(CampEntity)
-    private readonly campRepo: Repository<CampEntity>,
-    @InjectRepository(CampInventoryEntity)
     private readonly campInventoryRepo: Repository<CampInventoryEntity>,
     @InjectRepository(DailyConsumptionEntity)
     private readonly dailyConsumptionRepo: Repository<DailyConsumptionEntity>,
@@ -41,14 +40,7 @@ export class TemporalAutomationService {
     private readonly inventoryAlertRepo: Repository<InventoryAlertEntity>,
     @InjectRepository(InventoryMovementEntity)
     private readonly inventoryMovementRepo: Repository<InventoryMovementEntity>,
-    @InjectRepository(OccupationEntity)
-    private readonly occupationRepo: Repository<OccupationEntity>,
-    @InjectRepository(PersonEntity)
-    private readonly personRepo: Repository<PersonEntity>,
-    @InjectRepository(ResourceTypeEntity)
-    private readonly resourceTypeRepo: Repository<ResourceTypeEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
+    private readonly temporalAutomationRepository: TemporalAutomationRepository,
     private readonly notificationService: NotificationService,
     private readonly systemTimeService: SystemTimeService,
   ) {}
@@ -56,12 +48,10 @@ export class TemporalAutomationService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async runDailyResourceCycle(): Promise<void> {
     const now = this.systemTimeService.now();
-    const camps = await this.campRepo.find({
-      select: ['id', 'name', 'minimumDailyRationPerPerson', 'maxPersonCapacity'],
-    });
+    const camps = await this.temporalAutomationRepository.findDailyCycleCamps();
 
-    const foodResource = await this.resourceTypeRepo.findOne({ where: { category: 'FOOD' } });
-    const waterResource = await this.resourceTypeRepo.findOne({ where: { category: 'WATER' } });
+    const foodResource = await this.temporalAutomationRepository.findResourceTypeByCategory('FOOD');
+    const waterResource = await this.temporalAutomationRepository.findResourceTypeByCategory('WATER');
 
     if (!foodResource || !waterResource) {
       this.logger.warn('No FOOD/WATER resources were found for the daily cycle');
@@ -72,12 +62,7 @@ export class TemporalAutomationService {
       const touchedResourceIds = new Set<number>();
       const rationPerPerson = this.toDecimal(camp.minimumDailyRationPerPerson || '1.00');
 
-      const peopleCount = await this.personRepo.count({
-        where: {
-          campId: camp.id,
-          currentStatus: In(['ACTIVE', 'SICK', 'INJURED']),
-        },
-      });
+      const peopleCount = await this.temporalAutomationRepository.countCampOperationalPeople(camp.id);
 
       const totalRation = this.roundTo2(peopleCount * rationPerPerson);
 
@@ -135,11 +120,7 @@ export class TemporalAutomationService {
   @Cron(CronExpression.EVERY_HOUR)
   async runHourlyExpeditionStateUpdate(): Promise<void> {
     const now = this.systemTimeService.now();
-    const expeditions = await this.expeditionRepo.find({
-      where: {
-        status: Not(In(['COMPLETED', 'CANCELED', 'LOST'])),
-      },
-    });
+    const expeditions = await this.temporalAutomationRepository.findExpeditionsForAutoStateUpdate();
 
     if (expeditions.length === 0) {
       return;
@@ -232,57 +213,23 @@ export class TemporalAutomationService {
     campId: number,
     resourceTypeId: number,
   ): Promise<CampInventoryEntity> {
-    const found = await this.campInventoryRepo.findOne({
-      where: { campId, resourceTypeId },
-    });
-
-    if (found) {
-      return found;
-    }
-
-    const created = this.campInventoryRepo.create({
-      campId,
-      resourceTypeId,
-      currentAmount: '0.00',
-      minimumAlertAmount: '0.00',
-    });
-
-    return await this.campInventoryRepo.save(created);
+    return await this.temporalAutomationRepository.getOrCreateCampInventory(campId, resourceTypeId);
   }
 
   private async getProductionByResource(campId: number, now: Date): Promise<Map<number, number>> {
-    const rows = (await this.personRepo.query(
-      `
-      SELECT
-        COALESCE(ta.temporary_occupation_id, p.occupation_id) AS occupation_id
-      FROM person p
-      LEFT JOIN LATERAL (
-        SELECT temporary_occupation_id
-        FROM temporary_occupation_assignment
-        WHERE person_id = p.id
-          AND start_date <= $2
-          AND (end_date IS NULL OR end_date >= $2)
-        ORDER BY start_date DESC
-        LIMIT 1
-      ) ta ON true
-      WHERE p.camp_id = $1
-        AND p.current_status NOT IN ('SICK', 'INJURED', 'OUTSIDE_CAMP')
-        AND COALESCE(ta.temporary_occupation_id, p.occupation_id) IS NOT NULL
-      `,
-      [campId, now.toISOString()],
-    )) as Array<{ occupation_id: string | number }>;
+    const rows = await this.temporalAutomationRepository.findProductionOccupationRows(
+      campId,
+      now.toISOString(),
+    );
 
     if (rows.length === 0) {
       return new Map<number, number>();
     }
 
     const occupationIds = [...new Set(rows.map((row) => Number(row.occupation_id)))];
-    const occupations = await this.occupationRepo.find({
-      where: {
-        id: In(occupationIds),
-      },
-      select: ['id', 'resourceTypeId', 'dailyAmountProduced'],
-    });
+    const occupations = await this.temporalAutomationRepository.findProductionOccupationsByIds(
+      occupationIds,
+    );
 
     const occupationById = new Map(occupations.map((occupation) => [occupation.id, occupation]));
     const result = new Map<number, number>();
@@ -314,12 +261,10 @@ export class TemporalAutomationService {
       return;
     }
 
-    const inventories = await this.campInventoryRepo.find({
-      where: {
-        campId,
-        resourceTypeId: In(resourceTypeIds),
-      },
-    });
+    const inventories = await this.temporalAutomationRepository.findCampInventories(
+      campId,
+      resourceTypeIds,
+    );
 
     for (const inventory of inventories) {
       const currentAmount = this.toDecimal(inventory.currentAmount);
@@ -329,13 +274,10 @@ export class TemporalAutomationService {
         continue;
       }
 
-      const unresolved = await this.inventoryAlertRepo.findOne({
-        where: {
-          campId,
-          resourceTypeId: inventory.resourceTypeId,
-          resolved: false,
-        },
-      });
+      const unresolved = await this.temporalAutomationRepository.findUnresolvedInventoryAlert(
+        campId,
+        inventory.resourceTypeId,
+      );
 
       if (unresolved) {
         continue;
@@ -359,8 +301,8 @@ export class TemporalAutomationService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
         {
           type: 'INVENTORY_ALERT',
-          title: 'Low inventory alert',
-          message: `Resource ${inventory.resourceTypeId} is below the allowed minimum (${inventory.currentAmount} < ${inventory.minimumAlertAmount}).`,
+          title: 'Alerta de inventario bajo',
+          message: `El recurso ${inventory.resourceTypeId} esta por debajo del minimo permitido (${inventory.currentAmount} < ${inventory.minimumAlertAmount}).`,
           sourceType: 'inventory_alert',
           sourceId: createdAlert.id,
         },
@@ -385,8 +327,8 @@ export class TemporalAutomationService {
       ['SYSTEM_ADMIN'],
       {
         type: 'OVERPOPULATION_ALERT',
-        title: 'Overpopulation alert',
-        message: `Camp ${camp.name} exceeded capacity (${peopleCount}/${camp.maxPersonCapacity}).`,
+        title: 'Alerta de sobrepoblacion',
+        message: `El campamento ${camp.name} excedio su capacidad (${peopleCount}/${camp.maxPersonCapacity}).`,
         sourceType: 'camp',
         sourceId: camp.id,
       },
@@ -394,32 +336,17 @@ export class TemporalAutomationService {
   }
 
   private async notifyOccupationsWithoutStaff(campId: number): Promise<void> {
-    const relevantOccupations = await this.occupationRepo.find({
-      where: [
-        { collectsResources: true },
-        { participatesInExpeditions: true },
-      ],
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+    const relevantOccupations = await this.temporalAutomationRepository.findRelevantOccupationsForStaffing();
 
     if (relevantOccupations.length === 0) {
       return;
     }
 
     const occupationIds = relevantOccupations.map((occupation) => occupation.id);
-    const activePeople = await this.personRepo.find({
-      where: {
-        campId,
-        currentStatus: 'ACTIVE',
-        occupationId: In(occupationIds),
-      },
-      select: {
-        occupationId: true,
-      },
-    });
+    const activePeople = await this.temporalAutomationRepository.findActivePeopleOccupationIds(
+      campId,
+      occupationIds,
+    );
 
     const staffedOccupationIds = new Set(
       activePeople
@@ -437,8 +364,8 @@ export class TemporalAutomationService {
         ['SYSTEM_ADMIN'],
         {
           type: 'OCCUPATION_WITHOUT_STAFF',
-          title: 'Occupation without assigned staff',
-          message: `Occupation ${occupation.name} has no active staff assigned in the camp.`,
+          title: 'Ocupacion sin personal asignado',
+          message: `La ocupacion ${occupation.name} no tiene personal activo asignado en el campamento.`,
           sourceType: 'occupation',
           sourceId: occupation.id,
         },
@@ -469,10 +396,7 @@ export class TemporalAutomationService {
   }
 
   private async syncPersonStatusFromExpeditions(personId: number): Promise<void> {
-    const person = await this.personRepo.findOne({
-      where: { id: personId },
-      select: { id: true, currentStatus: true },
-    });
+    const person = await this.temporalAutomationRepository.findPersonStatusById(personId);
 
     if (!person) {
       return;
@@ -491,8 +415,7 @@ export class TemporalAutomationService {
 
     if (targetStatus === null) {
       if (person.currentStatus === 'ON_EXPEDITION' || person.currentStatus === 'OUTSIDE_CAMP') {
-        person.currentStatus = 'ACTIVE';
-        await this.personRepo.save(person);
+        await this.temporalAutomationRepository.updatePersonStatus(person.id, 'ACTIVE');
       }
       return;
     }
@@ -505,22 +428,21 @@ export class TemporalAutomationService {
       return;
     }
 
-    person.currentStatus = targetStatus;
-    await this.personRepo.save(person);
+    await this.temporalAutomationRepository.updatePersonStatus(person.id, targetStatus);
   }
 
   private async notifyExpeditionStatusChange(
     expedition: ExpeditionEntity,
     previousStatus: ExpeditionEntity['status'],
   ): Promise<void> {
-    const message = `Expedition ${expedition.name} changed status from ${previousStatus} to ${expedition.status}.`;
+    const message = `La expedicion ${expedition.name} cambio de estado de ${previousStatus} a ${expedition.status}.`;
 
     await this.notificationService.notifyCampRoles(
       expedition.campId,
       ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
       {
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Expedition status updated',
+        title: 'Estado de expedicion actualizado',
         message,
         sourceType: 'expedition',
         sourceId: expedition.id,
@@ -534,28 +456,22 @@ export class TemporalAutomationService {
       return;
     }
 
-    const participantUsers = await this.userRepo.find({
-      where: {
-        personId: In(personIds),
-        campId: expedition.campId,
-        status: 'ACTIVE',
-      },
-      select: {
-        id: true,
-      },
-    });
+    const participantUserIds = await this.temporalAutomationRepository.findActiveUserIdsByCampAndPersonIds(
+      expedition.campId,
+      personIds,
+    );
 
-    if (participantUsers.length === 0) {
+    if (participantUserIds.length === 0) {
       return;
     }
 
     await this.notificationService.notifyUsers(
-      participantUsers.map((user) => user.id),
+      participantUserIds,
       {
         campId: expedition.campId,
         type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Expedition status updated',
-        message: `Your expedition ${expedition.name} is now in status ${expedition.status}.`,
+        title: 'Estado de expedicion actualizado',
+        message: `Tu expedicion ${expedition.name} ahora esta en estado ${expedition.status}.`,
         sourceType: 'expedition',
         sourceId: expedition.id,
       },

@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { PersonEntity } from '../person/person.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { ExpeditionParticipantEntity } from './expeditionParticipant.entity';
 import type {
   CreateExpeditionParticipantDTO,
@@ -39,6 +41,68 @@ export class ExpeditionParticipantRepository {
     personId: number,
   ): Promise<ExpeditionParticipant | null> {
     return await this.repo.findOne({ where: { expeditionId, personId } });
+  }
+
+  async findExpeditionById(id: number): Promise<ExpeditionEntity | null> {
+    return await this.repo.manager.getRepository(ExpeditionEntity).findOne({ where: { id } });
+  }
+
+  async findExpeditionSummaryById(
+    id: number,
+  ): Promise<Pick<ExpeditionEntity, 'id' | 'campId' | 'name' | 'status'> | null> {
+    return await this.repo.manager.getRepository(ExpeditionEntity).findOne({
+      where: { id },
+      select: {
+        id: true,
+        campId: true,
+        name: true,
+        status: true,
+      },
+    });
+  }
+
+  async findPersonById(id: number): Promise<PersonEntity | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({ where: { id } });
+  }
+
+  async findPersonStatusById(
+    id: number,
+  ): Promise<Pick<PersonEntity, 'id' | 'currentStatus'> | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({
+      where: { id },
+      select: {
+        id: true,
+        currentStatus: true,
+      },
+    });
+  }
+
+  async updatePersonStatus(id: number, currentStatus: PersonEntity['currentStatus']): Promise<void> {
+    await this.repo.manager.getRepository(PersonEntity).update({ id }, { currentStatus });
+  }
+
+  async findUserByPersonId(
+    personId: number,
+  ): Promise<Pick<UserEntity, 'id' | 'campId'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: { personId },
+      select: {
+        id: true,
+        campId: true,
+      },
+    });
+  }
+
+  async findUserByPersonAndCamp(
+    personId: number,
+    campId: number,
+  ): Promise<Pick<UserEntity, 'id'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: { personId, campId },
+      select: {
+        id: true,
+      },
+    });
   }
 
   async findExpeditionCampId(expeditionId: number): Promise<number | null> {

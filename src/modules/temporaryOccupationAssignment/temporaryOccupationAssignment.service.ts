@@ -28,12 +28,8 @@ export class TemporaryOccupationAssignmentService {
     sourceId: number,
     messagePrefix: string,
   ): Promise<void> {
-    const personRepo = this.dataSource.getRepository(PersonEntity);
-    const occupationRepo = this.dataSource.getRepository(OccupationEntity);
-    const userRepo = this.dataSource.getRepository(UserEntity);
-
-    const person = await personRepo.findOne({ where: { id: personId } });
-    const occupation = await occupationRepo.findOne({ where: { id: temporaryOccupationId } });
+    const person = await this.repository.findPersonById(personId);
+    const occupation = await this.repository.findOccupationById(temporaryOccupationId);
     if (!person || !occupation) {
       return;
     }
@@ -53,16 +49,10 @@ export class TemporaryOccupationAssignmentService {
       },
     );
 
-    const linkedUser = await userRepo.findOne({
-      where: {
-        personId: person.id,
-        campId: person.campId,
-        status: 'ACTIVE',
-      },
-      select: {
-        id: true,
-      },
-    });
+    const linkedUser = await this.repository.findActiveLinkedUserByPersonAndCamp(
+      person.id,
+      person.campId,
+    );
 
     if (!linkedUser) {
       return;

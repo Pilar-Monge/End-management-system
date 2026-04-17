@@ -10,6 +10,7 @@ import { PersonEntity } from '../person/person.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 
 import { DashboardController } from './dashboard.controller';
+import { DashboardRepository } from './dashboard.repository';
 import { DashboardService } from './dashboard.service';
 
 @Module({
@@ -25,6 +26,6 @@ import { DashboardService } from './dashboard.service';
     ]),
   ],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, DashboardRepository],
 })
 export class DashboardModule {}

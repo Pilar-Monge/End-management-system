@@ -32,13 +32,13 @@ export class CampInventoryService {
 
     const existing = await this.repository.findByKey(data.campId, data.resourceTypeId);
     if (existing) {
-      throw new Error('This camp inventory item already exists');
+      throw new Error('Este elemento de inventario del campamento ya existe');
     }
 
     const created = await this.repository.create(data);
     await this.notificationService.notifyCampRoles(created.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
       type: 'INVENTORY_ALERT',
-      title: 'Item de inventario creado',
+      title: 'Elemento de inventario creado',
       message: `Se agrego el recurso ${created.resourceTypeId} al inventario del campamento.`,
       sourceType: 'camp_inventory',
       sourceId: created.resourceTypeId,
@@ -88,8 +88,8 @@ export class CampInventoryService {
 
     await this.notificationService.notifyCampRoles(updated.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
       type: 'INVENTORY_ALERT',
-      title: 'Item de inventario actualizado',
-      message: `Se actualizo el recurso ${updated.resourceTypeId} del inventario del campamento.`,
+      title: 'Elemento de inventario actualizado',
+      message: `Se actualizo el recurso ${updated.resourceTypeId} en el inventario del campamento.`,
       sourceType: 'camp_inventory',
       sourceId: updated.resourceTypeId,
     });
@@ -110,7 +110,7 @@ export class CampInventoryService {
 
     await this.notificationService.notifyCampRoles(campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
       type: 'INVENTORY_ALERT',
-      title: 'Item de inventario eliminado',
+      title: 'Elemento de inventario eliminado',
       message: `Se elimino el recurso ${resourceTypeId} del inventario del campamento.`,
       sourceType: 'camp_inventory',
       sourceId: resourceTypeId,

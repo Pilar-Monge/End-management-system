@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { IntercampRequestEntity } from '../intercampRequest/intercampRequest.entity';
 import { RequestResourceDetailEntity } from './requestResourceDetail.entity';
 import type {
   CreateRequestResourceDetailDTO,
@@ -29,6 +30,28 @@ export class RequestResourceDetailRepository {
 
   async findById(id: number): Promise<RequestResourceDetail | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async resolveRequestScope(requestId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  } | null> {
+    const request = await this.repo.manager.getRepository(IntercampRequestEntity).findOne({
+      where: { id: requestId },
+      select: {
+        originCampId: true,
+        destinationCampId: true,
+      },
+    });
+
+    if (!request) {
+      return null;
+    }
+
+    return {
+      originCampId: request.originCampId,
+      destinationCampId: request.destinationCampId,
+    };
   }
 
   async findByRequestAndResourceType(

@@ -4,14 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
-import { ExpeditionEntity } from '../expedition/expedition.entity';
-import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
 import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { ExpeditionResourceConsumedRepository } from './expeditionResourceConsumed.repository';
 import type {
@@ -25,12 +21,6 @@ export class ExpeditionResourceConsumedService {
   constructor(
     private readonly repository: ExpeditionResourceConsumedRepository,
     private readonly dataSource: DataSource,
-    @InjectRepository(ExpeditionEntity)
-    private readonly expeditionRepo: Repository<ExpeditionEntity>,
-    @InjectRepository(InventoryMovementEntity)
-    private readonly movementRepo: Repository<InventoryMovementEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -42,46 +32,46 @@ export class ExpeditionResourceConsumedService {
   ): Promise<void> {
     await assertEntityExists(this.dataSource, ResourceTypeEntity, resourceTypeId, 'Resource type');
 
-    const expedition = await this.expeditionRepo.findOne({ where: { id: expeditionId } });
+    const expedition = await this.repository.findExpeditionById(expeditionId);
     if (!expedition) {
-      throw new NotFoundException('Expedition not found');
+      throw new NotFoundException('Expedicion no encontrada');
     }
 
-    const user = await this.userRepo.findOne({ where: { id: recordedBy } });
+    const user = await this.repository.findUserById(recordedBy);
     if (!user) {
-      throw new NotFoundException('RecordedBy user not found');
+      throw new NotFoundException('Usuario recordedBy no encontrado');
     }
 
     if (user.status !== 'ACTIVE') {
-      throw new ForbiddenException('Only ACTIVE users can record consumed expedition resources');
+      throw new ForbiddenException('Solo usuarios ACTIVE pueden registrar recursos consumidos en expediciones');
     }
 
     if (user.role !== 'RESOURCE_MANAGEMENT' && user.role !== 'SYSTEM_ADMIN') {
       throw new ForbiddenException(
-        'Only RESOURCE_MANAGEMENT or SYSTEM_ADMIN can record consumed expedition resources',
+        'Solo RESOURCE_MANAGEMENT o SYSTEM_ADMIN pueden registrar recursos consumidos en expediciones',
       );
     }
 
     if (user.campId !== expedition.campId) {
-      throw new BadRequestException('RecordedBy user does not belong to expedition camp');
+      throw new BadRequestException('El usuario recordedBy no pertenece al campamento de la expedicion');
     }
 
     if (movementId === null || movementId === undefined) {
       return;
     }
 
-    const movement = await this.movementRepo.findOne({ where: { id: movementId } });
+    const movement = await this.repository.findMovementById(movementId);
     if (!movement) {
-      throw new NotFoundException('Movement not found');
+      throw new NotFoundException('Movimiento no encontrado');
     }
 
     if (movement.campId !== expedition.campId) {
-      throw new BadRequestException('Movement does not belong to expedition camp');
+      throw new BadRequestException('El movimiento no pertenece al campamento de la expedicion');
     }
 
     if (movement.resourceTypeId !== resourceTypeId) {
       throw new BadRequestException(
-        'Movement resource type does not match provided resourceTypeId',
+        'El tipo de recurso del movimiento no coincide con resourceTypeId',
       );
     }
   }
@@ -101,11 +91,11 @@ export class ExpeditionResourceConsumedService {
       data.resourceTypeId,
     );
     if (existing) {
-      throw new Error('This consumed resource record already exists for this expedition');
+      throw new Error('Este registro de recursos consumidos ya existe para esta expedicion');
     }
 
     const created = await this.repository.create(data);
-    const expedition = await this.expeditionRepo.findOne({ where: { id: data.expeditionId } });
+    const expedition = await this.repository.findExpeditionById(data.expeditionId);
 
     if (expedition) {
       await this.notificationService.notifyCampRoles(
@@ -113,8 +103,8 @@ export class ExpeditionResourceConsumedService {
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_CONSUMED',
-          title: 'Expedition resource consumption',
-          message: `Resource consumption ${data.resourceTypeId} of amount ${data.amount} was recorded in expedition ${data.expeditionId}.`,
+          title: 'Consumo de recursos en expedicion',
+          message: `Se registro el consumo del recurso ${data.resourceTypeId} con cantidad ${data.amount} en la expedicion ${data.expeditionId}.`,
           sourceType: 'expedition_resource_consumed',
           sourceId: created.id,
         },
@@ -175,15 +165,15 @@ export class ExpeditionResourceConsumedService {
       return null;
     }
 
-    const expedition = await this.expeditionRepo.findOne({ where: { id: updated.expeditionId } });
+    const expedition = await this.repository.findExpeditionById(updated.expeditionId);
     if (expedition) {
       await this.notificationService.notifyCampRoles(
         expedition.campId,
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_CONSUMED',
-          title: 'Expedition resource consumption updated',
-          message: `Resource consumption record ${updated.resourceTypeId} in expedition ${updated.expeditionId} was updated.`,
+          title: 'Consumo de recursos en expedicion actualizado',
+          message: `Se actualizo el registro de consumo del recurso ${updated.resourceTypeId} en la expedicion ${updated.expeditionId}.`,
           sourceType: 'expedition_resource_consumed',
           sourceId: updated.id,
         },
@@ -204,15 +194,15 @@ export class ExpeditionResourceConsumedService {
       return false;
     }
 
-    const expedition = await this.expeditionRepo.findOne({ where: { id: existing.expeditionId } });
+    const expedition = await this.repository.findExpeditionById(existing.expeditionId);
     if (expedition) {
       await this.notificationService.notifyCampRoles(
         expedition.campId,
         ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
         {
           type: 'EXPEDITION_RESOURCE_CONSUMED',
-          title: 'Consumption record deleted',
-          message: `A resource consumption record was deleted from expedition ${existing.expeditionId}.`,
+          title: 'Registro de consumo eliminado',
+          message: `Se elimino un registro de consumo de recursos de la expedicion ${existing.expeditionId}.`,
           sourceType: 'expedition_resource_consumed',
           sourceId: existing.id,
         },

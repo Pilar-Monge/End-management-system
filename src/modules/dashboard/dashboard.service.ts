@@ -1,54 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-
-import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
-import { CampInventoryEntity } from '../campInventory/campInventory.entity';
-import { ExpeditionEntity } from '../expedition/expedition.entity';
-import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
-import { NotificationEntity } from '../notification/notification.entity';
-import { PersonEntity } from '../person/person.entity';
-import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
+import { DashboardRepository } from './dashboard.repository';
 
 @Injectable()
 export class DashboardService {
-  constructor(
-    @InjectRepository(NotificationEntity)
-    private readonly notificationRepo: Repository<NotificationEntity>,
-    @InjectRepository(PersonEntity)
-    private readonly personRepo: Repository<PersonEntity>,
-    @InjectRepository(AdmissionRequestEntity)
-    private readonly admissionRequestRepo: Repository<AdmissionRequestEntity>,
-    @InjectRepository(CampInventoryEntity)
-    private readonly campInventoryRepo: Repository<CampInventoryEntity>,
-    @InjectRepository(ResourceTypeEntity)
-    private readonly resourceTypeRepo: Repository<ResourceTypeEntity>,
-    @InjectRepository(ExpeditionEntity)
-    private readonly expeditionRepo: Repository<ExpeditionEntity>,
-    @InjectRepository(InventoryMovementEntity)
-    private readonly inventoryMovementRepo: Repository<InventoryMovementEntity>,
-  ) {}
+  constructor(private readonly repository: DashboardRepository) {}
 
   async getGeneralStats(campId: number) {
     const [unreadNotifications, totalPersons, pendingAdmissionRequests] = await Promise.all([
-      this.notificationRepo.count({
-        where: {
-          campId,
-          read: false,
-        },
-      }),
-      this.personRepo.count({
-        where: {
-          campId,
-        },
-      }),
-      this.admissionRequestRepo
-        .createQueryBuilder('request')
-        .where('request.campId = :campId', { campId })
-        .andWhere('request.status IN (:...statuses)', {
-          statuses: ['PENDING_AI', 'PENDING_ADMIN'],
-        })
-        .getCount(),
+      this.repository.countUnreadNotifications(campId),
+      this.repository.countPersonsByCamp(campId),
+      this.repository.countPendingAdmissionRequests(campId),
     ]);
 
     return {
@@ -59,19 +20,13 @@ export class DashboardService {
   }
 
   async getInventoryData(campId: number) {
-    const rows = await this.campInventoryRepo.find({
-      where: { campId },
-      order: { resourceTypeId: 'ASC' },
-    });
+    const rows = await this.repository.findCampInventoryRows(campId);
 
     const resourceTypeIds = rows.map((row) => row.resourceTypeId);
     const resourceTypeMap = new Map<number, string>();
 
     if (resourceTypeIds.length > 0) {
-      const resourceTypes = await this.resourceTypeRepo
-        .createQueryBuilder('resourceType')
-        .where('resourceType.id IN (:...ids)', { ids: resourceTypeIds })
-        .getMany();
+      const resourceTypes = await this.repository.findResourceTypesByIds(resourceTypeIds);
 
       resourceTypes.forEach((resourceType) => {
         resourceTypeMap.set(resourceType.id, resourceType.name);
@@ -94,13 +49,7 @@ export class DashboardService {
   }
 
   async getExpeditionStatus(campId: number) {
-    const grouped = await this.expeditionRepo
-      .createQueryBuilder('expedition')
-      .select('expedition.status', 'status')
-      .addSelect('COUNT(*)', 'count')
-      .where('expedition.campId = :campId', { campId })
-      .groupBy('expedition.status')
-      .getRawMany<{ status: string; count: string }>();
+    const grouped = await this.repository.countExpeditionsByStatus(campId);
 
     const base = {
       PLANNED: 0,
@@ -122,18 +71,7 @@ export class DashboardService {
     startDate.setHours(0, 0, 0, 0);
     startDate.setDate(startDate.getDate() - 6);
 
-    const rows = await this.inventoryMovementRepo
-      .createQueryBuilder('movement')
-      .select("TO_CHAR(DATE_TRUNC('day', movement.date), 'YYYY-MM-DD')", 'date')
-      .addSelect('SUM(CAST(movement.amount AS numeric))', 'totalConsumed')
-      .where('movement.campId = :campId', { campId })
-      .andWhere('movement.date >= :startDate', { startDate })
-      .andWhere('movement.movementType IN (:...types)', {
-        types: ['DAILY_RATION', 'EXPEDITION_DEPARTURE', 'TRANSFER_SENT'],
-      })
-      .groupBy("DATE_TRUNC('day', movement.date)")
-      .orderBy("DATE_TRUNC('day', movement.date)", 'ASC')
-      .getRawMany<{ date: string; totalConsumed: string }>();
+    const rows = await this.repository.findConsumptionRows(campId, startDate);
 
     const totalsByDate = new Map<string, number>();
     rows.forEach((row) => {

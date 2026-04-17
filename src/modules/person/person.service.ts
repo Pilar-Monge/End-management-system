@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryFailedError, Repository } from 'typeorm';
-import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { CampEntity } from '../camp/camp.entity';
 import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
@@ -18,16 +15,11 @@ export class PersonService {
     private readonly personStatusHistoryRepository: PersonStatusHistoryRepository,
     private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
-    @InjectRepository(AdmissionRequestEntity)
-    private readonly admissionRequestRepository: Repository<AdmissionRequestEntity>,
   ) {}
 
   private async assertAdmissionRequestExists(admissionRequestId: number): Promise<void> {
-    const admissionRequest = await this.admissionRequestRepository.findOne({
-      where: { id: admissionRequestId },
-      select: { id: true },
-    });
-    if (!admissionRequest) {
+    const exists = await this.repository.admissionRequestExists(admissionRequestId);
+    if (!exists) {
       throw new Error('Admission request not found');
     }
   }
@@ -147,16 +139,10 @@ export class PersonService {
         },
       );
 
-      const userRepo = this.dataSource.getRepository(UserEntity);
-      const linkedUser = await userRepo.findOne({
-        where: {
-          personId: id,
-          campId: updated?.campId ?? existing.campId,
-        },
-        select: {
-          id: true,
-        },
-      });
+      const linkedUser = await this.repository.findLinkedUserByPersonAndCamp(
+        id,
+        updated?.campId ?? existing.campId,
+      );
 
       if (linkedUser) {
         await this.notificationService.notifyUser(linkedUser.id, {
@@ -195,16 +181,10 @@ export class PersonService {
       },
     );
 
-    const userRepo = this.dataSource.getRepository(UserEntity);
-    const linkedUser = await userRepo.findOne({
-      where: {
-        personId: existing.id,
-        campId: existing.campId,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const linkedUser = await this.repository.findLinkedUserByPersonAndCamp(
+      existing.id,
+      existing.campId,
+    );
 
     if (linkedUser) {
       await this.notificationService.notifyUser(linkedUser.id, {

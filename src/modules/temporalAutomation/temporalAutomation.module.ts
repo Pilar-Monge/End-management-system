@@ -16,6 +16,7 @@ import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeModule } from '../systemTime/systemTime.module';
 import { TemporaryOccupationAssignmentEntity } from '../temporaryOccupationAssignment/temporaryOccupationAssignment.entity';
+import { TemporalAutomationRepository } from './temporalAutomation.repository';
 import { TemporalAutomationService } from './temporalAutomation.service';
 
 @Module({
@@ -37,6 +38,6 @@ import { TemporalAutomationService } from './temporalAutomation.service';
     SystemTimeModule,
     NotificationModule,
   ],
-  providers: [TemporalAutomationService, ExpeditionParticipantRepository],
+  providers: [TemporalAutomationService, TemporalAutomationRepository, ExpeditionParticipantRepository],
 })
 export class TemporalAutomationModule {}

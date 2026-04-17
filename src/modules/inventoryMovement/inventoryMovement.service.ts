@@ -3,7 +3,6 @@ import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { NotificationService } from '../notification/notification.service';
-import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { CampEntity } from '../camp/camp.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
@@ -33,10 +32,7 @@ export class InventoryMovementService {
     resourceTypeId: number,
     movementId: number,
   ): Promise<void> {
-    const campInventoryRepo = this.dataSource.getRepository(CampInventoryEntity);
-    const inventory = await campInventoryRepo.findOne({
-      where: { campId, resourceTypeId },
-    });
+    const inventory = await this.repository.findCampInventory(campId, resourceTypeId);
 
     if (!inventory) return;
 
@@ -62,7 +58,7 @@ export class InventoryMovementService {
   async createMovement(data: CreateInventoryMovementDTO): Promise<InventoryMovement> {
     const amount = Number.parseFloat(`${data.amount}`);
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException('Amount must be greater than 0');
+      throw new BadRequestException('La cantidad debe ser mayor que 0');
     }
 
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');

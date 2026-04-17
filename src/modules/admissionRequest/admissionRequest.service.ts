@@ -4,7 +4,6 @@ import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
 import { OccupationEntity } from '../occupation/occupation.entity';
-import { AiAdmissionReportEntity } from '../aiAdmissionReport/aiAdmissionReport.entity';
 import { AI_DECISION_VALUES } from '../aiAdmissionReport/aiAdmissionReport.model';
 import { NotificationService } from '../notification/notification.service';
 import { UserEntity } from '../systemUser/systemUser.entity';
@@ -39,7 +38,7 @@ export class AdmissionRequestService {
     const existingRequest = await this.repository.findByEmail(data.email);
 
     if (existingRequest) {
-      throw new Error('A request with this email already exists');
+      throw new Error('Ya existe una solicitud con este correo');
     }
 
     const normalizedData = this.normalizeAiFieldsForCreate(data);
@@ -57,10 +56,7 @@ export class AdmissionRequestService {
       });
 
       const mappedOccupationName = aiExplain.roleAssignment.mappedOccupationName;
-      const occupationRepo = this.dataSource.getRepository(OccupationEntity);
-      const assignedOccupation = await occupationRepo.findOne({
-        where: { name: mappedOccupationName },
-      });
+      const assignedOccupation = await this.repository.findOccupationByName(mappedOccupationName);
 
       const aiDecision = this.normalizeAiDecision(aiExplain.prediction);
 
@@ -69,35 +65,32 @@ export class AdmissionRequestService {
         suggestedOccupationId: assignedOccupation?.id ?? null,
       });
 
-      const aiReportRepo = this.dataSource.getRepository(AiAdmissionReportEntity);
-      await aiReportRepo.save(
-        aiReportRepo.create({
-          requestId: createdRequest.id,
-          submittedData: {
-            features,
+      await this.repository.saveAiAdmissionReport({
+        requestId: createdRequest.id,
+        submittedData: {
+          features,
+        },
+        aiResponse: {
+          admission: {
+            prediction: aiExplain.prediction,
+            rules: aiExplain.rules,
+            summary: aiExplain.explanation.admissionSummary,
+            reason: aiExplain.explanation.admissionReason,
           },
-          aiResponse: {
-            admission: {
-              prediction: aiExplain.prediction,
-              rules: aiExplain.rules,
-              summary: aiExplain.explanation.admissionSummary,
-              reason: aiExplain.explanation.admissionReason,
-            },
-            roleAssignment: {
-              suggestedRole: aiExplain.roleAssignment.suggestedRole,
-              mappedOccupationName,
-              suggestedOccupationId: assignedOccupation?.id ?? null,
-              rules: aiExplain.roleAssignment.rules,
-              summary: aiExplain.roleAssignment.summary,
-              reason: aiExplain.roleAssignment.reason,
-              recommendedAttributes: aiExplain.roleAssignment.recommendedAttributes,
-            },
+          roleAssignment: {
+            suggestedRole: aiExplain.roleAssignment.suggestedRole,
+            mappedOccupationName,
+            suggestedOccupationId: assignedOccupation?.id ?? null,
+            rules: aiExplain.roleAssignment.rules,
+            summary: aiExplain.roleAssignment.summary,
+            reason: aiExplain.roleAssignment.reason,
+            recommendedAttributes: aiExplain.roleAssignment.recommendedAttributes,
           },
-          aiDecision,
-          aiJustification: aiExplain.explanation.admissionReason,
-          suggestedOccupationId: assignedOccupation?.id ?? null,
-        }),
-      );
+        },
+        aiDecision,
+        aiJustification: aiExplain.explanation.admissionReason,
+        suggestedOccupationId: assignedOccupation?.id ?? null,
+      });
 
       if (updatedByAi) {
         await this.notifyAiReviewResult(updatedByAi.id, updatedByAi.campId, updatedByAi.email, updatedByAi.status);
@@ -114,7 +107,7 @@ export class AdmissionRequestService {
     const request = await this.repository.findById(id);
 
     if (!request) {
-      throw new Error('Request not found');
+      throw new Error('Solicitud no encontrada');
     }
 
     return request;
@@ -164,13 +157,13 @@ export class AdmissionRequestService {
     const existingRequest = await this.repository.findById(id);
 
     if (!existingRequest) {
-      throw new Error('Request not found');
+      throw new Error('Solicitud no encontrada');
     }
 
     if (data.email && data.email !== existingRequest.email) {
       const requestWithEmail = await this.repository.findByEmail(data.email);
       if (requestWithEmail && requestWithEmail.id !== existingRequest.id) {
-        throw new Error('Another request with this email already exists');
+        throw new Error('Ya existe otra solicitud con este correo');
       }
     }
 
@@ -202,7 +195,7 @@ export class AdmissionRequestService {
 
     const updatedRequest = await this.repository.update(id, data);
     if (!updatedRequest) {
-      throw new Error('Error updating request');
+      throw new Error('Error al actualizar la solicitud');
     }
 
     return updatedRequest;
@@ -212,17 +205,17 @@ export class AdmissionRequestService {
     const existingRequest = await this.repository.findById(id);
 
     if (!existingRequest) {
-      throw new Error('Request not found');
+      throw new Error('Solicitud no encontrada');
     }
 
     if (existingRequest.status === 'APPROVED') {
-      throw new Error('Cannot delete an approved request');
+      throw new Error('No se puede eliminar una solicitud aprobada');
     }
 
     const deleted = await this.repository.delete(id);
 
     if (!deleted) {
-      throw new Error('Error deleting request');
+      throw new Error('Error al eliminar la solicitud');
     }
   }
 
@@ -234,11 +227,11 @@ export class AdmissionRequestService {
     const request = await this.repository.findById(id);
 
     if (!request) {
-      throw new Error('Request not found');
+      throw new Error('Solicitud no encontrada');
     }
 
     if (request.status !== 'PENDING_AI') {
-      throw new Error('This request is not pending AI analysis');
+      throw new Error('Esta solicitud no esta pendiente de analisis de IA');
     }
 
     await assertEntityExists(
@@ -256,7 +249,7 @@ export class AdmissionRequestService {
     const updatedRequest = await this.repository.update(id, updateData);
 
     if (!updatedRequest) {
-      throw new Error('Error processing request with AI');
+      throw new Error('Error al procesar la solicitud con IA');
     }
 
     await this.notifyAiReviewResult(updatedRequest.id, updatedRequest.campId, updatedRequest.email, updatedRequest.status);
@@ -273,11 +266,11 @@ export class AdmissionRequestService {
     const request = await this.repository.findById(id);
 
     if (!request) {
-      throw new Error('Request not found');
+      throw new Error('Solicitud no encontrada');
     }
 
     if (request.status !== 'PENDING_ADMIN') {
-      throw new Error('This request is not pending admin review');
+      throw new Error('Esta solicitud no esta pendiente de revision administrativa');
     }
 
     await assertEntityExists(this.dataSource, UserEntity, adminUserId, 'User');
@@ -291,13 +284,13 @@ export class AdmissionRequestService {
       reviewDate: new Date(),
       status: approved ? 'APPROVED' : 'REJECTED',
       finalOccupationId: assignedOccupationIdOnApproval,
-      rejectionReason: approved ? null : rejectionReason || 'Request rejected',
+      rejectionReason: approved ? null : rejectionReason || 'Solicitud rechazada',
     };
 
     const updatedRequest = await this.repository.update(id, updateData);
 
     if (!updatedRequest) {
-      throw new Error('Error reviewing request');
+      throw new Error('Error al revisar la solicitud');
     }
 
     await this.notifyAdminReviewResult(
@@ -320,7 +313,7 @@ export class AdmissionRequestService {
   async getAiFeaturesByRequestId(id: number): Promise<AdmissionFeatureVector> {
     const request = await this.repository.findById(id);
     if (!request) {
-      throw new Error('Request not found');
+      throw new Error('Solicitud no encontrada');
     }
 
     return buildAdmissionFeatures({
@@ -363,7 +356,7 @@ export class AdmissionRequestService {
       return 'REJECT';
     }
 
-    throw new Error(`Invalid admission prediction for AI report: ${prediction}`);
+    throw new Error(`Prediccion de admision invalida para el reporte de IA: ${prediction}`);
   }
 
   private normalizeAiFieldsForUpdate(

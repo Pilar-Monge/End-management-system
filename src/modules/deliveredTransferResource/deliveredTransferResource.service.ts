@@ -26,24 +26,12 @@ export class DeliveredTransferResourceService {
     originCampId: number;
     destinationCampId: number;
   }> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer t
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE t.id = $1
-       LIMIT 1`,
-      [transferId],
-    );
-
-    const row = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!row) {
-      throw new Error('Transfer scope not found');
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new Error('No se encontro el alcance del traslado');
     }
 
-    return {
-      originCampId: row.origin_camp_id,
-      destinationCampId: row.destination_camp_id,
-    };
+    return scope;
   }
 
   private async notifyDeliveredResourceChange(
@@ -54,7 +42,7 @@ export class DeliveredTransferResourceService {
   ): Promise<void> {
     const scope = await this.resolveTransferScope(transferId);
     const title = 'Registro de recursos entregados';
-    const message = `${actionLabel} para recurso ${resourceTypeId} en traslado ${transferId}.`;
+    const message = `${actionLabel} para el recurso ${resourceTypeId} en el traslado ${transferId}.`;
 
     await this.notificationService.notifyCampRoles(
       scope.originCampId,
@@ -104,7 +92,7 @@ export class DeliveredTransferResourceService {
       data.resourceTypeId,
     );
     if (existing) {
-      throw new Error('This delivered transfer resource already exists');
+      throw new Error('Este recurso entregado del traslado ya existe');
     }
 
     const created = await this.repository.create(data);
@@ -112,7 +100,7 @@ export class DeliveredTransferResourceService {
       created.transferId,
       created.id,
       created.resourceTypeId,
-      'Se registro entrega de recurso',
+      'Se registro la entrega del recurso',
     );
     return created;
   }
@@ -186,7 +174,7 @@ export class DeliveredTransferResourceService {
         resolvedResourceTypeId,
       );
       if (byPair && byPair.id !== id) {
-        throw new Error('This delivered transfer resource already exists');
+        throw new Error('Este recurso entregado del traslado ya existe');
       }
     }
 
@@ -196,7 +184,7 @@ export class DeliveredTransferResourceService {
         updated.transferId,
         updated.id,
         updated.resourceTypeId,
-        'Se actualizo entrega de recurso',
+        'Se actualizo la entrega del recurso',
       );
     }
 
@@ -218,7 +206,7 @@ export class DeliveredTransferResourceService {
       existing.transferId,
       existing.id,
       existing.resourceTypeId,
-      'Se elimino registro de entrega de recurso',
+      'Se elimino el registro de entrega del recurso',
     );
 
     return true;

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { TransferPersonEntity } from './transferPerson.entity';
 import type {
   CreateTransferPersonDTO,
@@ -38,6 +39,44 @@ export class TransferPersonRepository {
     personId: number,
   ): Promise<TransferPerson | null> {
     return await this.repo.findOne({ where: { transferId, personId } });
+  }
+
+  async resolveTransferScope(transferId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  } | null> {
+    const rows = (await this.repo.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer t
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE t.id = $1
+       LIMIT 1`,
+      [transferId],
+    )) as Array<{ origin_camp_id: number; destination_camp_id: number }>;
+
+    const row = rows[0];
+    if (!row) {
+      return null;
+    }
+
+    return {
+      originCampId: row.origin_camp_id,
+      destinationCampId: row.destination_camp_id,
+    };
+  }
+
+  async findLinkedUserByPersonId(
+    personId: number,
+  ): Promise<Pick<UserEntity, 'id' | 'campId'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: {
+        personId,
+      },
+      select: {
+        id: true,
+        campId: true,
+      },
+    });
   }
 
   async findAllAndCount(filters?: {

@@ -27,24 +27,12 @@ export class TransferHistoryService {
     originCampId: number;
     destinationCampId: number;
   }> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer t
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE t.id = $1
-       LIMIT 1`,
-      [transferId],
-    );
-
-    const row = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!row) {
-      throw new Error('Transfer scope not found');
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new Error('No se encontro el alcance del traslado');
     }
 
-    return {
-      originCampId: row.origin_camp_id,
-      destinationCampId: row.destination_camp_id,
-    };
+    return scope;
   }
 
   private getNotificationTypeFromStatus(newStatus: TransferStatus): NotificationType {
