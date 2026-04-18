@@ -56,6 +56,33 @@ export class UserRoleHistoryService {
     return await this.repository.findById(id);
   }
 
+  async getEntryCampId(id: number): Promise<number | null> {
+    const entry = await this.repository.findById(id);
+    if (!entry) {
+      return null;
+    }
+
+    const user = await this.dataSource.getRepository(UserEntity).findOne({
+      where: { id: entry.userId },
+      select: {
+        campId: true,
+      },
+    });
+
+    return user?.campId ?? null;
+  }
+
+  async getUserCampId(userId: number): Promise<number | null> {
+    const user = await this.dataSource.getRepository(UserEntity).findOne({
+      where: { id: userId },
+      select: {
+        campId: true,
+      },
+    });
+
+    return user?.campId ?? null;
+  }
+
   async getAllEntries(filters?: {
     userId?: number;
     changedBy?: number;

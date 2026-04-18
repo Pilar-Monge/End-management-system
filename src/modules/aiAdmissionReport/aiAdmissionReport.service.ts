@@ -77,6 +77,22 @@ export class AiAdmissionReportService {
     return await this.repository.findByRequestId(requestId);
   }
 
+  async getReportCampId(reportId: number): Promise<number | null> {
+    const report = await this.repository.findById(reportId);
+    if (!report) {
+      return null;
+    }
+
+    const request = await this.admissionRequestRepo.findOne({
+      where: { id: report.requestId },
+      select: {
+        campId: true,
+      },
+    });
+
+    return request?.campId ?? null;
+  }
+
   async getAllReports(filters?: {
     requestId?: number;
     aiDecision?: AiDecision;

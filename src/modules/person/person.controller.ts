@@ -60,10 +60,6 @@ export class PersonController {
       rol: currentUser.rol,
     };
   }
-
-  private isSystemAdmin(rol: string): boolean {
-    return rol === 'SYSTEM_ADMIN';
-  }
   @Post()
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Person' })
@@ -101,7 +97,7 @@ export class PersonController {
     if (!person) throw new NotFoundException('Person not found');
 
     const currentUser = this.getCurrentUser(req);
-    if (!this.isSystemAdmin(currentUser.rol) && person.campId !== currentUser.campId) {
+    if (person.campId !== currentUser.campId) {
       throw new BadRequestException('You do not have permission to view this person');
     }
 
@@ -141,11 +137,7 @@ export class PersonController {
       }
 
       const currentUser = this.getCurrentUser(req);
-      const isAdmin = this.isSystemAdmin(currentUser.rol);
-
-      if (!isAdmin) {
-        filters.campId = currentUser.campId;
-      }
+      filters.campId = currentUser.campId;
 
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
@@ -153,7 +145,7 @@ export class PersonController {
           throw new BadRequestException('Invalid camp ID');
         }
 
-        if (!isAdmin && parsedCampId !== currentUser.campId) {
+        if (parsedCampId !== currentUser.campId) {
           throw new BadRequestException('You cannot query persons from another camp');
         }
 
@@ -216,13 +208,21 @@ export class PersonController {
   @ApiOkResponseData(PersonEntity, { description: 'Person updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Person not found' })
-  async update(@Param('id') id: string, @Body() body: UpdatePersonDTO) {
+  async update(@Param('id') id: string, @Body() body: UpdatePersonDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingPerson = await this.service.getPersonById(parsedId);
+      if (!existingPerson) throw new NotFoundException('Person not found');
+
+      if (existingPerson.campId !== currentUser.campId) {
+        throw new BadRequestException('You do not have permission to update this person');
+      }
+
       const person = await this.service.updatePerson(parsedId, body);
       if (!person) throw new NotFoundException('Person not found');
 

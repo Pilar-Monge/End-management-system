@@ -11,6 +11,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -34,18 +35,46 @@ import type { CreateSessionDTO, SessionStatus, UpdateSessionDTO } from './sessio
 import { SessionEntity } from './session.entity';
 
 import { CreateSessionDto, UpdateSessionDto } from './dto';
+
 @Controller('sessions')
 @ApiTags('Session')
 @Roles('SYSTEM_ADMIN')
 export class SessionController {
   constructor(private readonly service: SessionService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create Session' })
   @ApiBody({ type: CreateSessionDto })
   @ApiCreatedResponseData(SessionEntity, { description: 'Session created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateSessionDTO) {
+  async create(@Body() body: CreateSessionDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (body.campId !== currentUser.campId) {
+        throw new BadRequestException('You cannot create sessions for another camp');
+      }
+
       const session = await this.service.createSession(body);
       return {
         success: true,
@@ -58,23 +87,27 @@ export class SessionController {
       );
     }
   }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get Session by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Session id' })
   @ApiOkResponseData(SessionEntity, { description: 'Session found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Session not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
+    const currentUser = this.getCurrentUser(req);
     const session = await this.service.getSessionById(parsedId);
     if (!session) throw new NotFoundException('Session not found');
+    if (session.campId !== currentUser.campId) throw new NotFoundException('Session not found');
 
     return { success: true, data: session };
   }
+
   @Get()
   @ApiOperation({ summary: 'List Session' })
   @ApiOkResponseList(SessionEntity, { description: 'Session list' })
@@ -92,15 +125,23 @@ export class SessionController {
     @Query('status') status?: SessionStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
       const filters: {
         userId?: number;
         campId?: number;
         status?: SessionStatus;
         page?: number;
         limit?: number;
-      } = {};
+      } = {
+        campId: currentUser.campId,
+      };
 
       if (userId) {
         const parsedUserId = Number.parseInt(userId, 10);
@@ -111,6 +152,9 @@ export class SessionController {
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
+        if (parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query sessions from another camp');
+        }
         filters.campId = parsedCampId;
       }
 
@@ -154,6 +198,7 @@ export class SessionController {
       );
     }
   }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update Session' })
   @ApiParam({ name: 'id', type: Number, description: 'Session id' })
@@ -161,13 +206,20 @@ export class SessionController {
   @ApiOkResponseData(SessionEntity, { description: 'Session updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Session not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateSessionDTO) {
+  async update(@Param('id') id: string, @Body() body: UpdateSessionDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingSession = await this.service.getSessionById(parsedId);
+      if (!existingSession) throw new NotFoundException('Session not found');
+      if (existingSession.campId !== currentUser.campId) {
+        throw new NotFoundException('Session not found');
+      }
+
       const session = await this.service.updateSession(parsedId, body);
       if (!session) throw new NotFoundException('Session not found');
 
@@ -182,19 +234,27 @@ export class SessionController {
       );
     }
   }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Session' })
   @ApiParam({ name: 'id', type: Number, description: 'Session id' })
   @ApiOkResponseMessage({ description: 'Session deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Session not found' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingSession = await this.service.getSessionById(parsedId);
+      if (!existingSession) throw new NotFoundException('Session not found');
+      if (existingSession.campId !== currentUser.campId) {
+        throw new NotFoundException('Session not found');
+      }
+
       const deleted = await this.service.deleteSession(parsedId);
       if (!deleted) throw new NotFoundException('Session not found');
 
