@@ -54,7 +54,7 @@ export class AdmissionRequestService {
         physical_condition_score: features.physical_condition_score,
         experience_years: features.experience_years,
         skills_score: features.skills_score,
-      });
+      }, createdRequest.campId);
 
       const mappedOccupationName = aiExplain.roleAssignment.mappedOccupationName;
       const occupationRepo = this.dataSource.getRepository(OccupationEntity);

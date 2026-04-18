@@ -51,19 +51,33 @@ async function bootstrap(): Promise<void> {
   }
 
   try {
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
     const decisionTreeService = app.get(DecisionTreeService);
     const trainingJobs = [
       { filePath: 'train.json', label: 'admission' },
       { filePath: 'train-role.json', label: 'role assignment' },
     ] as const;
 
-    for (const job of trainingJobs) {
-      const result = await decisionTreeService.trainFromFileIfMissingModel(job.filePath);
+    const camps = (await AppDataSource.query('SELECT id FROM camp ORDER BY id')) as Array<{
+      id: number;
+    }>;
 
-      if (result.trained) {
-        logger.log(`AI model "${result.modelName}" trained automatically from ${job.filePath}`);
-      } else {
-        logger.log(`AI model "${result.modelName}" already exists; skipping auto-training`);
+    for (const camp of camps) {
+      for (const job of trainingJobs) {
+        const result = await decisionTreeService.trainFromFileIfMissingModel(job.filePath, camp.id);
+
+        if (result.trained) {
+          logger.log(
+            `AI model "${result.modelName}" trained automatically from ${job.filePath} for camp ${camp.id}`,
+          );
+        } else {
+          logger.log(
+            `AI model "${result.modelName}" already exists for camp ${camp.id}; skipping auto-training`,
+          );
+        }
       }
     }
   } catch (error) {
@@ -72,6 +86,10 @@ async function bootstrap(): Promise<void> {
         error instanceof Error ? error.message : 'unknown error'
       }`,
     );
+  } finally {
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
   }
 
   const port = Number(process.env.PORT) || 3000;

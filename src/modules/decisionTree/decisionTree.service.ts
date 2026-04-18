@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import * as nodePath from 'path';
+import { DecisionTreeClassifier } from 'ml-cart';
 
 import { DecisionTreeRepository } from './decisionTree.repository';
 import type {
@@ -9,23 +10,6 @@ import type {
   PredictDecisionTreeDTO,
   TrainDecisionTreeDTO,
 } from './decisionTree.model';
-
-type DecisionTreeCtor = {
-  new (options?: {
-    gainFunction?: 'gini' | 'entropy';
-    maxDepth?: number;
-    minNumSamples?: number;
-  }): {
-    train: (trainingSet: number[][], labels: number[]) => void;
-    predict: (rows: number[][]) => number[];
-    toJSON?: () => unknown;
-    root?: unknown;
-  };
-  load?: (json: unknown) => {
-    predict: (rows: number[][]) => number[];
-    root?: unknown;
-  };
-};
 
 type SerializedTreeNode = {
   splitColumn?: number;
@@ -126,18 +110,11 @@ const ROLE_PROFILES: Record<AssignmentRoleName, RoleProfile> = {
 
 @Injectable()
 export class DecisionTreeService {
-  private readonly decisionTreeClassifier: DecisionTreeCtor;
+  private readonly decisionTreeClassifier = DecisionTreeClassifier;
 
-  constructor(private readonly repository: DecisionTreeRepository) {
-    const mod = require('ml-cart') as { DecisionTreeClassifier?: DecisionTreeCtor };
-    if (!mod.DecisionTreeClassifier) {
-      throw new Error('ml-cart DecisionTreeClassifier is not available');
-    }
+  constructor(private readonly repository: DecisionTreeRepository) {}
 
-    this.decisionTreeClassifier = mod.DecisionTreeClassifier;
-  }
-
-  async trainModel(data: TrainDecisionTreeDTO): Promise<DecisionTreeModel> {
+  async trainModel(data: TrainDecisionTreeDTO, campId: number): Promise<DecisionTreeModel> {
     this.validateTrainInput(data);
 
     const { rows, labels } = this.buildTrainingRows(data.featureNames, data.samples);
@@ -186,9 +163,10 @@ export class DecisionTreeService {
 
     const modelPayload = typeof classifier.toJSON === 'function' ? classifier.toJSON() : classifier;
 
-    await this.repository.deactivateByModelName(data.modelName);
+    await this.repository.deactivateByModelName(data.modelName, campId);
 
     return await this.repository.create({
+      campId,
       modelName: data.modelName,
       featureNames: data.featureNames,
       modelPayload,
@@ -203,7 +181,10 @@ export class DecisionTreeService {
     });
   }
 
-  async trainFromFileIfMissingModel(filePath = 'train.json'): Promise<{
+  async trainFromFileIfMissingModel(
+    filePath = 'train.json',
+    campId = 0,
+  ): Promise<{
     trained: boolean;
     modelName: string;
   }> {
@@ -213,12 +194,12 @@ export class DecisionTreeService {
 
     this.validateTrainInput(parsed);
 
-    const activeModel = await this.repository.findActiveByModelName(parsed.modelName);
+    const activeModel = await this.repository.findActiveByModelName(parsed.modelName, campId);
     if (activeModel) {
       return { trained: false, modelName: parsed.modelName };
     }
 
-    const trained = await this.trainModel(parsed);
+    const trained = await this.trainModel(parsed, campId);
     return { trained: true, modelName: trained.modelName };
   }
 
@@ -233,7 +214,7 @@ export class DecisionTreeService {
       roleReason: string;
     };
   }> {
-    const model = await this.getModelOrThrow(data.modelId);
+    const model = await this.getModelOrThrow(data.modelId, data.campId);
     const explained = await this.explainWithModel(model, data.features);
 
     return {
@@ -256,13 +237,14 @@ export class DecisionTreeService {
       roleReason: string;
     };
   }> {
-    const model = await this.getModelOrThrow(data.modelId);
+    const model = await this.getModelOrThrow(data.modelId, data.campId);
     return await this.explainWithModel(model, data.features);
   }
 
   async explainByModelName(
     modelName: string,
     features: Record<string, number>,
+    campId = 0,
   ): Promise<{
     model: Omit<DecisionTreeModel, 'modelPayload'>;
     prediction: string;
@@ -275,17 +257,27 @@ export class DecisionTreeService {
       roleReason: string;
     };
   }> {
-    const model = await this.getActiveModelByNameOrThrow(modelName);
+    const model = await this.getActiveModelByNameOrThrow(modelName, campId);
     return await this.explainWithModel(model, features);
   }
 
-  async getModelById(id: number): Promise<DecisionTreeModel | null> {
-    return await this.repository.findById(id);
+  async getModelById(id: number, campId?: number): Promise<DecisionTreeModel | null> {
+    const model = await this.repository.findById(id);
+    if (!model) {
+      return null;
+    }
+
+    if (campId !== undefined && model.campId !== campId) {
+      return null;
+    }
+
+    return model;
   }
 
   async listModels(filters?: {
     modelName?: string;
     isActive?: boolean;
+    campId?: number;
     page?: number;
     limit?: number;
   }): Promise<{ data: Omit<DecisionTreeModel, 'modelPayload'>[]; total: number }> {
@@ -296,6 +288,7 @@ export class DecisionTreeService {
     const query: {
       modelName?: string;
       isActive?: boolean;
+      campId?: number;
       offset?: number;
       limit?: number;
     } = {
@@ -309,6 +302,10 @@ export class DecisionTreeService {
 
     if (filters?.isActive !== undefined) {
       query.isActive = filters.isActive;
+    }
+
+    if (filters?.campId !== undefined) {
+      query.campId = filters.campId;
     }
 
     const result = await this.repository.findAll(query);
@@ -371,8 +368,8 @@ export class DecisionTreeService {
     return row;
   }
 
-  private async getModelOrThrow(id: number): Promise<DecisionTreeModel> {
-    const model = await this.repository.findById(id);
+  private async getModelOrThrow(id: number, campId?: number): Promise<DecisionTreeModel> {
+    const model = await this.getModelById(id, campId);
     if (!model) {
       throw new Error('Decision tree model not found');
     }
@@ -380,8 +377,11 @@ export class DecisionTreeService {
     return model;
   }
 
-  private async getActiveModelByNameOrThrow(modelName: string): Promise<DecisionTreeModel> {
-    const model = await this.repository.findActiveByModelName(modelName);
+  private async getActiveModelByNameOrThrow(
+    modelName: string,
+    campId?: number,
+  ): Promise<DecisionTreeModel> {
+    const model = await this.repository.findActiveByModelName(modelName, campId);
     if (!model) {
       throw new Error(`Active decision tree model not found for ${modelName}`);
     }
@@ -459,12 +459,12 @@ export class DecisionTreeService {
   }> {
     let payload: unknown | null = null;
 
-    if ((model as any).modelFilePath) {
+    if (model.modelFilePath) {
       try {
-        const absolute = nodePath.resolve(process.cwd(), (model as any).modelFilePath as string);
+        const absolute = nodePath.resolve(process.cwd(), model.modelFilePath);
         const raw = await fs.readFile(absolute, 'utf8');
         payload = JSON.parse(raw);
-      } catch (err) {
+      } catch {
         // fall through to try modelPayload
       }
     }
@@ -623,7 +623,8 @@ export class DecisionTreeService {
 
   private buildTreeSummary(treeName: string, decision: string, rules: string[]): string {
     const verb = decision === 'ACCEPT' ? 'aprobo' : decision === 'REJECT' ? 'rechazo' : 'clasifico';
-    return `${treeName}: el modelo ${verb} la solicitud.`;
+    const ruleSummary = rules.length > 0 ? ` Reglas: ${rules[0]}.` : '';
+    return `${treeName}: el modelo ${verb} la solicitud.${ruleSummary}`;
   }
 
   private buildRoleSummary(roleAssignment: RoleAssignment): string {
