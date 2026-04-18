@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { PersonEntity } from '../person/person.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { ExpeditionParticipantEntity } from './expeditionParticipant.entity';
 import type {
   CreateExpeditionParticipantDTO,
@@ -38,6 +41,136 @@ export class ExpeditionParticipantRepository {
     personId: number,
   ): Promise<ExpeditionParticipant | null> {
     return await this.repo.findOne({ where: { expeditionId, personId } });
+  }
+
+  async findExpeditionById(id: number): Promise<ExpeditionEntity | null> {
+    return await this.repo.manager.getRepository(ExpeditionEntity).findOne({ where: { id } });
+  }
+
+  async findExpeditionSummaryById(
+    id: number,
+  ): Promise<Pick<ExpeditionEntity, 'id' | 'campId' | 'name' | 'status'> | null> {
+    return await this.repo.manager.getRepository(ExpeditionEntity).findOne({
+      where: { id },
+      select: {
+        id: true,
+        campId: true,
+        name: true,
+        status: true,
+      },
+    });
+  }
+
+  async findPersonById(id: number): Promise<PersonEntity | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({ where: { id } });
+  }
+
+  async findPersonStatusById(
+    id: number,
+  ): Promise<Pick<PersonEntity, 'id' | 'currentStatus'> | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({
+      where: { id },
+      select: {
+        id: true,
+        currentStatus: true,
+      },
+    });
+  }
+
+  async updatePersonStatus(id: number, currentStatus: PersonEntity['currentStatus']): Promise<void> {
+    await this.repo.manager.getRepository(PersonEntity).update({ id }, { currentStatus });
+  }
+
+  async findUserByPersonId(
+    personId: number,
+  ): Promise<Pick<UserEntity, 'id' | 'campId'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: { personId },
+      select: {
+        id: true,
+        campId: true,
+      },
+    });
+  }
+
+  async findUserByPersonAndCamp(
+    personId: number,
+    campId: number,
+  ): Promise<Pick<UserEntity, 'id'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: { personId, campId },
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  async findExpeditionCampId(expeditionId: number): Promise<number | null> {
+    const expedition = await this.repo.manager.getRepository(ExpeditionEntity).findOne({
+      where: { id: expeditionId },
+      select: { campId: true },
+    });
+
+    return expedition?.campId ?? null;
+  }
+
+  async findParticipantCampId(participantId: number): Promise<number | null> {
+    const row = await this.repo
+      .createQueryBuilder('ep')
+      .innerJoin(ExpeditionEntity, 'e', 'e.id = ep.expeditionId')
+      .select('e.campId', 'campId')
+      .where('ep.id = :participantId', { participantId })
+      .getRawOne<{ campId: number }>();
+
+    return row?.campId ?? null;
+  }
+
+  async hasActiveParticipationInExpeditionStatuses(
+    personId: number,
+    statuses: Array<ExpeditionEntity['status']>,
+  ): Promise<boolean> {
+    if (statuses.length === 0) {
+      return false;
+    }
+
+    const count = await this.repo
+      .createQueryBuilder('ep')
+      .innerJoin(ExpeditionEntity, 'e', 'e.id = ep.expeditionId')
+      .where('ep.personId = :personId', { personId })
+      .andWhere('ep.status = :participantStatus', { participantStatus: 'ACTIVE' })
+      .andWhere('e.status IN (:...statuses)', { statuses })
+      .getCount();
+
+    return count > 0;
+  }
+
+  async getActivePersonIdsByExpedition(expeditionId: number): Promise<number[]> {
+    const participants = await this.repo.find({
+      where: {
+        expeditionId,
+        status: 'ACTIVE',
+      },
+      select: {
+        personId: true,
+      },
+    });
+
+    return [...new Set(participants.map((participant) => participant.personId))];
+  }
+
+  async getTrackedExpeditionStatusesByPersonId(
+    personId: number,
+  ): Promise<Array<ExpeditionEntity['status']>> {
+    const rows = await this.repo
+      .createQueryBuilder('ep')
+      .innerJoin(ExpeditionEntity, 'e', 'e.id = ep.expeditionId')
+      .select('e.status', 'status')
+      .where('ep.personId = :personId', { personId })
+      .andWhere('ep.status = :participantStatus', { participantStatus: 'ACTIVE' as ParticipantStatus })
+      .andWhere('e.status IN (:...statuses)', { statuses: ['IN_PROGRESS', 'DELAYED', 'LOST'] })
+      .getRawMany<{ status: ExpeditionEntity['status'] }>();
+
+    return [...new Set(rows.map((row) => row.status))];
   }
 
   async findAllAndCount(filters?: {

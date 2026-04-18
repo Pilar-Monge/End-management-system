@@ -5,6 +5,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -285,7 +286,6 @@ export class ExpeditionController {
   }
 
   @Post(':id/complete')
-  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Complete exploration' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseData(ExpeditionEntity, { description: 'Exploration completed' })
@@ -317,6 +317,17 @@ export class ExpeditionController {
         message: 'Exploration completed successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      if (
+        error instanceof Error &&
+        error.message === 'Only active expedition participants can complete this expedition'
+      ) {
+        throw new ForbiddenException(error.message);
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error completing exploration',
       );

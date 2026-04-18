@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, In } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
-import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
+import type { PersonEntity } from '../person/person.entity';
 import { NotificationService } from '../notification/notification.service';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
 
 import { ExpeditionRepository } from './expedition.repository';
@@ -24,6 +23,51 @@ export class ExpeditionService {
     private readonly systemTimeService: SystemTimeService,
     private readonly notificationService: NotificationService,
   ) {}
+
+  private async syncParticipantPersonStatuses(expeditionId: number): Promise<void> {
+    const personIds = await this.repository.getActiveParticipantPersonIds(expeditionId);
+    if (personIds.length === 0) {
+      return;
+    }
+
+    for (const personId of personIds) {
+      await this.syncPersonStatusFromExpeditions(personId);
+    }
+  }
+
+  private async syncPersonStatusFromExpeditions(personId: number): Promise<void> {
+    const person = await this.repository.findPersonStatusById(personId);
+
+    if (!person) {
+      return;
+    }
+
+    const statuses = new Set(await this.repository.getTrackedExpeditionStatusesByPersonId(personId));
+    let targetStatus: PersonEntity['currentStatus'] | null = null;
+
+    if (statuses.has('LOST')) {
+      targetStatus = 'OUTSIDE_CAMP';
+    } else if (statuses.has('IN_PROGRESS') || statuses.has('DELAYED')) {
+      targetStatus = 'ON_EXPEDITION';
+    }
+
+    if (targetStatus === null) {
+      if (person.currentStatus === 'ON_EXPEDITION' || person.currentStatus === 'OUTSIDE_CAMP') {
+        await this.repository.updatePersonStatus(person.id, 'ACTIVE');
+      }
+      return;
+    }
+
+    if (person.currentStatus === targetStatus) {
+      return;
+    }
+
+    if (!['ACTIVE', 'ON_EXPEDITION', 'OUTSIDE_CAMP'].includes(person.currentStatus)) {
+      return;
+    }
+
+    await this.repository.updatePersonStatus(person.id, targetStatus);
+  }
 
   async createExpedition(data: CreateExpeditionDTO): Promise<Expedition> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
@@ -48,7 +92,7 @@ export class ExpeditionService {
     await this.notificationService.notifyCampRoles(created.campId, ['SYSTEM_ADMIN', 'TRAVEL_MANAGER'], {
       type: 'EXPEDITION_CREATED',
       title: 'Nueva expedicion registrada',
-      message: `Se registro la expedicion ${created.name} con estado inicial ${created.status}.`,
+      message: `La expedicion ${created.name} fue registrada con estado inicial ${created.status}.`,
       sourceType: 'expedition',
       sourceId: created.id,
     });
@@ -96,16 +140,27 @@ export class ExpeditionService {
       return null;
     }
 
+    if (!Number.isInteger(completedBy) || completedBy <= 0) {
+      throw new Error('Usuario autenticado no valido');
+    }
+
+    const isParticipant = await this.repository.isUserActiveParticipant(id, completedBy);
+    if (!isParticipant) {
+      throw new Error('Solo los participantes activos pueden completar esta expedicion');
+    }
+
     const now = this.systemTimeService.now();
     if (now.getTime() < expedition.plannedReturnDate.getTime()) {
-      throw new Error('Expedition can only be completed after the estimated return date');
+      throw new Error('La expedicion solo puede completarse despues de la fecha estimada de retorno');
     }
 
     if (['COMPLETED', 'CANCELED', 'LOST'].includes(expedition.status)) {
-      throw new Error('Expedition cannot be completed from its current status');
+      throw new Error('La expedicion no puede completarse desde su estado actual');
     }
 
     await this.repository.completeExplorationWithLoot(expedition, completedBy, now);
+
+    await this.syncParticipantPersonStatuses(id);
 
     const completed = await this.repository.findById(id);
     if (!completed) {
@@ -162,6 +217,10 @@ export class ExpeditionService {
       return null;
     }
 
+    if (existing.status !== updated.status) {
+      await this.syncParticipantPersonStatuses(updated.id);
+    }
+
     await this.notificationService.notifyCampRoles(
       updated.campId,
       ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
@@ -200,35 +259,16 @@ export class ExpeditionService {
       },
     );
 
-    const participantRepo = this.dataSource.getRepository(ExpeditionParticipantEntity);
-    const participants = await participantRepo.find({
-      where: {
-        expeditionId: existing.id,
-      },
-      select: {
-        personId: true,
-      },
-    });
-
-    const personIds = [...new Set(participants.map((participant) => participant.personId))];
+    const personIds = await this.repository.getAllParticipantPersonIds(existing.id);
     if (personIds.length === 0) {
       return true;
     }
 
-    const userRepo = this.dataSource.getRepository(UserEntity);
-    const users = await userRepo.find({
-      where: {
-        campId: existing.campId,
-        personId: In(personIds),
-      },
-      select: {
-        id: true,
-      },
-    });
+    const userIds = await this.repository.findUserIdsByCampAndPersonIds(existing.campId, personIds);
 
-    if (users.length > 0) {
+    if (userIds.length > 0) {
       await this.notificationService.notifyUsers(
-        users.map((user) => user.id),
+        userIds,
         {
           campId: existing.campId,
           type: 'EXPEDITION_STATUS_UPDATED',
@@ -246,14 +286,14 @@ export class ExpeditionService {
   private resolveEstimatedDays(data: CreateExpeditionDTO): number {
     if (data.estimatedDurationDays !== undefined) {
       if (!Number.isInteger(data.estimatedDurationDays) || data.estimatedDurationDays <= 0) {
-        throw new Error('estimatedDurationDays must be an integer greater than 0');
+        throw new Error('estimatedDurationDays debe ser un entero mayor que 0');
       }
 
       return data.estimatedDurationDays;
     }
 
     if (!data.plannedDepartureDate || !data.plannedReturnDate) {
-      throw new Error('You must provide estimatedDurationDays or valid planned dates');
+      throw new Error('Debes proporcionar estimatedDurationDays o fechas planificadas validas');
     }
 
     const departureMs = new Date(data.plannedDepartureDate).getTime();
@@ -262,7 +302,7 @@ export class ExpeditionService {
     const days = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
 
     if (!Number.isFinite(days) || days <= 0) {
-      throw new Error('Could not calculate estimatedDurationDays from the provided dates');
+      throw new Error('No se pudo calcular estimatedDurationDays con las fechas proporcionadas');
     }
 
     return days;
@@ -275,11 +315,11 @@ export class ExpeditionService {
 
     const departure = new Date(data.plannedDepartureDate);
     if (Number.isNaN(departure.getTime())) {
-      throw new Error('plannedDepartureDate must be a valid timestamp');
+      throw new Error('plannedDepartureDate debe ser una fecha valida');
     }
 
     if (departure.getTime() < now.getTime()) {
-      throw new Error('plannedDepartureDate must be current or future server time');
+      throw new Error('plannedDepartureDate debe ser la hora actual o futura del servidor');
     }
 
     return departure;
@@ -289,7 +329,7 @@ export class ExpeditionService {
     const value = data.maxExtraDays ?? data.extraDaysAvailable ?? 0;
 
     if (!Number.isInteger(value) || value < 0) {
-      throw new Error('maxExtraDays must be an integer greater than or equal to 0');
+      throw new Error('maxExtraDays debe ser un entero mayor o igual a 0');
     }
 
     return value;

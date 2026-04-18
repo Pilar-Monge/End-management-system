@@ -4,7 +4,6 @@ import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { NotificationService } from '../notification/notification.service';
 import { PersonEntity } from '../person/person.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { TransferEntity } from '../transfer/transfer.entity';
 
 import { TransferPersonRepository } from './transferPerson.repository';
@@ -27,24 +26,12 @@ export class TransferPersonService {
     originCampId: number;
     destinationCampId: number;
   }> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer t
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE t.id = $1
-       LIMIT 1`,
-      [transferId],
-    );
-
-    const row = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!row) {
-      throw new Error('Transfer scope not found');
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new Error('No se encontro el alcance del traslado');
     }
 
-    return {
-      originCampId: row.origin_camp_id,
-      destinationCampId: row.destination_camp_id,
-    };
+    return scope;
   }
 
   private async notifyTransferPersonEvent(
@@ -55,7 +42,7 @@ export class TransferPersonService {
   ): Promise<void> {
     const scope = await this.resolveTransferScope(transferId);
     const title = 'Actualizacion de persona en traslado';
-    const message = `La persona ${personId} en el traslado ${transferId} cambio a estado ${status}.`;
+    const message = `La persona ${personId} en el traslado ${transferId} cambio al estado ${status}.`;
 
     await this.notificationService.notifyCampRoles(
       scope.originCampId,
@@ -80,16 +67,7 @@ export class TransferPersonService {
       },
     );
 
-    const userRepo = this.dataSource.getRepository(UserEntity);
-    const linkedUser = await userRepo.findOne({
-      where: {
-        personId,
-      },
-      select: {
-        id: true,
-        campId: true,
-      },
-    });
+    const linkedUser = await this.repository.findLinkedUserByPersonId(personId);
 
     if (!linkedUser) {
       return;
@@ -99,7 +77,7 @@ export class TransferPersonService {
       campId: linkedUser.campId,
       type: 'TRANSFER_PERSON_UPDATED',
       title: 'Estado de traslado actualizado',
-      message: `Tu traslado fue actualizado a estado ${status}.`,
+      message: `Tu traslado fue actualizado al estado ${status}.`,
       sourceType: 'transfer_person',
       sourceId,
     });
@@ -111,7 +89,7 @@ export class TransferPersonService {
 
     const existing = await this.repository.findByTransferAndPerson(data.transferId, data.personId);
     if (existing) {
-      throw new Error('This person is already assigned to this transfer');
+      throw new Error('Esta persona ya esta asignada a este traslado');
     }
 
     const created = await this.repository.create(data);
@@ -180,7 +158,7 @@ export class TransferPersonService {
         resolvedPersonId,
       );
       if (byPair && byPair.id !== id) {
-        throw new Error('This person is already assigned to this transfer');
+        throw new Error('Esta persona ya esta asignada a este traslado');
       }
     }
 

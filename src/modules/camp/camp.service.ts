@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { CampRepository } from './camp.repository';
 import type { Camp, CampStatus, CreateCampDTO, UpdateCampDTO } from './camp.model';
 
@@ -11,7 +9,6 @@ export class CampService {
   constructor(
     private readonly repository: CampRepository,
     private readonly notificationService: NotificationService,
-    private readonly dataSource: DataSource,
   ) {}
 
   private valueToText(value: unknown): string {
@@ -32,17 +29,7 @@ export class CampService {
     sourceId: number,
     emailPayload?: Record<string, unknown>,
   ): Promise<void> {
-    const userRepo = this.dataSource.getRepository(UserEntity);
-    const admins = await userRepo.find({
-      where: {
-        role: 'SYSTEM_ADMIN',
-        status: 'ACTIVE',
-      },
-      select: {
-        id: true,
-        campId: true,
-      },
-    });
+    const admins = await this.repository.findActiveSystemAdmins();
 
     for (const admin of admins) {
       const notificationOptions: {

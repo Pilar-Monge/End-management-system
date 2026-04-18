@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import type { SystemRole } from '../systemUser/systemUser.model';
+import { UserEntity } from '../systemUser/systemUser.entity';
 
 import { NotificationEntity } from './notification.entity';
 import type {
@@ -39,6 +40,30 @@ export class NotificationRepository {
 
   async findById(id: number): Promise<Notification | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findUserById(id: number): Promise<UserEntity | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
+  }
+
+  async findActiveUsersByCampAndRoles(
+    campId: number,
+    roles: SystemRole[],
+  ): Promise<Array<Pick<UserEntity, 'id'>>> {
+    if (roles.length === 0) {
+      return [];
+    }
+
+    return await this.repo.manager.getRepository(UserEntity).find({
+      select: {
+        id: true,
+      },
+      where: {
+        campId,
+        role: In(roles),
+        status: 'ACTIVE',
+      },
+    });
   }
 
   async findAllAndCount(filters?: {

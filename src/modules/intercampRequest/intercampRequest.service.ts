@@ -1,10 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-
-import { CampEntity } from '../camp/camp.entity';
 import { NotificationService } from '../notification/notification.service';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { IntercampRequestRepository } from './intercampRequest.repository';
 import type {
   CreateIntercampRequestDTO,
@@ -18,10 +13,6 @@ export class IntercampRequestService {
   constructor(
     private readonly repository: IntercampRequestRepository,
     private readonly notificationService: NotificationService,
-    @InjectRepository(CampEntity)
-    private readonly campRepo: Repository<CampEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
   private async validateRoutingAndOwnership(
@@ -31,39 +22,39 @@ export class IntercampRequestService {
     respondedBy?: number | null,
   ): Promise<void> {
     if (originCampId === destinationCampId) {
-      throw new BadRequestException('Origin and destination camps must be different');
+      throw new BadRequestException('El campamento de origen y destino deben ser diferentes');
     }
 
-    const originCamp = await this.campRepo.findOne({ where: { id: originCampId } });
+    const originCamp = await this.repository.findCampById(originCampId);
     if (!originCamp) {
-      throw new NotFoundException('Origin camp not found');
+      throw new NotFoundException('Campamento de origen no encontrado');
     }
 
-    const destinationCamp = await this.campRepo.findOne({ where: { id: destinationCampId } });
+    const destinationCamp = await this.repository.findCampById(destinationCampId);
     if (!destinationCamp) {
-      throw new NotFoundException('Destination camp not found');
+      throw new NotFoundException('Campamento de destino no encontrado');
     }
 
-    const creatorUser = await this.userRepo.findOne({ where: { id: createdBy } });
+    const creatorUser = await this.repository.findUserById(createdBy);
     if (!creatorUser) {
-      throw new NotFoundException('CreatedBy user not found');
+      throw new NotFoundException('Usuario creador no encontrado');
     }
 
     if (creatorUser.campId !== originCampId) {
-      throw new BadRequestException('CreatedBy user does not belong to origin camp');
+      throw new BadRequestException('El usuario creador no pertenece al campamento de origen');
     }
 
     if (respondedBy === null || respondedBy === undefined) {
       return;
     }
 
-    const responderUser = await this.userRepo.findOne({ where: { id: respondedBy } });
+    const responderUser = await this.repository.findUserById(respondedBy);
     if (!responderUser) {
-      throw new NotFoundException('RespondedBy user not found');
+      throw new NotFoundException('Usuario que responde no encontrado');
     }
 
     if (responderUser.campId !== destinationCampId) {
-      throw new BadRequestException('RespondedBy user does not belong to destination camp');
+      throw new BadRequestException('El usuario que responde no pertenece al campamento de destino');
     }
   }
 

@@ -4,13 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
-import { PersonEntity } from '../person/person.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
-import { PersonStatusHistoryEntity } from './personStatusHistory.entity';
 import { PersonStatusHistoryRepository } from './personStatusHistory.repository';
 import type {
   CreatePersonStatusHistoryDTO,
@@ -23,75 +18,57 @@ import type {
 export class PersonStatusHistoryService {
   constructor(
     private readonly repository: PersonStatusHistoryRepository,
-    private readonly dataSource: DataSource,
     private readonly notificationService: NotificationService,
-    @InjectRepository(PersonEntity)
-    private readonly personRepo: Repository<PersonEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
   private async validateAdminFromSameCamp(personId: number, changedBy: number): Promise<void> {
-    const person = await this.personRepo.findOne({ where: { id: personId } });
+    const person = await this.repository.findPersonById(personId);
     if (!person) {
-      throw new NotFoundException('Person not found');
+      throw new NotFoundException('Persona no encontrada');
     }
 
-    const user = await this.userRepo.findOne({ where: { id: changedBy } });
+    const user = await this.repository.findUserById(changedBy);
     if (!user) {
-      throw new NotFoundException('User who changed status not found');
+      throw new NotFoundException('No se encontro el usuario que cambio el estado');
     }
 
     if (user.role !== 'SYSTEM_ADMIN') {
-      throw new ForbiddenException('Only SYSTEM_ADMIN users can change person status');
+      throw new ForbiddenException('Solo usuarios SYSTEM_ADMIN pueden cambiar el estado de la persona');
     }
 
     if (user.campId !== person.campId) {
-      throw new BadRequestException('User camp does not match person camp');
+      throw new BadRequestException('El campamento del usuario no coincide con el de la persona');
     }
   }
 
   async createEntry(data: CreatePersonStatusHistoryDTO): Promise<PersonStatusHistory> {
-    const created = await this.dataSource.transaction(async (manager) => {
-      const personRepo = manager.getRepository(PersonEntity);
-      const userRepo = manager.getRepository(UserEntity);
-      const historyRepo = manager.getRepository(PersonStatusHistoryEntity);
+    const created = await this.repository
+      .createEntryTransactional(data)
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : '';
 
-      const person = await personRepo.findOne({ where: { id: data.personId } });
-      if (!person) {
-        throw new NotFoundException('Person not found');
-      }
+        if (message === 'PERSON_NOT_FOUND') {
+          throw new NotFoundException('Persona no encontrada');
+        }
 
-      const changedByUser = await userRepo.findOne({ where: { id: data.changedBy } });
-      if (!changedByUser) {
-        throw new NotFoundException('User who changed status not found');
-      }
+        if (message === 'CHANGED_BY_NOT_FOUND') {
+          throw new NotFoundException('No se encontro el usuario que cambio el estado');
+        }
 
-      if (changedByUser.role !== 'SYSTEM_ADMIN') {
-        throw new ForbiddenException('Only SYSTEM_ADMIN users can change person status');
-      }
+        if (message === 'ONLY_SYSTEM_ADMIN') {
+          throw new ForbiddenException('Solo usuarios SYSTEM_ADMIN pueden cambiar el estado de la persona');
+        }
 
-      if (changedByUser.campId !== person.campId) {
-        throw new BadRequestException('User camp does not match person camp');
-      }
+        if (message === 'CAMP_MISMATCH') {
+          throw new BadRequestException('El campamento del usuario no coincide con el de la persona');
+        }
 
-      if (person.currentStatus !== data.previousStatus) {
-        throw new BadRequestException('previousStatus does not match current person status');
-      }
+        if (message === 'PREVIOUS_STATUS_MISMATCH') {
+          throw new BadRequestException('previousStatus no coincide con el estado actual de la persona');
+        }
 
-      person.currentStatus = data.newStatus;
-      await personRepo.save(person);
-
-      const historyEntry = historyRepo.create({
-        personId: data.personId,
-        previousStatus: data.previousStatus,
-        newStatus: data.newStatus,
-        reason: data.reason ?? null,
-        changedBy: data.changedBy,
+        throw error;
       });
-
-      return await historyRepo.save(historyEntry);
-    });
 
     await this.notifyStatusChange(data.personId, data.previousStatus, data.newStatus);
     return created;
@@ -163,13 +140,7 @@ export class PersonStatusHistoryService {
     previousStatus: PersonStatus,
     newStatus: PersonStatus,
   ): Promise<void> {
-    const person = await this.personRepo.findOne({
-      where: { id: personId },
-      select: {
-        id: true,
-        campId: true,
-      },
-    });
+    const person = await this.repository.findPersonCampInfo(personId);
 
     if (!person) {
       return;
@@ -189,15 +160,10 @@ export class PersonStatusHistoryService {
       },
     );
 
-    const associatedUser = await this.userRepo.findOne({
-      where: {
-        personId,
-        campId: person.campId,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const associatedUser = await this.repository.findAssociatedUserByPersonAndCamp(
+      personId,
+      person.campId,
+    );
 
     if (!associatedUser) {
       return;

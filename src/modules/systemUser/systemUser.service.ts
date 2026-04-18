@@ -37,7 +37,7 @@ export class UserService {
       campId: existing.campId,
       type: 'ROLE_UPDATED',
       title: 'Rol actualizado',
-      message: `Tu rol del sistema ha sido actualizado a ${newRole}`,
+      message: `Tu rol del sistema fue actualizado a ${newRole}`,
       sourceType: 'system_user',
       sourceId: existing.id,
     });

@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { ExpeditionResourceObtainedEntity } from './expeditionResourceObtained.entity';
 import type {
   CreateExpeditionResourceObtainedDTO,
@@ -31,6 +34,20 @@ export class ExpeditionResourceObtainedRepository {
 
   async findById(id: number): Promise<ExpeditionResourceObtained | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findExpeditionById(id: number): Promise<ExpeditionEntity | null> {
+    return await this.repo.manager.getRepository(ExpeditionEntity).findOne({ where: { id } });
+  }
+
+  async findUserById(id: number): Promise<UserEntity | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
+  }
+
+  async findMovementById(id: number): Promise<InventoryMovementEntity | null> {
+    return await this.repo.manager.getRepository(InventoryMovementEntity).findOne({
+      where: { id },
+    });
   }
 
   async findByExpeditionAndResourceType(

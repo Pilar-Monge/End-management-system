@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AiAdmissionReportEntity } from '../aiAdmissionReport/aiAdmissionReport.entity';
+import { OccupationEntity } from '../occupation/occupation.entity';
 import {
   type AdmissionRequest,
   type CreateAdmissionRequestDTO,
@@ -99,5 +101,16 @@ export class AdmissionRequestRepository {
 
   async findByEmail(email: string): Promise<AdmissionRequest | null> {
     return await this.repo.findOne({ where: { email } });
+  }
+
+  async findOccupationByName(name: string): Promise<OccupationEntity | null> {
+    return await this.repo.manager.getRepository(OccupationEntity).findOne({
+      where: { name },
+    });
+  }
+
+  async saveAiAdmissionReport(data: Partial<AiAdmissionReportEntity>): Promise<void> {
+    const aiReportRepo = this.repo.manager.getRepository(AiAdmissionReportEntity);
+    await aiReportRepo.save(aiReportRepo.create(data));
   }
 }

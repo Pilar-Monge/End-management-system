@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { AiAdmissionReportRepository } from './aiAdmissionReport.repository';
-import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
 import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { assertEntityExists } from '../../common/validation/assert-exists';
@@ -20,22 +18,18 @@ export class AiAdmissionReportService {
     private readonly repository: AiAdmissionReportRepository,
     private readonly dataSource: DataSource,
     private readonly notificationService: NotificationService,
-    @InjectRepository(AdmissionRequestEntity)
-    private readonly admissionRequestRepo: Repository<AdmissionRequestEntity>,
   ) {}
 
   async createReport(data: CreateAiAdmissionReportDTO): Promise<AiAdmissionReport> {
-    const admissionRequestExists = await this.admissionRequestRepo.exist({
-      where: { id: data.requestId },
-    });
+    const admissionRequestExists = await this.repository.admissionRequestExists(data.requestId);
 
     if (!admissionRequestExists) {
-      throw new Error('Admission request not found');
+      throw new Error('Solicitud de admision no encontrada');
     }
 
     const existing = await this.repository.findByRequestId(data.requestId);
     if (existing) {
-      throw new Error('An AI admission report already exists for this request');
+      throw new Error('Ya existe un reporte de IA de admision para esta solicitud');
     }
 
     if (data.suggestedOccupationId !== undefined && data.suggestedOccupationId !== null) {
@@ -49,18 +43,13 @@ export class AiAdmissionReportService {
 
     const created = await this.repository.create(data);
 
-    const request = await this.admissionRequestRepo.findOne({
-      where: { id: data.requestId },
-      select: {
-        campId: true,
-      },
-    });
+    const campId = await this.repository.findAdmissionRequestCampId(data.requestId);
 
-    if (request) {
-      await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
+    if (campId !== null) {
+      await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
         type: 'ADMISSION_REQUEST_AI_REVIEWED',
-        title: 'Reporte IA de admision creado',
-        message: `Se creo un reporte IA para la solicitud ${data.requestId}.`,
+        title: 'Reporte de IA de admision creado',
+        message: `Se creo un reporte de IA para la solicitud ${data.requestId}.`,
         sourceType: 'ai_admission_report',
         sourceId: created.id,
       });
@@ -132,17 +121,15 @@ export class AiAdmissionReportService {
     if (!existing) return null;
 
     if (data.requestId !== undefined && data.requestId !== existing.requestId) {
-      const admissionRequestExists = await this.admissionRequestRepo.exist({
-        where: { id: data.requestId },
-      });
+      const admissionRequestExists = await this.repository.admissionRequestExists(data.requestId);
 
       if (!admissionRequestExists) {
-        throw new Error('Admission request not found');
+        throw new Error('Solicitud de admision no encontrada');
       }
 
       const byRequest = await this.repository.findByRequestId(data.requestId);
       if (byRequest && byRequest.id !== id) {
-        throw new Error('An AI admission report already exists for this request');
+        throw new Error('Ya existe un reporte de IA de admision para esta solicitud');
       }
     }
 
@@ -159,18 +146,13 @@ export class AiAdmissionReportService {
       return null;
     }
 
-    const request = await this.admissionRequestRepo.findOne({
-      where: { id: updated.requestId },
-      select: {
-        campId: true,
-      },
-    });
+    const updateCampId = await this.repository.findAdmissionRequestCampId(updated.requestId);
 
-    if (request) {
-      await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
+    if (updateCampId !== null) {
+      await this.notificationService.notifyCampRoles(updateCampId, ['SYSTEM_ADMIN'], {
         type: 'ADMISSION_REQUEST_AI_REVIEWED',
-        title: 'Reporte IA de admision actualizado',
-        message: `Se actualizo el reporte IA para la solicitud ${updated.requestId}.`,
+        title: 'Reporte de IA de admision actualizado',
+        message: `Se actualizo el reporte de IA para la solicitud ${updated.requestId}.`,
         sourceType: 'ai_admission_report',
         sourceId: updated.id,
       });
@@ -190,18 +172,13 @@ export class AiAdmissionReportService {
       return false;
     }
 
-    const request = await this.admissionRequestRepo.findOne({
-      where: { id: existing.requestId },
-      select: {
-        campId: true,
-      },
-    });
+    const deleteCampId = await this.repository.findAdmissionRequestCampId(existing.requestId);
 
-    if (request) {
-      await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
+    if (deleteCampId !== null) {
+      await this.notificationService.notifyCampRoles(deleteCampId, ['SYSTEM_ADMIN'], {
         type: 'ADMISSION_REQUEST_AI_REVIEWED',
-        title: 'Reporte IA de admision eliminado',
-        message: `Se elimino el reporte IA para la solicitud ${existing.requestId}.`,
+        title: 'Reporte de IA de admision eliminado',
+        message: `Se elimino el reporte de IA para la solicitud ${existing.requestId}.`,
         sourceType: 'ai_admission_report',
         sourceId: existing.id,
       });

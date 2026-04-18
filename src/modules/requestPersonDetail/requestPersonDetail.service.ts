@@ -28,23 +28,12 @@ export class RequestPersonDetailService {
     originCampId: number;
     destinationCampId: number;
   }> {
-    const requestRepo = this.dataSource.getRepository(IntercampRequestEntity);
-    const request = await requestRepo.findOne({
-      where: { id: requestId },
-      select: {
-        originCampId: true,
-        destinationCampId: true,
-      },
-    });
-
-    if (!request) {
-      throw new Error('Intercamp request not found');
+    const scope = await this.repository.resolveRequestScope(requestId);
+    if (!scope) {
+      throw new Error('Solicitud intercampamento no encontrada');
     }
 
-    return {
-      originCampId: request.originCampId,
-      destinationCampId: request.destinationCampId,
-    };
+    return scope;
   }
 
   private async notifyRequestPersonChange(
@@ -52,7 +41,7 @@ export class RequestPersonDetailService {
     actionLabel: string,
   ): Promise<void> {
     const scope = await this.resolveRequestScope(detail.requestId);
-    const title = 'Detalle de personas intercampamento';
+    const title = 'Detalles de personas intercampamento';
     const personLabel = detail.personId ?? detail.occupationId ?? 0;
     const message = `${actionLabel}: detalle ${detail.id} (${detail.detailType}) sobre referencia ${personLabel}.`;
 

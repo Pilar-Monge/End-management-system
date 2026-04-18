@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { PersonEntity } from '../person/person.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { PersonStatusHistoryEntity } from './personStatusHistory.entity';
 import type {
   CreatePersonStatusHistoryDTO,
@@ -31,6 +33,84 @@ export class PersonStatusHistoryRepository {
 
   async findById(id: number): Promise<PersonStatusHistory | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findPersonById(id: number): Promise<PersonEntity | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({ where: { id } });
+  }
+
+  async findUserById(id: number): Promise<UserEntity | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
+  }
+
+  async findPersonCampInfo(
+    personId: number,
+  ): Promise<Pick<PersonEntity, 'id' | 'campId'> | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({
+      where: { id: personId },
+      select: {
+        id: true,
+        campId: true,
+      },
+    });
+  }
+
+  async findAssociatedUserByPersonAndCamp(
+    personId: number,
+    campId: number,
+  ): Promise<Pick<UserEntity, 'id'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: {
+        personId,
+        campId,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  async createEntryTransactional(data: CreatePersonStatusHistoryDTO): Promise<PersonStatusHistory> {
+    return await this.repo.manager.transaction(async (manager) => {
+      const personRepo = manager.getRepository(PersonEntity);
+      const userRepo = manager.getRepository(UserEntity);
+      const historyRepo = manager.getRepository(PersonStatusHistoryEntity);
+
+      const person = await personRepo.findOne({ where: { id: data.personId } });
+      if (!person) {
+        throw new Error('PERSON_NOT_FOUND');
+      }
+
+      const changedByUser = await userRepo.findOne({ where: { id: data.changedBy } });
+      if (!changedByUser) {
+        throw new Error('CHANGED_BY_NOT_FOUND');
+      }
+
+      if (changedByUser.role !== 'SYSTEM_ADMIN') {
+        throw new Error('ONLY_SYSTEM_ADMIN');
+      }
+
+      if (changedByUser.campId !== person.campId) {
+        throw new Error('CAMP_MISMATCH');
+      }
+
+      if (person.currentStatus !== data.previousStatus) {
+        throw new Error('PREVIOUS_STATUS_MISMATCH');
+      }
+
+      person.currentStatus = data.newStatus;
+      await personRepo.save(person);
+
+      const historyEntry = historyRepo.create({
+        personId: data.personId,
+        previousStatus: data.previousStatus,
+        newStatus: data.newStatus,
+        reason: data.reason ?? null,
+        changedBy: data.changedBy,
+      });
+
+      return await historyRepo.save(historyEntry);
+    });
   }
 
   async findAllAndCount(filters?: {

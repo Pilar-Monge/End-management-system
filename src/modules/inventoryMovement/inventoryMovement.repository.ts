@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { InventoryMovementEntity } from './inventoryMovement.entity';
 import type {
   CreateInventoryMovementDTO,
@@ -35,6 +36,15 @@ export class InventoryMovementRepository {
 
   async findById(id: number): Promise<InventoryMovement | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findCampInventory(
+    campId: number,
+    resourceTypeId: number,
+  ): Promise<CampInventoryEntity | null> {
+    return await this.repo.manager.getRepository(CampInventoryEntity).findOne({
+      where: { campId, resourceTypeId },
+    });
   }
 
   async findAllAndCount(filters?: {

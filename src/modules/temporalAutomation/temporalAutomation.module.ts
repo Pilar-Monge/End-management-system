@@ -6,6 +6,7 @@ import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { DailyConsumptionEntity } from '../dailyConsumption/dailyConsumption.entity';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
 import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
+import { ExpeditionParticipantRepository } from '../expeditionParticipant/expeditionParticipant.repository';
 import { InventoryAlertEntity } from '../inventoryAlert/inventoryAlert.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
 import { NotificationModule } from '../notification/notification.module';
@@ -15,6 +16,7 @@ import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeModule } from '../systemTime/systemTime.module';
 import { TemporaryOccupationAssignmentEntity } from '../temporaryOccupationAssignment/temporaryOccupationAssignment.entity';
+import { TemporalAutomationRepository } from './temporalAutomation.repository';
 import { TemporalAutomationService } from './temporalAutomation.service';
 
 @Module({
@@ -36,6 +38,6 @@ import { TemporalAutomationService } from './temporalAutomation.service';
     SystemTimeModule,
     NotificationModule,
   ],
-  providers: [TemporalAutomationService],
+  providers: [TemporalAutomationService, TemporalAutomationRepository, ExpeditionParticipantRepository],
 })
 export class TemporalAutomationModule {}

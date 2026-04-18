@@ -27,27 +27,12 @@ export class TransferService {
     createdBy: number;
     respondedBy: number | null;
   }> {
-    const requestRepo = this.dataSource.getRepository(IntercampRequestEntity);
-    const request = await requestRepo.findOne({
-      where: { id: requestId },
-      select: {
-        originCampId: true,
-        destinationCampId: true,
-        createdBy: true,
-        respondedBy: true,
-      },
-    });
-
-    if (!request) {
-      throw new Error('Intercamp request not found');
+    const scope = await this.repository.resolveRequestScope(requestId);
+    if (!scope) {
+      throw new Error('Solicitud intercampamento no encontrada');
     }
 
-    return {
-      originCampId: request.originCampId,
-      destinationCampId: request.destinationCampId,
-      createdBy: request.createdBy,
-      respondedBy: request.respondedBy,
-    };
+    return scope;
   }
 
   async createTransfer(data: CreateTransferDTO): Promise<Transfer> {
@@ -60,13 +45,13 @@ export class TransferService {
 
     const existing = await this.repository.findByRequestId(data.requestId);
     if (existing) {
-      throw new Error('A transfer already exists for this request');
+      throw new Error('Ya existe un traslado para esta solicitud');
     }
 
     const created = await this.repository.create(data);
     const scope = await this.resolveRequestScope(data.requestId);
 
-    const message = `Se creo el traslado #${created.id} con estado ${created.status}.`;
+    const message = `El traslado #${created.id} fue creado con estado ${created.status}.`;
     await this.notificationService.notifyCampRoles(
       scope.originCampId,
       ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
@@ -137,7 +122,7 @@ export class TransferService {
 
       const byRequest = await this.repository.findByRequestId(data.requestId);
       if (byRequest && byRequest.id !== id) {
-        throw new Error('A transfer already exists for this request');
+        throw new Error('Ya existe un traslado para esta solicitud');
       }
     }
 

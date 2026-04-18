@@ -1,9 +1,4 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-
-import { SessionEntity } from '../session/session.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { AccessLogRepository } from './accessLog.repository';
 import type {
   AccessLog,
@@ -14,43 +9,37 @@ import type {
 
 @Injectable()
 export class AccessLogService {
-  constructor(
-    private readonly repository: AccessLogRepository,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
-    @InjectRepository(SessionEntity)
-    private readonly sessionRepo: Repository<SessionEntity>,
-  ) {}
+  constructor(private readonly repository: AccessLogRepository) {}
 
   private async validateLogOwnership(
     userId: number,
     campId: number,
     sessionId?: number | null,
   ): Promise<void> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.repository.findUserById(userId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Usuario no encontrado');
     }
 
     if (user.campId !== campId) {
-      throw new BadRequestException('User does not belong to the provided camp');
+      throw new BadRequestException('El usuario no pertenece al campamento proporcionado');
     }
 
     if (sessionId === null || sessionId === undefined) {
       return;
     }
 
-    const session = await this.sessionRepo.findOne({ where: { id: sessionId } });
+    const session = await this.repository.findSessionById(sessionId);
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw new NotFoundException('Sesion no encontrada');
     }
 
     if (session.userId !== userId) {
-      throw new BadRequestException('Session does not belong to the provided user');
+      throw new BadRequestException('La sesion no pertenece al usuario proporcionado');
     }
 
     if (session.campId !== campId) {
-      throw new BadRequestException('Session does not belong to the provided camp');
+      throw new BadRequestException('La sesion no pertenece al campamento proporcionado');
     }
   }
 

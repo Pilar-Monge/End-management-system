@@ -25,23 +25,12 @@ export class RequestResourceDetailService {
     originCampId: number;
     destinationCampId: number;
   }> {
-    const requestRepo = this.dataSource.getRepository(IntercampRequestEntity);
-    const request = await requestRepo.findOne({
-      where: { id: requestId },
-      select: {
-        originCampId: true,
-        destinationCampId: true,
-      },
-    });
-
-    if (!request) {
-      throw new Error('Intercamp request not found');
+    const scope = await this.repository.resolveRequestScope(requestId);
+    if (!scope) {
+      throw new Error('Solicitud intercampamento no encontrada');
     }
 
-    return {
-      originCampId: request.originCampId,
-      destinationCampId: request.destinationCampId,
-    };
+    return scope;
   }
 
   private async notifyRequestResourceChange(
@@ -51,8 +40,8 @@ export class RequestResourceDetailService {
     actionLabel: string,
   ): Promise<void> {
     const scope = await this.resolveRequestScope(requestId);
-    const title = 'Detalle de recursos intercampamento';
-    const message = `${actionLabel}: detalle ${detailId} para recurso ${resourceTypeId} en solicitud ${requestId}.`;
+    const title = 'Detalles de recursos intercampamento';
+    const message = `${actionLabel}: detalle ${detailId} para el recurso ${resourceTypeId} en la solicitud ${requestId}.`;
 
     await this.notificationService.notifyCampRoles(
       scope.originCampId,
@@ -97,7 +86,7 @@ export class RequestResourceDetailService {
       data.resourceTypeId,
     );
     if (existing) {
-      throw new Error('This request resource detail already exists');
+      throw new Error('Este detalle de recurso de solicitud ya existe');
     }
 
     const created = await this.repository.create(data);
@@ -176,7 +165,7 @@ export class RequestResourceDetailService {
         resolvedResourceTypeId,
       );
       if (byPair && byPair.id !== id) {
-        throw new Error('This request resource detail already exists');
+        throw new Error('Este detalle de recurso de solicitud ya existe');
       }
     }
 

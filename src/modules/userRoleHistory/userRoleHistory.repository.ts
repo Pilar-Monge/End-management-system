@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { UserRoleHistoryEntity } from './userRoleHistory.entity';
 import type {
   CreateUserRoleHistoryDTO,
@@ -27,6 +28,51 @@ export class UserRoleHistoryRepository {
     });
 
     return await this.repo.save(entity);
+  }
+
+  async createEntryTransactional(data: CreateUserRoleHistoryDTO): Promise<{
+    targetUser: UserEntity;
+    changedByUser: UserEntity;
+    createdEntry: UserRoleHistory;
+  }> {
+    return await this.repo.manager.transaction(async (manager) => {
+      const userRepo = manager.getRepository(UserEntity);
+      const historyRepo = manager.getRepository(UserRoleHistoryEntity);
+
+      const targetUser = await userRepo.findOne({ where: { id: data.userId } });
+      if (!targetUser) {
+        throw new Error('USER_NOT_FOUND');
+      }
+
+      const changedByUser = await userRepo.findOne({ where: { id: data.changedBy } });
+      if (!changedByUser) {
+        throw new Error('CHANGED_BY_NOT_FOUND');
+      }
+
+      if (targetUser.role !== data.previousRole) {
+        throw new Error('PREVIOUS_ROLE_MISMATCH');
+      }
+
+      targetUser.role = data.newRole;
+      await userRepo.save(targetUser);
+
+      const historyEntry = historyRepo.create({
+        userId: data.userId,
+        previousRole: data.previousRole,
+        newRole: data.newRole,
+        changedBy: data.changedBy,
+        ...(data.changeDate !== undefined ? { changeDate: data.changeDate } : {}),
+        reason: data.reason ?? null,
+      });
+
+      const createdEntry = await historyRepo.save(historyEntry);
+
+      return {
+        targetUser,
+        changedByUser,
+        createdEntry,
+      };
+    });
   }
 
   async findById(id: number): Promise<UserRoleHistory | null> {

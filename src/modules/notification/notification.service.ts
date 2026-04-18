@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { EmailOutboxService } from '../email/emailOutbox.service';
@@ -13,7 +12,6 @@ import type {
   UpdateNotificationDTO,
 } from './notification.model';
 import type { SystemRole } from '../systemUser/systemUser.model';
-import { UserEntity } from '../systemUser/systemUser.entity';
 
 interface NotificationEmailOptions {
   subject?: string;
@@ -38,8 +36,6 @@ export class NotificationService {
     private readonly repository: NotificationRepository,
     private readonly dataSource: DataSource,
     private readonly emailOutboxService: EmailOutboxService,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
   private resolveTemplateKeyForType(type: NotificationType): string {
@@ -81,18 +77,18 @@ export class NotificationService {
   private async validateUserCamp(
     campId: number,
     userId?: number | null,
-  ): Promise<UserEntity | null> {
+  ): Promise<{ id: number; campId: number; email: string | null } | null> {
     if (userId === null || userId === undefined) {
       return null;
     }
 
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.repository.findUserById(userId);
     if (!user) {
-      throw new NotFoundException('Notification user was not found');
+      throw new NotFoundException('Usuario destino de la notificacion no encontrado');
     }
 
     if (user.campId !== campId) {
-      throw new BadRequestException('Notification user does not belong to the provided camp');
+      throw new BadRequestException('El usuario destino de la notificacion no pertenece al campamento proporcionado');
     }
 
     return user;
@@ -142,7 +138,7 @@ export class NotificationService {
   }
 
   private async queueEmailForUser(
-    user: UserEntity,
+    user: { email: string | null },
     title: string,
     message: string,
     notificationType: NotificationType,
@@ -164,7 +160,7 @@ export class NotificationService {
     const hasUser = data.userId !== undefined && data.userId !== null;
     const hasRole = data.targetRole !== undefined && data.targetRole !== null;
     if (!hasUser && !hasRole) {
-      throw new Error('Notification must target a userId or a targetRole');
+      throw new Error('La notificacion debe dirigirse a un userId o a un targetRole');
     }
 
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
@@ -217,7 +213,7 @@ export class NotificationService {
     if (!existing) return null;
 
     if (data.userId === null && data.targetRole === null) {
-      throw new Error('Notification must target a userId or a targetRole');
+      throw new Error('La notificacion debe dirigirse a un userId o a un targetRole');
     }
 
     const finalCampId = data.campId ?? existing.campId;
@@ -304,19 +300,7 @@ export class NotificationService {
       return;
     }
 
-    const users = await this.userRepo.find({
-      select: {
-        id: true,
-        campId: true,
-        email: true,
-        status: true,
-      },
-      where: {
-        campId,
-        role: In(uniqueRoles),
-        status: 'ACTIVE',
-      },
-    });
+    const users = await this.repository.findActiveUsersByCampAndRoles(campId, uniqueRoles);
 
     if (users.length === 0) {
       return;

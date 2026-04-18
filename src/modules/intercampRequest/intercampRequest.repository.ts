@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { CampEntity } from '../camp/camp.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { IntercampRequestEntity } from './intercampRequest.entity';
 import type {
   CreateIntercampRequestDTO,
@@ -34,6 +36,14 @@ export class IntercampRequestRepository {
 
   async findById(id: number): Promise<IntercampRequest | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findCampById(id: number): Promise<CampEntity | null> {
+    return await this.repo.manager.getRepository(CampEntity).findOne({ where: { id } });
+  }
+
+  async findUserById(id: number): Promise<UserEntity | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
   }
 
   async findAllAndCount(filters?: {

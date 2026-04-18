@@ -1,16 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThanOrEqual, Repository } from 'typeorm';
 
 import type { EmailOutbox, EnqueueEmailDTO } from './emailOutbox.model';
 import { EmailOutboxEntity } from './emailOutbox.entity';
+import { EmailOutboxRepository } from './emailOutbox.repository';
 
 @Injectable()
 export class EmailOutboxService {
-  constructor(
-    @InjectRepository(EmailOutboxEntity)
-    private readonly outboxRepo: Repository<EmailOutboxEntity>,
-  ) {}
+  constructor(private readonly outboxRepository: EmailOutboxRepository) {}
 
   private resolveMaxAttempts(explicitValue?: number): number {
     if (explicitValue !== undefined && Number.isInteger(explicitValue) && explicitValue > 0) {
@@ -26,20 +22,10 @@ export class EmailOutboxService {
   }
 
   async enqueue(entry: EnqueueEmailDTO): Promise<EmailOutbox> {
-    const entity = this.outboxRepo.create({
-      toEmail: entry.toEmail,
-      subject: entry.subject,
-      templateKey: entry.templateKey,
-      payload: entry.payload ?? {},
-      status: 'PENDING',
-      attempts: 0,
-      maxAttempts: this.resolveMaxAttempts(entry.maxAttempts),
-      nextAttemptAt: new Date(),
-      lastError: null,
-      sentAt: null,
-    });
-
-    return await this.outboxRepo.save(entity);
+    return await this.outboxRepository.createPendingEntry(
+      entry,
+      this.resolveMaxAttempts(entry.maxAttempts),
+    );
   }
 
   async enqueueMany(entries: EnqueueEmailDTO[]): Promise<void> {
@@ -49,20 +35,10 @@ export class EmailOutboxService {
   }
 
   async findDueForDelivery(limit: number, now: Date): Promise<EmailOutboxEntity[]> {
-    return await this.outboxRepo.find({
-      where: {
-        status: In(['PENDING', 'PROCESSING']),
-        nextAttemptAt: LessThanOrEqual(now),
-      },
-      order: {
-        nextAttemptAt: 'ASC',
-        id: 'ASC',
-      },
-      take: limit,
-    });
+    return await this.outboxRepository.findDueForDelivery(limit, now);
   }
 
   async save(entity: EmailOutboxEntity): Promise<EmailOutboxEntity> {
-    return await this.outboxRepo.save(entity);
+    return await this.outboxRepository.save(entity);
   }
 }

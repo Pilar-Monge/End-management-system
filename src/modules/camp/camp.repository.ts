@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { CampEntity } from './camp.entity';
 import type { Camp, CampStatus, CreateCampDTO, UpdateCampDTO } from './camp.model';
 
@@ -35,6 +36,19 @@ export class CampRepository {
 
   async findByName(name: string): Promise<Camp | null> {
     return await this.repo.findOne({ where: { name } });
+  }
+
+  async findActiveSystemAdmins(): Promise<Array<Pick<UserEntity, 'id' | 'campId'>>> {
+    return await this.repo.manager.getRepository(UserEntity).find({
+      where: {
+        role: 'SYSTEM_ADMIN',
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+        campId: true,
+      },
+    });
   }
 
   async findAllAndCount(filters?: {
