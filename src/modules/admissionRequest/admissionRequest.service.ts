@@ -43,17 +43,25 @@ export class AdmissionRequestService {
 
     const normalizedData = this.normalizeAiFieldsForCreate(data);
     const createdRequest = await this.repository.create(normalizedData);
-    await this.notifyInitialAdmissionRequest(createdRequest.id, createdRequest.campId, createdRequest.email);
+    await this.notifyInitialAdmissionRequest(
+      createdRequest.id,
+      createdRequest.campId,
+      createdRequest.email,
+    );
 
     try {
       const features = buildAdmissionFeatures(normalizedData);
-      const aiExplain = await this.decisionTreeService.explainByModelName(ADMISSION_MODEL_NAME, {
-        age_years: features.age_years,
-        health_level_score: features.health_level_score,
-        physical_condition_score: features.physical_condition_score,
-        experience_years: features.experience_years,
-        skills_score: features.skills_score,
-      }, createdRequest.campId);
+      const aiExplain = await this.decisionTreeService.explainByModelName(
+        ADMISSION_MODEL_NAME,
+        {
+          age_years: features.age_years,
+          health_level_score: features.health_level_score,
+          physical_condition_score: features.physical_condition_score,
+          experience_years: features.experience_years,
+          skills_score: features.skills_score,
+        },
+        createdRequest.campId,
+      );
 
       const mappedOccupationName = aiExplain.roleAssignment.mappedOccupationName;
       const assignedOccupation = await this.repository.findOccupationByName(mappedOccupationName);
@@ -93,7 +101,12 @@ export class AdmissionRequestService {
       });
 
       if (updatedByAi) {
-        await this.notifyAiReviewResult(updatedByAi.id, updatedByAi.campId, updatedByAi.email, updatedByAi.status);
+        await this.notifyAiReviewResult(
+          updatedByAi.id,
+          updatedByAi.campId,
+          updatedByAi.email,
+          updatedByAi.status,
+        );
         return updatedByAi;
       }
     } catch {
@@ -252,7 +265,12 @@ export class AdmissionRequestService {
       throw new Error('Error al procesar la solicitud con IA');
     }
 
-    await this.notifyAiReviewResult(updatedRequest.id, updatedRequest.campId, updatedRequest.email, updatedRequest.status);
+    await this.notifyAiReviewResult(
+      updatedRequest.id,
+      updatedRequest.campId,
+      updatedRequest.email,
+      updatedRequest.status,
+    );
 
     return updatedRequest;
   }

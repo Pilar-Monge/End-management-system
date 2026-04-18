@@ -56,7 +56,9 @@ export class DailyCollectionRecordRepository {
   }
 
   async findMovementById(id: number): Promise<InventoryMovementEntity | null> {
-    return await this.repo.manager.getRepository(InventoryMovementEntity).findOne({ where: { id } });
+    return await this.repo.manager
+      .getRepository(InventoryMovementEntity)
+      .findOne({ where: { id } });
   }
 
   async findAllAndCount(filters?: {

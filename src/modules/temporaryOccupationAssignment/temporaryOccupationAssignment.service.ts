@@ -37,17 +37,13 @@ export class TemporaryOccupationAssignmentService {
     const fullName = `${person.name} ${person.lastName1}`.trim();
     const message = `${messagePrefix}: ${fullName} -> ${occupation.name}.`;
 
-    await this.notificationService.notifyCampRoles(
-      person.campId,
-      ['SYSTEM_ADMIN'],
-      {
-        type: 'TEMPORARY_OCCUPATION_ASSIGNED',
-        title: 'Asignacion temporal de ocupacion',
-        message,
-        sourceType: 'temporary_occupation_assignment',
-        sourceId,
-      },
-    );
+    await this.notificationService.notifyCampRoles(person.campId, ['SYSTEM_ADMIN'], {
+      type: 'TEMPORARY_OCCUPATION_ASSIGNED',
+      title: 'Asignacion temporal de ocupacion',
+      message,
+      sourceType: 'temporary_occupation_assignment',
+      sourceId,
+    });
 
     const linkedUser = await this.repository.findActiveLinkedUserByPersonAndCamp(
       person.id,

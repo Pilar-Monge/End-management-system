@@ -15,7 +15,12 @@ import { PasswordResetTokenEntity } from './passwordResetToken.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SessionEntity, AccessLogEntity, UserEntity, PasswordResetTokenEntity]),
+    TypeOrmModule.forFeature([
+      SessionEntity,
+      AccessLogEntity,
+      UserEntity,
+      PasswordResetTokenEntity,
+    ]),
     SystemTimeModule,
     EmailModule,
     NotificationModule,

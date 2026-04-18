@@ -152,27 +152,29 @@ export class AuthRepository {
     tokenHash: string,
     now: Date,
   ): Promise<PasswordResetTokenEntity | null> {
-    return await this.passwordResetTokenRepo.findOne({
-      where: {
-        tokenHash,
-        status: 'ACTIVE',
-      },
-      order: {
-        id: 'DESC',
-      },
-    }).then(async (token) => {
-      if (!token) {
-        return null;
-      }
+    return await this.passwordResetTokenRepo
+      .findOne({
+        where: {
+          tokenHash,
+          status: 'ACTIVE',
+        },
+        order: {
+          id: 'DESC',
+        },
+      })
+      .then(async (token) => {
+        if (!token) {
+          return null;
+        }
 
-      if (token.expiresAt.getTime() <= now.getTime()) {
-        token.status = 'EXPIRED';
-        await this.passwordResetTokenRepo.save(token);
-        return null;
-      }
+        if (token.expiresAt.getTime() <= now.getTime()) {
+          token.status = 'EXPIRED';
+          await this.passwordResetTokenRepo.save(token);
+          return null;
+        }
 
-      return token;
-    });
+        return token;
+      });
   }
 
   async markPasswordResetTokenUsed(id: number, now: Date): Promise<void> {

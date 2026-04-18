@@ -212,7 +212,11 @@ export class InventoryAlertController {
   @ApiOkResponseData(InventoryAlertEntity, { description: 'Inventory Alert updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateInventoryAlertDTO, @Req() req: Request) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateInventoryAlertDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);

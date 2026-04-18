@@ -306,7 +306,9 @@ export class DeliveredTransferResourceController {
         await this.assertDeliveredCampAccess(parsedId, currentUser.campId);
 
         if (existing.recordedBy !== currentUser.userId) {
-          throw new BadRequestException('You can only update delivered resources created by your user');
+          throw new BadRequestException(
+            'You can only update delivered resources created by your user',
+          );
         }
 
         if (body.transferId !== undefined) {

@@ -1,11 +1,4 @@
-import {
-  Check,
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 import {
   PASSWORD_RESET_TOKEN_STATUS_VALUES,
@@ -19,7 +12,10 @@ import {
   'chk_password_reset_token_status',
   `"status" IN (${PASSWORD_RESET_TOKEN_STATUS_VALUES.map((status) => `'${status}'`).join(', ')})`,
 )
-@Check('chk_password_reset_used', `("status" = 'USED' AND "used_at" IS NOT NULL) OR ("status" <> 'USED')`)
+@Check(
+  'chk_password_reset_used',
+  `("status" = 'USED' AND "used_at" IS NOT NULL) OR ("status" <> 'USED')`,
+)
 export class PasswordResetTokenEntity {
   @PrimaryGeneratedColumn()
   id!: number;

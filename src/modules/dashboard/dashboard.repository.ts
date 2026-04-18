@@ -74,7 +74,9 @@ export class DashboardRepository {
       .getMany();
   }
 
-  async countExpeditionsByStatus(campId: number): Promise<Array<{ status: string; count: string }>> {
+  async countExpeditionsByStatus(
+    campId: number,
+  ): Promise<Array<{ status: string; count: string }>> {
     return await this.expeditionRepo
       .createQueryBuilder('expedition')
       .select('expedition.status', 'status')
@@ -84,7 +86,10 @@ export class DashboardRepository {
       .getRawMany<{ status: string; count: string }>();
   }
 
-  async findConsumptionRows(campId: number, startDate: Date): Promise<Array<{ date: string; totalConsumed: string }>> {
+  async findConsumptionRows(
+    campId: number,
+    startDate: Date,
+  ): Promise<Array<{ date: string; totalConsumed: string }>> {
     return await this.inventoryMovementRepo
       .createQueryBuilder('movement')
       .select("TO_CHAR(DATE_TRUNC('day', movement.date), 'YYYY-MM-DD')", 'date')

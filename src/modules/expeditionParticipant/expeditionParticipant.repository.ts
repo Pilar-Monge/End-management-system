@@ -77,13 +77,14 @@ export class ExpeditionParticipantRepository {
     });
   }
 
-  async updatePersonStatus(id: number, currentStatus: PersonEntity['currentStatus']): Promise<void> {
+  async updatePersonStatus(
+    id: number,
+    currentStatus: PersonEntity['currentStatus'],
+  ): Promise<void> {
     await this.repo.manager.getRepository(PersonEntity).update({ id }, { currentStatus });
   }
 
-  async findUserByPersonId(
-    personId: number,
-  ): Promise<Pick<UserEntity, 'id' | 'campId'> | null> {
+  async findUserByPersonId(personId: number): Promise<Pick<UserEntity, 'id' | 'campId'> | null> {
     return await this.repo.manager.getRepository(UserEntity).findOne({
       where: { personId },
       select: {
@@ -166,7 +167,9 @@ export class ExpeditionParticipantRepository {
       .innerJoin(ExpeditionEntity, 'e', 'e.id = ep.expeditionId')
       .select('e.status', 'status')
       .where('ep.personId = :personId', { personId })
-      .andWhere('ep.status = :participantStatus', { participantStatus: 'ACTIVE' as ParticipantStatus })
+      .andWhere('ep.status = :participantStatus', {
+        participantStatus: 'ACTIVE' as ParticipantStatus,
+      })
       .andWhere('e.status IN (:...statuses)', { statuses: ['IN_PROGRESS', 'DELAYED', 'LOST'] })
       .getRawMany<{ status: ExpeditionEntity['status'] }>();
 

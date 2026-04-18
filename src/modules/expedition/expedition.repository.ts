@@ -63,7 +63,9 @@ export class ExpeditionRepository {
   }
 
   async updatePersonStatus(personId: number, status: PersonEntity['currentStatus']): Promise<void> {
-    await this.dataSource.getRepository(PersonEntity).update({ id: personId }, { currentStatus: status });
+    await this.dataSource
+      .getRepository(PersonEntity)
+      .update({ id: personId }, { currentStatus: status });
   }
 
   async getActiveParticipantPersonIds(expeditionId: number): Promise<number[]> {

@@ -261,11 +261,18 @@ export class ExpeditionResourceConsumedController {
         throw new NotFoundException('Record not found');
       }
 
-      if (!this.isSystemAdmin(currentUser.rol) && existingRecord.recordedBy !== currentUser.userId) {
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        existingRecord.recordedBy !== currentUser.userId
+      ) {
         throw new BadRequestException('You can only update records created by your user');
       }
 
-      if (!this.isSystemAdmin(currentUser.rol) && body.recordedBy !== undefined && body.recordedBy !== currentUser.userId) {
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        body.recordedBy !== undefined &&
+        body.recordedBy !== currentUser.userId
+      ) {
         throw new BadRequestException('recordedBy must match the authenticated user');
       }
 

@@ -45,7 +45,9 @@ export class DailyCollectionRecordService {
     }
 
     if (user.campId !== campId) {
-      throw new BadRequestException('El usuario recordedBy no pertenece al campamento proporcionado');
+      throw new BadRequestException(
+        'El usuario recordedBy no pertenece al campamento proporcionado',
+      );
     }
 
     if (movementId === null || movementId === undefined) {
@@ -90,13 +92,17 @@ export class DailyCollectionRecordService {
     }
 
     const created = await this.repository.create(data);
-    await this.notificationService.notifyCampRoles(created.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
-      type: 'INVENTORY_ALERT',
-      title: 'Registro diario de recoleccion creado',
-      message: `Se registro una recoleccion diaria para el recurso ${created.resourceTypeId}.`,
-      sourceType: 'daily_collection_record',
-      sourceId: created.id,
-    });
+    await this.notificationService.notifyCampRoles(
+      created.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Registro diario de recoleccion creado',
+        message: `Se registro una recoleccion diaria para el recurso ${created.resourceTypeId}.`,
+        sourceType: 'daily_collection_record',
+        sourceId: created.id,
+      },
+    );
     return created;
   }
 
@@ -156,13 +162,17 @@ export class DailyCollectionRecordService {
       return null;
     }
 
-    await this.notificationService.notifyCampRoles(updated.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
-      type: 'INVENTORY_ALERT',
-      title: 'Registro diario de recoleccion actualizado',
-      message: `El registro diario ${updated.id} fue actualizado.`,
-      sourceType: 'daily_collection_record',
-      sourceId: updated.id,
-    });
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Registro diario de recoleccion actualizado',
+        message: `El registro diario ${updated.id} fue actualizado.`,
+        sourceType: 'daily_collection_record',
+        sourceId: updated.id,
+      },
+    );
 
     return updated;
   }
@@ -178,13 +188,17 @@ export class DailyCollectionRecordService {
       return false;
     }
 
-    await this.notificationService.notifyCampRoles(existing.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
-      type: 'INVENTORY_ALERT',
-      title: 'Registro diario de recoleccion eliminado',
-      message: `El registro diario ${existing.id} fue eliminado.`,
-      sourceType: 'daily_collection_record',
-      sourceId: existing.id,
-    });
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Registro diario de recoleccion eliminado',
+        message: `El registro diario ${existing.id} fue eliminado.`,
+        sourceType: 'daily_collection_record',
+        sourceId: existing.id,
+      },
+    );
 
     return true;
   }

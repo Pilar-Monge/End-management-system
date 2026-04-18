@@ -124,7 +124,9 @@ export class InventoryAlertService {
       ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
       {
         type: 'INVENTORY_ALERT',
-        title: updated.resolved ? 'Alerta de inventario resuelta' : 'Alerta de inventario actualizada',
+        title: updated.resolved
+          ? 'Alerta de inventario resuelta'
+          : 'Alerta de inventario actualizada',
         message: updated.resolved
           ? `La alerta ${updated.id} se marco como resuelta.`
           : `La alerta ${updated.id} fue actualizada.`,

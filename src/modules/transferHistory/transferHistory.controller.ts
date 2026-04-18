@@ -164,7 +164,9 @@ export class TransferHistoryController {
     if (!entry) throw new NotFoundException('Transfer history entry not found');
 
     if (!this.isSystemAdmin(currentUser.rol) && entry.userId !== currentUser.userId) {
-      throw new BadRequestException('You do not have permission to view this transfer history entry');
+      throw new BadRequestException(
+        'You do not have permission to view this transfer history entry',
+      );
     }
 
     return { success: true, data: entry };
@@ -285,7 +287,11 @@ export class TransferHistoryController {
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateTransferHistoryDTO, @Req() req: Request) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateTransferHistoryDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -302,7 +308,9 @@ export class TransferHistoryController {
         await this.assertHistoryCampAccess(parsedId, currentUser.campId);
 
         if (existing.userId !== currentUser.userId) {
-          throw new BadRequestException('You can only update transfer history entries created by your user');
+          throw new BadRequestException(
+            'You can only update transfer history entries created by your user',
+          );
         }
 
         if (body.transferId !== undefined) {

@@ -23,7 +23,9 @@ export class ExpeditionParticipantService {
     }
 
     if (campId !== currentCampId) {
-      throw new BadRequestException('Solo puedes acceder a participantes de expediciones de tu campamento');
+      throw new BadRequestException(
+        'Solo puedes acceder a participantes de expediciones de tu campamento',
+      );
     }
   }
 
@@ -34,7 +36,9 @@ export class ExpeditionParticipantService {
     }
 
     if (campId !== currentCampId) {
-      throw new BadRequestException('Solo puedes acceder a participantes de expediciones de tu campamento');
+      throw new BadRequestException(
+        'Solo puedes acceder a participantes de expediciones de tu campamento',
+      );
     }
   }
 
@@ -108,7 +112,9 @@ export class ExpeditionParticipantService {
     }
 
     if (expedition.status !== 'PLANNED') {
-      throw new BadRequestException('Solo las expediciones planificadas pueden recibir nuevos participantes');
+      throw new BadRequestException(
+        'Solo las expediciones planificadas pueden recibir nuevos participantes',
+      );
     }
 
     const person = await this.repository.findPersonById(personId);
@@ -121,7 +127,9 @@ export class ExpeditionParticipantService {
     }
 
     if (person.campId !== expedition.campId) {
-      throw new BadRequestException('La persona no pertenece al mismo campamento que la expedicion');
+      throw new BadRequestException(
+        'La persona no pertenece al mismo campamento que la expedicion',
+      );
     }
 
     return { expedition, person };

@@ -351,7 +351,8 @@ export class AuthService {
   private buildPasswordResetUrl(rawToken: string): string {
     const configuredBaseUrl = process.env.FRONTEND_RESET_PASSWORD_URL?.trim();
     const fallback = 'http://localhost:5173/reset-password';
-    const baseUrl = configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : fallback;
+    const baseUrl =
+      configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : fallback;
 
     try {
       const url = new URL(baseUrl);

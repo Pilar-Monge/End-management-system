@@ -51,7 +51,8 @@ export class TemporalAutomationService {
     const camps = await this.temporalAutomationRepository.findDailyCycleCamps();
 
     const foodResource = await this.temporalAutomationRepository.findResourceTypeByCategory('FOOD');
-    const waterResource = await this.temporalAutomationRepository.findResourceTypeByCategory('WATER');
+    const waterResource =
+      await this.temporalAutomationRepository.findResourceTypeByCategory('WATER');
 
     if (!foodResource || !waterResource) {
       this.logger.warn('No FOOD/WATER resources were found for the daily cycle');
@@ -62,7 +63,9 @@ export class TemporalAutomationService {
       const touchedResourceIds = new Set<number>();
       const rationPerPerson = this.toDecimal(camp.minimumDailyRationPerPerson || '1.00');
 
-      const peopleCount = await this.temporalAutomationRepository.countCampOperationalPeople(camp.id);
+      const peopleCount = await this.temporalAutomationRepository.countCampOperationalPeople(
+        camp.id,
+      );
 
       const totalRation = this.roundTo2(peopleCount * rationPerPerson);
 
@@ -227,9 +230,8 @@ export class TemporalAutomationService {
     }
 
     const occupationIds = [...new Set(rows.map((row) => Number(row.occupation_id)))];
-    const occupations = await this.temporalAutomationRepository.findProductionOccupationsByIds(
-      occupationIds,
-    );
+    const occupations =
+      await this.temporalAutomationRepository.findProductionOccupationsByIds(occupationIds);
 
     const occupationById = new Map(occupations.map((occupation) => [occupation.id, occupation]));
     const result = new Map<number, number>();
@@ -322,21 +324,18 @@ export class TemporalAutomationService {
       return;
     }
 
-    await this.notificationService.notifyCampRoles(
-      camp.id,
-      ['SYSTEM_ADMIN'],
-      {
-        type: 'OVERPOPULATION_ALERT',
-        title: 'Alerta de sobrepoblacion',
-        message: `El campamento ${camp.name} excedio su capacidad (${peopleCount}/${camp.maxPersonCapacity}).`,
-        sourceType: 'camp',
-        sourceId: camp.id,
-      },
-    );
+    await this.notificationService.notifyCampRoles(camp.id, ['SYSTEM_ADMIN'], {
+      type: 'OVERPOPULATION_ALERT',
+      title: 'Alerta de sobrepoblacion',
+      message: `El campamento ${camp.name} excedio su capacidad (${peopleCount}/${camp.maxPersonCapacity}).`,
+      sourceType: 'camp',
+      sourceId: camp.id,
+    });
   }
 
   private async notifyOccupationsWithoutStaff(campId: number): Promise<void> {
-    const relevantOccupations = await this.temporalAutomationRepository.findRelevantOccupationsForStaffing();
+    const relevantOccupations =
+      await this.temporalAutomationRepository.findRelevantOccupationsForStaffing();
 
     if (relevantOccupations.length === 0) {
       return;
@@ -359,17 +358,13 @@ export class TemporalAutomationService {
         continue;
       }
 
-      await this.notificationService.notifyCampRoles(
-        campId,
-        ['SYSTEM_ADMIN'],
-        {
-          type: 'OCCUPATION_WITHOUT_STAFF',
-          title: 'Ocupacion sin personal asignado',
-          message: `La ocupacion ${occupation.name} no tiene personal activo asignado en el campamento.`,
-          sourceType: 'occupation',
-          sourceId: occupation.id,
-        },
-      );
+      await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
+        type: 'OCCUPATION_WITHOUT_STAFF',
+        title: 'Ocupacion sin personal asignado',
+        message: `La ocupacion ${occupation.name} no tiene personal activo asignado en el campamento.`,
+        sourceType: 'occupation',
+        sourceId: occupation.id,
+      });
     }
   }
 
@@ -383,9 +378,8 @@ export class TemporalAutomationService {
   }
 
   private async syncParticipantPersonStatuses(expeditionId: number): Promise<void> {
-    const personIds = await this.expeditionParticipantRepository.getActivePersonIdsByExpedition(
-      expeditionId,
-    );
+    const personIds =
+      await this.expeditionParticipantRepository.getActivePersonIdsByExpedition(expeditionId);
     if (personIds.length === 0) {
       return;
     }
@@ -456,25 +450,23 @@ export class TemporalAutomationService {
       return;
     }
 
-    const participantUserIds = await this.temporalAutomationRepository.findActiveUserIdsByCampAndPersonIds(
-      expedition.campId,
-      personIds,
-    );
+    const participantUserIds =
+      await this.temporalAutomationRepository.findActiveUserIdsByCampAndPersonIds(
+        expedition.campId,
+        personIds,
+      );
 
     if (participantUserIds.length === 0) {
       return;
     }
 
-    await this.notificationService.notifyUsers(
-      participantUserIds,
-      {
-        campId: expedition.campId,
-        type: 'EXPEDITION_STATUS_UPDATED',
-        title: 'Estado de expedicion actualizado',
-        message: `Tu expedicion ${expedition.name} ahora esta en estado ${expedition.status}.`,
-        sourceType: 'expedition',
-        sourceId: expedition.id,
-      },
-    );
+    await this.notificationService.notifyUsers(participantUserIds, {
+      campId: expedition.campId,
+      type: 'EXPEDITION_STATUS_UPDATED',
+      title: 'Estado de expedicion actualizado',
+      message: `Tu expedicion ${expedition.name} ahora esta en estado ${expedition.status}.`,
+      sourceType: 'expedition',
+      sourceId: expedition.id,
+    });
   }
 }

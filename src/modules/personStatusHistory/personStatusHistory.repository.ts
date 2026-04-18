@@ -43,9 +43,7 @@ export class PersonStatusHistoryRepository {
     return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
   }
 
-  async findPersonCampInfo(
-    personId: number,
-  ): Promise<Pick<PersonEntity, 'id' | 'campId'> | null> {
+  async findPersonCampInfo(personId: number): Promise<Pick<PersonEntity, 'id' | 'campId'> | null> {
     return await this.repo.manager.getRepository(PersonEntity).findOne({
       where: { id: personId },
       select: {

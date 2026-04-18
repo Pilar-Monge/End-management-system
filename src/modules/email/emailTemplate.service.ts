@@ -164,9 +164,7 @@ export class EmailTemplateService {
     const changedFieldsText =
       changedFields.length > 0
         ? `\n\nDatos modificados:\n${changedFields
-            .map(
-              (field) => `- ${field.field}: ${field.previous} -> ${field.current}`,
-            )
+            .map((field) => `- ${field.field}: ${field.previous} -> ${field.current}`)
             .join('\n')}`
         : '';
 

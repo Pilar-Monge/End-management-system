@@ -4,7 +4,9 @@ export class ExpandNotificationTypes1776300000000 implements MigrationInterface 
   name = 'ExpandNotificationTypes1776300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`);
+    await queryRunner.query(
+      `ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`,
+    );
     await queryRunner.query(`
       ALTER TABLE "notification"
       ADD CONSTRAINT "chk_notificacion_tipo"
@@ -47,7 +49,9 @@ export class ExpandNotificationTypes1776300000000 implements MigrationInterface 
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`);
+    await queryRunner.query(
+      `ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`,
+    );
     await queryRunner.query(`
       ALTER TABLE "notification"
       ADD CONSTRAINT "chk_notificacion_tipo"

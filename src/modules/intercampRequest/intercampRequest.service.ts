@@ -54,7 +54,9 @@ export class IntercampRequestService {
     }
 
     if (responderUser.campId !== destinationCampId) {
-      throw new BadRequestException('El usuario que responde no pertenece al campamento de destino');
+      throw new BadRequestException(
+        'El usuario que responde no pertenece al campamento de destino',
+      );
     }
   }
 

@@ -88,7 +88,9 @@ export class NotificationService {
     }
 
     if (user.campId !== campId) {
-      throw new BadRequestException('El usuario destino de la notificacion no pertenece al campamento proporcionado');
+      throw new BadRequestException(
+        'El usuario destino de la notificacion no pertenece al campamento proporcionado',
+      );
     }
 
     return user;
@@ -283,7 +285,9 @@ export class NotificationService {
   }
 
   async notifyUsers(userIds: number[], options: NotificationDispatchOptions): Promise<void> {
-    const uniqueUserIds = [...new Set(userIds)].filter((userId) => Number.isInteger(userId) && userId > 0);
+    const uniqueUserIds = [...new Set(userIds)].filter(
+      (userId) => Number.isInteger(userId) && userId > 0,
+    );
 
     for (const userId of uniqueUserIds) {
       await this.notifyUser(userId, options);

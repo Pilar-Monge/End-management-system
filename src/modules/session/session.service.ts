@@ -16,7 +16,9 @@ export class SessionService {
   ) {}
 
   async createSession(data: CreateSessionDTO): Promise<Session> {
-    const user = await this.dataSource.getRepository(UserEntity).findOne({ where: { id: data.userId } });
+    const user = await this.dataSource
+      .getRepository(UserEntity)
+      .findOne({ where: { id: data.userId } });
     if (!user) {
       throw new Error('User not found');
     }

@@ -43,7 +43,9 @@ export class ExpeditionResourceObtainedService {
     }
 
     if (user.status !== 'ACTIVE') {
-      throw new ForbiddenException('Solo usuarios ACTIVE pueden registrar recursos obtenidos en expediciones');
+      throw new ForbiddenException(
+        'Solo usuarios ACTIVE pueden registrar recursos obtenidos en expediciones',
+      );
     }
 
     if (user.role !== 'RESOURCE_MANAGEMENT' && user.role !== 'SYSTEM_ADMIN') {
@@ -53,7 +55,9 @@ export class ExpeditionResourceObtainedService {
     }
 
     if (user.campId !== expedition.campId) {
-      throw new BadRequestException('El usuario recordedBy no pertenece al campamento de la expedicion');
+      throw new BadRequestException(
+        'El usuario recordedBy no pertenece al campamento de la expedicion',
+      );
     }
 
     if (movementId === null || movementId === undefined) {

@@ -32,13 +32,17 @@ export class TemporalAutomationRepository {
     private readonly userRepo: Repository<UserEntity>,
   ) {}
 
-  async findDailyCycleCamps(): Promise<Array<Pick<CampEntity, 'id' | 'name' | 'minimumDailyRationPerPerson' | 'maxPersonCapacity'>>> {
+  async findDailyCycleCamps(): Promise<
+    Array<Pick<CampEntity, 'id' | 'name' | 'minimumDailyRationPerPerson' | 'maxPersonCapacity'>>
+  > {
     return await this.campRepo.find({
       select: ['id', 'name', 'minimumDailyRationPerPerson', 'maxPersonCapacity'],
     });
   }
 
-  async findResourceTypeByCategory(category: ResourceTypeEntity['category']): Promise<ResourceTypeEntity | null> {
+  async findResourceTypeByCategory(
+    category: ResourceTypeEntity['category'],
+  ): Promise<ResourceTypeEntity | null> {
     return await this.resourceTypeRepo.findOne({ where: { category } });
   }
 
@@ -59,7 +63,10 @@ export class TemporalAutomationRepository {
     });
   }
 
-  async getOrCreateCampInventory(campId: number, resourceTypeId: number): Promise<CampInventoryEntity> {
+  async getOrCreateCampInventory(
+    campId: number,
+    resourceTypeId: number,
+  ): Promise<CampInventoryEntity> {
     const found = await this.campInventoryRepo.findOne({
       where: { campId, resourceTypeId },
     });
@@ -78,7 +85,10 @@ export class TemporalAutomationRepository {
     return await this.campInventoryRepo.save(created);
   }
 
-  async findProductionOccupationRows(campId: number, nowIso: string): Promise<Array<{ occupation_id: string | number }>> {
+  async findProductionOccupationRows(
+    campId: number,
+    nowIso: string,
+  ): Promise<Array<{ occupation_id: string | number }>> {
     return (await this.personRepo.query(
       `
       SELECT
@@ -116,7 +126,10 @@ export class TemporalAutomationRepository {
     });
   }
 
-  async findCampInventories(campId: number, resourceTypeIds: number[]): Promise<CampInventoryEntity[]> {
+  async findCampInventories(
+    campId: number,
+    resourceTypeIds: number[],
+  ): Promise<CampInventoryEntity[]> {
     if (resourceTypeIds.length === 0) {
       return [];
     }
@@ -142,7 +155,9 @@ export class TemporalAutomationRepository {
     });
   }
 
-  async findRelevantOccupationsForStaffing(): Promise<Array<Pick<OccupationEntity, 'id' | 'name'>>> {
+  async findRelevantOccupationsForStaffing(): Promise<
+    Array<Pick<OccupationEntity, 'id' | 'name'>>
+  > {
     return await this.occupationRepo.find({
       where: [{ collectsResources: true }, { participatesInExpeditions: true }],
       select: {
@@ -188,7 +203,10 @@ export class TemporalAutomationRepository {
     await this.personRepo.update({ id: personId }, { currentStatus: status });
   }
 
-  async findActiveUserIdsByCampAndPersonIds(campId: number, personIds: number[]): Promise<number[]> {
+  async findActiveUserIdsByCampAndPersonIds(
+    campId: number,
+    personIds: number[],
+  ): Promise<number[]> {
     if (personIds.length === 0) {
       return [];
     }

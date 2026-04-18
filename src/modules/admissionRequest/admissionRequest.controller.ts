@@ -202,7 +202,11 @@ export class AdmissionRequestController {
   @ApiBody({ type: UpdateAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  async updateRequest(@Param('id') id: string, @Body() body: UpdateAdmissionRequestDto, @Req() req: Request) {
+  async updateRequest(
+    @Param('id') id: string,
+    @Body() body: UpdateAdmissionRequestDto,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
@@ -240,7 +244,11 @@ export class AdmissionRequestController {
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request processed by AI' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  async processWithAI(@Param('id') id: string, @Body() body: ProcessAiAdmissionRequestDto, @Req() req: Request) {
+  async processWithAI(
+    @Param('id') id: string,
+    @Body() body: ProcessAiAdmissionRequestDto,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
@@ -268,7 +276,11 @@ export class AdmissionRequestController {
   @ApiBody({ type: ReviewAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request reviewed by admin' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  async reviewByAdmin(@Param('id') id: string, @Body() body: ReviewAdmissionRequestDto, @Req() req: Request) {
+  async reviewByAdmin(
+    @Param('id') id: string,
+    @Body() body: ReviewAdmissionRequestDto,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');

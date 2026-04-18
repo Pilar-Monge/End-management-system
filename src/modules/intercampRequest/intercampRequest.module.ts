@@ -10,7 +10,10 @@ import { IntercampRequestRepository } from './intercampRequest.repository';
 import { IntercampRequestService } from './intercampRequest.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([IntercampRequestEntity, CampEntity, UserEntity]), NotificationModule],
+  imports: [
+    TypeOrmModule.forFeature([IntercampRequestEntity, CampEntity, UserEntity]),
+    NotificationModule,
+  ],
   controllers: [IntercampRequestController],
   providers: [IntercampRequestRepository, IntercampRequestService],
 })

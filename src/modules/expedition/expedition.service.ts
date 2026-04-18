@@ -42,7 +42,9 @@ export class ExpeditionService {
       return;
     }
 
-    const statuses = new Set(await this.repository.getTrackedExpeditionStatusesByPersonId(personId));
+    const statuses = new Set(
+      await this.repository.getTrackedExpeditionStatusesByPersonId(personId),
+    );
     let targetStatus: PersonEntity['currentStatus'] | null = null;
 
     if (statuses.has('LOST')) {
@@ -89,13 +91,17 @@ export class ExpeditionService {
       status: shouldStartNow ? 'IN_PROGRESS' : 'PLANNED',
     });
 
-    await this.notificationService.notifyCampRoles(created.campId, ['SYSTEM_ADMIN', 'TRAVEL_MANAGER'], {
-      type: 'EXPEDITION_CREATED',
-      title: 'Nueva expedicion registrada',
-      message: `La expedicion ${created.name} fue registrada con estado inicial ${created.status}.`,
-      sourceType: 'expedition',
-      sourceId: created.id,
-    });
+    await this.notificationService.notifyCampRoles(
+      created.campId,
+      ['SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
+      {
+        type: 'EXPEDITION_CREATED',
+        title: 'Nueva expedicion registrada',
+        message: `La expedicion ${created.name} fue registrada con estado inicial ${created.status}.`,
+        sourceType: 'expedition',
+        sourceId: created.id,
+      },
+    );
 
     return created;
   }
@@ -151,7 +157,9 @@ export class ExpeditionService {
 
     const now = this.systemTimeService.now();
     if (now.getTime() < expedition.plannedReturnDate.getTime()) {
-      throw new Error('La expedicion solo puede completarse despues de la fecha estimada de retorno');
+      throw new Error(
+        'La expedicion solo puede completarse despues de la fecha estimada de retorno',
+      );
     }
 
     if (['COMPLETED', 'CANCELED', 'LOST'].includes(expedition.status)) {
@@ -195,7 +203,10 @@ export class ExpeditionService {
     const normalized: UpdateExpeditionDTO = { ...data };
 
     if (normalized.estimatedDurationDays !== undefined) {
-      if (!Number.isInteger(normalized.estimatedDurationDays) || normalized.estimatedDurationDays <= 0) {
+      if (
+        !Number.isInteger(normalized.estimatedDurationDays) ||
+        normalized.estimatedDurationDays <= 0
+      ) {
         throw new Error('estimatedDurationDays must be an integer greater than 0');
       }
 
@@ -267,17 +278,14 @@ export class ExpeditionService {
     const userIds = await this.repository.findUserIdsByCampAndPersonIds(existing.campId, personIds);
 
     if (userIds.length > 0) {
-      await this.notificationService.notifyUsers(
-        userIds,
-        {
-          campId: existing.campId,
-          type: 'EXPEDITION_STATUS_UPDATED',
-          title: 'Expedicion cancelada',
-          message: `La expedicion ${existing.name} en la que participabas fue eliminada.`,
-          sourceType: 'expedition',
-          sourceId: existing.id,
-        },
-      );
+      await this.notificationService.notifyUsers(userIds, {
+        campId: existing.campId,
+        type: 'EXPEDITION_STATUS_UPDATED',
+        title: 'Expedicion cancelada',
+        message: `La expedicion ${existing.name} en la que participabas fue eliminada.`,
+        sourceType: 'expedition',
+        sourceId: existing.id,
+      });
     }
 
     return true;

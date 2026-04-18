@@ -164,7 +164,12 @@ export class TransferPersonService {
 
     const updated = await this.repository.update(id, data);
     if (updated && updated.status !== existing.status) {
-      await this.notifyTransferPersonEvent(updated.transferId, updated.personId, updated.status, updated.id);
+      await this.notifyTransferPersonEvent(
+        updated.transferId,
+        updated.personId,
+        updated.status,
+        updated.id,
+      );
     }
 
     return updated;

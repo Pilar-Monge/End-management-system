@@ -245,7 +245,11 @@ export class InventoryMovementController {
   @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateInventoryMovementDTO, @Req() req: Request) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateInventoryMovementDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);

@@ -38,6 +38,10 @@ import { TemporalAutomationService } from './temporalAutomation.service';
     SystemTimeModule,
     NotificationModule,
   ],
-  providers: [TemporalAutomationService, TemporalAutomationRepository, ExpeditionParticipantRepository],
+  providers: [
+    TemporalAutomationService,
+    TemporalAutomationRepository,
+    ExpeditionParticipantRepository,
+  ],
 })
 export class TemporalAutomationModule {}

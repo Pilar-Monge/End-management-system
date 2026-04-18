@@ -36,13 +36,17 @@ export class CampInventoryService {
     }
 
     const created = await this.repository.create(data);
-    await this.notificationService.notifyCampRoles(created.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
-      type: 'INVENTORY_ALERT',
-      title: 'Elemento de inventario creado',
-      message: `Se agrego el recurso ${created.resourceTypeId} al inventario del campamento.`,
-      sourceType: 'camp_inventory',
-      sourceId: created.resourceTypeId,
-    });
+    await this.notificationService.notifyCampRoles(
+      created.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Elemento de inventario creado',
+        message: `Se agrego el recurso ${created.resourceTypeId} al inventario del campamento.`,
+        sourceType: 'camp_inventory',
+        sourceId: created.resourceTypeId,
+      },
+    );
     return created;
   }
 
@@ -86,13 +90,17 @@ export class CampInventoryService {
       return null;
     }
 
-    await this.notificationService.notifyCampRoles(updated.campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
-      type: 'INVENTORY_ALERT',
-      title: 'Elemento de inventario actualizado',
-      message: `Se actualizo el recurso ${updated.resourceTypeId} en el inventario del campamento.`,
-      sourceType: 'camp_inventory',
-      sourceId: updated.resourceTypeId,
-    });
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Elemento de inventario actualizado',
+        message: `Se actualizo el recurso ${updated.resourceTypeId} en el inventario del campamento.`,
+        sourceType: 'camp_inventory',
+        sourceId: updated.resourceTypeId,
+      },
+    );
 
     return updated;
   }
@@ -108,13 +116,17 @@ export class CampInventoryService {
       return false;
     }
 
-    await this.notificationService.notifyCampRoles(campId, ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'], {
-      type: 'INVENTORY_ALERT',
-      title: 'Elemento de inventario eliminado',
-      message: `Se elimino el recurso ${resourceTypeId} del inventario del campamento.`,
-      sourceType: 'camp_inventory',
-      sourceId: resourceTypeId,
-    });
+    await this.notificationService.notifyCampRoles(
+      campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Elemento de inventario eliminado',
+        message: `Se elimino el recurso ${resourceTypeId} del inventario del campamento.`,
+        sourceType: 'camp_inventory',
+        sourceId: resourceTypeId,
+      },
+    );
 
     return true;
   }

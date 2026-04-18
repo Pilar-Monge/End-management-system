@@ -33,7 +33,9 @@ export class PersonStatusHistoryService {
     }
 
     if (user.role !== 'SYSTEM_ADMIN') {
-      throw new ForbiddenException('Solo usuarios SYSTEM_ADMIN pueden cambiar el estado de la persona');
+      throw new ForbiddenException(
+        'Solo usuarios SYSTEM_ADMIN pueden cambiar el estado de la persona',
+      );
     }
 
     if (user.campId !== person.campId) {
@@ -42,33 +44,35 @@ export class PersonStatusHistoryService {
   }
 
   async createEntry(data: CreatePersonStatusHistoryDTO): Promise<PersonStatusHistory> {
-    const created = await this.repository
-      .createEntryTransactional(data)
-      .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : '';
+    const created = await this.repository.createEntryTransactional(data).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : '';
 
-        if (message === 'PERSON_NOT_FOUND') {
-          throw new NotFoundException('Persona no encontrada');
-        }
+      if (message === 'PERSON_NOT_FOUND') {
+        throw new NotFoundException('Persona no encontrada');
+      }
 
-        if (message === 'CHANGED_BY_NOT_FOUND') {
-          throw new NotFoundException('No se encontro el usuario que cambio el estado');
-        }
+      if (message === 'CHANGED_BY_NOT_FOUND') {
+        throw new NotFoundException('No se encontro el usuario que cambio el estado');
+      }
 
-        if (message === 'ONLY_SYSTEM_ADMIN') {
-          throw new ForbiddenException('Solo usuarios SYSTEM_ADMIN pueden cambiar el estado de la persona');
-        }
+      if (message === 'ONLY_SYSTEM_ADMIN') {
+        throw new ForbiddenException(
+          'Solo usuarios SYSTEM_ADMIN pueden cambiar el estado de la persona',
+        );
+      }
 
-        if (message === 'CAMP_MISMATCH') {
-          throw new BadRequestException('El campamento del usuario no coincide con el de la persona');
-        }
+      if (message === 'CAMP_MISMATCH') {
+        throw new BadRequestException('El campamento del usuario no coincide con el de la persona');
+      }
 
-        if (message === 'PREVIOUS_STATUS_MISMATCH') {
-          throw new BadRequestException('previousStatus no coincide con el estado actual de la persona');
-        }
+      if (message === 'PREVIOUS_STATUS_MISMATCH') {
+        throw new BadRequestException(
+          'previousStatus no coincide con el estado actual de la persona',
+        );
+      }
 
-        throw error;
-      });
+      throw error;
+    });
 
     await this.notifyStatusChange(data.personId, data.previousStatus, data.newStatus);
     return created;

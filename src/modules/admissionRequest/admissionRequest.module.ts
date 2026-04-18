@@ -8,7 +8,11 @@ import { DecisionTreeModule } from '../decisionTree/decisionTree.module';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AdmissionRequestEntity]), DecisionTreeModule, NotificationModule],
+  imports: [
+    TypeOrmModule.forFeature([AdmissionRequestEntity]),
+    DecisionTreeModule,
+    NotificationModule,
+  ],
   controllers: [AdmissionRequestController],
   providers: [AdmissionRequestRepository, AdmissionRequestService],
 })

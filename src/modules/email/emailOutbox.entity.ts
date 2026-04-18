@@ -1,11 +1,4 @@
-import {
-  Check,
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 import { EMAIL_OUTBOX_STATUS_VALUES, type EmailOutboxStatus } from './emailOutbox.model';
 

@@ -85,7 +85,9 @@ export class EmailOutboxAndPasswordReset1776200000000 implements MigrationInterf
       )
     `);
 
-    await queryRunner.query(`ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`);
+    await queryRunner.query(
+      `ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`,
+    );
     await queryRunner.query(`
       ALTER TABLE "notification"
       ADD CONSTRAINT "chk_notificacion_tipo"
@@ -122,7 +124,9 @@ export class EmailOutboxAndPasswordReset1776200000000 implements MigrationInterf
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`);
+    await queryRunner.query(
+      `ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "chk_notificacion_tipo"`,
+    );
     await queryRunner.query(`
       ALTER TABLE "notification"
       ADD CONSTRAINT "chk_notificacion_tipo"
