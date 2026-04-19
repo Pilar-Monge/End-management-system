@@ -64,5 +64,345 @@
     "isActive": true,
     "createdAt": "2026-04-09T05:26:15.027Z",
     "updatedAt": "2026-04-09T05:26:15.027Z"
+  },
+  {
+    "id": 3,
+    "campId": 1,
+    "modelName": "admission-acceptance-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-acceptance-v1-1776557571047.json",
+    "trainingMetrics": {
+      "sampleCount": 20,
+      "featureCount": 5,
+      "trainAccuracy": 0.95,
+      "labelDistribution": {
+        "ACCEPT": 10,
+        "REJECT": 10
+      },
+      "labelClasses": [
+        "ACCEPT",
+        "REJECT"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.053Z",
+    "updatedAt": "2026-04-19T00:12:51.053Z"
+  },
+  {
+    "id": 4,
+    "campId": 1,
+    "modelName": "admission-role-assignment-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571090.json",
+    "trainingMetrics": {
+      "sampleCount": 36,
+      "featureCount": 5,
+      "trainAccuracy": 0.944444,
+      "labelDistribution": {
+        "Recolector de agua": 6,
+        "Recolector de comida": 6,
+        "Explorador": 6,
+        "Guardia": 6,
+        "Medico": 6,
+        "Ingeniero": 6
+      },
+      "labelClasses": [
+        "Recolector de agua",
+        "Recolector de comida",
+        "Explorador",
+        "Guardia",
+        "Medico",
+        "Ingeniero"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.101Z",
+    "updatedAt": "2026-04-19T00:12:51.101Z"
+  },
+  {
+    "id": 5,
+    "campId": 2,
+    "modelName": "admission-acceptance-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-acceptance-v1-1776557571118.json",
+    "trainingMetrics": {
+      "sampleCount": 20,
+      "featureCount": 5,
+      "trainAccuracy": 0.95,
+      "labelDistribution": {
+        "ACCEPT": 10,
+        "REJECT": 10
+      },
+      "labelClasses": [
+        "ACCEPT",
+        "REJECT"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.126Z",
+    "updatedAt": "2026-04-19T00:12:51.126Z"
+  },
+  {
+    "id": 6,
+    "campId": 2,
+    "modelName": "admission-role-assignment-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571167.json",
+    "trainingMetrics": {
+      "sampleCount": 36,
+      "featureCount": 5,
+      "trainAccuracy": 0.944444,
+      "labelDistribution": {
+        "Recolector de agua": 6,
+        "Recolector de comida": 6,
+        "Explorador": 6,
+        "Guardia": 6,
+        "Medico": 6,
+        "Ingeniero": 6
+      },
+      "labelClasses": [
+        "Recolector de agua",
+        "Recolector de comida",
+        "Explorador",
+        "Guardia",
+        "Medico",
+        "Ingeniero"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.204Z",
+    "updatedAt": "2026-04-19T00:12:51.204Z"
+  },
+  {
+    "id": 7,
+    "campId": 3,
+    "modelName": "admission-acceptance-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-acceptance-v1-1776557571250.json",
+    "trainingMetrics": {
+      "sampleCount": 20,
+      "featureCount": 5,
+      "trainAccuracy": 0.95,
+      "labelDistribution": {
+        "ACCEPT": 10,
+        "REJECT": 10
+      },
+      "labelClasses": [
+        "ACCEPT",
+        "REJECT"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.259Z",
+    "updatedAt": "2026-04-19T00:12:51.259Z"
+  },
+  {
+    "id": 8,
+    "campId": 3,
+    "modelName": "admission-role-assignment-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571290.json",
+    "trainingMetrics": {
+      "sampleCount": 36,
+      "featureCount": 5,
+      "trainAccuracy": 0.944444,
+      "labelDistribution": {
+        "Recolector de agua": 6,
+        "Recolector de comida": 6,
+        "Explorador": 6,
+        "Guardia": 6,
+        "Medico": 6,
+        "Ingeniero": 6
+      },
+      "labelClasses": [
+        "Recolector de agua",
+        "Recolector de comida",
+        "Explorador",
+        "Guardia",
+        "Medico",
+        "Ingeniero"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.299Z",
+    "updatedAt": "2026-04-19T00:12:51.299Z"
+  },
+  {
+    "id": 9,
+    "campId": 4,
+    "modelName": "admission-acceptance-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-acceptance-v1-1776557571325.json",
+    "trainingMetrics": {
+      "sampleCount": 20,
+      "featureCount": 5,
+      "trainAccuracy": 0.95,
+      "labelDistribution": {
+        "ACCEPT": 10,
+        "REJECT": 10
+      },
+      "labelClasses": [
+        "ACCEPT",
+        "REJECT"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.336Z",
+    "updatedAt": "2026-04-19T00:12:51.336Z"
+  },
+  {
+    "id": 10,
+    "campId": 4,
+    "modelName": "admission-role-assignment-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571375.json",
+    "trainingMetrics": {
+      "sampleCount": 36,
+      "featureCount": 5,
+      "trainAccuracy": 0.944444,
+      "labelDistribution": {
+        "Recolector de agua": 6,
+        "Recolector de comida": 6,
+        "Explorador": 6,
+        "Guardia": 6,
+        "Medico": 6,
+        "Ingeniero": 6
+      },
+      "labelClasses": [
+        "Recolector de agua",
+        "Recolector de comida",
+        "Explorador",
+        "Guardia",
+        "Medico",
+        "Ingeniero"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.387Z",
+    "updatedAt": "2026-04-19T00:12:51.387Z"
+  },
+  {
+    "id": 11,
+    "campId": 5,
+    "modelName": "admission-acceptance-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-acceptance-v1-1776557571427.json",
+    "trainingMetrics": {
+      "sampleCount": 20,
+      "featureCount": 5,
+      "trainAccuracy": 0.95,
+      "labelDistribution": {
+        "ACCEPT": 10,
+        "REJECT": 10
+      },
+      "labelClasses": [
+        "ACCEPT",
+        "REJECT"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.439Z",
+    "updatedAt": "2026-04-19T00:12:51.439Z"
+  },
+  {
+    "id": 12,
+    "campId": 5,
+    "modelName": "admission-role-assignment-v1",
+    "featureNames": [
+      "age_years",
+      "health_level_score",
+      "physical_condition_score",
+      "experience_years",
+      "skills_score"
+    ],
+    "modelPayload": null,
+    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571481.json",
+    "trainingMetrics": {
+      "sampleCount": 36,
+      "featureCount": 5,
+      "trainAccuracy": 0.944444,
+      "labelDistribution": {
+        "Recolector de agua": 6,
+        "Recolector de comida": 6,
+        "Explorador": 6,
+        "Guardia": 6,
+        "Medico": 6,
+        "Ingeniero": 6
+      },
+      "labelClasses": [
+        "Recolector de agua",
+        "Recolector de comida",
+        "Explorador",
+        "Guardia",
+        "Medico",
+        "Ingeniero"
+      ]
+    },
+    "isActive": true,
+    "createdAt": "2026-04-19T00:12:51.492Z",
+    "updatedAt": "2026-04-19T00:12:51.492Z"
   }
 ]

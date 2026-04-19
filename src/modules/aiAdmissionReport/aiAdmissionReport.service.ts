@@ -52,6 +52,7 @@ export class AiAdmissionReportService {
         message: `Se creo un reporte de IA para la solicitud ${data.requestId}.`,
         sourceType: 'ai_admission_report',
         sourceId: created.id,
+        sendEmail: false,
       });
     }
 
@@ -155,6 +156,7 @@ export class AiAdmissionReportService {
         message: `Se actualizo el reporte de IA para la solicitud ${updated.requestId}.`,
         sourceType: 'ai_admission_report',
         sourceId: updated.id,
+        sendEmail: false,
       });
     }
 
@@ -181,6 +183,7 @@ export class AiAdmissionReportService {
         message: `Se elimino el reporte de IA para la solicitud ${existing.requestId}.`,
         sourceType: 'ai_admission_report',
         sourceId: existing.id,
+        sendEmail: false,
       });
     }
 

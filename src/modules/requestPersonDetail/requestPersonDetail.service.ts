@@ -133,6 +133,11 @@ export class RequestPersonDetailService {
     id: number,
     data: UpdateRequestPersonDetailDTO,
   ): Promise<RequestPersonDetail | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return null;
+    }
+
     if (data.requestId !== undefined) {
       await assertEntityExists(
         this.dataSource,
@@ -151,7 +156,12 @@ export class RequestPersonDetailService {
     }
     const updated = await this.repository.update(id, data);
     if (updated) {
-      await this.notifyRequestPersonChange(updated, 'Se actualizo un detalle de persona');
+      const statusChanged = updated.status !== existing.status;
+      const actionLabel = statusChanged
+        ? `Se actualizo el estado de un detalle de persona (${existing.status} -> ${updated.status})`
+        : 'Se actualizo un detalle de persona';
+
+      await this.notifyRequestPersonChange(updated, actionLabel);
     }
 
     return updated;
