@@ -291,4 +291,180 @@ export class ExpeditionRepository {
       await queryRunner.release();
     }
   }
+
+  async applyDepartureProvisioningIfNeeded(expeditionId: number, now: Date): Promise<boolean> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const expeditionRows = (await queryRunner.query(
+        `
+        SELECT id, camp_id, planned_departure_date, planned_return_date, extra_days_available
+        FROM expedition
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [expeditionId],
+      )) as Array<{
+        id: number;
+        camp_id: number;
+        planned_departure_date: Date;
+        planned_return_date: Date;
+        extra_days_available: number;
+      }>;
+
+      const expedition = expeditionRows[0];
+      if (!expedition) {
+        await queryRunner.rollbackTransaction();
+        return false;
+      }
+
+      const existingMovements = (await queryRunner.query(
+        `
+        SELECT COUNT(*)::int AS total
+        FROM inventory_movement
+        WHERE movement_type = 'EXPEDITION_DEPARTURE'
+          AND source_id = $1
+          AND source_type = 'expedition_departure_auto'
+        `,
+        [expeditionId],
+      )) as Array<{ total: number }>;
+
+      if ((existingMovements[0]?.total ?? 0) > 0) {
+        await queryRunner.rollbackTransaction();
+        return false;
+      }
+
+      const participantRows = (await queryRunner.query(
+        `
+        SELECT COUNT(*)::int AS total
+        FROM expedition_participant
+        WHERE expedition_id = $1
+          AND status = 'ACTIVE'
+        `,
+        [expeditionId],
+      )) as Array<{ total: number }>;
+
+      const participantCount = participantRows[0]?.total ?? 0;
+      if (participantCount <= 0) {
+        await queryRunner.rollbackTransaction();
+        return false;
+      }
+
+      const campRows = (await queryRunner.query(
+        `
+        SELECT minimum_daily_ration_per_person
+        FROM camp
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [expedition.camp_id],
+      )) as Array<{ minimum_daily_ration_per_person: string }>;
+
+      const rationPerPerson = Number.parseFloat(
+        campRows[0]?.minimum_daily_ration_per_person ?? '1.00',
+      );
+
+      const resourceRows = (await queryRunner.query(
+        `
+        SELECT id, category
+        FROM resource_type
+        WHERE category IN ('FOOD', 'WATER')
+        `,
+      )) as Array<{ id: number; category: 'FOOD' | 'WATER' }>;
+
+      if (resourceRows.length === 0) {
+        await queryRunner.rollbackTransaction();
+        return false;
+      }
+
+      const recorderRows = (await queryRunner.query(
+        `
+        SELECT id
+        FROM system_user
+        WHERE camp_id = $1
+          AND status = 'ACTIVE'
+          AND role IN ('RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN')
+        ORDER BY CASE role WHEN 'RESOURCE_MANAGEMENT' THEN 0 ELSE 1 END, id ASC
+        LIMIT 1
+        `,
+        [expedition.camp_id],
+      )) as Array<{ id: number }>;
+
+      const recorder = recorderRows[0];
+      if (!recorder) {
+        await queryRunner.rollbackTransaction();
+        return false;
+      }
+
+      const recorderId = recorder.id;
+      const departureMs = new Date(expedition.planned_departure_date).getTime();
+      const returnMs = new Date(expedition.planned_return_date).getTime();
+      const baseDays = Math.max(1, Math.ceil((returnMs - departureMs) / (24 * 60 * 60 * 1000)));
+      const extraDays = Math.max(0, expedition.extra_days_available ?? 0);
+      const reserveDays = baseDays + extraDays;
+
+      const perResourceAmount =
+        Math.round(participantCount * rationPerPerson * reserveDays * 100) / 100;
+
+      if (!Number.isFinite(perResourceAmount) || perResourceAmount <= 0) {
+        await queryRunner.rollbackTransaction();
+        return false;
+      }
+
+      for (const resource of resourceRows) {
+        await queryRunner.query(
+          `
+          INSERT INTO camp_inventory (camp_id, resource_type_id, current_amount, minimum_alert_amount, last_update)
+          VALUES ($1, $2, $3, '0.00', $4)
+          ON CONFLICT (camp_id, resource_type_id)
+          DO UPDATE SET
+            current_amount = (camp_inventory.current_amount::numeric + EXCLUDED.current_amount::numeric)::numeric(12,2),
+            last_update = EXCLUDED.last_update
+          `,
+          [
+            expedition.camp_id,
+            resource.id,
+            (-perResourceAmount).toFixed(2),
+            now.toISOString(),
+          ],
+        );
+
+        await queryRunner.query(
+          `
+          INSERT INTO inventory_movement (
+            camp_id,
+            resource_type_id,
+            amount,
+            movement_type,
+            source_id,
+            source_type,
+            recorded_by,
+            date,
+            description
+          )
+          VALUES ($1, $2, $3, 'EXPEDITION_DEPARTURE', $4, 'expedition_departure_auto', $5, $6, $7)
+          `,
+          [
+            expedition.camp_id,
+            resource.id,
+            (-perResourceAmount).toFixed(2),
+            expeditionId,
+            recorderId,
+            now.toISOString(),
+            `Automatic ration provisioning for expedition departure (participants=${participantCount}, reserveDays=${reserveDays})`,
+          ],
+        );
+      }
+
+      await queryRunner.commitTransaction();
+      return true;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 }

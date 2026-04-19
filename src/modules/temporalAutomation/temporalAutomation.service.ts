@@ -7,6 +7,7 @@ import { CampEntity } from '../camp/camp.entity';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { DailyConsumptionEntity } from '../dailyConsumption/dailyConsumption.entity';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { ExpeditionRepository } from '../expedition/expedition.repository';
 import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
 import { ExpeditionParticipantRepository } from '../expeditionParticipant/expeditionParticipant.repository';
 import { InventoryAlertEntity } from '../inventoryAlert/inventoryAlert.entity';
@@ -36,6 +37,7 @@ export class TemporalAutomationService {
     @InjectRepository(ExpeditionParticipantEntity)
     private readonly expeditionParticipantRepo: Repository<ExpeditionParticipantEntity>,
     private readonly expeditionParticipantRepository: ExpeditionParticipantRepository,
+    private readonly expeditionRepository: ExpeditionRepository,
     @InjectRepository(InventoryAlertEntity)
     private readonly inventoryAlertRepo: Repository<InventoryAlertEntity>,
     @InjectRepository(InventoryMovementEntity)
@@ -160,6 +162,10 @@ export class TemporalAutomationService {
         expedition.status = nextStatus;
         expedition.extraDaysUsed = Math.min(extraDaysUsed, expedition.extraDaysAvailable);
         await this.expeditionRepo.save(expedition);
+
+        if (previousStatus !== 'IN_PROGRESS' && expedition.status === 'IN_PROGRESS') {
+          await this.expeditionRepository.applyDepartureProvisioningIfNeeded(expedition.id, now);
+        }
 
         await this.syncParticipantPersonStatuses(expedition.id);
 

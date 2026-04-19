@@ -5,6 +5,7 @@ import { CampEntity } from '../camp/camp.entity';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
 import { DailyConsumptionEntity } from '../dailyConsumption/dailyConsumption.entity';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
+import { ExpeditionRepository } from '../expedition/expedition.repository';
 import { ExpeditionParticipantEntity } from '../expeditionParticipant/expeditionParticipant.entity';
 import { ExpeditionParticipantRepository } from '../expeditionParticipant/expeditionParticipant.repository';
 import { InventoryAlertEntity } from '../inventoryAlert/inventoryAlert.entity';
@@ -42,6 +43,7 @@ import { TemporalAutomationService } from './temporalAutomation.service';
     TemporalAutomationService,
     TemporalAutomationRepository,
     ExpeditionParticipantRepository,
+    ExpeditionRepository,
   ],
 })
 export class TemporalAutomationModule {}
