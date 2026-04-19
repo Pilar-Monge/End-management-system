@@ -224,4 +224,46 @@ export class TemporalAutomationRepository {
 
     return users.map((user) => user.id);
   }
+
+  async findAutomationRecorderUserId(campId: number): Promise<number | null> {
+    const preferred = await this.userRepo.findOne({
+      where: [
+        {
+          campId,
+          status: 'ACTIVE',
+          role: 'RESOURCE_MANAGEMENT',
+        },
+        {
+          campId,
+          status: 'ACTIVE',
+          role: 'SYSTEM_ADMIN',
+        },
+      ],
+      order: {
+        id: 'ASC',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (preferred) {
+      return preferred.id;
+    }
+
+    const fallback = await this.userRepo.findOne({
+      where: {
+        campId,
+        status: 'ACTIVE',
+      },
+      order: {
+        id: 'ASC',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return fallback?.id ?? null;
+  }
 }

@@ -57,6 +57,10 @@ test.describe('Requirement 4 - Expeditions full flow', () => {
       'Seed data does not contain both eligible and ineligible occupation profiles',
     );
 
+    if (eligiblePerson.rowCount === 0 || ineligiblePerson.rowCount === 0) {
+      return;
+    }
+
     const foodAndWater = await db.query<{ id: number; category: 'FOOD' | 'WATER' }>(
       `
       SELECT id, category
@@ -69,6 +73,10 @@ test.describe('Requirement 4 - Expeditions full flow', () => {
     const waterId = foodAndWater.rows.find((row) => row.category === 'WATER')?.id;
 
     test.skip(foodId === undefined || waterId === undefined, 'FOOD/WATER resources are required');
+
+    if (foodId === undefined || waterId === undefined) {
+      return;
+    }
 
     const now = new Date();
     const departureDate = new Date(now.getTime() + 2 * 60 * 60 * 1000);

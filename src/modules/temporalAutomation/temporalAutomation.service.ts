@@ -21,7 +21,6 @@ import { SystemTimeService } from '../systemTime/systemTime.service';
 import { TemporalAutomationRepository } from './temporalAutomation.repository';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const SYSTEM_RECORDED_BY = 0;
 
 @Injectable()
 export class TemporalAutomationService {
@@ -64,6 +63,15 @@ export class TemporalAutomationService {
     for (const camp of camps) {
       const touchedResourceIds = new Set<number>();
       const rationPerPerson = this.toDecimal(camp.minimumDailyRationPerPerson || '1.00');
+      const recorderUserId = await this.temporalAutomationRepository.findAutomationRecorderUserId(
+        camp.id,
+      );
+
+      if (recorderUserId === null) {
+        this.logger.warn(
+          `Skipping inventory movements for camp ${camp.id}: no ACTIVE system user available to record automation`,
+        );
+      }
 
       const peopleCount = await this.temporalAutomationRepository.countCampOperationalPeople(
         camp.id,
@@ -77,6 +85,7 @@ export class TemporalAutomationService {
         totalRation,
         now,
         touchedResourceIds,
+        recorderUserId,
       );
       await this.applyDailyConsumption(
         camp.id,
@@ -84,6 +93,7 @@ export class TemporalAutomationService {
         totalRation,
         now,
         touchedResourceIds,
+        recorderUserId,
       );
 
       const productionByResource = await this.getProductionByResource(camp.id, now);
@@ -99,19 +109,21 @@ export class TemporalAutomationService {
         inventory.lastUpdate = now;
         await this.campInventoryRepo.save(inventory);
 
-        await this.inventoryMovementRepo.save(
-          this.inventoryMovementRepo.create({
-            campId: camp.id,
-            resourceTypeId,
-            amount: amount.toFixed(2),
-            movementType: 'DAILY_COLLECTION',
-            sourceId: null,
-            sourceType: 'temporal_automation',
-            recordedBy: SYSTEM_RECORDED_BY,
-            date: now,
-            description: 'Automatic daily production',
-          }),
-        );
+        if (recorderUserId !== null) {
+          await this.inventoryMovementRepo.save(
+            this.inventoryMovementRepo.create({
+              campId: camp.id,
+              resourceTypeId,
+              amount: amount.toFixed(2),
+              movementType: 'DAILY_COLLECTION',
+              sourceId: null,
+              sourceType: 'temporal_automation',
+              recordedBy: recorderUserId,
+              date: now,
+              description: 'Automatic daily production',
+            }),
+          );
+        }
 
         touchedResourceIds.add(resourceTypeId);
       }
@@ -182,6 +194,7 @@ export class TemporalAutomationService {
     totalRation: number,
     now: Date,
     touchedResourceIds: Set<number>,
+    recorderUserId: number | null,
   ): Promise<void> {
     const inventory = await this.getOrCreateCampInventory(campId, resourceTypeId);
     const currentAmount = this.toDecimal(inventory.currentAmount);
@@ -201,19 +214,21 @@ export class TemporalAutomationService {
       }),
     );
 
-    await this.inventoryMovementRepo.save(
-      this.inventoryMovementRepo.create({
-        campId,
-        resourceTypeId,
-        amount: (-totalRation).toFixed(2),
-        movementType: 'DAILY_RATION',
-        sourceId: null,
-        sourceType: 'temporal_automation',
-        recordedBy: SYSTEM_RECORDED_BY,
-        date: now,
-        description: 'Automatic daily consumption',
-      }),
-    );
+    if (recorderUserId !== null) {
+      await this.inventoryMovementRepo.save(
+        this.inventoryMovementRepo.create({
+          campId,
+          resourceTypeId,
+          amount: (-totalRation).toFixed(2),
+          movementType: 'DAILY_RATION',
+          sourceId: null,
+          sourceType: 'temporal_automation',
+          recordedBy: recorderUserId,
+          date: now,
+          description: 'Automatic daily consumption',
+        }),
+      );
+    }
 
     touchedResourceIds.add(resourceTypeId);
   }
