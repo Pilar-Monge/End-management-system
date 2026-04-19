@@ -32,11 +32,33 @@ interface NotificationDispatchOptions {
 
 @Injectable()
 export class NotificationService {
+  private readonly emailEnabledByDefaultTypes: ReadonlySet<NotificationType> = new Set([
+    'ADMISSION_REQUEST_PENDING',
+    'ADMISSION_REQUEST_AI_REVIEWED',
+    'ADMISSION_REQUEST_APPROVED',
+    'ADMISSION_REQUEST_REJECTED',
+    'INTERCAMP_REQUEST_RECEIVED',
+    'INTERCAMP_REQUEST_APPROVED',
+    'INTERCAMP_REQUEST_REJECTED',
+    'INTERCAMP_REQUEST_CANCELED',
+  ]);
+
   constructor(
     private readonly repository: NotificationRepository,
     private readonly dataSource: DataSource,
     private readonly emailOutboxService: EmailOutboxService,
   ) {}
+
+  private shouldSendEmail(
+    type: NotificationType,
+    explicitValue?: boolean,
+  ): boolean {
+    if (explicitValue !== undefined) {
+      return explicitValue;
+    }
+
+    return this.emailEnabledByDefaultTypes.has(type);
+  }
 
   private resolveTemplateKeyForType(type: NotificationType): string {
     const templateByType: Partial<Record<NotificationType, string>> = {
@@ -263,7 +285,7 @@ export class NotificationService {
 
     const notification = await this.createNotification(createData);
 
-    if (options.sendEmail !== false) {
+    if (this.shouldSendEmail(options.type, options.sendEmail)) {
       const mergedEmailOptions: NotificationEmailOptions = {
         ...options.email,
         payload: {

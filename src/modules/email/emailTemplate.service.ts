@@ -127,6 +127,17 @@ export class EmailTemplateService {
         ? `<ul style="padding-left:18px;margin:8px 0 0 0;">${detailsRows.join('')}</ul>`
         : '';
 
+    const customDetails = this.getCustomDetails(payload);
+    const customDetailsBlock =
+      customDetails.length > 0
+        ? `<div style="margin-top:12px;"><p style="margin:0 0 8px 0;font-weight:600;color:#0f172a;">Detalle de solicitud</p><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>${customDetails
+            .map(
+              (detail) =>
+                `<tr><td style="padding:8px;border:1px solid #d1d5db;background:#f8fafc;font-weight:600;">${this.escapeHtml(detail.label)}</td><td style="padding:8px;border:1px solid #d1d5db;">${this.escapeHtml(detail.value)}</td></tr>`,
+            )
+            .join('')}</tbody></table></div>`
+        : '';
+
     const changedFields = this.getChangedFields(payload);
     const changesBlock =
       changedFields.length > 0
@@ -148,6 +159,7 @@ export class EmailTemplateService {
       `<h2 style="margin:0 0 10px 0;color:#134e4a;">${this.escapeHtml(title)}</h2>`,
       `<p style="margin:0 0 10px 0;">${this.escapeHtml(message)}</p>`,
       detailsBlock,
+      customDetailsBlock,
       changesBlock,
       actionBlock,
       '<p style="margin-top:18px;color:#475569;font-size:12px;">Este mensaje fue generado automaticamente por End Management System.</p>',
@@ -168,11 +180,19 @@ export class EmailTemplateService {
             .join('\n')}`
         : '';
 
+    const customDetailsText =
+      customDetails.length > 0
+        ? `\n\nDetalle de solicitud:\n${customDetails
+            .map((detail) => `- ${detail.label}: ${detail.value}`)
+            .join('\n')}`
+        : '';
+
     const text = [
       title,
       '',
       message,
       detailsText,
+      customDetailsText,
       changedFieldsText,
       actionLabel && actionUrl ? `${actionLabel}: ${actionUrl}` : '',
     ]
@@ -211,6 +231,55 @@ export class EmailTemplateService {
         previous: this.toString(item.previous, '-'),
         current: this.toString(item.current, '-'),
       }));
+  }
+
+  private getCustomDetails(
+    payload: Record<string, unknown>,
+  ): Array<{ label: string; value: string }> {
+    const details =
+      typeof payload.details === 'object' && payload.details !== null
+        ? (payload.details as Record<string, unknown>)
+        : null;
+
+    if (!details) {
+      return [];
+    }
+
+    return Object.entries(details)
+      .filter(([key]) => key !== 'changedFields')
+      .map(([key, value]) => ({
+        label: key,
+        value: this.formatDetailValue(value),
+      }));
+  }
+
+  private formatDetailValue(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '-';
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : '-';
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.formatDetailValue(item)).join(', ');
+    }
+
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    return String(value);
   }
 
   private toString(value: unknown, fallback: string): string {

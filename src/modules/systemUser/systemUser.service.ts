@@ -41,6 +41,14 @@ export class UserService {
       sourceType: 'system_user',
       sourceId: existing.id,
     });
+
+    await this.notificationService.notifyCampRoles(existing.campId, ['SYSTEM_ADMIN'], {
+      type: 'ROLE_UPDATED',
+      title: 'Rol de usuario actualizado',
+      message: `El usuario ${existing.username} cambio su rol de ${existing.role} a ${newRole}.`,
+      sourceType: 'system_user',
+      sourceId: existing.id,
+    });
   }
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
@@ -124,6 +132,14 @@ export class UserService {
         sourceType: 'system_user',
         sourceId: user.id,
       });
+
+      await this.notificationService.notifyCampRoles(user.campId, ['SYSTEM_ADMIN'], {
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `El usuario ${user.username} cambio su estado de ${existing.status} a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
+      });
     }
     if (!user) return null;
     const { passwordHash: _, ...userResponse } = user;
@@ -188,6 +204,14 @@ export class UserService {
         type: 'USER_STATUS_UPDATED',
         title: 'Estado de usuario actualizado',
         message: `Tu estado de usuario fue cambiado a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
+      });
+
+      await this.notificationService.notifyCampRoles(user.campId, ['SYSTEM_ADMIN'], {
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `El usuario ${user.username} cambio su estado de ${existing.status} a ${user.status}.`,
         sourceType: 'system_user',
         sourceId: user.id,
       });
