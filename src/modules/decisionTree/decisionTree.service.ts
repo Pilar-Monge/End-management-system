@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import * as nodePath from 'path';
+import { DecisionTreeClassifier } from 'ml-cart';
 
 import { DecisionTreeRepository } from './decisionTree.repository';
 import type {
@@ -10,23 +11,6 @@ import type {
   TrainDecisionTreeDTO,
 } from './decisionTree.model';
 
-type DecisionTreeCtor = {
-  new (options?: {
-    gainFunction?: 'gini' | 'entropy';
-    maxDepth?: number;
-    minNumSamples?: number;
-  }): {
-    train: (trainingSet: number[][], labels: number[]) => void;
-    predict: (rows: number[][]) => number[];
-    toJSON?: () => unknown;
-    root?: unknown;
-  };
-  load?: (json: unknown) => {
-    predict: (rows: number[][]) => number[];
-    root?: unknown;
-  };
-};
-
 type SerializedTreeNode = {
   splitColumn?: number;
   splitValue?: number;
@@ -35,20 +19,102 @@ type SerializedTreeNode = {
   category?: string;
 };
 
+const ROLE_MODEL_NAME = 'admission-role-assignment-v1';
+
+type AssignmentRoleName =
+  | 'Recolector de agua'
+  | 'Recolector de comida'
+  | 'Explorador'
+  | 'Guardia'
+  | 'Medico'
+  | 'Ingeniero';
+
+type RoleAssignment = {
+  suggestedRole: AssignmentRoleName;
+  mappedOccupationName: string;
+  modelId: number;
+  modelName: string;
+  rules: string[];
+  summary: string;
+  reason: string;
+  recommendedAttributes: string[];
+};
+
+type RoleProfile = {
+  recommendedAttributes: string[];
+  reason: string;
+};
+
+const ROLE_PROFILES: Record<AssignmentRoleName, RoleProfile> = {
+  'Recolector de agua': {
+    recommendedAttributes: [
+      'condicion fisica alta',
+      'salud estable',
+      'resistencia al esfuerzo',
+      'constancia operativa',
+    ],
+    reason:
+      'el rol exige esfuerzo repetitivo y buena tolerancia fisica para mantener el abastecimiento diario de agua',
+  },
+  'Recolector de comida': {
+    recommendedAttributes: [
+      'condicion fisica alta',
+      'salud estable',
+      'capacidad de trabajo continuo',
+      'adaptacion a tareas de campo',
+    ],
+    reason:
+      'el rol necesita produccion y recoleccion constante de alimentos con buena movilidad y resistencia',
+  },
+  Explorador: {
+    recommendedAttributes: [
+      'condicion fisica muy alta',
+      'buena salud',
+      'experiencia en campo',
+      'capacidad de adaptacion',
+    ],
+    reason:
+      'el rol requiere desplazamiento, lectura del entorno y tolerancia a condiciones cambiantes',
+  },
+  Guardia: {
+    recommendedAttributes: [
+      'condicion fisica alta',
+      'salud estable',
+      'experiencia',
+      'capacidad de vigilancia y reaccion',
+    ],
+    reason:
+      'el rol necesita presencia sostenida, vigilancia y respuesta rapida ante riesgos de seguridad',
+  },
+  Medico: {
+    recommendedAttributes: [
+      'salud muy estable',
+      'habilidades altas',
+      'experiencia',
+      'criterio para atencion',
+    ],
+    reason:
+      'el rol se favorece en personas con buenas habilidades y estabilidad para atender a otros de forma segura',
+  },
+  Ingeniero: {
+    recommendedAttributes: [
+      'experiencia alta',
+      'habilidades altas',
+      'salud estable',
+      'condicion fisica suficiente',
+    ],
+    reason:
+      'el rol demanda experiencia tecnica, resolucion de problemas y capacidad para mantener infraestructura',
+  },
+};
+
 @Injectable()
 export class DecisionTreeService {
-  private readonly decisionTreeClassifier: DecisionTreeCtor;
+  private readonly decisionTreeClassifier = DecisionTreeClassifier;
 
-  constructor(private readonly repository: DecisionTreeRepository) {
-    const mod = require('ml-cart') as { DecisionTreeClassifier?: DecisionTreeCtor };
-    if (!mod.DecisionTreeClassifier) {
-      throw new Error('ml-cart DecisionTreeClassifier is not available');
-    }
+  constructor(private readonly repository: DecisionTreeRepository) {}
 
-    this.decisionTreeClassifier = mod.DecisionTreeClassifier;
-  }
-
-  async trainModel(data: TrainDecisionTreeDTO): Promise<DecisionTreeModel> {
+  async trainModel(data: TrainDecisionTreeDTO, campId: number): Promise<DecisionTreeModel> {
     this.validateTrainInput(data);
 
     const { rows, labels } = this.buildTrainingRows(data.featureNames, data.samples);
@@ -97,9 +163,10 @@ export class DecisionTreeService {
 
     const modelPayload = typeof classifier.toJSON === 'function' ? classifier.toJSON() : classifier;
 
-    await this.repository.deactivateByModelName(data.modelName);
+    await this.repository.deactivateByModelName(data.modelName, campId);
 
     return await this.repository.create({
+      campId,
       modelName: data.modelName,
       featureNames: data.featureNames,
       modelPayload,
@@ -114,7 +181,10 @@ export class DecisionTreeService {
     });
   }
 
-  async trainFromFileIfMissingModel(filePath = 'train.json'): Promise<{
+  async trainFromFileIfMissingModel(
+    filePath = 'train.json',
+    campId = 0,
+  ): Promise<{
     trained: boolean;
     modelName: string;
   }> {
@@ -124,29 +194,34 @@ export class DecisionTreeService {
 
     this.validateTrainInput(parsed);
 
-    const activeModel = await this.repository.findActiveByModelName(parsed.modelName);
+    const activeModel = await this.repository.findActiveByModelName(parsed.modelName, campId);
     if (activeModel) {
       return { trained: false, modelName: parsed.modelName };
     }
 
-    const trained = await this.trainModel(parsed);
+    const trained = await this.trainModel(parsed, campId);
     return { trained: true, modelName: trained.modelName };
   }
 
   async predict(data: PredictDecisionTreeDTO): Promise<{
     model: Omit<DecisionTreeModel, 'modelPayload'>;
     prediction: string;
+    roleAssignment: RoleAssignment;
+    explanation: {
+      admissionSummary: string;
+      roleSummary: string;
+      admissionReason: string;
+      roleReason: string;
+    };
   }> {
-    const model = await this.getModelOrThrow(data.modelId);
-    const row = this.buildSingleRow(model.featureNames, data.features);
-
-    const { loaded, payload } = await this.loadModelFromModel(model);
-    const rawPrediction = loaded.predict([row])[0];
-    const prediction = this.decodePrediction(model, rawPrediction);
+    const model = await this.getModelOrThrow(data.modelId, data.campId);
+    const explained = await this.explainWithModel(model, data.features);
 
     return {
-      model: this.repository.sanitize(model),
-      prediction,
+      model: explained.model,
+      prediction: explained.prediction,
+      roleAssignment: explained.roleAssignment,
+      explanation: explained.explanation,
     };
   }
 
@@ -154,29 +229,55 @@ export class DecisionTreeService {
     model: Omit<DecisionTreeModel, 'modelPayload'>;
     prediction: string;
     rules: string[];
-  }> {
-    const model = await this.getModelOrThrow(data.modelId);
-    const row = this.buildSingleRow(model.featureNames, data.features);
-
-    const { loaded, payload } = await this.loadModelFromModel(model);
-    const rawPrediction = loaded.predict([row])[0];
-    const prediction = this.decodePrediction(model, rawPrediction);
-    const rules = this.extractRulePath(model.featureNames, data.features, payload, loaded.root);
-
-    return {
-      model: this.repository.sanitize(model),
-      prediction,
-      rules,
+    roleAssignment: RoleAssignment;
+    explanation: {
+      admissionSummary: string;
+      roleSummary: string;
+      admissionReason: string;
+      roleReason: string;
     };
+  }> {
+    const model = await this.getModelOrThrow(data.modelId, data.campId);
+    return await this.explainWithModel(model, data.features);
   }
 
-  async getModelById(id: number): Promise<DecisionTreeModel | null> {
-    return await this.repository.findById(id);
+  async explainByModelName(
+    modelName: string,
+    features: Record<string, number>,
+    campId = 0,
+  ): Promise<{
+    model: Omit<DecisionTreeModel, 'modelPayload'>;
+    prediction: string;
+    rules: string[];
+    roleAssignment: RoleAssignment;
+    explanation: {
+      admissionSummary: string;
+      roleSummary: string;
+      admissionReason: string;
+      roleReason: string;
+    };
+  }> {
+    const model = await this.getActiveModelByNameOrThrow(modelName, campId);
+    return await this.explainWithModel(model, features);
+  }
+
+  async getModelById(id: number, campId?: number): Promise<DecisionTreeModel | null> {
+    const model = await this.repository.findById(id);
+    if (!model) {
+      return null;
+    }
+
+    if (campId !== undefined && model.campId !== campId) {
+      return null;
+    }
+
+    return model;
   }
 
   async listModels(filters?: {
     modelName?: string;
     isActive?: boolean;
+    campId?: number;
     page?: number;
     limit?: number;
   }): Promise<{ data: Omit<DecisionTreeModel, 'modelPayload'>[]; total: number }> {
@@ -187,6 +288,7 @@ export class DecisionTreeService {
     const query: {
       modelName?: string;
       isActive?: boolean;
+      campId?: number;
       offset?: number;
       limit?: number;
     } = {
@@ -200,6 +302,10 @@ export class DecisionTreeService {
 
     if (filters?.isActive !== undefined) {
       query.isActive = filters.isActive;
+    }
+
+    if (filters?.campId !== undefined) {
+      query.campId = filters.campId;
     }
 
     const result = await this.repository.findAll(query);
@@ -262,8 +368,8 @@ export class DecisionTreeService {
     return row;
   }
 
-  private async getModelOrThrow(id: number): Promise<DecisionTreeModel> {
-    const model = await this.repository.findById(id);
+  private async getModelOrThrow(id: number, campId?: number): Promise<DecisionTreeModel> {
+    const model = await this.getModelById(id, campId);
     if (!model) {
       throw new Error('Decision tree model not found');
     }
@@ -271,20 +377,94 @@ export class DecisionTreeService {
     return model;
   }
 
-  private async loadModelFromModel(
+  private async getActiveModelByNameOrThrow(
+    modelName: string,
+    campId?: number,
+  ): Promise<DecisionTreeModel> {
+    const model = await this.repository.findActiveByModelName(modelName, campId);
+    if (!model) {
+      throw new Error(`Active decision tree model not found for ${modelName}`);
+    }
+
+    return model;
+  }
+
+  private async explainWithModel(
     model: DecisionTreeModel,
+    features: Record<string, number>,
   ): Promise<{
+    model: Omit<DecisionTreeModel, 'modelPayload'>;
+    prediction: string;
+    rules: string[];
+    roleAssignment: RoleAssignment;
+    explanation: {
+      admissionSummary: string;
+      roleSummary: string;
+      admissionReason: string;
+      roleReason: string;
+    };
+  }> {
+    const row = this.buildSingleRow(model.featureNames, features);
+
+    const { loaded, payload } = await this.loadModelFromModel(model);
+    const rawPrediction = loaded.predict([row])[0];
+    const prediction = this.decodePrediction(model, rawPrediction);
+    const rules = this.extractRulePath(model.featureNames, features, payload, loaded.root);
+    const roleAssignment = await this.predictRoleAssignment(features);
+
+    const explanation = {
+      admissionSummary: this.buildTreeSummary('Admisión', prediction, rules),
+      roleSummary: this.buildRoleSummary(roleAssignment),
+      admissionReason: this.buildAdmissionReason(prediction, rules),
+      roleReason: roleAssignment.reason,
+    };
+
+    return {
+      model: this.repository.sanitize(model),
+      prediction,
+      rules,
+      roleAssignment,
+      explanation,
+    };
+  }
+
+  private async predictRoleAssignment(features: Record<string, number>): Promise<RoleAssignment> {
+    const roleModel = await this.getActiveModelByNameOrThrow(ROLE_MODEL_NAME);
+    const row = this.buildSingleRow(roleModel.featureNames, features);
+
+    const { loaded, payload } = await this.loadModelFromModel(roleModel);
+    const rawPrediction = loaded.predict([row])[0];
+    const prediction = this.decodePrediction(roleModel, rawPrediction);
+    const rules = this.extractRulePath(roleModel.featureNames, features, payload, loaded.root);
+    const suggestedRole = this.normalizeRoleLabel(prediction);
+    const mappedOccupationName = this.mapRoleToSeedOccupation(suggestedRole);
+    const profile = ROLE_PROFILES[suggestedRole];
+    const summary = this.buildRoleSummaryText(suggestedRole, rules, profile);
+
+    return {
+      suggestedRole,
+      mappedOccupationName,
+      modelId: roleModel.id,
+      modelName: roleModel.modelName,
+      rules,
+      summary,
+      reason: profile.reason,
+      recommendedAttributes: profile.recommendedAttributes,
+    };
+  }
+
+  private async loadModelFromModel(model: DecisionTreeModel): Promise<{
     loaded: { predict: (rows: number[][]) => number[]; root?: unknown };
     payload: unknown | null;
   }> {
     let payload: unknown | null = null;
 
-    if ((model as any).modelFilePath) {
+    if (model.modelFilePath) {
       try {
-        const absolute = nodePath.resolve(process.cwd(), (model as any).modelFilePath as string);
+        const absolute = nodePath.resolve(process.cwd(), model.modelFilePath);
         const raw = await fs.readFile(absolute, 'utf8');
         payload = JSON.parse(raw);
-      } catch (err) {
+      } catch {
         // fall through to try modelPayload
       }
     }
@@ -335,6 +515,7 @@ export class DecisionTreeService {
     const rules: string[] = [];
     let current: SerializedTreeNode | undefined = root;
     let guard = 0;
+    let step = 1;
 
     while (current && guard < 200) {
       guard += 1;
@@ -342,7 +523,7 @@ export class DecisionTreeService {
       const isLeaf = typeof current.category === 'string' || (!current.left && !current.right);
       if (isLeaf) {
         if (current.category) {
-          rules.push(`Leaf => ${current.category}`);
+          rules.push(`${step}) leaf => ${current.category}`);
         }
         break;
       }
@@ -368,9 +549,11 @@ export class DecisionTreeService {
 
       const inputValue: number = rawInputValue;
       const goesLeft: boolean = inputValue <= threshold;
+      const comparison = goesLeft ? '<=' : '>';
       const branch = goesLeft ? 'left' : 'right';
 
-      rules.push(`${featureName} (${inputValue}) <= ${threshold} => ${branch}`);
+      rules.push(`${step}) ${featureName} (${inputValue}) ${comparison} ${threshold} => ${branch}`);
+      step += 1;
 
       current = goesLeft ? current.left : current.right;
     }
@@ -396,5 +579,98 @@ export class DecisionTreeService {
     }
 
     return true;
+  }
+
+  private normalizeRoleLabel(roleLabel: string): AssignmentRoleName {
+    const normalized = roleLabel.trim().toLowerCase();
+
+    switch (normalized) {
+      case 'recolector de agua':
+        return 'Recolector de agua';
+      case 'recolector de comida':
+        return 'Recolector de comida';
+      case 'explorador':
+        return 'Explorador';
+      case 'guardia':
+        return 'Guardia';
+      case 'medico':
+        return 'Medico';
+      case 'ingeniero':
+        return 'Ingeniero';
+      default:
+        throw new Error(`Unknown role label returned by the AI model: ${roleLabel}`);
+    }
+  }
+
+  private mapRoleToSeedOccupation(role: AssignmentRoleName): string {
+    switch (role) {
+      case 'Recolector de agua':
+        return 'Water Collector';
+      case 'Recolector de comida':
+        return 'Food Gatherer';
+      case 'Explorador':
+        return 'Scout';
+      case 'Guardia':
+        return 'Guard';
+      case 'Medico':
+        return 'Medic';
+      case 'Ingeniero':
+        return 'Engineer';
+      default:
+        throw new Error(`Unknown role cannot be mapped to occupation: ${role}`);
+    }
+  }
+
+  private buildTreeSummary(treeName: string, decision: string, rules: string[]): string {
+    const verb = decision === 'ACCEPT' ? 'aprobo' : decision === 'REJECT' ? 'rechazo' : 'clasifico';
+    const ruleSummary = rules.length > 0 ? ` Reglas: ${rules[0]}.` : '';
+    return `${treeName}: el modelo ${verb} la solicitud.${ruleSummary}`;
+  }
+
+  private buildRoleSummary(roleAssignment: RoleAssignment): string {
+    return this.buildRoleSummaryText(roleAssignment.suggestedRole, roleAssignment.rules, {
+      reason: roleAssignment.reason,
+      recommendedAttributes: roleAssignment.recommendedAttributes,
+    });
+  }
+
+  private buildRoleSummaryText(
+    role: AssignmentRoleName,
+    rules: string[],
+    profile: RoleProfile,
+  ): string {
+    const occupation = this.mapRoleToSeedOccupation(role);
+    const recommended = profile.recommendedAttributes.slice(0, 3).join(', ');
+    return `Cargo sugerido: ${role} (${occupation}). Motivo: ${profile.reason}. Recomendado: ${recommended}.`;
+  }
+
+  private buildAdmissionReason(decision: string, rules: string[]): string {
+    if (rules.length === 0) {
+      return 'No fue posible identificar los criterios exactos evaluados por el arbol.';
+    }
+
+    const positives = rules.filter((rule) => rule.includes('supera el umbral'));
+    const negatives = rules.filter((rule) => rule.includes('no supera el umbral'));
+
+    const concisePositive = rules
+      .filter((rule) => rule.includes('=> right'))
+      .slice(0, 2)
+      .join('; ');
+    const conciseNegative = rules
+      .filter((rule) => rule.includes('=> left'))
+      .slice(0, 2)
+      .join('; ');
+
+    if (decision === 'ACCEPT') {
+      const reasons = concisePositive || positives.join('; ') || rules.slice(0, 2).join('; ');
+      return `Aceptado porque los atributos evaluados cumplieron los umbrales requeridos: ${reasons}.`;
+    }
+
+    if (conciseNegative || negatives.length > 0) {
+      const reasons = conciseNegative || negatives.join('; ');
+      return `Rechazado porque uno o mas atributos quedaron por debajo de lo requerido: ${reasons}.`;
+    }
+
+    return `Rechazado por la combinacion de atributos evaluados por el modelo: ${rules.slice(0, 2).join('; ')}.`;
   }
 }

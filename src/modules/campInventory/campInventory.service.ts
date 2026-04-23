@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
+import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 
 import { CampInventoryRepository } from './campInventory.repository';
@@ -17,6 +18,7 @@ export class CampInventoryService {
   constructor(
     private readonly repository: CampInventoryRepository,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createItem(data: CreateCampInventoryDTO): Promise<CampInventory> {
@@ -30,10 +32,22 @@ export class CampInventoryService {
 
     const existing = await this.repository.findByKey(data.campId, data.resourceTypeId);
     if (existing) {
-      throw new Error('This camp inventory item already exists');
+      throw new Error('Este elemento de inventario del campamento ya existe');
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notificationService.notifyCampRoles(
+      created.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Elemento de inventario creado',
+        message: `Se agrego el recurso ${created.resourceTypeId} al inventario del campamento.`,
+        sourceType: 'camp_inventory',
+        sourceId: created.resourceTypeId,
+      },
+    );
+    return created;
   }
 
   async getItem(campId: number, resourceTypeId: number): Promise<CampInventory | null> {
@@ -71,10 +85,49 @@ export class CampInventoryService {
     resourceTypeId: number,
     data: UpdateCampInventoryDTO,
   ): Promise<CampInventory | null> {
-    return await this.repository.update(campId, resourceTypeId, data);
+    const updated = await this.repository.update(campId, resourceTypeId, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Elemento de inventario actualizado',
+        message: `Se actualizo el recurso ${updated.resourceTypeId} en el inventario del campamento.`,
+        sourceType: 'camp_inventory',
+        sourceId: updated.resourceTypeId,
+      },
+    );
+
+    return updated;
   }
 
   async deleteItem(campId: number, resourceTypeId: number): Promise<boolean> {
-    return await this.repository.delete(campId, resourceTypeId);
+    const existing = await this.repository.findByKey(campId, resourceTypeId);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(campId, resourceTypeId);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Elemento de inventario eliminado',
+        message: `Se elimino el recurso ${resourceTypeId} del inventario del campamento.`,
+        sourceType: 'camp_inventory',
+        sourceId: resourceTypeId,
+      },
+    );
+
+    return true;
   }
 }

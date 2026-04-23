@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
@@ -8,6 +8,7 @@ import { UserRepository } from './systemUser.repository';
 import { User, CreateUserDTO, UserResponse, LoginDTO } from './systemUser.model';
 import { EncryptionService } from '../../services/encryption.service';
 import { UserRoleHistoryRepository } from '../userRoleHistory/userRoleHistory.repository';
+import { NotificationService } from '../notification/notification.service';
 import type { UpdateSystemUserDto } from './dto';
 
 @Injectable()
@@ -15,8 +16,40 @@ export class UserService {
   constructor(
     private userRepo: UserRepository,
     private readonly userRoleHistoryRepository: UserRoleHistoryRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async handleRoleChange(
+    existing: User,
+    newRole: User['role'],
+    reason: string | null = null,
+  ): Promise<void> {
+    await this.userRoleHistoryRepository.create({
+      userId: existing.id,
+      previousRole: existing.role,
+      newRole,
+      changedBy: existing.id,
+      reason,
+    });
+
+    await this.notificationService.notifyUser(existing.id, {
+      campId: existing.campId,
+      type: 'ROLE_UPDATED',
+      title: 'Rol actualizado',
+      message: `Tu rol del sistema fue actualizado a ${newRole}`,
+      sourceType: 'system_user',
+      sourceId: existing.id,
+    });
+
+    await this.notificationService.notifyCampRoles(existing.campId, ['SYSTEM_ADMIN'], {
+      type: 'ROLE_UPDATED',
+      title: 'Rol de usuario actualizado',
+      message: `El usuario ${existing.username} cambio su rol de ${existing.role} a ${newRole}.`,
+      sourceType: 'system_user',
+      sourceId: existing.id,
+    });
+  }
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
     await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
@@ -72,14 +105,40 @@ export class UserService {
   ): Promise<UserResponse | null> {
     const existing = await this.userRepo.findById(id);
     if (!existing) return null;
+
+    const newRole = data.role;
+    if (newRole !== undefined && existing.role === newRole) {
+      throw new BadRequestException(`El usuario ya tiene asignado el rol ${newRole}`);
+    }
+
+    const hasRoleChange = data.role !== undefined;
+    const hasStatusChange = data.status !== undefined && data.status !== existing.status;
+
+    if (!hasRoleChange && !hasStatusChange) {
+      const { passwordHash: _, ...userResponse } = existing;
+      return userResponse;
+    }
+
     const user = await this.userRepo.update(id, data);
-    if (data.role !== undefined && data.role !== existing.role) {
-      await this.userRoleHistoryRepository.create({
-        userId: id,
-        previousRole: existing.role,
-        newRole: data.role,
-        changedBy: 0,
-        reason: null,
+    if (hasRoleChange) {
+      await this.handleRoleChange(existing, data.role as User['role']);
+    }
+    if (hasStatusChange && user) {
+      await this.notificationService.notifyUser(user.id, {
+        campId: user.campId,
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `Tu estado de usuario fue cambiado a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
+      });
+
+      await this.notificationService.notifyCampRoles(user.campId, ['SYSTEM_ADMIN'], {
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `El usuario ${user.username} cambio su estado de ${existing.status} a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
       });
     }
     if (!user) return null;
@@ -88,7 +147,27 @@ export class UserService {
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    return this.userRepo.delete(id);
+    const existing = await this.userRepo.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.userRepo.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyUser(existing.id, {
+      campId: existing.campId,
+      type: 'USER_STATUS_UPDATED',
+      title: 'Cuenta de usuario eliminada',
+      message: 'Tu cuenta de usuario del sistema fue eliminada.',
+      sourceType: 'system_user',
+      sourceId: existing.id,
+      sendEmail: false,
+    });
+
+    return true;
   }
 
   async countUsersByCamp(campId: number): Promise<number> {
@@ -96,15 +175,48 @@ export class UserService {
   }
 
   async changeUserRole(id: number, newRole: User['role']): Promise<UserResponse | null> {
+    const existing = await this.userRepo.findById(id);
+    if (!existing) return null;
+
+    if (existing.role === newRole) {
+      throw new BadRequestException(`El usuario ya tiene asignado el rol ${newRole}`);
+    }
+
     const user = await this.userRepo.update(id, { role: newRole });
     if (!user) return null;
+
+    await this.handleRoleChange(existing, newRole);
+
     const { passwordHash: _, ...userResponse } = user;
     return userResponse;
   }
 
   async toggleUserStatus(id: number, newStatus: User['status']): Promise<UserResponse | null> {
+    const existing = await this.userRepo.findById(id);
+    if (!existing) return null;
+
     const user = await this.userRepo.update(id, { status: newStatus });
     if (!user) return null;
+
+    if (existing.status !== user.status) {
+      await this.notificationService.notifyUser(user.id, {
+        campId: user.campId,
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `Tu estado de usuario fue cambiado a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
+      });
+
+      await this.notificationService.notifyCampRoles(user.campId, ['SYSTEM_ADMIN'], {
+        type: 'USER_STATUS_UPDATED',
+        title: 'Estado de usuario actualizado',
+        message: `El usuario ${user.username} cambio su estado de ${existing.status} a ${user.status}.`,
+        sourceType: 'system_user',
+        sourceId: user.id,
+      });
+    }
+
     const { passwordHash: _, ...userResponse } = user;
     return userResponse;
   }

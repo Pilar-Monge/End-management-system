@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { CampEntity } from '../camp/camp.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { IntercampRequestEntity } from './intercampRequest.entity';
 import type {
   CreateIntercampRequestDTO,
@@ -36,9 +38,18 @@ export class IntercampRequestRepository {
     return await this.repo.findOne({ where: { id } });
   }
 
+  async findCampById(id: number): Promise<CampEntity | null> {
+    return await this.repo.manager.getRepository(CampEntity).findOne({ where: { id } });
+  }
+
+  async findUserById(id: number): Promise<UserEntity | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
+  }
+
   async findAllAndCount(filters?: {
     originCampId?: number;
     destinationCampId?: number;
+    involvedCampId?: number;
     status?: IntercampRequestStatus;
     createdBy?: number;
     respondedBy?: number;
@@ -56,6 +67,12 @@ export class IntercampRequestRepository {
     if (filters?.destinationCampId !== undefined) {
       qb.andWhere('r.destinationCampId = :destinationCampId', {
         destinationCampId: filters.destinationCampId,
+      });
+    }
+
+    if (filters?.involvedCampId !== undefined) {
+      qb.andWhere('(r.originCampId = :involvedCampId OR r.destinationCampId = :involvedCampId)', {
+        involvedCampId: filters.involvedCampId,
       });
     }
 

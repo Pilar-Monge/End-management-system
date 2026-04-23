@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { PersonEntity } from '../person/person.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { DailyCollectionRecordEntity } from './dailyCollectionRecord.entity';
 import type {
   CreateDailyCollectionRecordDTO,
@@ -42,6 +45,20 @@ export class DailyCollectionRecordRepository {
     date: Date,
   ): Promise<DailyCollectionRecord | null> {
     return await this.repo.findOne({ where: { personId, resourceTypeId, date } });
+  }
+
+  async findPersonById(id: number): Promise<PersonEntity | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({ where: { id } });
+  }
+
+  async findUserById(id: number): Promise<UserEntity | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
+  }
+
+  async findMovementById(id: number): Promise<InventoryMovementEntity | null> {
+    return await this.repo.manager
+      .getRepository(InventoryMovementEntity)
+      .findOne({ where: { id } });
   }
 
   async findAllAndCount(filters?: {

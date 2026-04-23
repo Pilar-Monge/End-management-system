@@ -1,8 +1,4 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-
-import { UserEntity } from '../systemUser/systemUser.entity';
-import { UserRoleHistoryEntity } from './userRoleHistory.entity';
 import { UserRoleHistoryRepository } from './userRoleHistory.repository';
 import type {
   CreateUserRoleHistoryDTO,
@@ -12,48 +8,60 @@ import type {
 
 @Injectable()
 export class UserRoleHistoryService {
-  constructor(
-    private readonly repository: UserRoleHistoryRepository,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly repository: UserRoleHistoryRepository) {}
 
   async createEntry(data: CreateUserRoleHistoryDTO): Promise<UserRoleHistory> {
-    return await this.dataSource.transaction(async (manager) => {
-      const userRepo = manager.getRepository(UserEntity);
-      const historyRepo = manager.getRepository(UserRoleHistoryEntity);
+    try {
+      const result = await this.repository.createEntryTransactional(data);
+      return result.createdEntry;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
 
-      const targetUser = await userRepo.findOne({ where: { id: data.userId } });
-      if (!targetUser) {
-        throw new NotFoundException('User not found');
+      if (message === 'USER_NOT_FOUND') {
+        throw new NotFoundException('Usuario no encontrado');
       }
 
-      const changedByUser = await userRepo.findOne({ where: { id: data.changedBy } });
-      if (!changedByUser) {
-        throw new NotFoundException('User who changed role not found');
+      if (message === 'CHANGED_BY_NOT_FOUND') {
+        throw new NotFoundException('Usuario que cambio el rol no encontrado');
       }
 
-      if (targetUser.role !== data.previousRole) {
-        throw new BadRequestException('previousRole does not match current user role');
+      if (message === 'PREVIOUS_ROLE_MISMATCH') {
+        throw new BadRequestException('previousRole no coincide con el rol actual del usuario');
       }
 
-      targetUser.role = data.newRole;
-      await userRepo.save(targetUser);
-
-      const historyEntry = historyRepo.create({
-        userId: data.userId,
-        previousRole: data.previousRole,
-        newRole: data.newRole,
-        changedBy: data.changedBy,
-        ...(data.changeDate !== undefined ? { changeDate: data.changeDate } : {}),
-        reason: data.reason ?? null,
-      });
-
-      return await historyRepo.save(historyEntry);
-    });
+      throw error;
+    }
   }
 
   async getEntryById(id: number): Promise<UserRoleHistory | null> {
     return await this.repository.findById(id);
+  }
+
+  async getEntryCampId(id: number): Promise<number | null> {
+    const entry = await this.repository.findById(id);
+    if (!entry) {
+      return null;
+    }
+
+    const user = await this.dataSource.getRepository(UserEntity).findOne({
+      where: { id: entry.userId },
+      select: {
+        campId: true,
+      },
+    });
+
+    return user?.campId ?? null;
+  }
+
+  async getUserCampId(userId: number): Promise<number | null> {
+    const user = await this.dataSource.getRepository(UserEntity).findOne({
+      where: { id: userId },
+      select: {
+        campId: true,
+      },
+    });
+
+    return user?.campId ?? null;
   }
 
   async getAllEntries(filters?: {

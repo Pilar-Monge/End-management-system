@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -44,14 +45,49 @@ import { CreateInventoryMovementDto, UpdateInventoryMovementDto } from './dto';
 @ApiTags('Inventory Movement')
 export class InventoryMovementController {
   constructor(private readonly service: InventoryMovementService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
   @Post()
   @Roles('WORKER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Inventory Movement' })
   @ApiBody({ type: CreateInventoryMovementDto })
   @ApiCreatedResponseData(InventoryMovementEntity, { description: 'Inventory Movement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateInventoryMovementDTO) {
+  async create(@Body() body: CreateInventoryMovementDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (body.campId !== currentUser.campId) {
+        throw new BadRequestException('You can only create movements in your own camp');
+      }
+
+      if (body.recordedBy !== currentUser.userId) {
+        throw new BadRequestException('recordedBy must match the authenticated user');
+      }
+
       const movement = await this.service.createMovement(body);
       return {
         success: true,
@@ -71,7 +107,7 @@ export class InventoryMovementController {
   @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -79,6 +115,11 @@ export class InventoryMovementController {
 
     const movement = await this.service.getMovementById(parsedId);
     if (!movement) throw new NotFoundException('Inventory movement not found');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && movement.campId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this movement');
+    }
 
     return { success: true, data: movement };
   }
@@ -101,6 +142,7 @@ export class InventoryMovementController {
     @Query('recordedBy') recordedBy?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -112,9 +154,25 @@ export class InventoryMovementController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.campId = currentUser.campId;
+      }
+
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
+
+        if (!isAdmin && parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query movements from another camp');
+        }
+
         filters.campId = parsedCampId;
       }
 
@@ -135,6 +193,11 @@ export class InventoryMovementController {
         if (Number.isNaN(parsedRecordedBy)) {
           throw new BadRequestException('Invalid recordedBy');
         }
+
+        if (!isAdmin && parsedRecordedBy !== currentUser.userId) {
+          throw new BadRequestException('recordedBy filter must match the authenticated user');
+        }
+
         filters.recordedBy = parsedRecordedBy;
       }
 
@@ -182,13 +245,35 @@ export class InventoryMovementController {
   @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateInventoryMovementDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateInventoryMovementDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingMovement = await this.service.getMovementById(parsedId);
+      if (!existingMovement) {
+        throw new NotFoundException('Inventory movement not found');
+      }
+
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        (existingMovement.campId !== currentUser.campId ||
+          (body.campId !== undefined && body.campId !== currentUser.campId))
+      ) {
+        throw new BadRequestException('You can only update movements from your own camp');
+      }
+
+      if (body.recordedBy !== undefined && body.recordedBy !== currentUser.userId) {
+        throw new BadRequestException('recordedBy must match the authenticated user');
+      }
+
       const movement = await this.service.updateMovement(parsedId, body);
       if (!movement) throw new NotFoundException('Inventory movement not found');
 

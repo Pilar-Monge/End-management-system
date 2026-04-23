@@ -10,7 +10,9 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -39,13 +41,39 @@ import { CreateAccessLogDto, UpdateAccessLogDto } from './dto';
 @Roles('SYSTEM_ADMIN')
 export class AccessLogController {
   constructor(private readonly service: AccessLogService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
   @Post()
   @ApiOperation({ summary: 'Create Access Log' })
   @ApiBody({ type: CreateAccessLogDto })
   @ApiCreatedResponseData(AccessLogEntity, { description: 'Access Log created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateAccessLogDTO) {
+  async create(@Body() body: CreateAccessLogDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (body.campId !== currentUser.campId) {
+        throw new BadRequestException('You cannot create logs for another camp');
+      }
+
       const log = await this.service.createLog(body);
       return {
         success: true,
@@ -68,14 +96,16 @@ export class AccessLogController {
   @ApiOkResponseData(AccessLogEntity, { description: 'Access Log found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
+    const currentUser = this.getCurrentUser(req);
     const log = await this.service.getLogById(parsedId);
     if (!log) throw new NotFoundException('Access log not found');
+    if (log.campId !== currentUser.campId) throw new NotFoundException('Access log not found');
 
     return { success: true, data: log };
   }
@@ -97,6 +127,7 @@ export class AccessLogController {
     @Query('eventType') eventType?: AccessLogEventType,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -146,6 +177,13 @@ export class AccessLogController {
         filters.limit = parsedLimit;
       }
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      filters.campId = currentUser.campId;
+
       const result = await this.service.getAllLogs(filters);
       const resolvedPage = filters.page ?? 1;
       const resolvedLimit = filters.limit ?? 10;
@@ -173,13 +211,20 @@ export class AccessLogController {
   @ApiOkResponseData(AccessLogEntity, { description: 'Access Log updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateAccessLogDTO) {
+  async update(@Param('id') id: string, @Body() body: UpdateAccessLogDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingLog = await this.service.getLogById(parsedId);
+      if (!existingLog) throw new NotFoundException('Access log not found');
+      if (existingLog.campId !== currentUser.campId) {
+        throw new NotFoundException('Access log not found');
+      }
+
       const log = await this.service.updateLog(parsedId, body);
       if (!log) throw new NotFoundException('Access log not found');
 
@@ -204,13 +249,20 @@ export class AccessLogController {
   @ApiOkResponseMessage({ description: 'Access Log deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingLog = await this.service.getLogById(parsedId);
+      if (!existingLog) throw new NotFoundException('Access log not found');
+      if (existingLog.campId !== currentUser.campId) {
+        throw new NotFoundException('Access log not found');
+      }
+
       const deleted = await this.service.deleteLog(parsedId);
       if (!deleted) throw new NotFoundException('Access log not found');
 

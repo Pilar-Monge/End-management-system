@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
+import { NotificationService } from '../notification/notification.service';
 import { PersonEntity } from '../person/person.entity';
 import { TransferEntity } from '../transfer/transfer.entity';
 
@@ -17,8 +18,70 @@ import type {
 export class TransferPersonService {
   constructor(
     private readonly repository: TransferPersonRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async resolveTransferScope(transferId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  }> {
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new Error('No se encontro el alcance del traslado');
+    }
+
+    return scope;
+  }
+
+  private async notifyTransferPersonEvent(
+    transferId: number,
+    personId: number,
+    status: PersonTransferStatus,
+    sourceId: number,
+  ): Promise<void> {
+    const scope = await this.resolveTransferScope(transferId);
+    const title = 'Actualizacion de persona en traslado';
+    const message = `La persona ${personId} en el traslado ${transferId} cambio al estado ${status}.`;
+
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_PERSON_UPDATED',
+        title,
+        message,
+        sourceType: 'transfer_person',
+        sourceId,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_PERSON_UPDATED',
+        title,
+        message,
+        sourceType: 'transfer_person',
+        sourceId,
+      },
+    );
+
+    const linkedUser = await this.repository.findLinkedUserByPersonId(personId);
+
+    if (!linkedUser) {
+      return;
+    }
+
+    await this.notificationService.notifyUser(linkedUser.id, {
+      campId: linkedUser.campId,
+      type: 'TRANSFER_PERSON_UPDATED',
+      title: 'Estado de traslado actualizado',
+      message: `Tu traslado fue actualizado al estado ${status}.`,
+      sourceType: 'transfer_person',
+      sourceId,
+    });
+  }
 
   async createTransferPerson(data: CreateTransferPersonDTO): Promise<TransferPerson> {
     await assertEntityExists(this.dataSource, TransferEntity, data.transferId, 'Transfer');
@@ -26,10 +89,17 @@ export class TransferPersonService {
 
     const existing = await this.repository.findByTransferAndPerson(data.transferId, data.personId);
     if (existing) {
-      throw new Error('This person is already assigned to this transfer');
+      throw new Error('Esta persona ya esta asignada a este traslado');
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notifyTransferPersonEvent(
+      created.transferId,
+      created.personId,
+      created.status,
+      created.id,
+    );
+    return created;
   }
 
   async getTransferPersonById(id: number): Promise<TransferPerson | null> {
@@ -88,14 +158,41 @@ export class TransferPersonService {
         resolvedPersonId,
       );
       if (byPair && byPair.id !== id) {
-        throw new Error('This person is already assigned to this transfer');
+        throw new Error('Esta persona ya esta asignada a este traslado');
       }
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (updated && updated.status !== existing.status) {
+      await this.notifyTransferPersonEvent(
+        updated.transferId,
+        updated.personId,
+        updated.status,
+        updated.id,
+      );
+    }
+
+    return updated;
   }
 
   async deleteTransferPerson(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyTransferPersonEvent(
+      existing.transferId,
+      existing.personId,
+      existing.status,
+      existing.id,
+    );
+
+    return true;
   }
 }

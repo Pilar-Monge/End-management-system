@@ -13,6 +13,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -42,9 +43,35 @@ import { ExpeditionResourceObtainedEntity } from './expeditionResourceObtained.e
 import { CreateExpeditionResourceObtainedDto, UpdateExpeditionResourceObtainedDto } from './dto';
 @Controller('expedition-resources-obtained')
 @ApiTags('Expedition Resource Obtained')
-@Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+@Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
 export class ExpeditionResourceObtainedController {
   constructor(private readonly service: ExpeditionResourceObtainedService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create Expedition Resource Obtained' })
   @ApiBody({ type: CreateExpeditionResourceObtainedDto })
@@ -52,8 +79,13 @@ export class ExpeditionResourceObtainedController {
     description: 'Expedition Resource Obtained created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateExpeditionResourceObtainedDTO) {
+  async create(@Body() body: CreateExpeditionResourceObtainedDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol) && body.recordedBy !== currentUser.userId) {
+        throw new BadRequestException('recordedBy must match the authenticated user');
+      }
+
       const record = await this.service.createRecord(body);
       return {
         success: true,
@@ -80,7 +112,7 @@ export class ExpeditionResourceObtainedController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -88,6 +120,11 @@ export class ExpeditionResourceObtainedController {
 
     const record = await this.service.getRecordById(parsedId);
     if (!record) throw new NotFoundException('Record not found');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && record.recordedBy !== currentUser.userId) {
+      throw new BadRequestException('You do not have permission to view this record');
+    }
 
     return { success: true, data: record };
   }
@@ -110,6 +147,7 @@ export class ExpeditionResourceObtainedController {
     @Query('recordedBy') recordedBy?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -119,6 +157,17 @@ export class ExpeditionResourceObtainedController {
         page?: number;
         limit?: number;
       } = {};
+
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.recordedBy = currentUser.userId;
+      }
 
       if (expeditionId) {
         const parsedExpeditionId = Number.parseInt(expeditionId, 10);
@@ -141,6 +190,11 @@ export class ExpeditionResourceObtainedController {
         if (Number.isNaN(parsedRecordedBy)) {
           throw new BadRequestException('Invalid recordedBy');
         }
+
+        if (!isAdmin && parsedRecordedBy !== currentUser.userId) {
+          throw new BadRequestException('recordedBy filter must match the authenticated user');
+        }
+
         filters.recordedBy = parsedRecordedBy;
       }
 
@@ -191,13 +245,38 @@ export class ExpeditionResourceObtainedController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateExpeditionResourceObtainedDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateExpeditionResourceObtainedDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingRecord = await this.service.getRecordById(parsedId);
+      if (!existingRecord) {
+        throw new NotFoundException('Record not found');
+      }
+
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        existingRecord.recordedBy !== currentUser.userId
+      ) {
+        throw new BadRequestException('You can only update records created by your user');
+      }
+
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        body.recordedBy !== undefined &&
+        body.recordedBy !== currentUser.userId
+      ) {
+        throw new BadRequestException('recordedBy must match the authenticated user');
+      }
+
       const record = await this.service.updateRecord(parsedId, body);
       if (!record) throw new NotFoundException('Record not found');
 

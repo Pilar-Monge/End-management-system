@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
 import { AiAdmissionReportEntity } from './aiAdmissionReport.entity';
 import type {
   AiAdmissionReport,
@@ -36,6 +37,23 @@ export class AiAdmissionReportRepository {
 
   async findByRequestId(requestId: number): Promise<AiAdmissionReport | null> {
     return await this.repo.findOne({ where: { requestId } });
+  }
+
+  async admissionRequestExists(requestId: number): Promise<boolean> {
+    return await this.repo.manager.getRepository(AdmissionRequestEntity).exist({
+      where: { id: requestId },
+    });
+  }
+
+  async findAdmissionRequestCampId(requestId: number): Promise<number | null> {
+    const request = await this.repo.manager.getRepository(AdmissionRequestEntity).findOne({
+      where: { id: requestId },
+      select: {
+        campId: true,
+      },
+    });
+
+    return request?.campId ?? null;
   }
 
   async findAllAndCount(filters?: {

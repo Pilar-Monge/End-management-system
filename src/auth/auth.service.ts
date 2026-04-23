@@ -1,17 +1,26 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
+import { EncryptionService } from '../services/encryption.service';
+import { EmailOutboxService } from '../modules/email/emailOutbox.service';
+import { NotificationService } from '../modules/notification/notification.service';
 import { UserRepository } from '../modules/systemUser/systemUser.repository';
+import { SystemTimeService } from '../modules/systemTime/systemTime.service';
 import { AuthRepository } from './auth.repository';
-import type { JwtPayload, LoginDTO, LoginResponse } from './auth.model';
+import type { JwtPayload, LoginDTO, LoginResponse, SessionValidationOptions } from './auth.model';
+
+const SESSION_INACTIVITY_MINUTES = 20;
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly systemUserRepository: UserRepository,
+    private readonly systemTimeService: SystemTimeService,
+    private readonly emailOutboxService: EmailOutboxService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async login(dto: LoginDTO, ip: string): Promise<LoginResponse> {
@@ -54,10 +63,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
-      user.campId,
-    );
-
     const secret = process.env.JWT_SECRET;
     if (!secret) {
       throw new Error('JWT_SECRET is not configured');
@@ -70,11 +75,11 @@ export class AuthService {
     };
 
     const token = jwt.sign({ ...payload, jti: randomUUID() }, secret, {
-      expiresIn: `${sessionInactivityMinutes}m`,
+      expiresIn: `${SESSION_INACTIVITY_MINUTES}m`,
     });
 
-    const now = new Date();
-    const expirationDate = new Date(now.getTime() + sessionInactivityMinutes * 60 * 1000);
+    const now = this.systemTimeService.now();
+    const expirationDate = new Date(now.getTime() + SESSION_INACTIVITY_MINUTES * 60 * 1000);
 
     const session = await this.authRepository.createSession({
       token,
@@ -118,7 +123,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid session');
     }
 
-    await this.authRepository.closeSession(session.id);
+    await this.authRepository.closeSession(session.id, this.systemTimeService.now());
 
     await this.authRepository.createAccessLog({
       sessionId: session.id,
@@ -130,7 +135,7 @@ export class AuthService {
     });
   }
 
-  async validateSession(token: string, ip: string): Promise<JwtPayload> {
+  decodeAndVerifyToken(token: string): JwtPayload {
     const normalizedToken = typeof token === 'string' ? token.trim() : '';
     const secret = process.env.JWT_SECRET;
 
@@ -158,38 +163,47 @@ export class AuthService {
       throw new UnauthorizedException('Token inválido');
     }
 
-    const payload: JwtPayload = {
+    return {
       userId: decodedToken.userId,
       campId: decodedToken.campId,
       rol: decodedToken.rol,
     };
+  }
+
+  async validateSession(
+    token: string,
+    ip: string,
+    options?: SessionValidationOptions,
+  ): Promise<JwtPayload> {
+    const normalizedToken = typeof token === 'string' ? token.trim() : '';
+    const payload = this.decodeAndVerifyToken(normalizedToken);
 
     const session = await this.authRepository.findActiveSessionByToken(normalizedToken);
     if (!session) {
       throw new UnauthorizedException('Sesión no encontrada');
     }
 
-    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
-      session.campId,
-    );
-
-    const now = new Date();
+    const now = this.systemTimeService.now();
     const inactiveMilliseconds = now.getTime() - session.lastActivityDate.getTime();
 
-    if (inactiveMilliseconds > sessionInactivityMinutes * 60000) {
-      await this.authRepository.expireSession(session.id);
+    if (inactiveMilliseconds >= SESSION_INACTIVITY_MINUTES * 60000) {
+      await this.authRepository.expireSession(session.id, now);
       await this.authRepository.createAccessLog({
         sessionId: session.id,
         userId: session.userId,
         campId: session.campId,
         eventType: 'INACTIVITY_EXPIRATION',
+        eventDate: now,
         sourceIp: ip,
         detail: 'EXPIRACION_INACTIVIDAD',
       });
       throw new UnauthorizedException('Sesión expirada por inactividad');
     }
 
-    await this.authRepository.updateSessionLastActivity(session.id);
+    if (options?.updateLastActivity === true) {
+      await this.authRepository.updateSessionLastActivity(session.id, now);
+    }
+
     return payload;
   }
 
@@ -199,14 +213,154 @@ export class AuthService {
       throw new Error('JWT_SECRET is not configured');
     }
 
-    const sessionInactivityMinutes = await this.authRepository.findCampSessionInactivityMinutes(
-      payload.campId,
-    );
-
     const token = jwt.sign({ ...payload, jti: randomUUID() }, secret, {
-      expiresIn: `${sessionInactivityMinutes}m`,
+      expiresIn: `${SESSION_INACTIVITY_MINUTES}m`,
     });
 
     return token;
+  }
+
+  async forgotPassword(email: string, campId: number, ip: string): Promise<void> {
+    const normalizedEmail = typeof email === 'string' ? email.trim() : '';
+    if (!normalizedEmail || !Number.isInteger(campId) || campId <= 0) {
+      return;
+    }
+
+    const user = await this.systemUserRepository.findByEmail(normalizedEmail, campId);
+    if (!user || user.status !== 'ACTIVE') {
+      return;
+    }
+
+    const now = this.systemTimeService.now();
+    const ttlMinutes = this.resolvePasswordResetTtlMinutes();
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = this.hashResetToken(rawToken);
+    const expiresAt = new Date(now.getTime() + ttlMinutes * 60 * 1000);
+
+    await this.authRepository.invalidateActivePasswordResetTokens(user.id);
+    await this.authRepository.createPasswordResetToken({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      requestIp: ip,
+    });
+
+    await this.authRepository.createAccessLog({
+      sessionId: null,
+      userId: user.id,
+      campId: user.campId,
+      eventType: 'PASSWORD_RESET_REQUEST',
+      eventDate: now,
+      sourceIp: ip,
+      detail: 'PASSWORD_RESET_REQUESTED',
+    });
+
+    await this.notificationService.notifyUser(user.id, {
+      campId: user.campId,
+      type: 'PASSWORD_RESET_REQUESTED',
+      title: 'Solicitud de recuperacion de contrasena',
+      message: 'Se registro una solicitud para restablecer tu contrasena.',
+      sourceType: 'auth_password_reset',
+      sourceId: user.id,
+      sendEmail: false,
+    });
+
+    const resetUrl = this.buildPasswordResetUrl(rawToken);
+    await this.emailOutboxService.enqueue({
+      toEmail: user.email,
+      subject: 'Recuperacion de contrasena',
+      templateKey: 'password_reset_request',
+      payload: {
+        resetUrl,
+        expirationMinutes: String(ttlMinutes),
+      },
+    });
+  }
+
+  async resetPassword(token: string, newPassword: string, ip: string): Promise<void> {
+    const normalizedToken = typeof token === 'string' ? token.trim() : '';
+    const normalizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
+
+    if (!normalizedToken || normalizedPassword.length < 8) {
+      throw new BadRequestException('Token o contrasena invalida');
+    }
+
+    const now = this.systemTimeService.now();
+    const tokenHash = this.hashResetToken(normalizedToken);
+    const resetToken = await this.authRepository.findActivePasswordResetTokenByHash(tokenHash, now);
+    if (!resetToken) {
+      throw new BadRequestException('Token invalido o expirado');
+    }
+
+    const user = await this.systemUserRepository.findById(resetToken.userId);
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    const passwordHash = await EncryptionService.hashPassword(normalizedPassword);
+    await this.systemUserRepository.update(user.id, {
+      passwordHash,
+    });
+
+    await this.authRepository.markPasswordResetTokenUsed(resetToken.id, now);
+    await this.authRepository.invalidateActivePasswordResetTokens(user.id);
+    await this.authRepository.closeActiveSessionsByUser(user.id, now);
+    await this.authRepository.createAccessLog({
+      sessionId: null,
+      userId: user.id,
+      campId: user.campId,
+      eventType: 'PASSWORD_RESET_COMPLETED',
+      eventDate: now,
+      sourceIp: ip,
+      detail: 'PASSWORD_RESET_SUCCESS',
+    });
+
+    await this.notificationService.notifyUser(user.id, {
+      campId: user.campId,
+      type: 'PASSWORD_RESET_COMPLETED',
+      title: 'Contrasena actualizada',
+      message: 'Tu contrasena fue restablecida correctamente.',
+      sourceType: 'auth_password_reset',
+      sourceId: user.id,
+      sendEmail: false,
+    });
+
+    await this.emailOutboxService.enqueue({
+      toEmail: user.email,
+      subject: 'Contrasena actualizada',
+      templateKey: 'password_reset_confirmation',
+      payload: {
+        dateText: now.toISOString(),
+      },
+    });
+  }
+
+  private resolvePasswordResetTtlMinutes(): number {
+    const parsed = Number.parseInt(process.env.PASSWORD_RESET_TTL_MINUTES ?? '30', 10);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return 30;
+    }
+
+    return parsed;
+  }
+
+  private hashResetToken(rawToken: string): string {
+    return createHash('sha256').update(rawToken).digest('hex');
+  }
+
+  private buildPasswordResetUrl(rawToken: string): string {
+    const configuredBaseUrl = process.env.FRONTEND_RESET_PASSWORD_URL?.trim();
+    const fallback = 'http://localhost:5173/reset-password';
+    const baseUrl =
+      configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : fallback;
+
+    try {
+      const url = new URL(baseUrl);
+      url.searchParams.set('token', rawToken);
+      return url.toString();
+    } catch {
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      return `${baseUrl}${separator}token=${encodeURIComponent(rawToken)}`;
+    }
   }
 }

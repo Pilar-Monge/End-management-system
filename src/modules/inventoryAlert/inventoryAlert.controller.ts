@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -41,6 +42,32 @@ import { CreateInventoryAlertDto, UpdateInventoryAlertDto } from './dto';
 @ApiTags('Inventory Alert')
 export class InventoryAlertController {
   constructor(private readonly service: InventoryAlertService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
   @Post()
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Create Inventory Alert' })
@@ -59,7 +86,7 @@ export class InventoryAlertController {
   @ApiOkResponseData(InventoryAlertEntity, { description: 'Inventory Alert found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -67,6 +94,11 @@ export class InventoryAlertController {
 
     const alert = await this.service.getAlertById(parsedId);
     if (!alert) throw new NotFoundException('Inventory alert not found');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && alert.campId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this alert');
+    }
 
     return { success: true, data: alert };
   }
@@ -88,6 +120,7 @@ export class InventoryAlertController {
     @Query('resolved') resolved?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -98,9 +131,25 @@ export class InventoryAlertController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.campId = currentUser.campId;
+      }
+
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
+
+        if (!isAdmin && parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query alerts from another camp');
+        }
+
         filters.campId = parsedCampId;
       }
 
@@ -163,13 +212,31 @@ export class InventoryAlertController {
   @ApiOkResponseData(InventoryAlertEntity, { description: 'Inventory Alert updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateInventoryAlertDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateInventoryAlertDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingAlert = await this.service.getAlertById(parsedId);
+      if (!existingAlert) {
+        throw new NotFoundException('Inventory alert not found');
+      }
+
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        (existingAlert.campId !== currentUser.campId ||
+          (body.campId !== undefined && body.campId !== currentUser.campId))
+      ) {
+        throw new BadRequestException('You can only update alerts from your own camp');
+      }
+
       const alert = await this.service.updateAlert(parsedId, body);
       if (!alert) throw new NotFoundException('Inventory alert not found');
 

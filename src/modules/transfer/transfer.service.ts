@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { IntercampRequestEntity } from '../intercampRequest/intercampRequest.entity';
+import { NotificationService } from '../notification/notification.service';
 
 import { TransferRepository } from './transfer.repository';
 import type {
@@ -16,8 +17,23 @@ import type {
 export class TransferService {
   constructor(
     private readonly repository: TransferRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async resolveRequestScope(requestId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+    createdBy: number;
+    respondedBy: number | null;
+  }> {
+    const scope = await this.repository.resolveRequestScope(requestId);
+    if (!scope) {
+      throw new Error('Solicitud intercampamento no encontrada');
+    }
+
+    return scope;
+  }
 
   async createTransfer(data: CreateTransferDTO): Promise<Transfer> {
     await assertEntityExists(
@@ -29,10 +45,37 @@ export class TransferService {
 
     const existing = await this.repository.findByRequestId(data.requestId);
     if (existing) {
-      throw new Error('A transfer already exists for this request');
+      throw new Error('Ya existe un traslado para esta solicitud');
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    const scope = await this.resolveRequestScope(data.requestId);
+
+    const message = `El traslado #${created.id} fue creado con estado ${created.status}.`;
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_PENDING',
+        title: 'Nuevo traslado intercampamento',
+        message,
+        sourceType: 'transfer',
+        sourceId: created.id,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_PENDING',
+        title: 'Nuevo traslado intercampamento',
+        message,
+        sourceType: 'transfer',
+        sourceId: created.id,
+      },
+    );
+
+    return created;
   }
 
   async getTransferById(id: number): Promise<Transfer | null> {
@@ -79,14 +122,97 @@ export class TransferService {
 
       const byRequest = await this.repository.findByRequestId(data.requestId);
       if (byRequest && byRequest.id !== id) {
-        throw new Error('A transfer already exists for this request');
+        throw new Error('Ya existe un traslado para esta solicitud');
       }
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    if (updated.status !== existing.status) {
+      const scope = await this.resolveRequestScope(updated.requestId);
+      const notificationType =
+        updated.status === 'COMPLETED'
+          ? 'TRANSFER_COMPLETED'
+          : updated.status === 'CANCELED'
+            ? 'TRANSFER_CANCELED'
+            : 'TRANSFER_PENDING';
+
+      const title =
+        updated.status === 'COMPLETED'
+          ? 'Traslado completado'
+          : updated.status === 'CANCELED'
+            ? 'Traslado cancelado'
+            : 'Traslado pendiente de salida';
+
+      const message = `El traslado #${updated.id} cambio su estado a ${updated.status}.`;
+
+      await this.notificationService.notifyCampRoles(
+        scope.originCampId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: notificationType,
+          title,
+          message,
+          sourceType: 'transfer',
+          sourceId: updated.id,
+        },
+      );
+      await this.notificationService.notifyCampRoles(
+        scope.destinationCampId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: notificationType,
+          title,
+          message,
+          sourceType: 'transfer',
+          sourceId: updated.id,
+        },
+      );
+    }
+
+    return updated;
   }
 
   async deleteTransfer(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const scope = await this.resolveRequestScope(existing.requestId);
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    const title = 'Traslado eliminado';
+    const message = `El traslado #${id} fue eliminado del sistema.`;
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_CANCELED',
+        title,
+        message,
+        sourceType: 'transfer',
+        sourceId: id,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_CANCELED',
+        title,
+        message,
+        sourceType: 'transfer',
+        sourceId: id,
+      },
+    );
+
+    return true;
   }
 }

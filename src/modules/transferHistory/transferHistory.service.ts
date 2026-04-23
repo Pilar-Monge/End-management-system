@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
+import { NotificationService } from '../notification/notification.service';
+import type { NotificationType } from '../notification/notification.model';
 import { TransferEntity } from '../transfer/transfer.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 
@@ -17,13 +19,70 @@ import type { TransferStatus } from '../transfer/transfer.model';
 export class TransferHistoryService {
   constructor(
     private readonly repository: TransferHistoryRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async resolveTransferScope(transferId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  }> {
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new Error('No se encontro el alcance del traslado');
+    }
+
+    return scope;
+  }
+
+  private getNotificationTypeFromStatus(newStatus: TransferStatus): NotificationType {
+    if (newStatus === 'COMPLETED') {
+      return 'TRANSFER_COMPLETED';
+    }
+
+    if (newStatus === 'CANCELED') {
+      return 'TRANSFER_CANCELED';
+    }
+
+    return 'TRANSFER_PENDING';
+  }
+
+  private async notifyTransferHistoryChange(entry: TransferHistory): Promise<void> {
+    const scope = await this.resolveTransferScope(entry.transferId);
+    const title = 'Historial de traslado actualizado';
+    const message = `Traslado ${entry.transferId}: ${entry.previousStatus} -> ${entry.newStatus}.`;
+    const notificationType = this.getNotificationTypeFromStatus(entry.newStatus);
+
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: notificationType,
+        title,
+        message,
+        sourceType: 'transfer_history',
+        sourceId: entry.id,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: notificationType,
+        title,
+        message,
+        sourceType: 'transfer_history',
+        sourceId: entry.id,
+      },
+    );
+  }
 
   async createEntry(data: CreateTransferHistoryDTO): Promise<TransferHistory> {
     await assertEntityExists(this.dataSource, TransferEntity, data.transferId, 'Transfer');
     await assertEntityExists(this.dataSource, UserEntity, data.userId, 'User');
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notifyTransferHistoryChange(created);
+    return created;
   }
 
   async getEntryById(id: number): Promise<TransferHistory | null> {
@@ -70,10 +129,26 @@ export class TransferHistoryService {
       await assertEntityExists(this.dataSource, UserEntity, data.userId, 'User');
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (updated) {
+      await this.notifyTransferHistoryChange(updated);
+    }
+
+    return updated;
   }
 
   async deleteEntry(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyTransferHistoryChange(existing);
+    return true;
   }
 }

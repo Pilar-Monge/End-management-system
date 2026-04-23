@@ -10,7 +10,10 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -39,15 +42,94 @@ import { CreateTransferHistoryDto, UpdateTransferHistoryDto } from './dto';
 @Controller('transfer-history')
 @ApiTags('Transfer History')
 export class TransferHistoryController {
-  constructor(private readonly service: TransferHistoryService) {}
+  constructor(
+    private readonly service: TransferHistoryService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
+
+  private async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer t
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE t.id = $1
+       LIMIT 1`,
+      [transferId],
+    );
+
+    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!scope) {
+      throw new NotFoundException('Transfer not found');
+    }
+
+    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access transfer history involving your camp');
+    }
+  }
+
+  private async assertHistoryCampAccess(id: number, currentCampId: number): Promise<void> {
+    const rows = await this.dataSource.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer_history h
+       JOIN public.transfer t ON t.id = h.transfer_id
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE h.id = $1
+       LIMIT 1`,
+      [id],
+    );
+
+    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
+    if (!scope) {
+      throw new NotFoundException('Transfer history entry not found');
+    }
+
+    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
+      throw new BadRequestException('You can only access transfer history involving your camp');
+    }
+  }
+
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Transfer History' })
   @ApiBody({ type: CreateTransferHistoryDto })
   @ApiCreatedResponseData(TransferHistoryEntity, { description: 'Transfer History created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateTransferHistoryDTO) {
+  async create(@Body() body: CreateTransferHistoryDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        if (body.userId !== currentUser.userId) {
+          throw new BadRequestException('userId must match the authenticated user');
+        }
+
+        await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+      }
+
       const entry = await this.service.createEntry(body);
       return {
         success: true,
@@ -67,14 +149,25 @@ export class TransferHistoryController {
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol)) {
+      await this.assertHistoryCampAccess(parsedId, currentUser.campId);
+    }
+
     const entry = await this.service.getEntryById(parsedId);
     if (!entry) throw new NotFoundException('Transfer history entry not found');
+
+    if (!this.isSystemAdmin(currentUser.rol) && entry.userId !== currentUser.userId) {
+      throw new BadRequestException(
+        'You do not have permission to view this transfer history entry',
+      );
+    }
 
     return { success: true, data: entry };
   }
@@ -97,6 +190,7 @@ export class TransferHistoryController {
     @Query('newStatus') newStatus?: TransferStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -108,15 +202,36 @@ export class TransferHistoryController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.userId = currentUser.userId;
+      }
+
       if (transferId) {
         const parsedTransferId = Number.parseInt(transferId, 10);
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
+
+        if (!isAdmin) {
+          await this.assertTransferCampAccess(parsedTransferId, currentUser.campId);
+        }
+
         filters.transferId = parsedTransferId;
       }
 
       if (userId) {
         const parsedUserId = Number.parseInt(userId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
+
+        if (!isAdmin && parsedUserId !== currentUser.userId) {
+          throw new BadRequestException('userId filter must match the authenticated user');
+        }
+
         filters.userId = parsedUserId;
       }
 
@@ -172,13 +287,41 @@ export class TransferHistoryController {
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateTransferHistoryDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateTransferHistoryDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existing = await this.service.getEntryById(parsedId);
+      if (!existing) {
+        throw new NotFoundException('Transfer history entry not found');
+      }
+
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.assertHistoryCampAccess(parsedId, currentUser.campId);
+
+        if (existing.userId !== currentUser.userId) {
+          throw new BadRequestException(
+            'You can only update transfer history entries created by your user',
+          );
+        }
+
+        if (body.transferId !== undefined) {
+          await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+        }
+
+        if (body.userId !== undefined && body.userId !== currentUser.userId) {
+          throw new BadRequestException('userId must match the authenticated user');
+        }
+      }
+
       const entry = await this.service.updateEntry(parsedId, body);
       if (!entry) throw new NotFoundException('Transfer history entry not found');
 

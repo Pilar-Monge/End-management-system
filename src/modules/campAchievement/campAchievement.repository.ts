@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { AchievementEntity } from '../achievement/achievement.entity';
 import { CampAchievementEntity } from './campAchievement.entity';
 import type {
   CampAchievement,
@@ -30,6 +31,10 @@ export class CampAchievementRepository {
 
   async findByKey(campId: number, achievementId: number): Promise<CampAchievement | null> {
     return await this.repo.findOne({ where: { campId, achievementId } });
+  }
+
+  async findAchievementById(id: number): Promise<AchievementEntity | null> {
+    return await this.repo.manager.getRepository(AchievementEntity).findOne({ where: { id } });
   }
 
   async findAllAndCount(filters?: {

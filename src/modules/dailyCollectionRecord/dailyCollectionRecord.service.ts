@@ -1,13 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
-import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
-import { PersonEntity } from '../person/person.entity';
+import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { DailyCollectionRecordRepository } from './dailyCollectionRecord.repository';
 import type {
   CreateDailyCollectionRecordDTO,
@@ -19,13 +16,8 @@ import type {
 export class DailyCollectionRecordService {
   constructor(
     private readonly repository: DailyCollectionRecordRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
-    @InjectRepository(PersonEntity)
-    private readonly personRepo: Repository<PersonEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
-    @InjectRepository(InventoryMovementEntity)
-    private readonly movementRepo: Repository<InventoryMovementEntity>,
   ) {}
 
   private async validateCampConsistency(
@@ -38,40 +30,42 @@ export class DailyCollectionRecordService {
     await assertEntityExists(this.dataSource, CampEntity, campId, 'Camp');
     await assertEntityExists(this.dataSource, ResourceTypeEntity, resourceTypeId, 'Resource type');
 
-    const person = await this.personRepo.findOne({ where: { id: personId } });
+    const person = await this.repository.findPersonById(personId);
     if (!person) {
-      throw new NotFoundException('Person not found');
+      throw new NotFoundException('Persona no encontrada');
     }
 
     if (person.campId !== campId) {
-      throw new BadRequestException('Person does not belong to the provided camp');
+      throw new BadRequestException('La persona no pertenece al campamento proporcionado');
     }
 
-    const user = await this.userRepo.findOne({ where: { id: recordedBy } });
+    const user = await this.repository.findUserById(recordedBy);
     if (!user) {
-      throw new NotFoundException('User who recorded the collection was not found');
+      throw new NotFoundException('No se encontro el usuario que registro la recoleccion');
     }
 
     if (user.campId !== campId) {
-      throw new BadRequestException('RecordedBy user does not belong to the provided camp');
+      throw new BadRequestException(
+        'El usuario recordedBy no pertenece al campamento proporcionado',
+      );
     }
 
     if (movementId === null || movementId === undefined) {
       return;
     }
 
-    const movement = await this.movementRepo.findOne({ where: { id: movementId } });
+    const movement = await this.repository.findMovementById(movementId);
     if (!movement) {
-      throw new NotFoundException('Inventory movement not found');
+      throw new NotFoundException('Movimiento de inventario no encontrado');
     }
 
     if (movement.campId !== campId) {
-      throw new BadRequestException('Movement does not belong to the provided camp');
+      throw new BadRequestException('El movimiento no pertenece al campamento proporcionado');
     }
 
     if (movement.resourceTypeId !== resourceTypeId) {
       throw new BadRequestException(
-        'Movement resource type does not match provided resourceTypeId',
+        'El tipo de recurso del movimiento no coincide con resourceTypeId',
       );
     }
   }
@@ -93,11 +87,23 @@ export class DailyCollectionRecordService {
 
     if (existing) {
       throw new Error(
-        'A daily collection record for this person, resource type and date already exists',
+        'Ya existe un registro de recoleccion diaria para esta persona, tipo de recurso y fecha',
       );
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notificationService.notifyCampRoles(
+      created.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Registro diario de recoleccion creado',
+        message: `Se registro una recoleccion diaria para el recurso ${created.resourceTypeId}.`,
+        sourceType: 'daily_collection_record',
+        sourceId: created.id,
+      },
+    );
+    return created;
   }
 
   async getRecordById(id: number): Promise<DailyCollectionRecord | null> {
@@ -151,10 +157,49 @@ export class DailyCollectionRecordService {
 
     await this.validateCampConsistency(campId, personId, recordedBy, resourceTypeId, movementId);
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      updated.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Registro diario de recoleccion actualizado',
+        message: `El registro diario ${updated.id} fue actualizado.`,
+        sourceType: 'daily_collection_record',
+        sourceId: updated.id,
+      },
+    );
+
+    return updated;
   }
 
   async deleteRecord(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN'],
+      {
+        type: 'INVENTORY_ALERT',
+        title: 'Registro diario de recoleccion eliminado',
+        message: `El registro diario ${existing.id} fue eliminado.`,
+        sourceType: 'daily_collection_record',
+        sourceId: existing.id,
+      },
+    );
+
+    return true;
   }
 }

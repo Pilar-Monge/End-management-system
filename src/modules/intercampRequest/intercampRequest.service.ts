@@ -1,9 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-
-import { CampEntity } from '../camp/camp.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
+import { NotificationService } from '../notification/notification.service';
 import { IntercampRequestRepository } from './intercampRequest.repository';
 import type {
   CreateIntercampRequestDTO,
@@ -16,10 +12,7 @@ import type {
 export class IntercampRequestService {
   constructor(
     private readonly repository: IntercampRequestRepository,
-    @InjectRepository(CampEntity)
-    private readonly campRepo: Repository<CampEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private async validateRoutingAndOwnership(
@@ -29,39 +22,41 @@ export class IntercampRequestService {
     respondedBy?: number | null,
   ): Promise<void> {
     if (originCampId === destinationCampId) {
-      throw new BadRequestException('Origin and destination camps must be different');
+      throw new BadRequestException('El campamento de origen y destino deben ser diferentes');
     }
 
-    const originCamp = await this.campRepo.findOne({ where: { id: originCampId } });
+    const originCamp = await this.repository.findCampById(originCampId);
     if (!originCamp) {
-      throw new NotFoundException('Origin camp not found');
+      throw new NotFoundException('Campamento de origen no encontrado');
     }
 
-    const destinationCamp = await this.campRepo.findOne({ where: { id: destinationCampId } });
+    const destinationCamp = await this.repository.findCampById(destinationCampId);
     if (!destinationCamp) {
-      throw new NotFoundException('Destination camp not found');
+      throw new NotFoundException('Campamento de destino no encontrado');
     }
 
-    const creatorUser = await this.userRepo.findOne({ where: { id: createdBy } });
+    const creatorUser = await this.repository.findUserById(createdBy);
     if (!creatorUser) {
-      throw new NotFoundException('CreatedBy user not found');
+      throw new NotFoundException('Usuario creador no encontrado');
     }
 
     if (creatorUser.campId !== originCampId) {
-      throw new BadRequestException('CreatedBy user does not belong to origin camp');
+      throw new BadRequestException('El usuario creador no pertenece al campamento de origen');
     }
 
     if (respondedBy === null || respondedBy === undefined) {
       return;
     }
 
-    const responderUser = await this.userRepo.findOne({ where: { id: respondedBy } });
+    const responderUser = await this.repository.findUserById(respondedBy);
     if (!responderUser) {
-      throw new NotFoundException('RespondedBy user not found');
+      throw new NotFoundException('Usuario que responde no encontrado');
     }
 
     if (responderUser.campId !== destinationCampId) {
-      throw new BadRequestException('RespondedBy user does not belong to destination camp');
+      throw new BadRequestException(
+        'El usuario que responde no pertenece al campamento de destino',
+      );
     }
   }
 
@@ -73,7 +68,30 @@ export class IntercampRequestService {
       data.respondedBy,
     );
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+
+    await this.notificationService.notifyUser(created.createdBy, {
+      campId: created.originCampId,
+      type: 'INTERCAMP_REQUEST_RECEIVED',
+      title: 'Solicitud intercampamento creada',
+      message: `Tu solicitud intercampamento #${created.id} fue registrada y enviada al campamento ${created.destinationCampId}.`,
+      sourceType: 'intercamp_request',
+      sourceId: created.id,
+    });
+
+    await this.notificationService.notifyCampRoles(
+      created.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'INTERCAMP_REQUEST_RECEIVED',
+        title: 'Nueva solicitud intercampamento',
+        message: `Se recibio una solicitud intercampamento #${created.id} desde el campamento ${created.originCampId}.`,
+        sourceType: 'intercamp_request',
+        sourceId: created.id,
+      },
+    );
+
+    return created;
   }
 
   async getRequestById(id: number): Promise<IntercampRequest | null> {
@@ -83,6 +101,7 @@ export class IntercampRequestService {
   async getAllRequests(filters?: {
     originCampId?: number;
     destinationCampId?: number;
+    involvedCampId?: number;
     status?: IntercampRequestStatus;
     createdBy?: number;
     respondedBy?: number;
@@ -96,6 +115,7 @@ export class IntercampRequestService {
     const repoFilters: {
       originCampId?: number;
       destinationCampId?: number;
+      involvedCampId?: number;
       status?: IntercampRequestStatus;
       createdBy?: number;
       respondedBy?: number;
@@ -109,6 +129,7 @@ export class IntercampRequestService {
     if (filters?.originCampId !== undefined) repoFilters.originCampId = filters.originCampId;
     if (filters?.destinationCampId !== undefined)
       repoFilters.destinationCampId = filters.destinationCampId;
+    if (filters?.involvedCampId !== undefined) repoFilters.involvedCampId = filters.involvedCampId;
     if (filters?.status !== undefined) repoFilters.status = filters.status;
     if (filters?.createdBy !== undefined) repoFilters.createdBy = filters.createdBy;
     if (filters?.respondedBy !== undefined) repoFilters.respondedBy = filters.respondedBy;
@@ -130,10 +151,98 @@ export class IntercampRequestService {
 
     await this.validateRoutingAndOwnership(originCampId, destinationCampId, createdBy, respondedBy);
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    const statusChanged = updated.status !== existing.status;
+    if (statusChanged) {
+      const notificationType =
+        updated.status === 'APPROVED'
+          ? 'INTERCAMP_REQUEST_APPROVED'
+          : updated.status === 'REJECTED'
+            ? 'INTERCAMP_REQUEST_REJECTED'
+            : updated.status === 'CANCELED'
+              ? 'INTERCAMP_REQUEST_CANCELED'
+              : 'INTERCAMP_REQUEST_RECEIVED';
+
+      const title =
+        updated.status === 'APPROVED'
+          ? 'Solicitud intercampamento aprobada'
+          : updated.status === 'REJECTED'
+            ? 'Solicitud intercampamento rechazada'
+            : updated.status === 'CANCELED'
+              ? 'Solicitud intercampamento cancelada'
+              : 'Solicitud intercampamento actualizada';
+
+      const message = `La solicitud intercampamento #${updated.id} cambio su estado a ${updated.status}.`;
+
+      await this.notificationService.notifyCampRoles(
+        updated.originCampId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: notificationType,
+          title,
+          message,
+          sourceType: 'intercamp_request',
+          sourceId: updated.id,
+        },
+      );
+      await this.notificationService.notifyCampRoles(
+        updated.destinationCampId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: notificationType,
+          title,
+          message,
+          sourceType: 'intercamp_request',
+          sourceId: updated.id,
+        },
+      );
+    }
+
+    return updated;
   }
 
   async deleteRequest(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    const title = 'Solicitud intercampamento eliminada';
+    const message = `La solicitud intercampamento #${id} fue eliminada del sistema.`;
+
+    await this.notificationService.notifyCampRoles(
+      existing.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'INTERCAMP_REQUEST_CANCELED',
+        title,
+        message,
+        sourceType: 'intercamp_request',
+        sourceId: id,
+      },
+    );
+
+    await this.notificationService.notifyCampRoles(
+      existing.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'INTERCAMP_REQUEST_CANCELED',
+        title,
+        message,
+        sourceType: 'intercamp_request',
+        sourceId: id,
+      },
+    );
+
+    return true;
   }
 }

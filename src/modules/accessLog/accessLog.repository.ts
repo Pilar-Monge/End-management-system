@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { SessionEntity } from '../session/session.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { AccessLogEntity } from './accessLog.entity';
 import type {
   AccessLog,
@@ -33,6 +35,14 @@ export class AccessLogRepository {
 
   async findById(id: number): Promise<AccessLog | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findUserById(id: number): Promise<UserEntity | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
+  }
+
+  async findSessionById(id: number): Promise<SessionEntity | null> {
+    return await this.repo.manager.getRepository(SessionEntity).findOne({ where: { id } });
   }
 
   async findAllAndCount(filters?: {

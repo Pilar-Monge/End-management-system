@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { CampEntity } from '../camp/camp.entity';
+import { NotificationService } from '../notification/notification.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { PersonRepository } from './person.repository';
@@ -14,17 +13,13 @@ export class PersonService {
   constructor(
     private readonly repository: PersonRepository,
     private readonly personStatusHistoryRepository: PersonStatusHistoryRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
-    @InjectRepository(AdmissionRequestEntity)
-    private readonly admissionRequestRepository: Repository<AdmissionRequestEntity>,
   ) {}
 
   private async assertAdmissionRequestExists(admissionRequestId: number): Promise<void> {
-    const admissionRequest = await this.admissionRequestRepository.findOne({
-      where: { id: admissionRequestId },
-      select: { id: true },
-    });
-    if (!admissionRequest) {
+    const exists = await this.repository.admissionRequestExists(admissionRequestId);
+    if (!exists) {
       throw new Error('Admission request not found');
     }
   }
@@ -48,7 +43,12 @@ export class PersonService {
         throw new Error('A person for this admission request already exists');
       }
     }
-    return await this.repository.create(data);
+    try {
+      return await this.repository.create(data);
+    } catch (error) {
+      this.rethrowFriendlyUniqueErrors(error);
+      throw error;
+    }
   }
 
   async getPersonById(id: number): Promise<Person | null> {
@@ -109,7 +109,15 @@ export class PersonService {
         throw new Error('Another person for this admission request already exists');
       }
     }
-    const updated = await this.repository.update(id, data);
+    let updated: Person | null;
+
+    try {
+      updated = await this.repository.update(id, data);
+    } catch (error) {
+      this.rethrowFriendlyUniqueErrors(error);
+      throw error;
+    }
+
     if (data.currentStatus !== undefined && data.currentStatus !== existing.currentStatus) {
       await this.personStatusHistoryRepository.create({
         personId: id,
@@ -118,11 +126,101 @@ export class PersonService {
         changedBy: 0,
         reason: null,
       });
+
+      await this.notificationService.notifyCampRoles(
+        updated?.campId ?? existing.campId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: 'PERSON_STATUS_CHANGED',
+          title: 'Cambio de estado de persona',
+          message: `La persona ${id} cambio de estado de ${existing.currentStatus} a ${data.currentStatus}.`,
+          sourceType: 'person',
+          sourceId: id,
+        },
+      );
+
+      const linkedUser = await this.repository.findLinkedUserByPersonAndCamp(
+        id,
+        updated?.campId ?? existing.campId,
+      );
+
+      if (linkedUser) {
+        await this.notificationService.notifyUser(linkedUser.id, {
+          campId: updated?.campId ?? existing.campId,
+          type: 'PERSON_STATUS_CHANGED',
+          title: 'Cambio de estado personal',
+          message: `Tu estado fue actualizado de ${existing.currentStatus} a ${data.currentStatus}.`,
+          sourceType: 'person',
+          sourceId: id,
+        });
+      }
     }
     return updated;
   }
 
-  async deletePerson(_id: number): Promise<boolean> {
-    return false;
+  async deletePerson(id: number): Promise<boolean> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notificationService.notifyCampRoles(
+      existing.campId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'PERSON_STATUS_CHANGED',
+        title: 'Persona eliminada',
+        message: `La persona ${existing.id} fue eliminada del sistema.`,
+        sourceType: 'person',
+        sourceId: existing.id,
+      },
+    );
+
+    const linkedUser = await this.repository.findLinkedUserByPersonAndCamp(
+      existing.id,
+      existing.campId,
+    );
+
+    if (linkedUser) {
+      await this.notificationService.notifyUser(linkedUser.id, {
+        campId: existing.campId,
+        type: 'PERSON_STATUS_CHANGED',
+        title: 'Registro personal eliminado',
+        message: 'Tu registro personal fue eliminado del sistema.',
+        sourceType: 'person',
+        sourceId: existing.id,
+        sendEmail: false,
+      });
+    }
+
+    return true;
+  }
+
+  private rethrowFriendlyUniqueErrors(error: unknown): never | void {
+    if (!(error instanceof QueryFailedError)) {
+      return;
+    }
+
+    const driverError = error.driverError as {
+      code?: string;
+      constraint?: string;
+    };
+
+    if (driverError?.code !== '23505') {
+      return;
+    }
+
+    if (driverError.constraint === 'uq_person_request') {
+      throw new Error('Ya existe una persona asociada a esta solicitud de admision');
+    }
+
+    if (driverError.constraint === 'uq_person_identification') {
+      throw new Error('Ya existe una persona con este numero de identificacion');
+    }
   }
 }

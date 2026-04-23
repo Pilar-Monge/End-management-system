@@ -30,6 +30,7 @@ export class DecisionTreeRepository {
 
     const record: LocalModelRecord = {
       id: nextId,
+      campId: data.campId ?? null,
       modelName: data.modelName,
       featureNames: data.featureNames,
       modelPayload: null,
@@ -46,13 +47,17 @@ export class DecisionTreeRepository {
     return this.toModel(record);
   }
 
-  async deactivateByModelName(modelName: string): Promise<void> {
+  async deactivateByModelName(modelName: string, campId?: number | null): Promise<void> {
     const records = await this.readIndex();
     const now = new Date().toISOString();
 
     let changed = false;
     for (const record of records) {
-      if (record.modelName === modelName && record.isActive) {
+      if (
+        record.modelName === modelName &&
+        record.isActive &&
+        (campId === undefined || campId === null || record.campId === campId)
+      ) {
         record.isActive = false;
         record.updatedAt = now;
         changed = true;
@@ -70,10 +75,18 @@ export class DecisionTreeRepository {
     return record ? this.toModel(record) : null;
   }
 
-  async findActiveByModelName(modelName: string): Promise<DecisionTreeModel | null> {
+  async findActiveByModelName(
+    modelName: string,
+    campId?: number | null,
+  ): Promise<DecisionTreeModel | null> {
     const records = await this.readIndex();
     const matches = records
-      .filter((item) => item.modelName === modelName && item.isActive)
+      .filter(
+        (item) =>
+          item.modelName === modelName &&
+          item.isActive &&
+          (campId === undefined || campId === null || item.campId === campId),
+      )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     const latest = matches.at(0);
@@ -83,6 +96,7 @@ export class DecisionTreeRepository {
   async findAll(filters?: {
     modelName?: string;
     isActive?: boolean;
+    campId?: number | null;
     offset?: number;
     limit?: number;
   }): Promise<{ data: DecisionTreeModel[]; total: number }> {
@@ -96,6 +110,10 @@ export class DecisionTreeRepository {
 
     if (filters?.isActive !== undefined) {
       filtered = filtered.filter((item) => item.isActive === filters.isActive);
+    }
+
+    if (filters?.campId !== undefined && filters.campId !== null) {
+      filtered = filtered.filter((item) => item.campId === filters.campId);
     }
 
     filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -146,6 +164,7 @@ export class DecisionTreeRepository {
   private toModel(entity: LocalModelRecord): DecisionTreeModel {
     return {
       id: entity.id,
+      campId: entity.campId ?? null,
       modelName: entity.modelName,
       featureNames: entity.featureNames,
       modelPayload: entity.modelPayload,
@@ -160,6 +179,7 @@ export class DecisionTreeRepository {
 
 type LocalModelRecord = {
   id: number;
+  campId?: number | null;
   modelName: string;
   featureNames: string[];
   modelPayload: unknown | null;

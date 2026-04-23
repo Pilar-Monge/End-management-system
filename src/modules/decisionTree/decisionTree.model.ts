@@ -14,11 +14,13 @@ export interface TrainDecisionTreeDTO {
 
 export interface PredictDecisionTreeDTO {
   modelId: number;
+  campId: number;
   features: Record<string, number>;
 }
 
 export interface ExplainDecisionTreeDTO {
   modelId: number;
+  campId: number;
   features: Record<string, number>;
 }
 
@@ -32,6 +34,7 @@ export interface DecisionTreeTrainingMetrics {
 
 export interface DecisionTreeModel {
   id: number;
+  campId?: number | null;
   modelName: string;
   featureNames: string[];
   modelPayload: unknown | null;
@@ -43,6 +46,7 @@ export interface DecisionTreeModel {
 }
 
 export interface CreateDecisionTreeModelDTO {
+  campId?: number | null;
   modelName: string;
   featureNames: string[];
   modelPayload?: unknown | null;

@@ -1,0 +1,174 @@
+@baseUrl = http://localhost:3000/api
+@username = admin_camp1
+@password = Seed1234!
+@campId = 1
+@modelName = admission-acceptance-v1
+
+### 1) Login and save token
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}",
+  "campId": {{campId}}
+}
+
+### 2) List active model by name
+# @name listModels
+GET {{baseUrl}}/decision-tree/models?modelName={{modelName}}&isActive=true&page=1&limit=10
+Authorization: Bearer {{login.response.body.$.data.token}}
+
+### 3) Optional: train model manually
+POST {{baseUrl}}/decision-tree/train
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "modelName": "{{modelName}}",
+  "featureNames": [
+    "age_years",
+    "health_level_score",
+    "physical_condition_score",
+    "experience_years",
+    "skills_score"
+  ],
+  "samples": [
+    {
+      "features": {
+        "age_years": 24,
+        "health_level_score": 8,
+        "physical_condition_score": 8,
+        "experience_years": 3,
+        "skills_score": 7
+      },
+      "label": "ACCEPT"
+    },
+    {
+      "features": {
+        "age_years": 28,
+        "health_level_score": 4,
+        "physical_condition_score": 4,
+        "experience_years": 4,
+        "skills_score": 6
+      },
+      "label": "REJECT"
+    }
+  ],
+  "maxDepth": 6,
+  "minNumSamples": 1,
+  "gainFunction": "gini"
+}
+
+### 4) Predict with auto-captured model id
+POST {{baseUrl}}/decision-tree/predict
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+# Expected relevant output fields:
+# data.prediction => ACCEPT | REJECT
+# data.roleAssignment.suggestedRole => Recolector de agua | Recolector de comida | Explorador | Guardia | Medico | Ingeniero
+# data.roleAssignment.mappedOccupationName => seeded occupation name (Water Collector, Food Gatherer, Scout, Guard, Medic, Engineer)
+# data.roleAssignment.modelName => admission-role-assignment-v1
+
+{
+  "modelId": {{listModels.response.body.$.data[0].id}},
+  "features": {
+    "age_years": 24,
+    "health_level_score": 8,
+    "physical_condition_score": 8,
+    "experience_years": 3,
+    "skills_score": 7
+  }
+}
+
+### 5) Explain prediction with same input
+POST {{baseUrl}}/decision-tree/explain
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "modelId": {{listModels.response.body.$.data[0].id}},
+  "features": {
+    "age_years": 24,
+    "health_level_score": 8,
+    "physical_condition_score": 8,
+    "experience_years": 3,
+    "skills_score": 7
+  }
+}
+
+### 5.1) Predict scenario expected ACCEPT (high profile)
+POST {{baseUrl}}/decision-tree/predict
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "modelId": {{listModels.response.body.$.data[0].id}},
+  "features": {
+    "age_years": 29,
+    "health_level_score": 8,
+    "physical_condition_score": 9,
+    "experience_years": 4,
+    "skills_score": 8
+  }
+}
+
+### 5.2) Explain scenario expected ACCEPT (human reason)
+# Look for:
+# data.explanation.admissionReason
+# data.explanation.roleSummary
+POST {{baseUrl}}/decision-tree/explain
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "modelId": {{listModels.response.body.$.data[0].id}},
+  "features": {
+    "age_years": 29,
+    "health_level_score": 8,
+    "physical_condition_score": 9,
+    "experience_years": 4,
+    "skills_score": 8
+  }
+}
+
+### 5.3) Predict scenario expected REJECT (low profile)
+POST {{baseUrl}}/decision-tree/predict
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "modelId": {{listModels.response.body.$.data[0].id}},
+  "features": {
+    "age_years": 30,
+    "health_level_score": 3,
+    "physical_condition_score": 4,
+    "experience_years": 2,
+    "skills_score": 5
+  }
+}
+
+### 5.4) Explain scenario expected REJECT (human reason)
+# Look for:
+# data.explanation.admissionReason (below required thresholds)
+# data.explanation.roleReason
+POST {{baseUrl}}/decision-tree/explain
+Authorization: Bearer {{login.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "modelId": {{listModels.response.body.$.data[0].id}},
+  "features": {
+    "age_years": 30,
+    "health_level_score": 3,
+    "physical_condition_score": 4,
+    "experience_years": 2,
+    "skills_score": 5
+  }
+}
+
+### 6) Get one model by id
+GET {{baseUrl}}/decision-tree/models/{{listModels.response.body.$.data[0].id}}
+Authorization: Bearer {{login.response.body.$.data.token}}

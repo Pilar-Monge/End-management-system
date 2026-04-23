@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { AdmissionRequestEntity } from '../admissionRequest/admissionRequest.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { PersonEntity } from './person.entity';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
 
@@ -43,6 +45,24 @@ export class PersonRepository {
 
   async findByAdmissionRequestId(admissionRequestId: number): Promise<Person | null> {
     return await this.repo.findOne({ where: { admissionRequestId } });
+  }
+
+  async admissionRequestExists(admissionRequestId: number): Promise<boolean> {
+    return await this.repo.manager.getRepository(AdmissionRequestEntity).exist({
+      where: { id: admissionRequestId },
+    });
+  }
+
+  async findLinkedUserByPersonAndCamp(
+    personId: number,
+    campId: number,
+  ): Promise<Pick<UserEntity, 'id'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: { personId, campId },
+      select: {
+        id: true,
+      },
+    });
   }
 
   async findAllAndCount(filters?: {

@@ -4,14 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
-import { ExpeditionEntity } from '../expedition/expedition.entity';
-import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { ExpeditionResourceObtainedRepository } from './expeditionResourceObtained.repository';
 import type {
   CreateExpeditionResourceObtainedDTO,
@@ -24,12 +21,7 @@ export class ExpeditionResourceObtainedService {
   constructor(
     private readonly repository: ExpeditionResourceObtainedRepository,
     private readonly dataSource: DataSource,
-    @InjectRepository(ExpeditionEntity)
-    private readonly expeditionRepo: Repository<ExpeditionEntity>,
-    @InjectRepository(InventoryMovementEntity)
-    private readonly movementRepo: Repository<InventoryMovementEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private async validateRecorder(
@@ -40,46 +32,50 @@ export class ExpeditionResourceObtainedService {
   ): Promise<void> {
     await assertEntityExists(this.dataSource, ResourceTypeEntity, resourceTypeId, 'Resource type');
 
-    const expedition = await this.expeditionRepo.findOne({ where: { id: expeditionId } });
+    const expedition = await this.repository.findExpeditionById(expeditionId);
     if (!expedition) {
-      throw new NotFoundException('Expedition not found');
+      throw new NotFoundException('Expedicion no encontrada');
     }
 
-    const user = await this.userRepo.findOne({ where: { id: recordedBy } });
+    const user = await this.repository.findUserById(recordedBy);
     if (!user) {
-      throw new NotFoundException('RecordedBy user not found');
+      throw new NotFoundException('Usuario recordedBy no encontrado');
     }
 
     if (user.status !== 'ACTIVE') {
-      throw new ForbiddenException('Only ACTIVE users can record obtained expedition resources');
+      throw new ForbiddenException(
+        'Solo usuarios ACTIVE pueden registrar recursos obtenidos en expediciones',
+      );
     }
 
     if (user.role !== 'RESOURCE_MANAGEMENT' && user.role !== 'SYSTEM_ADMIN') {
       throw new ForbiddenException(
-        'Only RESOURCE_MANAGEMENT or SYSTEM_ADMIN can record obtained expedition resources',
+        'Solo RESOURCE_MANAGEMENT o SYSTEM_ADMIN pueden registrar recursos obtenidos en expediciones',
       );
     }
 
     if (user.campId !== expedition.campId) {
-      throw new BadRequestException('RecordedBy user does not belong to expedition camp');
+      throw new BadRequestException(
+        'El usuario recordedBy no pertenece al campamento de la expedicion',
+      );
     }
 
     if (movementId === null || movementId === undefined) {
       return;
     }
 
-    const movement = await this.movementRepo.findOne({ where: { id: movementId } });
+    const movement = await this.repository.findMovementById(movementId);
     if (!movement) {
-      throw new NotFoundException('Movement not found');
+      throw new NotFoundException('Movimiento no encontrado');
     }
 
     if (movement.campId !== expedition.campId) {
-      throw new BadRequestException('Movement does not belong to expedition camp');
+      throw new BadRequestException('El movimiento no pertenece al campamento de la expedicion');
     }
 
     if (movement.resourceTypeId !== resourceTypeId) {
       throw new BadRequestException(
-        'Movement resource type does not match provided resourceTypeId',
+        'El tipo de recurso del movimiento no coincide con resourceTypeId',
       );
     }
   }
@@ -99,10 +95,27 @@ export class ExpeditionResourceObtainedService {
       data.resourceTypeId,
     );
     if (existing) {
-      throw new Error('This obtained resource record already exists for this expedition');
+      throw new Error('Este registro de recursos obtenidos ya existe para esta expedicion');
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    const expedition = await this.repository.findExpeditionById(data.expeditionId);
+
+    if (expedition) {
+      await this.notificationService.notifyCampRoles(
+        expedition.campId,
+        ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
+        {
+          type: 'EXPEDITION_RESOURCE_OBTAINED',
+          title: 'Recursos obtenidos en expedicion',
+          message: `Se registro el recurso obtenido ${data.resourceTypeId} con cantidad ${data.amount} en la expedicion ${data.expeditionId}.`,
+          sourceType: 'expedition_resource_obtained',
+          sourceId: created.id,
+        },
+      );
+    }
+
+    return created;
   }
 
   async getRecordById(id: number): Promise<ExpeditionResourceObtained | null> {
@@ -151,10 +164,55 @@ export class ExpeditionResourceObtainedService {
     const movementId = data.movementId !== undefined ? data.movementId : existing.movementId;
     await this.validateRecorder(expeditionId, recordedBy, resourceTypeId, movementId);
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (!updated) {
+      return null;
+    }
+
+    const expedition = await this.repository.findExpeditionById(updated.expeditionId);
+    if (expedition) {
+      await this.notificationService.notifyCampRoles(
+        expedition.campId,
+        ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
+        {
+          type: 'EXPEDITION_RESOURCE_OBTAINED',
+          title: 'Recursos obtenidos en expedicion actualizados',
+          message: `Se actualizo el registro de recursos obtenidos ${updated.resourceTypeId} en la expedicion ${updated.expeditionId}.`,
+          sourceType: 'expedition_resource_obtained',
+          sourceId: updated.id,
+        },
+      );
+    }
+
+    return updated;
   }
 
   async deleteRecord(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    const expedition = await this.repository.findExpeditionById(existing.expeditionId);
+    if (expedition) {
+      await this.notificationService.notifyCampRoles(
+        expedition.campId,
+        ['RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN', 'TRAVEL_MANAGER'],
+        {
+          type: 'EXPEDITION_RESOURCE_OBTAINED',
+          title: 'Registro de recursos obtenidos eliminado',
+          message: `Se elimino un registro de recursos obtenidos de la expedicion ${existing.expeditionId}.`,
+          sourceType: 'expedition_resource_obtained',
+          sourceId: existing.id,
+        },
+      );
+    }
+
+    return true;
   }
 }

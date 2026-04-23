@@ -5,6 +5,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -12,6 +13,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -40,18 +42,48 @@ import type {
 import { ExpeditionEntity } from './expedition.entity';
 
 import { CreateExpeditionDto, UpdateExpeditionDto } from './dto';
-@Controller('expeditions')
+@Controller(['expeditions', 'explorations'])
 @ApiTags('Expedition')
 export class ExpeditionController {
   constructor(private readonly service: ExpeditionService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
   @Post()
   @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Expedition' })
   @ApiBody({ type: CreateExpeditionDto })
   @ApiCreatedResponseData(ExpeditionEntity, { description: 'Expedition created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateExpeditionDTO) {
+  async create(@Body() body: CreateExpeditionDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol) && body.campId !== currentUser.campId) {
+        throw new BadRequestException('You can only create expeditions in your own camp');
+      }
+
       const expedition = await this.service.createExpedition(body);
       return {
         success: true,
@@ -64,6 +96,39 @@ export class ExpeditionController {
       );
     }
   }
+
+  @Get('active')
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @ApiOperation({ summary: 'List active explorations' })
+  @ApiOkResponseList(ExpeditionEntity, { description: 'Active explorations' })
+  async getActive(@Query('campId') campId?: string, @Req() req?: Request) {
+    let parsedCampId: number | undefined;
+
+    if (!req) {
+      throw new BadRequestException('Request context is required');
+    }
+
+    const currentUser = this.getCurrentUser(req);
+    const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+    if (campId !== undefined) {
+      parsedCampId = Number.parseInt(campId, 10);
+      if (Number.isNaN(parsedCampId)) {
+        throw new BadRequestException('Invalid campId');
+      }
+
+      if (!isAdmin && parsedCampId !== currentUser.campId) {
+        throw new BadRequestException('You cannot query active expeditions from another camp');
+      }
+    }
+
+    if (!isAdmin && parsedCampId === undefined) {
+      parsedCampId = currentUser.campId;
+    }
+
+    const data = await this.service.getActiveExplorations(parsedCampId);
+    return { success: true, data };
+  }
   @Get(':id')
   @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Expedition by id' })
@@ -71,7 +136,7 @@ export class ExpeditionController {
   @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -79,6 +144,11 @@ export class ExpeditionController {
 
     const expedition = await this.service.getExpeditionById(parsedId);
     if (!expedition) throw new NotFoundException('Expedition not found');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && expedition.campId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this expedition');
+    }
 
     return { success: true, data: expedition };
   }
@@ -99,6 +169,7 @@ export class ExpeditionController {
     @Query('status') status?: ExpeditionStatus,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -108,9 +179,25 @@ export class ExpeditionController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.campId = currentUser.campId;
+      }
+
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
+
+        if (!isAdmin && parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query expeditions from another camp');
+        }
+
         filters.campId = parsedCampId;
       }
 
@@ -162,13 +249,27 @@ export class ExpeditionController {
   @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateExpeditionDTO) {
+  async update(@Param('id') id: string, @Body() body: UpdateExpeditionDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingExpedition = await this.service.getExpeditionById(parsedId);
+      if (!existingExpedition) {
+        throw new NotFoundException('Expedition not found');
+      }
+
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        (existingExpedition.campId !== currentUser.campId ||
+          (body.campId !== undefined && body.campId !== currentUser.campId))
+      ) {
+        throw new BadRequestException('You can only update expeditions from your own camp');
+      }
+
       const expedition = await this.service.updateExpedition(parsedId, body);
       if (!expedition) throw new NotFoundException('Expedition not found');
 
@@ -183,6 +284,56 @@ export class ExpeditionController {
       );
     }
   }
+
+  @Post(':id/complete')
+  @ApiOperation({ summary: 'Complete exploration' })
+  @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
+  @ApiOkResponseData(ExpeditionEntity, { description: 'Exploration completed' })
+  async complete(@Param('id') id: string, @Req() req: Request & { user?: { userId?: number } }) {
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid ID');
+    }
+
+    try {
+      const currentUser = this.getCurrentUser(req);
+      const expedition = await this.service.getExpeditionById(parsedId);
+      if (!expedition) {
+        throw new NotFoundException('Expedition not found');
+      }
+
+      if (!this.isSystemAdmin(currentUser.rol) && expedition.campId !== currentUser.campId) {
+        throw new BadRequestException('You can only complete expeditions from your own camp');
+      }
+
+      const completed = await this.service.completeExploration(parsedId, currentUser.userId);
+      if (!completed) {
+        throw new NotFoundException('Expedition not found');
+      }
+
+      return {
+        success: true,
+        data: completed,
+        message: 'Exploration completed successfully',
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      if (
+        error instanceof Error &&
+        error.message === 'Only active expedition participants can complete this expedition'
+      ) {
+        throw new ForbiddenException(error.message);
+      }
+
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error completing exploration',
+      );
+    }
+  }
+
   @Delete(':id')
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Expedition' })

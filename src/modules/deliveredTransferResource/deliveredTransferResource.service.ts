@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
+import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { TransferEntity } from '../transfer/transfer.entity';
 
@@ -17,8 +18,55 @@ import type {
 export class DeliveredTransferResourceService {
   constructor(
     private readonly repository: DeliveredTransferResourceRepository,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async resolveTransferScope(transferId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  }> {
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new Error('No se encontro el alcance del traslado');
+    }
+
+    return scope;
+  }
+
+  private async notifyDeliveredResourceChange(
+    transferId: number,
+    detailId: number,
+    resourceTypeId: number,
+    actionLabel: string,
+  ): Promise<void> {
+    const scope = await this.resolveTransferScope(transferId);
+    const title = 'Registro de recursos entregados';
+    const message = `${actionLabel} para el recurso ${resourceTypeId} en el traslado ${transferId}.`;
+
+    await this.notificationService.notifyCampRoles(
+      scope.originCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_RESOURCE_RECORDED',
+        title,
+        message,
+        sourceType: 'delivered_transfer_resource',
+        sourceId: detailId,
+      },
+    );
+    await this.notificationService.notifyCampRoles(
+      scope.destinationCampId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'TRANSFER_RESOURCE_RECORDED',
+        title,
+        message,
+        sourceType: 'delivered_transfer_resource',
+        sourceId: detailId,
+      },
+    );
+  }
 
   async createDeliveredResource(
     data: CreateDeliveredTransferResourceDTO,
@@ -44,10 +92,17 @@ export class DeliveredTransferResourceService {
       data.resourceTypeId,
     );
     if (existing) {
-      throw new Error('This delivered transfer resource already exists');
+      throw new Error('Este recurso entregado del traslado ya existe');
     }
 
-    return await this.repository.create(data);
+    const created = await this.repository.create(data);
+    await this.notifyDeliveredResourceChange(
+      created.transferId,
+      created.id,
+      created.resourceTypeId,
+      'Se registro la entrega del recurso',
+    );
+    return created;
   }
 
   async getDeliveredResourceById(id: number): Promise<DeliveredTransferResource | null> {
@@ -119,14 +174,41 @@ export class DeliveredTransferResourceService {
         resolvedResourceTypeId,
       );
       if (byPair && byPair.id !== id) {
-        throw new Error('This delivered transfer resource already exists');
+        throw new Error('Este recurso entregado del traslado ya existe');
       }
     }
 
-    return await this.repository.update(id, data);
+    const updated = await this.repository.update(id, data);
+    if (updated) {
+      await this.notifyDeliveredResourceChange(
+        updated.transferId,
+        updated.id,
+        updated.resourceTypeId,
+        'Se actualizo la entrega del recurso',
+      );
+    }
+
+    return updated;
   }
 
   async deleteDeliveredResource(id: number): Promise<boolean> {
-    return await this.repository.delete(id);
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return false;
+    }
+
+    const deleted = await this.repository.delete(id);
+    if (!deleted) {
+      return false;
+    }
+
+    await this.notifyDeliveredResourceChange(
+      existing.transferId,
+      existing.id,
+      existing.resourceTypeId,
+      'Se elimino el registro de entrega del recurso',
+    );
+
+    return true;
   }
 }

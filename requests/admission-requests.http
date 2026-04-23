@@ -256,6 +256,32 @@ Content-Type: application/json
   "motivoRechazo": null
 }
 
+### BLOCK 2 - AI REPORTS
+
+# @name loginAdminAi
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin_camp1",
+  "password": "Seed1234!",
+  "campId": 1
+}
+
+###
+
+@aiAdminToken = {{loginAdminAi.response.body.$.data.token}}
+
+### [SHOULD 200] GET /api/admission-requests/14/ai-features - SYSTEM_ADMIN
+GET {{baseUrl}}/api/admission-requests/14/ai-features
+Authorization: Bearer {{aiAdminToken}}
+
+###
+
+### [SHOULD 200] GET /api/ai-admission-reports?requestId=14 - SYSTEM_ADMIN
+GET {{baseUrl}}/api/ai-admission-reports?requestId=14
+Authorization: Bearer {{aiAdminToken}}
+
 ###
 
 ### 31. [SHOULD 401] PUT /api/admission-requests/1 - no token

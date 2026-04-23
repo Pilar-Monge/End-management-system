@@ -11,6 +11,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -39,17 +40,46 @@ import type {
 import { AiAdmissionReportEntity } from './aiAdmissionReport.entity';
 
 import { CreateAiAdmissionReportDto, UpdateAiAdmissionReportDto } from './dto';
+
 @Controller('ai-admission-reports')
 @ApiTags('Ai Admission Report')
 @Roles('SYSTEM_ADMIN')
 export class AiAdmissionReportController {
   constructor(private readonly service: AiAdmissionReportService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create Ai Admission Report' })
   @ApiBody({ type: CreateAiAdmissionReportDto })
   @ApiCreatedResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateAiAdmissionReportDTO) {
+  async create(@Body() body: CreateAiAdmissionReportDTO, @Req() req: Request) {
+    const currentUser = this.getCurrentUser(req);
+    const requestCampId = await this.service.getReportCampId(body.requestId);
+    if (requestCampId !== null && requestCampId !== currentUser.campId) {
+      throw new BadRequestException('You cannot create a report for another camp');
+    }
+
     try {
       const report = await this.service.createReport(body);
       return {
@@ -63,23 +93,31 @@ export class AiAdmissionReportController {
       );
     }
   }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get Ai Admission Report by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Ai Admission Report id' })
   @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    const campId = await this.service.getReportCampId(parsedId);
+    if (campId === null || campId !== currentUser.campId) {
+      throw new NotFoundException('AI admission report not found');
+    }
 
     const report = await this.service.getReportById(parsedId);
     if (!report) throw new NotFoundException('AI admission report not found');
 
     return { success: true, data: report };
   }
+
   @Get()
   @ApiOperation({ summary: 'List Ai Admission Report' })
   @ApiOkResponseList(AiAdmissionReportEntity, { description: 'Ai Admission Report list' })
@@ -97,8 +135,14 @@ export class AiAdmissionReportController {
     @Query('suggestedOccupationId') suggestedOccupationId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
       const filters: {
         requestId?: number;
         aiDecision?: AiDecision;
@@ -142,17 +186,26 @@ export class AiAdmissionReportController {
       }
 
       const result = await this.service.getAllReports(filters);
+      const campScopedData = [] as typeof result.data;
+
+      for (const report of result.data) {
+        const reportCampId = await this.service.getReportCampId(report.id);
+        if (reportCampId === currentUser.campId) {
+          campScopedData.push(report);
+        }
+      }
+
       const resolvedPage = filters.page ?? 1;
       const resolvedLimit = filters.limit ?? 10;
 
       return {
         success: true,
-        data: result.data,
+        data: campScopedData,
         pagination: {
           page: resolvedPage,
           limit: resolvedLimit,
-          total: result.total,
-          pages: Math.ceil(result.total / resolvedLimit),
+          total: campScopedData.length,
+          pages: Math.ceil(campScopedData.length / resolvedLimit),
         },
       };
     } catch (error) {
@@ -161,6 +214,7 @@ export class AiAdmissionReportController {
       );
     }
   }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update Ai Admission Report' })
   @ApiParam({ name: 'id', type: Number, description: 'Ai Admission Report id' })
@@ -168,13 +222,23 @@ export class AiAdmissionReportController {
   @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateAiAdmissionReportDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateAiAdmissionReportDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const campId = await this.service.getReportCampId(parsedId);
+      if (campId === null || campId !== currentUser.campId) {
+        throw new NotFoundException('AI admission report not found');
+      }
+
       const report = await this.service.updateReport(parsedId, body);
       if (!report) throw new NotFoundException('AI admission report not found');
 
@@ -189,19 +253,26 @@ export class AiAdmissionReportController {
       );
     }
   }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Ai Admission Report' })
   @ApiParam({ name: 'id', type: Number, description: 'Ai Admission Report id' })
   @ApiOkResponseMessage({ description: 'Ai Admission Report deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const campId = await this.service.getReportCampId(parsedId);
+      if (campId === null || campId !== currentUser.campId) {
+        throw new NotFoundException('AI admission report not found');
+      }
+
       const deleted = await this.service.deleteReport(parsedId);
       if (!deleted) throw new NotFoundException('AI admission report not found');
 

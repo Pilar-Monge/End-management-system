@@ -5,6 +5,8 @@ export const ACCESS_LOG_EVENT_TYPE_VALUES = [
   'LOCKOUT',
   'CAMP_CHANGE',
   'FAILED_ATTEMPT',
+  'PASSWORD_RESET_REQUEST',
+  'PASSWORD_RESET_COMPLETED',
 ] as const;
 
 export type AccessLogEventType = (typeof ACCESS_LOG_EVENT_TYPE_VALUES)[number];

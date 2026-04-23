@@ -21,14 +21,14 @@ export class CreateExpeditionDto {
   @ApiPropertyOptional({ nullable: true })
   destinationLongitude?: string | null;
 
-  @ApiProperty()
-  plannedDepartureDate!: Date;
+  @ApiPropertyOptional()
+  plannedDepartureDate?: Date;
 
   @ApiPropertyOptional({ nullable: true })
   actualDepartureDate?: Date | null;
 
-  @ApiProperty()
-  plannedReturnDate!: Date;
+  @ApiPropertyOptional()
+  plannedReturnDate?: Date;
 
   @ApiPropertyOptional({ nullable: true })
   actualReturnDate?: Date | null;
@@ -41,4 +41,10 @@ export class CreateExpeditionDto {
 
   @ApiPropertyOptional()
   status?: ExpeditionStatus;
+
+  @ApiPropertyOptional()
+  estimatedDurationDays?: number;
+
+  @ApiPropertyOptional()
+  maxExtraDays?: number;
 }

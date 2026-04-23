@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { OccupationEntity } from '../occupation/occupation.entity';
+import { PersonEntity } from '../person/person.entity';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import { TemporaryOccupationAssignmentEntity } from './temporaryOccupationAssignment.entity';
 import type {
   CreateTemporaryOccupationAssignmentDTO,
@@ -33,6 +36,30 @@ export class TemporaryOccupationAssignmentRepository {
 
   async findById(id: number): Promise<TemporaryOccupationAssignment | null> {
     return await this.repo.findOne({ where: { id } });
+  }
+
+  async findPersonById(id: number): Promise<PersonEntity | null> {
+    return await this.repo.manager.getRepository(PersonEntity).findOne({ where: { id } });
+  }
+
+  async findOccupationById(id: number): Promise<OccupationEntity | null> {
+    return await this.repo.manager.getRepository(OccupationEntity).findOne({ where: { id } });
+  }
+
+  async findActiveLinkedUserByPersonAndCamp(
+    personId: number,
+    campId: number,
+  ): Promise<Pick<UserEntity, 'id'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: {
+        personId,
+        campId,
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+      },
+    });
   }
 
   async findAllAndCount(filters?: {

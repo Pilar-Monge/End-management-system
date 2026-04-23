@@ -11,7 +11,9 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -43,6 +45,31 @@ import { CreateDailyCollectionRecordDto, UpdateDailyCollectionRecordDto } from '
 @ApiTags('Daily Collection Record')
 export class DailyCollectionRecordController {
   constructor(private readonly service: DailyCollectionRecordService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private isSystemAdmin(rol: string): boolean {
+    return rol === 'SYSTEM_ADMIN';
+  }
   @Post()
   @Roles('WORKER', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Daily Collection Record' })
@@ -51,8 +78,17 @@ export class DailyCollectionRecordController {
     description: 'Daily Collection Record created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateDailyCollectionRecordDTO) {
+  async create(@Body() body: CreateDailyCollectionRecordDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (body.campId !== currentUser.campId) {
+        throw new BadRequestException('You can only create records in your own camp');
+      }
+
+      if (body.recordedBy !== currentUser.userId) {
+        throw new BadRequestException('recordedBy must match the authenticated user');
+      }
+
       const record = await this.service.createRecord(body);
       return {
         success: true,
@@ -76,7 +112,7 @@ export class DailyCollectionRecordController {
   @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -84,6 +120,11 @@ export class DailyCollectionRecordController {
 
     const record = await this.service.getRecordById(parsedId);
     if (!record) throw new NotFoundException('Daily collection record not found');
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && record.campId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this record');
+    }
 
     return { success: true, data: record };
   }
@@ -106,6 +147,7 @@ export class DailyCollectionRecordController {
     @Query('date') date?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
       const filters: {
@@ -117,9 +159,25 @@ export class DailyCollectionRecordController {
         limit?: number;
       } = {};
 
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      const isAdmin = this.isSystemAdmin(currentUser.rol);
+
+      if (!isAdmin) {
+        filters.campId = currentUser.campId;
+      }
+
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid camp ID');
+
+        if (!isAdmin && parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query records from another camp');
+        }
+
         filters.campId = parsedCampId;
       }
 
@@ -190,13 +248,35 @@ export class DailyCollectionRecordController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateDailyCollectionRecordDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateDailyCollectionRecordDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingRecord = await this.service.getRecordById(parsedId);
+      if (!existingRecord) {
+        throw new NotFoundException('Daily collection record not found');
+      }
+
+      if (
+        !this.isSystemAdmin(currentUser.rol) &&
+        (existingRecord.campId !== currentUser.campId ||
+          (body.campId !== undefined && body.campId !== currentUser.campId))
+      ) {
+        throw new BadRequestException('You can only update records from your own camp');
+      }
+
+      if (body.recordedBy !== undefined && body.recordedBy !== currentUser.userId) {
+        throw new BadRequestException('recordedBy must match the authenticated user');
+      }
+
       const record = await this.service.updateRecord(parsedId, body);
       if (!record) throw new NotFoundException('Daily collection record not found');
 

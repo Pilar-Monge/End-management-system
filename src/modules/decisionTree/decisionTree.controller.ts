@@ -7,7 +7,11 @@ import {
   Param,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+
+import { Roles } from '../../common/decorators';
 
 import { DecisionTreeService } from './decisionTree.service';
 import type {
@@ -17,13 +21,36 @@ import type {
 } from './decisionTree.model';
 
 @Controller('decision-tree')
+@Roles('SYSTEM_ADMIN')
 export class DecisionTreeController {
   constructor(private readonly service: DecisionTreeService) {}
 
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
   @Post('train')
-  async train(@Body() body: TrainDecisionTreeDTO) {
+  async train(@Body() body: TrainDecisionTreeDTO, @Req() req: Request) {
     try {
-      const model = await this.service.trainModel(body);
+      const currentUser = this.getCurrentUser(req);
+      const model = await this.service.trainModel(body, currentUser.campId);
       return {
         success: true,
         data: {
@@ -45,9 +72,10 @@ export class DecisionTreeController {
   }
 
   @Post('predict')
-  async predict(@Body() body: PredictDecisionTreeDTO) {
+  async predict(@Body() body: PredictDecisionTreeDTO, @Req() req: Request) {
     try {
-      const result = await this.service.predict(body);
+      const currentUser = this.getCurrentUser(req);
+      const result = await this.service.predict({ ...body, campId: currentUser.campId });
       return {
         success: true,
         data: result,
@@ -61,9 +89,10 @@ export class DecisionTreeController {
   }
 
   @Post('explain')
-  async explain(@Body() body: ExplainDecisionTreeDTO) {
+  async explain(@Body() body: ExplainDecisionTreeDTO, @Req() req: Request) {
     try {
-      const result = await this.service.explain(body);
+      const currentUser = this.getCurrentUser(req);
+      const result = await this.service.explain({ ...body, campId: currentUser.campId });
       return {
         success: true,
         data: result,
@@ -77,13 +106,15 @@ export class DecisionTreeController {
   }
 
   @Get('models/:id')
-  async getModelById(@Param('id') id: string) {
+  async getModelById(@Param('id') id: string, @Req() req: Request) {
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid ID');
     }
 
-    const model = await this.service.getModelById(parsedId);
+    const currentUser = this.getCurrentUser(req);
+
+    const model = await this.service.getModelById(parsedId, currentUser.campId);
     if (!model) {
       throw new NotFoundException('Decision tree model not found');
     }
@@ -108,7 +139,13 @@ export class DecisionTreeController {
     @Query('isActive') isActive?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
+    if (!req) {
+      throw new BadRequestException('Request context is required');
+    }
+
+    const currentUser = this.getCurrentUser(req);
     const parsedPage = page ? Number.parseInt(page, 10) : 1;
     const parsedLimit = limit ? Number.parseInt(limit, 10) : 10;
 
@@ -132,9 +169,11 @@ export class DecisionTreeController {
     const filters: {
       modelName?: string;
       isActive?: boolean;
+      campId?: number;
       page?: number;
       limit?: number;
     } = {
+      campId: currentUser.campId,
       page: parsedPage,
       limit: parsedLimit,
     };

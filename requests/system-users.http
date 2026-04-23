@@ -1,9 +1,9 @@
 @baseUrl = http://localhost:3000
-@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiYjU0NzE3ODMtZmRkNi00ZjNjLTg4ZDItMzU4Mjg5ZGMyMzBhIiwiaWF0IjoxNzc1Mjg5Mzk0LCJleHAiOjE3NzUyOTA1OTR9.YkeXeLdl_RxBTs6vogml1qYrOjbKOdt-Gndta1-FxPc
-@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNDFmMzk1YmItOTFjMS00ZmU5LTg1ZGQtZmZjOWM1OWM0N2U1IiwiaWF0IjoxNzc1Mjg4NDc0LCJleHAiOjE3NzUyODk2NzR9.j7hEbjfu7_Pmlq9uuRBUWTlTKg9nAtJVTeO84nJirfA
-@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImE2ODQ2MDI0LTU4NDItNDEwMC05NGFiLTBlYmY3ZGJmNjE2OCIsImlhdCI6MTc3NTI4ODUwMiwiZXhwIjoxNzc1Mjg5NzAyfQ.QO1_qZSFzo_8YT9ev0EKjo4GODm2L6EkT3tKgTNHUSY
-@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0YjhhNmZlYS02MDcyLTRiZjUtOWQ4OS1lODMzNWQzMDM2NmMiLCJpYXQiOjE3NzUyODg1MTksImV4cCI6MTc3NTI4OTcxOX0.p58viR8wAgP6GZ5sGoU1RPovpEjReOTwwMscbzri2D0
-@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImE1NWJjMjBiLWFlOTUtNDYwNi1hOTVhLWRmZDk1NWNkNzZjNiIsImlhdCI6MTc3NTI4ODUzNiwiZXhwIjoxNzc1Mjg5NzM2fQ.VtiFDiv50FTfwWM9zsZNdX6cD3Bad4ges3f-tCu3Kog
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNjM1ZGFjYzYtYTUyYy00ZjAxLWI4MzQtOTMxMDNhN2Y0ZTI1IiwiaWF0IjoxNzc1OTYyMzAwLCJleHAiOjE3NzU5NjM1MDB9.V_0eYGrGA4BEBsGEzTf3S3_JNkZNCaN-43xuSMFWJGw
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDU1MzViNWItOTY3MC00MmY4LWJhZTgtMGUyOGM2NWJjOTk3IiwiaWF0IjoxNzc1OTYyMjYxLCJleHAiOjE3NzU5NjM0NjF9.UWlmbnIOiNM2lp4N2cKAWSebgxRFJK0Qahz1tuI-rWM
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjliZGU0ZDI5LWQ0ZTMtNDQwZi04NTBmLWQxMzk1MGE5MWNkMCIsImlhdCI6MTc3NTk2MDUxMSwiZXhwIjoxNzc1OTYxNzExfQ.NH5l4fFYS5tHdGxUo4PJTOilXcCEYh6EPc9yYG2Nr7k
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJmYjBkMTQ4YS01NmRiLTQ5OTgtYmM1NS00NTAzYTg3MTgyMmYiLCJpYXQiOjE3NzU5NjA1MjcsImV4cCI6MTc3NTk2MTcyN30.F0v5HH394OUfMWuHurYXwplNQQXbRi1XadakfZWe6nk
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjUyY2FhMmJmLTEyMzYtNDk2My04ZWFhLTYzYThiYjlmYmM3YSIsImlhdCI6MTc3NTk2MDU0MCwiZXhwIjoxNzc1OTYxNzQwfQ.QR3s9ehysVpSaNZc7lcjKEGqjdBqnH2vNb1rcUMTqhg
 
 ### 1. [LOGIN] SYSTEM_ADMIN (Seeder)
 POST {{baseUrl}}/api/auth/login
@@ -284,6 +284,71 @@ Content-Type: application/json
 
 {
   "status": "INACTIVE"
+}
+
+###
+
+### ############################################################
+### AUTOMATION TESTS - PROACTIVE LOGIC
+### ############################################################
+
+@autoUserId = 2
+
+### 30. [USER-AUTO-01] Role Change Automation (History + Notification)
+### Expected: create an entry in /api/user-role-history and a notification titled "Rol actualizado".
+PUT {{baseUrl}}/api/users/{{autoUserId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "RESOURCE_MANAGEMENT"
+}
+
+###
+
+### 31. [USER-AUTO-01-CHECK-A] Verify role change history for the user
+GET {{baseUrl}}/api/user-role-history?userId={{autoUserId}}&page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 32. [USER-AUTO-01-CHECK-B] Verify ROLE_UPDATED notification for the affected user
+GET {{baseUrl}}/api/notifications?type=ROLE_UPDATED&page=1&limit=20
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 33. [USER-AUTO-02] Fail-Fast: resend the current role (no-op)
+### Expected: no new history entries or notifications are created.
+PUT {{baseUrl}}/api/users/{{autoUserId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "RESOURCE_MANAGEMENT"
+}
+
+###
+
+### 34. [USER-AUTO-02-CHECK-A] Confirm history does not increase from baseline
+GET {{baseUrl}}/api/user-role-history?userId={{autoUserId}}&page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 35. [USER-AUTO-02-CHECK-B] Confirm ROLE_UPDATED does not increase from baseline
+GET {{baseUrl}}/api/notifications?type=ROLE_UPDATED&page=1&limit=20
+Authorization: Bearer {{workerToken}}
+
+###
+
+### 36. [USER-AUTO-RESET] Restore original role to avoid affecting other tests
+PUT {{baseUrl}}/api/users/{{autoUserId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "WORKER"
 }
 
 ###

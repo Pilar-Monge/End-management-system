@@ -12,7 +12,9 @@ import {
   Param,
   Post,
   Put,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -38,6 +40,27 @@ import { CreateSystemUserDto, SystemUserResponseDto, UpdateSystemUserDto } from 
 export class UserController {
   constructor(private readonly service: UserService) {}
 
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
   @Post('users')
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create user' })
@@ -57,10 +80,14 @@ export class UserController {
   @ApiOperation({ summary: 'List users' })
   @ApiOkResponseList(SystemUserResponseDto)
   @ApiInternalServerErrorResponse()
-  async findAll() {
+  async findAll(@Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
       const users = await this.service.findAllUsers();
-      return { success: true, data: users };
+      return {
+        success: true,
+        data: users.filter((user) => user.campId === currentUser.campId),
+      };
     } catch (error) {
       throw new InternalServerErrorException(
         error instanceof Error ? error.message : 'Error getting users',
@@ -76,12 +103,16 @@ export class UserController {
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
   @ApiUnauthorizedResponse()
-  async findById(@Param('id') id: string) {
+  async findById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('ID not provided');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('invalid ID');
+    const currentUser = this.getCurrentUser(req);
     const user = await this.service.findUserById(parsedId);
     if (!user) throw new NotFoundException('User not found');
+    if (user.campId !== currentUser.campId) {
+      throw new NotFoundException('User not found');
+    }
     return { success: true, data: user };
   }
 
@@ -95,10 +126,16 @@ export class UserController {
   @ApiNotFoundResponse()
   @ApiUnauthorizedResponse()
   @ApiInternalServerErrorResponse()
-  async update(@Param('id') id: string, @Body() body: UpdateSystemUserDto) {
+  async update(@Param('id') id: string, @Body() body: UpdateSystemUserDto, @Req() req: Request) {
     if (!id) throw new BadRequestException('ID not provided');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('invalid ID');
+    const currentUser = this.getCurrentUser(req);
+    const existingUser = await this.service.findUserById(parsedId);
+    if (!existingUser) throw new NotFoundException('User not found');
+    if (existingUser.campId !== currentUser.campId) {
+      throw new NotFoundException('User not found');
+    }
     try {
       const user = await this.service.updateUser(parsedId, body);
       if (!user) throw new NotFoundException('User not found');

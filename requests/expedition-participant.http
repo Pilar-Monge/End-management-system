@@ -1,9 +1,9 @@
 @baseUrl = http://localhost:3000
-@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNTMwYzYwNjMtN2Q1OS00NTgzLWFiNjgtYThlMDVmOGM0ZTRkIiwiaWF0IjoxNzc1Mzc1MDczLCJleHAiOjE3NzUzNzYyNzN9.ApZ0Xelq-x-0TVGVZ5uPXImqMr7PZaqdCMRRE-KZ5Vc
-@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI2MDMyZWM5OC1lMmQ4LTQwNGUtOWIwNy1jNGJhYWM3OWRjZGYiLCJpYXQiOjE3NzUzNzUxMjEsImV4cCI6MTc3NTM3NjMyMX0.W92ZldPqBO8zDe5z175lNhwr-C585aqeEGvceFGLTRA
-@resourceToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImRmZjNjYjBjLTNlM2MtNDRmMi1hMDAxLWJlZDVkZmZlZGMzOCIsImlhdCI6MTc3NTM3NTE2NywiZXhwIjoxNzc1Mzc2MzY3fQ.2H-G9c5Gs2C3XOussD2Q5PIf9Ex4DfximkQAYX_0Tz0
-@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiY2VjNTcyM2ItMzBiYy00MThhLWI4MzMtNDZkNjk4MTAyZjE1IiwiaWF0IjoxNzc1Mzc1MTkyLCJleHAiOjE3NzUzNzYzOTJ9.IeWPzRvrdCLBJElItCHJPy9EZdQoSM1phnmloPrPZDs
-@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImQwZjM1OTllLWE4N2UtNDllMC1iOWUxLTA0NTUzMjE5MzA2YyIsImlhdCI6MTc3NTM3NTI0NCwiZXhwIjoxNzc1Mzc2NDQ0fQ.pqbB7viH_bxytttXJjO-UMcyQsjWQC7qvB6ikILUSCU
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZTQyNGRiNmUtMDE1My00OWZhLTg2OWEtMmNiMTUxYzVlMGRmIiwiaWF0IjoxNzc1OTYxODg0LCJleHAiOjE3NzU5NjMwODR9.fnXHaSsGFpIHZ7uZJvJiyFryxMjG5V9Eln2yl-1enMA
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjMyYmI5ZTg5LWNlMGYtNDFiMS04MDgyLThlNTRjNmViMmJhZSIsImlhdCI6MTc3NTk2MjUyMSwiZXhwIjoxNzc1OTYzNzIxfQ.iWkzt00jJpbowc9LiiAusAs00MSlstDBiwcI9YHDB50
+@resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImQ1NWViMDQzLWY0MjMtNDZlOS1iMGVhLTIyNDkzNzdmODYwNiIsImlhdCI6MTc3NTk2MjM5MiwiZXhwIjoxNzc1OTYzNTkyfQ.eIh9GktijKq7wNiwohkIRB42CKlJfWoOGzc_6siax-o
+@travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI0YTk1Nzk3MC03NTgxLTQ0NmYtODcxNC1iMjQyNDAxNjU2ZTQiLCJpYXQiOjE3NzU5NjIzNzMsImV4cCI6MTc3NTk2MzU3M30.j-L_7SsYLKe0ZHwXZHEMjsj1opmKRiXi-Cg9-v9gm9Q
+@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjUyY2FhMmJmLTEyMzYtNDk2My04ZWFhLTYzYThiYjlmYmM3YSIsImlhdCI6MTc3NTk2MDU0MCwiZXhwIjoxNzc1OTYxNzQwfQ.QR3s9ehysVpSaNZc7lcjKEGqjdBqnH2vNb1rcUMTqhg
 
 ### 2.1 [LOGIN] SYSTEM_ADMIN
 POST {{baseUrl}}/api/auth/login
@@ -181,3 +181,34 @@ Authorization: Bearer {{visitorToken}}
 ### 2.17 DELETE Expedition Participant - Travel Manager (Expect 403 Audit Hard-Lock)
 DELETE {{baseUrl}}/api/expedition-participants/1
 Authorization: Bearer {{travelToken}}
+
+###
+
+### ############################################################
+### AUTOMATION TESTS - PROACTIVE LOGIC
+### ############################################################
+
+@autoExpeditionId = 1
+@autoPersonId = 2
+
+### [EXP-AUTO-01] Assign Participant to PLANNED Expedition
+### Expected: create a notification of type EXPEDITION_RETURN.
+POST {{baseUrl}}/api/expedition-participants
+Authorization: Bearer {{travelToken}}
+Content-Type: application/json
+
+{
+  "expeditionId": {{autoExpeditionId}},
+  "personId": {{autoPersonId}},
+  "expeditionRole": "SCOUT",
+  "status": "ACTIVE"
+}
+
+###
+
+### [EXP-AUTO-02] Verify notification in the assigned worker inbox
+### Expected title: "Asignacion de expedicion".
+GET {{baseUrl}}/api/notifications?type=EXPEDITION_RETURN&page=1&limit=20
+Authorization: Bearer {{workerToken}}
+
+###

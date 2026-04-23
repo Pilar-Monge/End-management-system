@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -35,11 +36,34 @@ import { UserRoleHistoryService } from './userRoleHistory.service';
 import type { CreateUserRoleHistoryDTO, UpdateUserRoleHistoryDTO } from './userRoleHistory.model';
 import { UserRoleHistoryEntity } from './userRoleHistory.entity';
 import { CreateUserRoleHistoryDto, UpdateUserRoleHistoryDto } from './dto';
+
 @Controller('user-role-history')
 @ApiTags('User Role History')
 @Roles('SYSTEM_ADMIN')
 export class UserRoleHistoryController {
   constructor(private readonly service: UserRoleHistoryService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
   @Post()
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create User Role History' })
@@ -64,6 +88,7 @@ export class UserRoleHistoryController {
       );
     }
   }
+
   @Get(':id')
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get User Role History by id' })
@@ -71,17 +96,24 @@ export class UserRoleHistoryController {
   @ApiOkResponseData(UserRoleHistoryEntity, { description: 'User Role History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    const campId = await this.service.getEntryCampId(parsedId);
+    if (campId === null || campId !== currentUser.campId) {
+      throw new NotFoundException('User role history entry not found');
+    }
 
     const entry = await this.service.getEntryById(parsedId);
     if (!entry) throw new NotFoundException('User role history entry not found');
 
     return { success: true, data: entry };
   }
+
   @Get()
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List User Role History' })
@@ -99,8 +131,14 @@ export class UserRoleHistoryController {
     @Query('changedBy') changedBy?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
       const filters: {
         userId?: number;
         changedBy?: number;
@@ -111,12 +149,20 @@ export class UserRoleHistoryController {
       if (userId) {
         const parsedUserId = Number.parseInt(userId, 10);
         if (Number.isNaN(parsedUserId)) throw new BadRequestException('Invalid userId');
+        const campId = await this.service.getUserCampId(parsedUserId);
+        if (campId !== null && campId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query role history from another camp');
+        }
         filters.userId = parsedUserId;
       }
 
       if (changedBy) {
         const parsedChangedBy = Number.parseInt(changedBy, 10);
         if (Number.isNaN(parsedChangedBy)) throw new BadRequestException('Invalid changedBy');
+        const campId = await this.service.getUserCampId(parsedChangedBy);
+        if (campId !== null && campId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query role history from another camp');
+        }
         filters.changedBy = parsedChangedBy;
       }
 
@@ -137,17 +183,26 @@ export class UserRoleHistoryController {
       }
 
       const result = await this.service.getAllEntries(filters);
+      const campScopedData = [] as typeof result.data;
+
+      for (const entry of result.data) {
+        const campId = await this.service.getEntryCampId(entry.id);
+        if (campId === currentUser.campId) {
+          campScopedData.push(entry);
+        }
+      }
+
       const resolvedPage = filters.page ?? 1;
       const resolvedLimit = filters.limit ?? 10;
 
       return {
         success: true,
-        data: result.data,
+        data: campScopedData,
         pagination: {
           page: resolvedPage,
           limit: resolvedLimit,
-          total: result.total,
-          pages: Math.ceil(result.total / resolvedLimit),
+          total: campScopedData.length,
+          pages: Math.ceil(campScopedData.length / resolvedLimit),
         },
       };
     } catch (error) {
@@ -156,6 +211,7 @@ export class UserRoleHistoryController {
       );
     }
   }
+
   @Put(':id')
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Update User Role History' })
@@ -164,13 +220,23 @@ export class UserRoleHistoryController {
   @ApiOkResponseData(UserRoleHistoryEntity, { description: 'User Role History updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateUserRoleHistoryDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateUserRoleHistoryDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const campId = await this.service.getEntryCampId(parsedId);
+      if (campId === null || campId !== currentUser.campId) {
+        throw new NotFoundException('User role history entry not found');
+      }
+
       const entry = await this.service.updateEntry(parsedId, body);
       if (!entry) throw new NotFoundException('User role history entry not found');
 
@@ -189,6 +255,7 @@ export class UserRoleHistoryController {
       );
     }
   }
+
   @Delete(':id')
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete User Role History' })
@@ -196,13 +263,19 @@ export class UserRoleHistoryController {
   @ApiOkResponseMessage({ description: 'User Role History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const campId = await this.service.getEntryCampId(parsedId);
+      if (campId === null || campId !== currentUser.campId) {
+        throw new NotFoundException('User role history entry not found');
+      }
+
       const deleted = await this.service.deleteEntry(parsedId);
       if (!deleted) throw new NotFoundException('User role history entry not found');
 

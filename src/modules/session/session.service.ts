@@ -16,8 +16,17 @@ export class SessionService {
   ) {}
 
   async createSession(data: CreateSessionDTO): Promise<Session> {
-    await assertEntityExists(this.dataSource, UserEntity, data.userId, 'User');
+    const user = await this.dataSource
+      .getRepository(UserEntity)
+      .findOne({ where: { id: data.userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
+    if (user.campId !== data.campId) {
+      throw new Error('User does not belong to the provided camp');
+    }
 
     const existing = await this.repository.findByToken(data.token);
     if (existing) {
