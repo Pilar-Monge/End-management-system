@@ -454,20 +454,17 @@ export class AdmissionRequestService {
 
     await this.notificationService.queueEmail({
       toEmail: request.email,
-      subject: `Solicitud de ingreso #${request.id} recibida`,
+      subject: 'Solicitud de ingreso recibida',
       templateKey: 'admission_request_pending',
       payload: {
-        title: `Solicitud de ingreso #${request.id} recibida`,
-        message: `Hola ${applicantName}, recibimos tu solicitud y ahora entra en evaluacion automatizada con IA antes de la revision administrativa.`,
+        title: 'Solicitud de ingreso recibida',
+        message: `Hola ${applicantName}, recibimos tu solicitud y pronto sera revisada por administracion.`,
         sourceType: 'admission_request',
-        sourceId: request.id,
         details: {
-          solicitudId: request.id,
           nombreSolicitante: applicantName,
           campId: request.campId,
           correoSolicitante: request.email,
           usuarioDeseado: request.desiredUsername,
-          estadoSolicitud: request.status,
           fechaSolicitud: request.createdAt.toISOString(),
         },
       },
@@ -520,13 +517,10 @@ export class AdmissionRequestService {
         templateKey: 'admission_request_ai_reviewed',
         payload: {
           title: 'Solicitud en revision administrativa',
-          message: `Hola ${applicantName}, tu solicitud #${request.id} fue evaluada por IA y ahora esta pendiente de revision por administracion.`,
+          message: `Hola ${applicantName}, tu solicitud fue recibida y ahora esta en revision administrativa.`,
           sourceType: 'admission_request',
-          sourceId: request.id,
           details: {
-            solicitudId: request.id,
-            estadoSolicitud: request.status,
-            oficioSugeridoIA: aiContext?.suggestedOccupationName ?? 'PENDIENTE_DEFINICION',
+            estadoSolicitud: 'EN_REVISION_ADMINISTRATIVA',
           },
         },
       });
@@ -548,9 +542,8 @@ export class AdmissionRequestService {
         templateKey: 'admission_request_rejected',
         payload: {
           title: 'Solicitud rechazada',
-          message: `Hola ${applicantName}, la evaluacion inicial de tu solicitud #${request.id} resulto en rechazo. Puedes contactar al campamento para mas informacion.`,
+          message: `Hola ${applicantName}, la evaluacion inicial de tu solicitud resulto en rechazo. Puedes contactar al campamento para mas informacion.`,
           sourceType: 'admission_request',
-          sourceId: request.id,
         },
       });
     }
@@ -574,8 +567,8 @@ export class AdmissionRequestService {
     });
 
     const approvedMessage = provisionedCredentials
-      ? `Tu solicitud de ingreso (ID: ${request.id}) fue aprobada. Credenciales temporales: usuario ${provisionedCredentials.username}, contrasena ${provisionedCredentials.generatedPassword ?? 'ASIGNADA_PREVIAMENTE'}. Rol del sistema: ${provisionedCredentials.role}. Oficio: ${provisionedCredentials.occupationName}.`
-      : `Tu solicitud de ingreso (ID: ${request.id}) fue aprobada por administracion.`;
+      ? `Tu solicitud de ingreso fue aprobada. Credenciales temporales: usuario ${provisionedCredentials.username}, contrasena ${provisionedCredentials.generatedPassword ?? 'ASIGNADA_PREVIAMENTE'}. Rol del sistema: ${provisionedCredentials.role}. Oficio: ${provisionedCredentials.occupationName}.`
+      : 'Tu solicitud de ingreso fue aprobada por administracion.';
 
     await this.notificationService.queueEmail({
       toEmail: request.email,
@@ -585,12 +578,10 @@ export class AdmissionRequestService {
         title: approved ? 'Solicitud aprobada' : 'Solicitud rechazada',
         message: approved
           ? approvedMessage
-          : `Tu solicitud de ingreso (ID: ${request.id}) fue rechazada por administracion.`,
+          : 'Tu solicitud de ingreso fue rechazada por administracion.',
         sourceType: 'admission_request',
-        sourceId: request.id,
         details: approved
           ? {
-              solicitudId: request.id,
               nombreSolicitante: applicantName,
               usuarioAsignado: provisionedCredentials?.username ?? request.desiredUsername,
               contrasenaTemporal: provisionedCredentials?.generatedPassword ?? 'NO_GENERADA',
@@ -599,7 +590,6 @@ export class AdmissionRequestService {
               descripcionOficio: provisionedCredentials?.occupationDescription ?? 'Sin descripcion',
             }
           : {
-              solicitudId: request.id,
               nombreSolicitante: applicantName,
               motivoRechazo: request.rejectionReason ?? 'Sin motivo especifico',
             },
