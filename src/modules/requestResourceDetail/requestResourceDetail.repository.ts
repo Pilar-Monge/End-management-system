@@ -64,10 +64,18 @@ export class RequestResourceDetailRepository {
   async findAllAndCount(filters?: {
     requestId?: number;
     resourceTypeId?: number;
+    involvedCampId?: number;
     offset?: number;
     limit?: number;
   }): Promise<{ data: RequestResourceDetail[]; total: number }> {
     const qb = this.repo.createQueryBuilder('d');
+
+    if (filters?.involvedCampId !== undefined) {
+      qb.innerJoin('intercamp_request', 'ir', 'ir.id = d.request_id');
+      qb.andWhere('(ir.origin_camp_id = :involvedCampId OR ir.destination_camp_id = :involvedCampId)', {
+        involvedCampId: filters.involvedCampId,
+      });
+    }
 
     if (filters?.requestId !== undefined) {
       qb.andWhere('d.requestId = :requestId', { requestId: filters.requestId });
