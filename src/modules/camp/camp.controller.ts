@@ -67,6 +67,7 @@ export class CampController {
   }
 
   @Post()
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Camp' })
   @ApiBody({ type: CreateCampDto })
   @ApiCreatedResponseData(CampEntity, { description: 'Camp created' })
@@ -201,6 +202,7 @@ export class CampController {
     }
   }
   @Put(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Update Camp' })
   @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
   @ApiBody({ type: UpdateCampDto })
@@ -233,6 +235,7 @@ export class CampController {
     }
   }
   @Delete(':id')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Camp' })
   @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
   @ApiOkResponseMessage({ description: 'Camp deleted' })
