@@ -7,7 +7,6 @@ import { EncryptionService } from '../../services/encryption.service';
 import { CampEntity } from '../camp/camp.entity';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { AI_DECISION_VALUES } from '../aiAdmissionReport/aiAdmissionReport.model';
-import { AiAdmissionReportEntity } from '../aiAdmissionReport/aiAdmissionReport.entity';
 import { NotificationService } from '../notification/notification.service';
 import type { SystemRole } from '../systemUser/systemUser.model';
 import { UserEntity } from '../systemUser/systemUser.entity';
@@ -460,9 +459,7 @@ export class AdmissionRequestService {
     };
   }
 
-  private async notifyInitialAdmissionRequest(
-    request: AdmissionRequest,
-  ): Promise<void> {
+  private async notifyInitialAdmissionRequest(request: AdmissionRequest): Promise<void> {
     const applicantName = this.buildApplicantName(request);
 
     await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
@@ -673,10 +670,7 @@ export class AdmissionRequestService {
     return `user${Date.now()}`;
   }
 
-  private async resolveAvailableUsername(
-    baseCandidate: string,
-    campId: number,
-  ): Promise<string> {
+  private async resolveAvailableUsername(baseCandidate: string, campId: number): Promise<string> {
     const userRepo = this.dataSource.getRepository(UserEntity);
     let candidate = baseCandidate;
     let suffix = 1;

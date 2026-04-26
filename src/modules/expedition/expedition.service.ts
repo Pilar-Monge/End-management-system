@@ -161,9 +161,7 @@ export class ExpeditionService {
     }
 
     if (participantPerson.currentStatus === 'INACTIVE') {
-      throw new ForbiddenException(
-        'Las personas inactivas no pueden completar una expedicion',
-      );
+      throw new ForbiddenException('Las personas inactivas no pueden completar una expedicion');
     }
 
     const now = this.systemTimeService.now();
@@ -177,8 +175,7 @@ export class ExpeditionService {
       throw new Error('La expedicion no puede completarse desde su estado actual');
     }
 
-    const completedStatus =
-      expedition.status === 'LOST' ? 'RETURNED_AFTER_LOST' : 'COMPLETED';
+    const completedStatus = expedition.status === 'LOST' ? 'RETURNED_AFTER_LOST' : 'COMPLETED';
 
     await this.repository.completeExplorationWithLoot(
       expedition,

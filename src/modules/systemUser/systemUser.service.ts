@@ -54,10 +54,7 @@ export class UserService {
       sourceId: existing.id,
     });
 
-    await this.authRepository.closeActiveSessionsByUser(
-      existing.id,
-      this.systemTimeService.now(),
-    );
+    await this.authRepository.closeActiveSessionsByUser(existing.id, this.systemTimeService.now());
   }
 
   private async closeSessionsIfUserCannotContinueActive(
