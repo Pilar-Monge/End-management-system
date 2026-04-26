@@ -220,6 +220,29 @@ export class AuthService {
     return token;
   }
 
+  async rotateSessionToken(token: string, payload: JwtPayload): Promise<string> {
+    const normalizedToken = typeof token === 'string' ? token.trim() : '';
+    if (!normalizedToken) {
+      throw new UnauthorizedException('Token requerido');
+    }
+
+    const nextToken = await this.generateToken(payload);
+    const now = this.systemTimeService.now();
+    const expirationDate = new Date(now.getTime() + SESSION_INACTIVITY_MINUTES * 60 * 1000);
+    const replaced = await this.authRepository.replaceActiveSessionToken(
+      normalizedToken,
+      nextToken,
+      expirationDate,
+      now,
+    );
+
+    if (!replaced) {
+      throw new UnauthorizedException('SesiÃ³n no encontrada');
+    }
+
+    return nextToken;
+  }
+
   async forgotPassword(email: string, campId: number, ip: string): Promise<void> {
     const normalizedEmail = typeof email === 'string' ? email.trim() : '';
     if (!normalizedEmail || !Number.isInteger(campId) || campId <= 0) {
