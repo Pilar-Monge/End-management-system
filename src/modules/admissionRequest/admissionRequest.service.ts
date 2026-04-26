@@ -7,7 +7,6 @@ import { EncryptionService } from '../../services/encryption.service';
 import { CampEntity } from '../camp/camp.entity';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { AI_DECISION_VALUES } from '../aiAdmissionReport/aiAdmissionReport.model';
-import { AiAdmissionReportEntity } from '../aiAdmissionReport/aiAdmissionReport.entity';
 import { NotificationService } from '../notification/notification.service';
 import type { SystemRole } from '../systemUser/systemUser.model';
 import { UserEntity } from '../systemUser/systemUser.entity';
@@ -34,7 +33,7 @@ interface AiReviewContext {
   roleReason?: string;
 }
 
-interface ProvisionedCredentialsContext {
+interface CreatedAccessContext {
   username: string;
   generatedPassword: string | null;
   role: SystemRole;
@@ -58,10 +57,10 @@ export class AdmissionRequestService {
   async createRequest(data: CreateAdmissionRequestDTO): Promise<AdmissionRequest> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
 
-    const existingRequest = await this.repository.findByEmail(data.email);
+    const existingRequest = await this.repository.findByEmailAndCamp(data.email, data.campId);
 
     if (existingRequest) {
-      throw new Error('Ya existe una solicitud con este correo');
+      throw new Error('Ya existe una solicitud con este correo para este campamento');
     }
 
     const normalizedData = this.normalizeAiFieldsForCreate(data);
@@ -195,10 +194,18 @@ export class AdmissionRequestService {
       throw new Error('Solicitud no encontrada');
     }
 
-    if (data.email && data.email !== existingRequest.email) {
-      const requestWithEmail = await this.repository.findByEmail(data.email);
+    const targetCampId = data.campId ?? existingRequest.campId;
+
+    if (
+      (data.email && data.email !== existingRequest.email) ||
+      (data.campId !== undefined && data.campId !== existingRequest.campId)
+    ) {
+      const requestWithEmail = await this.repository.findByEmailAndCamp(
+        data.email ?? existingRequest.email,
+        targetCampId,
+      );
       if (requestWithEmail && requestWithEmail.id !== existingRequest.id) {
-        throw new Error('Ya existe otra solicitud con este correo');
+        throw new Error('Ya existe otra solicitud con este correo para este campamento');
       }
     }
 
@@ -310,6 +317,19 @@ export class AdmissionRequestService {
 
     await assertEntityExists(this.dataSource, UserEntity, adminUserId, 'User');
 
+    if (approved) {
+      const existingApprovedRequest = await this.repository.findApprovedByEmailExcludingId(
+        request.email,
+        request.id,
+      );
+
+      if (existingApprovedRequest) {
+        throw new Error(
+          'Esta persona ya fue aprobada en otro campamento y no puede ser aprobada nuevamente',
+        );
+      }
+    }
+
     const assignedOccupationIdOnApproval = approved
       ? (request.finalOccupationId ?? request.suggestedOccupationId ?? null)
       : null;
@@ -320,10 +340,10 @@ export class AdmissionRequestService {
       );
     }
 
-    let provisionedCredentials: ProvisionedCredentialsContext | null = null;
+    let createdAccess: CreatedAccessContext | null = null;
 
     if (approved && assignedOccupationIdOnApproval) {
-      provisionedCredentials = await this.provisionAccessForApprovedRequest(
+      createdAccess = await this.createPersonAndUserForApprovedRequest(
         request,
         assignedOccupationIdOnApproval,
       );
@@ -343,7 +363,7 @@ export class AdmissionRequestService {
       throw new Error('Error al revisar la solicitud');
     }
 
-    await this.notifyAdminReviewResult(updatedRequest, approved, provisionedCredentials);
+    await this.notifyAdminReviewResult(updatedRequest, approved, createdAccess);
 
     return updatedRequest;
   }
@@ -439,9 +459,7 @@ export class AdmissionRequestService {
     };
   }
 
-  private async notifyInitialAdmissionRequest(
-    request: AdmissionRequest,
-  ): Promise<void> {
+  private async notifyInitialAdmissionRequest(request: AdmissionRequest): Promise<void> {
     const applicantName = this.buildApplicantName(request);
 
     await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
@@ -454,20 +472,17 @@ export class AdmissionRequestService {
 
     await this.notificationService.queueEmail({
       toEmail: request.email,
-      subject: `Solicitud de ingreso #${request.id} recibida`,
+      subject: 'Solicitud de ingreso recibida',
       templateKey: 'admission_request_pending',
       payload: {
-        title: `Solicitud de ingreso #${request.id} recibida`,
-        message: `Hola ${applicantName}, recibimos tu solicitud y ahora entra en evaluacion automatizada con IA antes de la revision administrativa.`,
+        title: 'Solicitud de ingreso recibida',
+        message: `Hola ${applicantName}, recibimos tu solicitud y pronto sera revisada por administracion.`,
         sourceType: 'admission_request',
-        sourceId: request.id,
         details: {
-          solicitudId: request.id,
           nombreSolicitante: applicantName,
           campId: request.campId,
           correoSolicitante: request.email,
           usuarioDeseado: request.desiredUsername,
-          estadoSolicitud: request.status,
           fechaSolicitud: request.createdAt.toISOString(),
         },
       },
@@ -520,13 +535,10 @@ export class AdmissionRequestService {
         templateKey: 'admission_request_ai_reviewed',
         payload: {
           title: 'Solicitud en revision administrativa',
-          message: `Hola ${applicantName}, tu solicitud #${request.id} fue evaluada por IA y ahora esta pendiente de revision por administracion.`,
+          message: `Hola ${applicantName}, tu solicitud fue recibida y ahora esta en revision administrativa.`,
           sourceType: 'admission_request',
-          sourceId: request.id,
           details: {
-            solicitudId: request.id,
-            estadoSolicitud: request.status,
-            oficioSugeridoIA: aiContext?.suggestedOccupationName ?? 'PENDIENTE_DEFINICION',
+            estadoSolicitud: 'EN_REVISION_ADMINISTRATIVA',
           },
         },
       });
@@ -548,9 +560,8 @@ export class AdmissionRequestService {
         templateKey: 'admission_request_rejected',
         payload: {
           title: 'Solicitud rechazada',
-          message: `Hola ${applicantName}, la evaluacion inicial de tu solicitud #${request.id} resulto en rechazo. Puedes contactar al campamento para mas informacion.`,
+          message: `Hola ${applicantName}, la evaluacion inicial de tu solicitud resulto en rechazo. Puedes contactar al campamento para mas informacion.`,
           sourceType: 'admission_request',
-          sourceId: request.id,
         },
       });
     }
@@ -559,7 +570,7 @@ export class AdmissionRequestService {
   private async notifyAdminReviewResult(
     request: AdmissionRequest,
     approved: boolean,
-    provisionedCredentials: ProvisionedCredentialsContext | null,
+    createdAccess: CreatedAccessContext | null,
   ): Promise<void> {
     const applicantName = this.buildApplicantName(request);
 
@@ -573,9 +584,9 @@ export class AdmissionRequestService {
       sourceId: request.id,
     });
 
-    const approvedMessage = provisionedCredentials
-      ? `Tu solicitud de ingreso (ID: ${request.id}) fue aprobada. Credenciales temporales: usuario ${provisionedCredentials.username}, contrasena ${provisionedCredentials.generatedPassword ?? 'ASIGNADA_PREVIAMENTE'}. Rol del sistema: ${provisionedCredentials.role}. Oficio: ${provisionedCredentials.occupationName}.`
-      : `Tu solicitud de ingreso (ID: ${request.id}) fue aprobada por administracion.`;
+    const approvedMessage = createdAccess
+      ? `Tu solicitud de ingreso fue aprobada. Credenciales temporales: usuario ${createdAccess.username}, contrasena ${createdAccess.generatedPassword ?? 'ASIGNADA_PREVIAMENTE'}. Rol del sistema: ${createdAccess.role}. Oficio: ${createdAccess.occupationName}.`
+      : 'Tu solicitud de ingreso fue aprobada por administracion.';
 
     await this.notificationService.queueEmail({
       toEmail: request.email,
@@ -585,21 +596,18 @@ export class AdmissionRequestService {
         title: approved ? 'Solicitud aprobada' : 'Solicitud rechazada',
         message: approved
           ? approvedMessage
-          : `Tu solicitud de ingreso (ID: ${request.id}) fue rechazada por administracion.`,
+          : 'Tu solicitud de ingreso fue rechazada por administracion.',
         sourceType: 'admission_request',
-        sourceId: request.id,
         details: approved
           ? {
-              solicitudId: request.id,
               nombreSolicitante: applicantName,
-              usuarioAsignado: provisionedCredentials?.username ?? request.desiredUsername,
-              contrasenaTemporal: provisionedCredentials?.generatedPassword ?? 'NO_GENERADA',
-              rolSistema: provisionedCredentials?.role ?? 'NO_ASIGNADO',
-              oficioAsignado: provisionedCredentials?.occupationName ?? 'NO_ASIGNADO',
-              descripcionOficio: provisionedCredentials?.occupationDescription ?? 'Sin descripcion',
+              usuarioAsignado: createdAccess?.username ?? request.desiredUsername,
+              contrasenaTemporal: createdAccess?.generatedPassword ?? 'NO_GENERADA',
+              rolSistema: createdAccess?.role ?? 'NO_ASIGNADO',
+              oficioAsignado: createdAccess?.occupationName ?? 'NO_ASIGNADO',
+              descripcionOficio: createdAccess?.occupationDescription ?? 'Sin descripcion',
             }
           : {
-              solicitudId: request.id,
               nombreSolicitante: applicantName,
               motivoRechazo: request.rejectionReason ?? 'Sin motivo especifico',
             },
@@ -662,10 +670,7 @@ export class AdmissionRequestService {
     return `user${Date.now()}`;
   }
 
-  private async resolveAvailableUsername(
-    baseCandidate: string,
-    campId: number,
-  ): Promise<string> {
+  private async resolveAvailableUsername(baseCandidate: string, campId: number): Promise<string> {
     const userRepo = this.dataSource.getRepository(UserEntity);
     let candidate = baseCandidate;
     let suffix = 1;
@@ -690,10 +695,10 @@ export class AdmissionRequestService {
     }
   }
 
-  private async provisionAccessForApprovedRequest(
+  private async createPersonAndUserForApprovedRequest(
     request: AdmissionRequest,
     assignedOccupationId: number,
-  ): Promise<ProvisionedCredentialsContext> {
+  ): Promise<CreatedAccessContext> {
     const occupationRepo = this.dataSource.getRepository(OccupationEntity);
     const personRepo = this.dataSource.getRepository(PersonEntity);
     const userRepo = this.dataSource.getRepository(UserEntity);
@@ -703,17 +708,24 @@ export class AdmissionRequestService {
       throw new Error('No se encontro el oficio asignado para crear el acceso del usuario');
     }
 
-    const person = await personRepo.findOne({
-      where: {
+    const person = await personRepo.save(
+      personRepo.create({
         admissionRequestId: request.id,
-      },
-    });
-
-    if (!person) {
-      throw new Error(
-        'No se puede aprobar la solicitud: primero debes registrar la persona vinculada a esta solicitud',
-      );
-    }
+        name: request.name,
+        lastName1: request.lastName1,
+        lastName2: request.lastName2,
+        identificationNumber: `ADM-${request.id}`,
+        birthDate: request.birthDate,
+        gender: request.gender,
+        initialHealthLevel: request.declaredHealthLevel,
+        previousExperience: request.previousExperience,
+        physicalConditionAtEntry: request.physicalCondition,
+        currentStatus: 'ACTIVE',
+        imageUrl: request.photoUrl,
+        campId: request.campId,
+        occupationId: assignedOccupationId,
+      }),
+    );
 
     const role = this.resolveSystemRoleForOccupation(occupation);
 

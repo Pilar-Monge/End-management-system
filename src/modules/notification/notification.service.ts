@@ -49,10 +49,7 @@ export class NotificationService {
     private readonly emailOutboxService: EmailOutboxService,
   ) {}
 
-  private shouldSendEmail(
-    type: NotificationType,
-    explicitValue?: boolean,
-  ): boolean {
+  private shouldSendEmail(type: NotificationType, explicitValue?: boolean): boolean {
     if (explicitValue !== undefined) {
       return explicitValue;
     }

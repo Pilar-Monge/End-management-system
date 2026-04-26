@@ -16,6 +16,10 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
+    const shouldRefreshSession = this.reflector.getAllAndOverride<boolean>('refreshSession', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (isPublic) {
       return true;
@@ -34,8 +38,11 @@ export class AuthGuard implements CanActivate {
     }
 
     const payload = await this.authService.validateSession(token, request.ip ?? 'unknown');
-    const newToken = await this.authService.generateToken(payload);
-    response.setHeader('Authorization', `Bearer ${newToken}`);
+    if (shouldRefreshSession) {
+      const newToken = await this.authService.rotateSessionToken(token, payload);
+      response.setHeader('Authorization', `Bearer ${newToken}`);
+      (request as Request & { refreshedToken?: string }).refreshedToken = newToken;
+    }
 
     request.user = payload;
     return true;

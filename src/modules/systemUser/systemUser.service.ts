@@ -9,6 +9,8 @@ import { User, CreateUserDTO, UserResponse, LoginDTO } from './systemUser.model'
 import { EncryptionService } from '../../services/encryption.service';
 import { UserRoleHistoryRepository } from '../userRoleHistory/userRoleHistory.repository';
 import { NotificationService } from '../notification/notification.service';
+import { AuthRepository } from '../../auth/auth.repository';
+import { SystemTimeService } from '../systemTime/systemTime.service';
 import type { UpdateSystemUserDto } from './dto';
 
 @Injectable()
@@ -18,6 +20,8 @@ export class UserService {
     private readonly userRoleHistoryRepository: UserRoleHistoryRepository,
     private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
+    private readonly authRepository: AuthRepository,
+    private readonly systemTimeService: SystemTimeService,
   ) {}
 
   private async handleRoleChange(
@@ -49,6 +53,19 @@ export class UserService {
       sourceType: 'system_user',
       sourceId: existing.id,
     });
+
+    await this.authRepository.closeActiveSessionsByUser(existing.id, this.systemTimeService.now());
+  }
+
+  private async closeSessionsIfUserCannotContinueActive(
+    status: User['status'],
+    userId: number,
+  ): Promise<void> {
+    if (status === 'ACTIVE') {
+      return;
+    }
+
+    await this.authRepository.closeActiveSessionsByUser(userId, this.systemTimeService.now());
   }
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
@@ -124,6 +141,8 @@ export class UserService {
       await this.handleRoleChange(existing, data.role as User['role']);
     }
     if (hasStatusChange && user) {
+      await this.closeSessionsIfUserCannotContinueActive(user.status, user.id);
+
       await this.notificationService.notifyUser(user.id, {
         campId: user.campId,
         type: 'USER_STATUS_UPDATED',
@@ -199,6 +218,8 @@ export class UserService {
     if (!user) return null;
 
     if (existing.status !== user.status) {
+      await this.closeSessionsIfUserCannotContinueActive(user.status, user.id);
+
       await this.notificationService.notifyUser(user.id, {
         campId: user.campId,
         type: 'USER_STATUS_UPDATED',

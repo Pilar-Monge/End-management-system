@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { Public } from '../common/decorators';
+import { AuthenticatedOnly, Public, RefreshSession } from '../common/decorators';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { AuthService } from './auth.service';
 import type { LoginDTO } from './auth.model';
@@ -18,13 +18,14 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Req() req: Request) {
+  @AuthenticatedOnly()
+  async logout(@Req() req: Request & { refreshedToken?: string }) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new BadRequestException('Missing or invalid Authorization header');
     }
 
-    const token = authHeader.slice('Bearer '.length).trim();
+    const token = req.refreshedToken ?? authHeader.slice('Bearer '.length).trim();
     if (!token) {
       throw new BadRequestException('Missing token');
     }
@@ -34,21 +35,9 @@ export class AuthController {
   }
 
   @Get('check-session')
-  async checkSession(@Req() req: Request) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new BadRequestException('Missing or invalid Authorization header');
-    }
-
-    const token = authHeader.slice('Bearer '.length).trim();
-    if (!token) {
-      throw new BadRequestException('Missing token');
-    }
-
-    await this.service.validateSession(token, req.ip ?? 'unknown', {
-      updateLastActivity: false,
-    });
-
+  @AuthenticatedOnly()
+  @RefreshSession()
+  async checkSession() {
     return {
       success: true,
       data: {

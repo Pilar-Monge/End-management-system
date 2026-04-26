@@ -140,6 +140,25 @@ export class ExpeditionRepository {
     return count > 0;
   }
 
+  async findActiveParticipantPersonStatus(
+    expeditionId: number,
+    userId: number,
+  ): Promise<Pick<PersonEntity, 'id' | 'currentStatus'> | null> {
+    const row = await this.dataSource
+      .getRepository(ExpeditionParticipantEntity)
+      .createQueryBuilder('ep')
+      .innerJoin(UserEntity, 'su', 'su.personId = ep.personId')
+      .innerJoin(PersonEntity, 'p', 'p.id = ep.personId')
+      .select('p.id', 'id')
+      .addSelect('p.currentStatus', 'currentStatus')
+      .where('ep.expeditionId = :expeditionId', { expeditionId })
+      .andWhere('su.id = :userId', { userId })
+      .andWhere('ep.status = :status', { status: 'ACTIVE' })
+      .getRawOne<{ id: number; currentStatus: PersonEntity['currentStatus'] }>();
+
+    return row ?? null;
+  }
+
   async findByStatuses(statuses: ExpeditionStatus[], campId?: number): Promise<Expedition[]> {
     if (statuses.length === 0) {
       return [];
@@ -214,6 +233,7 @@ export class ExpeditionRepository {
     expedition: Expedition,
     completedBy: number,
     now: Date,
+    completedStatus: Extract<ExpeditionStatus, 'COMPLETED' | 'RETURNED_AFTER_LOST'>,
   ): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -276,11 +296,11 @@ export class ExpeditionRepository {
         `
         UPDATE expedition
         SET actual_return_date = $2,
-            status = 'COMPLETED',
+            status = $3,
             updated_at = $2
         WHERE id = $1
         `,
-        [expedition.id, now.toISOString()],
+        [expedition.id, now.toISOString(), completedStatus],
       );
 
       await queryRunner.commitTransaction();

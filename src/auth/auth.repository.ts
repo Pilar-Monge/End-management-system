@@ -82,6 +82,27 @@ export class AuthRepository {
     );
   }
 
+  async replaceActiveSessionToken(
+    currentToken: string,
+    nextToken: string,
+    expirationDate: Date,
+    now?: Date,
+  ): Promise<boolean> {
+    const result = await this.sessionRepo.update(
+      {
+        token: currentToken,
+        status: 'ACTIVE',
+      },
+      {
+        token: nextToken,
+        expirationDate,
+        lastActivityDate: now ?? new Date(),
+      },
+    );
+
+    return (result.affected ?? 0) > 0;
+  }
+
   async createAccessLog(data: {
     sessionId?: number | null;
     userId: number;

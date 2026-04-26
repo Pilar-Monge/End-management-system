@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
@@ -154,9 +154,18 @@ export class ExpeditionService {
       throw new Error('Usuario autenticado no valido');
     }
 
-    const isParticipant = await this.repository.isUserActiveParticipant(id, completedBy);
-    if (!isParticipant) {
-      throw new Error('Solo los participantes activos pueden completar esta expedicion');
+    const participantPerson = await this.repository.findActiveParticipantPersonStatus(
+      id,
+      completedBy,
+    );
+    if (!participantPerson) {
+      throw new ForbiddenException(
+        'Solo los participantes activos pueden completar esta expedicion',
+      );
+    }
+
+    if (participantPerson.currentStatus === 'INACTIVE') {
+      throw new ForbiddenException('Las personas inactivas no pueden completar una expedicion');
     }
 
     const now = this.systemTimeService.now();
@@ -166,11 +175,18 @@ export class ExpeditionService {
       );
     }
 
-    if (['COMPLETED', 'CANCELED', 'LOST'].includes(expedition.status)) {
+    if (['COMPLETED', 'CANCELED', 'RETURNED_AFTER_LOST'].includes(expedition.status)) {
       throw new Error('La expedicion no puede completarse desde su estado actual');
     }
 
-    await this.repository.completeExplorationWithLoot(expedition, completedBy, now);
+    const completedStatus = expedition.status === 'LOST' ? 'RETURNED_AFTER_LOST' : 'COMPLETED';
+
+    await this.repository.completeExplorationWithLoot(
+      expedition,
+      completedBy,
+      now,
+      completedStatus,
+    );
 
     await this.syncParticipantPersonStatuses(id);
 
@@ -185,7 +201,10 @@ export class ExpeditionService {
       {
         type: 'EXPEDITION_COMPLETED',
         title: 'Expedicion completada',
-        message: `La expedicion ${completed.name} fue completada correctamente.`,
+        message:
+          completed.status === 'RETURNED_AFTER_LOST'
+            ? `La expedicion ${completed.name} regreso despues de haber sido marcada como perdida.`
+            : `La expedicion ${completed.name} fue completada correctamente.`,
         sourceType: 'expedition',
         sourceId: completed.id,
       },

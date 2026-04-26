@@ -217,6 +217,10 @@ export class AdmissionRequestController {
         throw new NotFoundException('Request not found');
       }
 
+      if (body.campId !== undefined && body.campId !== currentUser.campId) {
+        throw new BadRequestException('You cannot move requests to another camp');
+      }
+
       const request = await this.service.updateRequest(parsedId, body);
       return { success: true, data: request, message: 'Request updated successfully' };
     } catch (error) {

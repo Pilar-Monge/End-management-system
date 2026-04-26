@@ -153,7 +153,8 @@ export class TemporalAutomationService {
       let nextStatus = expedition.status;
 
       if (expedition.actualReturnDate) {
-        nextStatus = 'COMPLETED';
+        nextStatus =
+          expedition.status === 'RETURNED_AFTER_LOST' ? 'RETURNED_AFTER_LOST' : 'COMPLETED';
       } else if (now.getTime() > lossLimit.getTime()) {
         nextStatus = 'LOST';
       } else if (now.getTime() > estimatedReturn.getTime()) {

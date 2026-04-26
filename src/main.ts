@@ -11,6 +11,10 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  app.enableCors({
+    exposedHeaders: ['Authorization'],
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
