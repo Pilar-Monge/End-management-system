@@ -286,6 +286,7 @@ export class ExpeditionController {
   }
 
   @Post(':id/complete')
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
   @ApiOperation({ summary: 'Complete exploration' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseData(ExpeditionEntity, { description: 'Exploration completed' })
@@ -323,7 +324,7 @@ export class ExpeditionController {
 
       if (
         error instanceof Error &&
-        error.message === 'Only active expedition participants can complete this expedition'
+        error.message === 'Solo los participantes activos pueden completar esta expedicion'
       ) {
         throw new ForbiddenException(error.message);
       }

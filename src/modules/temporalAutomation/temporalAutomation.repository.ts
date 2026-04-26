@@ -58,7 +58,7 @@ export class TemporalAutomationRepository {
   async findExpeditionsForAutoStateUpdate(): Promise<ExpeditionEntity[]> {
     return await this.expeditionRepo.find({
       where: {
-        status: Not(In(['COMPLETED', 'CANCELED', 'LOST'])),
+        status: Not(In(['COMPLETED', 'CANCELED', 'LOST', 'RETURNED_AFTER_LOST'])),
       },
     });
   }

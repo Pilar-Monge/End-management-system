@@ -53,7 +53,11 @@ export class DashboardService {
 
     const base = {
       PLANNED: 0,
+      IN_PROGRESS: 0,
+      DELAYED: 0,
       COMPLETED: 0,
+      LOST: 0,
+      RETURNED_AFTER_LOST: 0,
       CANCELED: 0,
     };
 
