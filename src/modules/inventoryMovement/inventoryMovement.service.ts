@@ -70,6 +70,15 @@ export class InventoryMovementService {
     );
     await assertEntityExists(this.dataSource, UserEntity, data.recordedBy, 'User');
 
+    if (this.isConsumptionMovement(data.movementType)) {
+      const inventory = await this.repository.findCampInventory(data.campId, data.resourceTypeId);
+      const currentAmount = Number.parseFloat(inventory?.currentAmount ?? '0');
+
+      if (!Number.isFinite(currentAmount) || currentAmount < amount) {
+        throw new BadRequestException('Inventario insuficiente para registrar este movimiento');
+      }
+    }
+
     const movement = await this.repository.create(data);
 
     if (this.isConsumptionMovement(data.movementType)) {

@@ -11,5 +11,6 @@ import { NotificationModule } from '../notification/notification.module';
   imports: [TypeOrmModule.forFeature([InventoryMovementEntity]), NotificationModule],
   controllers: [InventoryMovementController],
   providers: [InventoryMovementRepository, InventoryMovementService],
+  exports: [InventoryMovementService],
 })
 export class InventoryMovementModule {}

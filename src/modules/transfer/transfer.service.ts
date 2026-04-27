@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
+import { InventoryMovementService } from '../inventoryMovement/inventoryMovement.service';
 import { IntercampRequestEntity } from '../intercampRequest/intercampRequest.entity';
 import { NotificationService } from '../notification/notification.service';
 
@@ -18,8 +19,66 @@ export class TransferService {
   constructor(
     private readonly repository: TransferRepository,
     private readonly notificationService: NotificationService,
+    private readonly inventoryMovementService: InventoryMovementService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private async countAppliedTransferMovements(transferId: number): Promise<number> {
+    return await this.repository.countAppliedTransferMovements(transferId);
+  }
+
+  private async applyCompletedTransferInventory(
+    transferId: number,
+    requestId: number,
+    actorUserId: number,
+  ): Promise<void> {
+    const alreadyApplied = await this.countAppliedTransferMovements(transferId);
+    if (alreadyApplied > 0) {
+      return;
+    }
+
+    const scope = await this.resolveRequestScope(requestId);
+    const deliveredRows = await this.repository.findDeliveredResourcesByTransferId(transferId);
+
+    for (const delivered of deliveredRows) {
+      await this.inventoryMovementService.createMovement({
+        campId: scope.originCampId,
+        resourceTypeId: delivered.resourceTypeId,
+        amount: delivered.sentAmount,
+        movementType: 'TRANSFER_SENT',
+        sourceId: transferId,
+        sourceType: 'transfer',
+        recordedBy: actorUserId,
+        description: `Auto transfer sent movement for transfer #${transferId} (detail #${delivered.id})`,
+      });
+
+      await this.inventoryMovementService.createMovement({
+        campId: scope.destinationCampId,
+        resourceTypeId: delivered.resourceTypeId,
+        amount: delivered.receivedAmount,
+        movementType: 'TRANSFER_RECEIVED',
+        sourceId: transferId,
+        sourceType: 'transfer',
+        recordedBy: actorUserId,
+        description: `Auto transfer received movement for transfer #${transferId} (detail #${delivered.id})`,
+      });
+    }
+  }
+
+  private async createTransferHistoryEntry(
+    transferId: number,
+    previousStatus: TransferStatus,
+    newStatus: TransferStatus,
+    userId: number,
+  ): Promise<void> {
+    await this.repository.createTransferHistoryEntry({
+      transferId,
+      previousStatus,
+      newStatus,
+      userId,
+      comment: `Auto history on transfer status change: ${previousStatus} -> ${newStatus}`,
+    });
+  }
 
   private async resolveRequestScope(requestId: number): Promise<{
     originCampId: number;
@@ -133,6 +192,20 @@ export class TransferService {
 
     if (updated.status !== existing.status) {
       const scope = await this.resolveRequestScope(updated.requestId);
+      const actorUserId =
+        updated.arrivalApprovedBy ??
+        updated.departureApprovedBy ??
+        data.arrivalApprovedBy ??
+        data.departureApprovedBy ??
+        scope.respondedBy ??
+        scope.createdBy;
+
+      if (updated.status === 'COMPLETED') {
+        await this.applyCompletedTransferInventory(updated.id, updated.requestId, actorUserId);
+      }
+
+      await this.createTransferHistoryEntry(updated.id, existing.status, updated.status, actorUserId);
+
       const notificationType =
         updated.status === 'COMPLETED'
           ? 'TRANSFER_COMPLETED'
