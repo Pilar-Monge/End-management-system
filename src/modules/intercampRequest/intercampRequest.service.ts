@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InventoryMovementService } from '../inventoryMovement/inventoryMovement.service';
 import { NotificationService } from '../notification/notification.service';
 import { IntercampRequestRepository } from './intercampRequest.repository';
 import type {
@@ -13,7 +14,52 @@ export class IntercampRequestService {
   constructor(
     private readonly repository: IntercampRequestRepository,
     private readonly notificationService: NotificationService,
+    private readonly inventoryMovementService: InventoryMovementService,
   ) {}
+
+  private async applyApprovedRequestInventory(request: IntercampRequest): Promise<void> {
+    const existingTransferCount = await this.repository.countTransfersByRequestId(request.id);
+    if (existingTransferCount > 0) {
+      return;
+    }
+
+    const alreadyAppliedCount = await this.repository.countAppliedInventoryByRequestId(request.id);
+    if (alreadyAppliedCount > 0) {
+      return;
+    }
+
+    const detailRows = await this.repository.findRequestResourceAmountsByRequestId(request.id);
+
+    if (detailRows.length === 0) {
+      return;
+    }
+
+    const actorUserId = request.respondedBy ?? request.createdBy;
+
+    for (const detail of detailRows) {
+      await this.inventoryMovementService.createMovement({
+        campId: request.originCampId,
+        resourceTypeId: detail.resourceTypeId,
+        amount: detail.amount,
+        movementType: 'TRANSFER_SENT',
+        sourceId: request.id,
+        sourceType: 'intercamp_request',
+        recordedBy: actorUserId,
+        description: `Auto movement on intercamp request approval #${request.id}`,
+      });
+
+      await this.inventoryMovementService.createMovement({
+        campId: request.destinationCampId,
+        resourceTypeId: detail.resourceTypeId,
+        amount: detail.amount,
+        movementType: 'TRANSFER_RECEIVED',
+        sourceId: request.id,
+        sourceType: 'intercamp_request',
+        recordedBy: actorUserId,
+        description: `Auto movement on intercamp request approval #${request.id}`,
+      });
+    }
+  }
 
   private async validateRoutingAndOwnership(
     originCampId: number,
@@ -158,6 +204,10 @@ export class IntercampRequestService {
 
     const statusChanged = updated.status !== existing.status;
     if (statusChanged) {
+      if (updated.status === 'APPROVED') {
+        await this.applyApprovedRequestInventory(updated);
+      }
+
       const notificationType =
         updated.status === 'APPROVED'
           ? 'INTERCAMP_REQUEST_APPROVED'

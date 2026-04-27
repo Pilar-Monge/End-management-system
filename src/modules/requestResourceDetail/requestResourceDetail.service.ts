@@ -103,9 +103,29 @@ export class RequestResourceDetailService {
     return await this.repository.findById(id);
   }
 
+  async getRequestScope(requestId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  } | null> {
+    return await this.repository.resolveRequestScope(requestId);
+  }
+
+  async getDetailScope(id: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  } | null> {
+    const detail = await this.repository.findById(id);
+    if (!detail) {
+      return null;
+    }
+
+    return await this.repository.resolveRequestScope(detail.requestId);
+  }
+
   async getAllDetails(filters?: {
     requestId?: number;
     resourceTypeId?: number;
+    involvedCampId?: number;
     page?: number;
     limit?: number;
   }): Promise<{ data: RequestResourceDetail[]; total: number }> {
@@ -116,6 +136,7 @@ export class RequestResourceDetailService {
     const repoFilters: {
       requestId?: number;
       resourceTypeId?: number;
+      involvedCampId?: number;
       offset: number;
       limit: number;
     } = {
@@ -125,6 +146,7 @@ export class RequestResourceDetailService {
 
     if (filters?.requestId !== undefined) repoFilters.requestId = filters.requestId;
     if (filters?.resourceTypeId !== undefined) repoFilters.resourceTypeId = filters.resourceTypeId;
+    if (filters?.involvedCampId !== undefined) repoFilters.involvedCampId = filters.involvedCampId;
 
     return await this.repository.findAllAndCount(repoFilters);
   }

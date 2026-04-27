@@ -71,6 +71,69 @@ export class TransferRepository {
     };
   }
 
+  async countAppliedTransferMovements(transferId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.inventory_movement
+       WHERE source_type = 'transfer'
+         AND source_id = $1
+         AND movement_type IN ('TRANSFER_SENT', 'TRANSFER_RECEIVED')`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async findDeliveredResourcesByTransferId(transferId: number): Promise<
+    Array<{
+      id: number;
+      resourceTypeId: number;
+      sentAmount: string;
+      receivedAmount: string;
+    }>
+  > {
+    const rows = (await this.repo.query(
+      `SELECT id,
+              resource_type_id,
+              sent_amount::text AS sent_amount,
+              received_amount::text AS received_amount
+       FROM public.delivered_transfer_resource
+       WHERE transfer_id = $1`,
+      [transferId],
+    )) as Array<{
+      id: number;
+      resource_type_id: number;
+      sent_amount: string;
+      received_amount: string;
+    }>;
+
+    return rows.map((row) => ({
+      id: row.id,
+      resourceTypeId: row.resource_type_id,
+      sentAmount: row.sent_amount,
+      receivedAmount: row.received_amount,
+    }));
+  }
+
+  async createTransferHistoryEntry(data: {
+    transferId: number;
+    previousStatus: TransferStatus;
+    newStatus: TransferStatus;
+    userId: number;
+    comment: string;
+  }): Promise<void> {
+    await this.repo.query(
+      `INSERT INTO public.transfer_history (
+          transfer_id,
+          previous_status,
+          new_status,
+          user_id,
+          comment
+       ) VALUES ($1, $2, $3, $4, $5)`,
+      [data.transferId, data.previousStatus, data.newStatus, data.userId, data.comment],
+    );
+  }
+
   async findAllAndCount(filters?: {
     requestId?: number;
     status?: TransferStatus;

@@ -94,6 +94,29 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_movimiento_camp') THEN ALTER TABLE ONLY public.inventory_movement ADD CONSTRAINT fk_movimiento_camp FOREIGN KEY (camp_id) REFERENCES public.camp(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
+    await queryRunner.query(`
+      DO $$
+      DECLARE
+        fallback_user_id integer;
+      BEGIN
+        SELECT id INTO fallback_user_id
+        FROM public.system_user
+        ORDER BY id
+        LIMIT 1;
+
+        IF fallback_user_id IS NULL THEN
+          RAISE EXCEPTION 'Cannot enforce fk_movimiento_registrado_por: no rows found in public.system_user';
+        END IF;
+
+        UPDATE public.inventory_movement mov
+        SET recorded_by = fallback_user_id
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM public.system_user su
+          WHERE su.id = mov.recorded_by
+        );
+      END $$;
+    `);
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_movimiento_registrado_por') THEN ALTER TABLE ONLY public.inventory_movement ADD CONSTRAINT fk_movimiento_registrado_por FOREIGN KEY (recorded_by) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );

@@ -103,6 +103,10 @@ export class ExpeditionService {
       },
     );
 
+    if (created.status === 'IN_PROGRESS') {
+      await this.repository.applyDepartureProvisioningIfNeeded(created.id, now);
+    }
+
     return created;
   }
 
@@ -245,6 +249,10 @@ export class ExpeditionService {
     const updated = await this.repository.update(id, normalized);
     if (!updated) {
       return null;
+    }
+
+    if (existing.status !== 'IN_PROGRESS' && updated.status === 'IN_PROGRESS') {
+      await this.repository.applyDepartureProvisioningIfNeeded(updated.id, this.systemTimeService.now());
     }
 
     if (existing.status !== updated.status) {

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CampEntity } from '../camp/camp.entity';
+import { InventoryMovementModule } from '../inventoryMovement/inventoryMovement.module';
 import { NotificationModule } from '../notification/notification.module';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { IntercampRequestController } from './intercampRequest.controller';
@@ -13,6 +14,7 @@ import { IntercampRequestService } from './intercampRequest.service';
   imports: [
     TypeOrmModule.forFeature([IntercampRequestEntity, CampEntity, UserEntity]),
     NotificationModule,
+    InventoryMovementModule,
   ],
   controllers: [IntercampRequestController],
   providers: [IntercampRequestRepository, IntercampRequestService],
