@@ -93,6 +93,21 @@ export class DecisionTreeRepository {
     return latest ? this.toModel(latest) : null;
   }
 
+  async findActiveGlobalByModelName(modelName: string): Promise<DecisionTreeModel | null> {
+    const records = await this.readIndex();
+    const matches = records
+      .filter(
+        (item) =>
+          item.modelName === modelName &&
+          item.isActive &&
+          (item.campId === null || item.campId === undefined),
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    const latest = matches.at(0);
+    return latest ? this.toModel(latest) : null;
+  }
+
   async findAll(filters?: {
     modelName?: string;
     isActive?: boolean;

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { DataSource } from 'typeorm';
 
@@ -43,6 +43,7 @@ interface CreatedAccessContext {
 
 @Injectable()
 export class AdmissionRequestService {
+  private readonly logger = new Logger(AdmissionRequestService.name);
   private repository: AdmissionRequestRepository;
 
   constructor(
@@ -86,11 +87,6 @@ export class AdmissionRequestService {
 
       const aiDecision = this.normalizeAiDecision(aiExplain.prediction);
 
-      const updatedByAi = await this.repository.update(createdRequest.id, {
-        status: 'PENDING_ADMIN',
-        suggestedOccupationId: assignedOccupation?.id ?? null,
-      });
-
       await this.repository.saveAiAdmissionReport({
         requestId: createdRequest.id,
         submittedData: {
@@ -118,20 +114,22 @@ export class AdmissionRequestService {
         suggestedOccupationId: assignedOccupation?.id ?? null,
       });
 
-      if (updatedByAi) {
-        await this.notifyAiReviewResult(updatedByAi, {
-          aiDecision: aiExplain.prediction,
-          suggestedRole: aiExplain.roleAssignment.suggestedRole,
-          suggestedOccupationName: aiExplain.roleAssignment.mappedOccupationName,
-          admissionSummary: aiExplain.explanation.admissionSummary,
-          admissionReason: aiExplain.explanation.admissionReason,
-          roleSummary: aiExplain.roleAssignment.summary,
-          roleReason: aiExplain.roleAssignment.reason,
-        });
-        return updatedByAi;
-      }
-    } catch {
+      await this.notifyAiReviewResult(createdRequest, {
+        aiDecision: aiExplain.prediction,
+        suggestedRole: aiExplain.roleAssignment.suggestedRole,
+        suggestedOccupationName: aiExplain.roleAssignment.mappedOccupationName,
+        admissionSummary: aiExplain.explanation.admissionSummary,
+        admissionReason: aiExplain.explanation.admissionReason,
+        roleSummary: aiExplain.roleAssignment.summary,
+        roleReason: aiExplain.roleAssignment.reason,
+      });
+    } catch (error) {
       // If auto-recommendation fails, keep the request in PENDING_AI for manual fallback.
+      this.logger.warn(
+        `AI auto-review failed for admission request ${createdRequest.id} (camp ${createdRequest.campId}): ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
     }
 
     return createdRequest;
@@ -363,6 +361,15 @@ export class AdmissionRequestService {
       throw new Error('Error al revisar la solicitud');
     }
 
+    if (approved && assignedOccupationIdOnApproval && createdAccess === null) {
+      // Ensure access provisioning is persisted for approved requests, even if a
+      // previous attempt partially completed.
+      createdAccess = await this.createPersonAndUserForApprovedRequest(
+        updatedRequest,
+        assignedOccupationIdOnApproval,
+      );
+    }
+
     await this.notifyAdminReviewResult(updatedRequest, approved, createdAccess);
 
     return updatedRequest;
@@ -545,6 +552,18 @@ export class AdmissionRequestService {
       return;
     }
 
+    if (request.status === 'PENDING_AI') {
+      await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
+        type: 'ADMISSION_REQUEST_AI_REVIEWED',
+        title: 'Sugerencia de IA generada (sin aprobacion automatica)',
+        message: `La solicitud ${request.id} tiene sugerencias de IA disponibles. Un administrador debe decidir manualmente.`,
+        sourceType: 'admission_request',
+        sourceId: request.id,
+      });
+
+      return;
+    }
+
     if (request.status === 'REJECTED') {
       await this.notificationService.notifyCampRoles(request.campId, ['SYSTEM_ADMIN'], {
         type: 'ADMISSION_REQUEST_REJECTED',
@@ -708,24 +727,32 @@ export class AdmissionRequestService {
       throw new Error('No se encontro el oficio asignado para crear el acceso del usuario');
     }
 
-    const person = await personRepo.save(
-      personRepo.create({
+    const existingPerson = await personRepo.findOne({
+      where: {
         admissionRequestId: request.id,
-        name: request.name,
-        lastName1: request.lastName1,
-        lastName2: request.lastName2,
-        identificationNumber: `ADM-${request.id}`,
-        birthDate: request.birthDate,
-        gender: request.gender,
-        initialHealthLevel: request.declaredHealthLevel,
-        previousExperience: request.previousExperience,
-        physicalConditionAtEntry: request.physicalCondition,
-        currentStatus: 'ACTIVE',
-        imageUrl: request.photoUrl,
-        campId: request.campId,
-        occupationId: assignedOccupationId,
-      }),
-    );
+      },
+    });
+
+    const person =
+      existingPerson ??
+      (await personRepo.save(
+        personRepo.create({
+          admissionRequestId: request.id,
+          name: request.name,
+          lastName1: request.lastName1,
+          lastName2: request.lastName2,
+          identificationNumber: `ADM-${request.id}`,
+          birthDate: request.birthDate,
+          gender: request.gender,
+          initialHealthLevel: request.declaredHealthLevel,
+          previousExperience: request.previousExperience,
+          physicalConditionAtEntry: request.physicalCondition,
+          currentStatus: 'ACTIVE',
+          imageUrl: request.photoUrl,
+          campId: request.campId,
+          occupationId: assignedOccupationId,
+        }),
+      ));
 
     const role = this.resolveSystemRoleForOccupation(occupation);
 
@@ -736,12 +763,22 @@ export class AdmissionRequestService {
     });
 
     if (existingUser) {
-      if (existingUser.role !== role || existingUser.username !== request.desiredUsername) {
+      if (
+        existingUser.role !== role ||
+        existingUser.username !== request.desiredUsername ||
+        existingUser.personId !== person.id ||
+        existingUser.email !== request.email ||
+        existingUser.campId !== request.campId
+      ) {
         const availableUsername = await this.resolveAvailableUsername(
           this.buildUsernameCandidate(request.desiredUsername, request.email),
           request.campId,
         );
 
+        existingUser.personId = person.id;
+        existingUser.requestId = request.id;
+        existingUser.campId = request.campId;
+        existingUser.status = 'ACTIVE';
         existingUser.role = role;
         existingUser.username = availableUsername;
         existingUser.email = request.email;
