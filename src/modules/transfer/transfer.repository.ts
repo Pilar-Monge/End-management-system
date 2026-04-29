@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { IntercampRequestEntity } from '../intercampRequest/intercampRequest.entity';
+import { TransferPersonEntity } from '../transferPerson/transferPerson.entity';
 import { TransferEntity } from './transfer.entity';
 import type {
   CreateTransferDTO,
@@ -41,6 +42,12 @@ export class TransferRepository {
 
   async findByRequestId(requestId: number): Promise<Transfer | null> {
     return await this.repo.findOne({ where: { requestId } });
+  }
+
+  async countTransferPeople(transferId: number): Promise<number> {
+    return await this.repo.manager.getRepository(TransferPersonEntity).count({
+      where: { transferId },
+    });
   }
 
   async resolveRequestScope(requestId: number): Promise<{

@@ -12,5 +12,6 @@ import { TransferService } from './transfer.service';
   imports: [TypeOrmModule.forFeature([TransferEntity]), NotificationModule, InventoryMovementModule],
   controllers: [TransferController],
   providers: [TransferRepository, TransferService],
+  exports: [TransferService],
 })
 export class TransferModule {}

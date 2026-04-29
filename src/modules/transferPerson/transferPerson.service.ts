@@ -5,6 +5,7 @@ import { assertEntityExists } from '../../common/validation/assert-exists';
 import { NotificationService } from '../notification/notification.service';
 import { PersonEntity } from '../person/person.entity';
 import { TransferEntity } from '../transfer/transfer.entity';
+import { TransferService } from '../transfer/transfer.service';
 
 import { TransferPersonRepository } from './transferPerson.repository';
 import type {
@@ -19,8 +20,110 @@ export class TransferPersonService {
   constructor(
     private readonly repository: TransferPersonRepository,
     private readonly notificationService: NotificationService,
+    private readonly transferService: TransferService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private validateRequirementPayload(requirements: Array<{ occupationId: number; quantity: number }>): void {
+    for (const requirement of requirements) {
+      if (!Number.isInteger(requirement.occupationId) || requirement.occupationId <= 0) {
+        throw new Error('occupationId must be a positive integer');
+      }
+
+      if (!Number.isInteger(requirement.quantity) || requirement.quantity <= 0) {
+        throw new Error('quantity must be a positive integer');
+      }
+    }
+  }
+
+  async canFulfillRequirements(
+    originCampId: number,
+    requirements: Array<{ occupationId: number; quantity: number }>,
+  ): Promise<void> {
+    if (requirements.length === 0) {
+      return;
+    }
+
+    this.validateRequirementPayload(requirements);
+
+    const selectedPersonIds = new Set<number>();
+
+    for (const requirement of requirements) {
+      const eligiblePersonIds = await this.repository.findEligiblePersonIdsByCampAndOccupation(
+        originCampId,
+        requirement.occupationId,
+      );
+
+      const availablePersonIds = eligiblePersonIds.filter((personId) => !selectedPersonIds.has(personId));
+      if (availablePersonIds.length < requirement.quantity) {
+        throw new Error(
+          `No hay suficientes personas elegibles para el oficio ${requirement.occupationId}`,
+        );
+      }
+
+      for (const personId of availablePersonIds.slice(0, requirement.quantity)) {
+        selectedPersonIds.add(personId);
+      }
+    }
+  }
+
+  async autoAssignGroupForTransfer(
+    transferId: number,
+    originCampId: number,
+    requirements: Array<{ occupationId: number; quantity: number }>,
+  ): Promise<TransferPerson[]> {
+    if (requirements.length === 0) {
+      return [];
+    }
+
+    this.validateRequirementPayload(requirements);
+    const selectedPersonIds = new Set<number>();
+    const createdAssignments: TransferPerson[] = [];
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      for (const requirement of requirements) {
+        const eligiblePersonIds = await this.repository.findEligiblePersonIdsByCampAndOccupationForUpdate(
+          queryRunner,
+          originCampId,
+          requirement.occupationId,
+        );
+
+        const availablePersonIds = eligiblePersonIds.filter((personId) => !selectedPersonIds.has(personId));
+        if (availablePersonIds.length < requirement.quantity) {
+          throw new Error(`No hay suficientes personas elegibles para el oficio ${requirement.occupationId}`);
+        }
+
+        for (const personId of availablePersonIds.slice(0, requirement.quantity)) {
+          selectedPersonIds.add(personId);
+
+          const created = await this.repository.insertTransferPersonWithQueryRunner(
+            queryRunner,
+            transferId,
+            personId,
+            'CONFIRMED',
+          );
+
+          if (created) {
+            createdAssignments.push(created);
+          }
+        }
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+
+    await this.transferService.syncTransferRations(transferId);
+    return createdAssignments;
+  }
 
   private async resolveTransferScope(transferId: number): Promise<{
     originCampId: number;
@@ -99,6 +202,7 @@ export class TransferPersonService {
       created.status,
       created.id,
     );
+    await this.transferService.syncTransferRations(created.transferId);
     return created;
   }
 
@@ -172,6 +276,10 @@ export class TransferPersonService {
       );
     }
 
+    if (updated) {
+      await this.transferService.syncTransferRations(updated.transferId);
+    }
+
     return updated;
   }
 
@@ -192,6 +300,8 @@ export class TransferPersonService {
       existing.status,
       existing.id,
     );
+
+    await this.transferService.syncTransferRations(existing.transferId);
 
     return true;
   }
