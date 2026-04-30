@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsInt, Min, Max } from 'class-validator';
 
 import type { Gender } from '../person.model';
 
@@ -41,4 +42,14 @@ export class CreatePersonDto {
 
   @ApiPropertyOptional({ nullable: true })
   occupationId?: number | null;
+  @ApiProperty({
+    description: 'Personaje visual (1, 2, 3, 4 o 5)',
+    minimum: 1,
+    maximum: 5,
+    default: 1,
+  })
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  character!: number;
 }

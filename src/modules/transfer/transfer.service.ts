@@ -204,7 +204,12 @@ export class TransferService {
         await this.applyCompletedTransferInventory(updated.id, updated.requestId, actorUserId);
       }
 
-      await this.createTransferHistoryEntry(updated.id, existing.status, updated.status, actorUserId);
+      await this.createTransferHistoryEntry(
+        updated.id,
+        existing.status,
+        updated.status,
+        actorUserId,
+      );
 
       const notificationType =
         updated.status === 'COMPLETED'

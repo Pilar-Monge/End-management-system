@@ -88,6 +88,15 @@ export class PersonEntity {
   @ApiProperty({ nullable: true })
   imageUrl!: string | null;
 
+  @Column({ name: 'character', type: 'int', default: 1 })
+  @ApiProperty({
+    description: 'Personaje visual (1, 2, 3, 4 o 5)',
+    minimum: 1,
+    maximum: 5,
+    default: 1,
+  })
+  character!: number;
+
   @Column({ name: 'camp_id', type: 'int' })
   @ApiProperty()
   campId!: number;

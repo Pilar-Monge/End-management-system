@@ -443,12 +443,7 @@ export class ExpeditionRepository {
             current_amount = (camp_inventory.current_amount::numeric + EXCLUDED.current_amount::numeric)::numeric(12,2),
             last_update = EXCLUDED.last_update
           `,
-          [
-            expedition.camp_id,
-            resource.id,
-            (-perResourceAmount).toFixed(2),
-            now.toISOString(),
-          ],
+          [expedition.camp_id, resource.id, (-perResourceAmount).toFixed(2), now.toISOString()],
         );
 
         await queryRunner.query(
