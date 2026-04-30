@@ -10,12 +10,16 @@ import {
   Put,
   Query,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConsumes,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
@@ -35,6 +39,7 @@ import { PersonService } from './person.service';
 import type { CreatePersonDTO, PersonStatus, UpdatePersonDTO } from './person.model';
 import { PersonEntity } from './person.entity';
 import { CreatePersonDto, UpdatePersonDto } from './dto';
+
 @Controller('persons')
 @ApiTags('Person')
 export class PersonController {
@@ -93,7 +98,7 @@ export class PersonController {
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
-    const person = await this.service.getPersonById(parsedId);
+    const person = await this.service.getPersonWithSignedUrl(parsedId);
     if (!person) throw new NotFoundException('Person not found');
 
     const currentUser = this.getCurrentUser(req);
@@ -180,7 +185,7 @@ export class PersonController {
         filters.limit = parsedLimit;
       }
 
-      const result = await this.service.getAllPersons(filters);
+      const result = await this.service.getAllPersonsWithSignedUrls(filters);
       const resolvedPage = filters.page ?? 1;
       const resolvedLimit = filters.limit ?? 10;
 
@@ -237,6 +242,68 @@ export class PersonController {
       );
     }
   }
+
+  @Post(':id/photo')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @ApiOperation({ summary: 'Upload person photo' })
+  @ApiParam({ name: 'id', type: Number, description: 'Person id' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOkResponseData(PersonEntity, { description: 'Photo uploaded successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadPhoto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    if (!id) throw new BadRequestException('Invalid ID');
+    if (!file) throw new BadRequestException('No file uploaded');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const currentUser = this.getCurrentUser(req);
+      const existingPerson = await this.service.getPersonById(parsedId);
+      if (!existingPerson) throw new NotFoundException('Person not found');
+
+      if (existingPerson.campId !== currentUser.campId) {
+        throw new BadRequestException('You do not have permission to update this person');
+      }
+
+      const person = await this.service.uploadPersonPhoto(parsedId, file);
+      return {
+        success: true,
+        data: person,
+        message: 'Photo uploaded successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error uploading photo',
+      );
+    }
+  }
+
   @Delete(':id')
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Person' })
