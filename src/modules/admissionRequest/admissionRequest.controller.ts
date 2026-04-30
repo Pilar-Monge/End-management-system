@@ -257,6 +257,65 @@ export class AdmissionRequestController {
     }
   }
 
+  @Put(':id/photo')
+  @Roles('SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Update admission request photo' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOkResponseData(AdmissionRequestEntity, { description: 'Photo updated successfully' })
+  @UseInterceptors(FileInterceptor('file'))
+  async updatePhoto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    if (!id) throw new BadRequestException('Invalid ID');
+    if (!file) throw new BadRequestException('No file uploaded');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const currentUser = this.getCurrentUser(req);
+      const existingRequest = await this.service.getRequestById(parsedId);
+      if (!existingRequest || existingRequest.campId !== currentUser.campId) {
+        throw new NotFoundException('Request not found');
+      }
+
+      const request = await this.service.uploadAdmissionRequestPhoto(parsedId, file);
+      return {
+        success: true,
+        data: request,
+        message: 'Photo updated successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error updating photo',
+      );
+    }
+  }
+
   @Put(':id')
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update an admission request' })
