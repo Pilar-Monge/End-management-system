@@ -231,7 +231,11 @@ export class RequestResourceDetailController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateRequestResourceDetailDTO, @Req() req: Request) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateRequestResourceDetailDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);

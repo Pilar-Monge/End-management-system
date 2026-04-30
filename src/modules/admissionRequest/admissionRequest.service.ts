@@ -20,6 +20,7 @@ import {
   AdmissionRequestStatus,
 } from './admissionRequest.model';
 import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admissionFeatures.util';
+import { SupabaseStorageService } from '../../services/supabase-storage.service';
 
 const ADMISSION_MODEL_NAME = 'admission-acceptance-v1';
 
@@ -51,6 +52,7 @@ export class AdmissionRequestService {
     private readonly dataSource: DataSource,
     private readonly decisionTreeService: DecisionTreeService,
     private readonly notificationService: NotificationService,
+    private readonly storageService: SupabaseStorageService,
   ) {
     this.repository = repository;
   }
@@ -827,5 +829,61 @@ export class AdmissionRequestService {
       occupationName: occupation.name,
       occupationDescription: occupation.description ?? 'Sin descripcion disponible',
     };
+  }
+
+  async uploadAdmissionRequestPhoto(
+    id: number,
+    file: Express.Multer.File,
+  ): Promise<AdmissionRequest> {
+    const existing = await this.repository.findById(id);
+    if (!existing) throw new Error('Admission request not found');
+
+    if (existing.photoUrl) {
+      try {
+        await this.storageService.deleteImage(existing.photoUrl);
+      } catch (error) {
+        // If deletion fails, just continue with upload
+      }
+    }
+
+    const filePath = await this.storageService.uploadImage(file, 'admission-photos');
+    const updated = await this.repository.update(id, { photoUrl: filePath });
+    if (!updated) throw new Error('Admission request not found');
+    return updated;
+  }
+
+  private async addSignedUrlToAdmissionRequest(
+    request: AdmissionRequest,
+  ): Promise<AdmissionRequest & { photoSignedUrl?: string }> {
+    const result: AdmissionRequest & { photoSignedUrl?: string } = { ...request };
+    if (request.photoUrl) {
+      try {
+        result.photoSignedUrl = await this.storageService.getSignedUrl(request.photoUrl);
+      } catch (error) {
+        // If signed URL generation fails, just return without it
+      }
+    }
+    return result;
+  }
+
+  async getAdmissionRequestWithSignedUrl(
+    id: number,
+  ): Promise<(AdmissionRequest & { photoSignedUrl?: string }) | null> {
+    const request = await this.getRequestById(id);
+    if (!request) return null;
+    return await this.addSignedUrlToAdmissionRequest(request);
+  }
+
+  async getAllAdmissionRequestsWithSignedUrls(filters?: {
+    campId?: number;
+    status?: AdmissionRequestStatus;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: (AdmissionRequest & { photoSignedUrl?: string })[]; total: number }> {
+    const result = await this.getAllRequests(filters);
+    const dataWithUrls = await Promise.all(
+      result.data.map((request) => this.addSignedUrlToAdmissionRequest(request)),
+    );
+    return { data: dataWithUrls, total: result.total };
   }
 }

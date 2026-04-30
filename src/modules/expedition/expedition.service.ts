@@ -252,7 +252,10 @@ export class ExpeditionService {
     }
 
     if (existing.status !== 'IN_PROGRESS' && updated.status === 'IN_PROGRESS') {
-      await this.repository.applyDepartureProvisioningIfNeeded(updated.id, this.systemTimeService.now());
+      await this.repository.applyDepartureProvisioningIfNeeded(
+        updated.id,
+        this.systemTimeService.now(),
+      );
     }
 
     if (existing.status !== updated.status) {

@@ -72,9 +72,12 @@ export class RequestResourceDetailRepository {
 
     if (filters?.involvedCampId !== undefined) {
       qb.innerJoin('intercamp_request', 'ir', 'ir.id = d.request_id');
-      qb.andWhere('(ir.origin_camp_id = :involvedCampId OR ir.destination_camp_id = :involvedCampId)', {
-        involvedCampId: filters.involvedCampId,
-      });
+      qb.andWhere(
+        '(ir.origin_camp_id = :involvedCampId OR ir.destination_camp_id = :involvedCampId)',
+        {
+          involvedCampId: filters.involvedCampId,
+        },
+      );
     }
 
     if (filters?.requestId !== undefined) {

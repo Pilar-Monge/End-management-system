@@ -1,6 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
-
+import { IsEnum, IsInt, IsOptional, Min, Max } from 'class-validator';
 import type { PersonStatus } from '../person.model';
 
 const PersonStatusEnum = {
@@ -23,4 +22,11 @@ export class UpdatePersonDto {
   @IsInt()
   @Min(1)
   occupationId?: number | null;
+
+  @ApiPropertyOptional({ description: 'Personaje visual (1, 2, 3, 4 o 5)' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  character?: number;
 }
