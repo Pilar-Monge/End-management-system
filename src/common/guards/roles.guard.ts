@@ -7,13 +7,22 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const roles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
       context.getClass(),
     ]);
 
     if (!roles || roles.length === 0) {
-      return true;
+      throw new ForbiddenException('Acceso denegado');
     }
 
     const request = context.switchToHttp().getRequest<Request & { user?: { rol?: string } }>();
