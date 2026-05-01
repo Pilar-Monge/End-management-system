@@ -19,6 +19,10 @@ export class InventoryMovementRepository {
   ) {}
 
   private getSignedDelta(movementType: InventoryMovementType, amount: number): number {
+    if (movementType === 'MANUAL_ADJUSTMENT') {
+      return amount;
+    }
+
     if (
       movementType === 'DAILY_RATION' ||
       movementType === 'EXPEDITION_DEPARTURE' ||

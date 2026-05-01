@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 import { CampEntity } from '../camp/camp.entity';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
+import { DailyCollectionRecordEntity } from '../dailyCollectionRecord/dailyCollectionRecord.entity';
 import { DailyConsumptionEntity } from '../dailyConsumption/dailyConsumption.entity';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
 import { ExpeditionRepository } from '../expedition/expedition.repository';
@@ -29,6 +30,8 @@ export class TemporalAutomationService {
   constructor(
     @InjectRepository(CampEntity)
     private readonly campInventoryRepo: Repository<CampInventoryEntity>,
+    @InjectRepository(DailyCollectionRecordEntity)
+    private readonly dailyCollectionRecordRepo: Repository<DailyCollectionRecordEntity>,
     @InjectRepository(DailyConsumptionEntity)
     private readonly dailyConsumptionRepo: Repository<DailyConsumptionEntity>,
     @InjectRepository(ExpeditionEntity)
@@ -78,6 +81,8 @@ export class TemporalAutomationService {
       );
 
       const totalRation = this.roundTo2(peopleCount * rationPerPerson);
+
+      await this.createDailyCollectionRecords(camp.id, now);
 
       await this.applyDailyConsumption(
         camp.id,
@@ -131,6 +136,63 @@ export class TemporalAutomationService {
       await this.generateAlertsIfNeeded(camp.id, [...touchedResourceIds], now);
       await this.notifyCampOverpopulationIfNeeded(camp, peopleCount);
       await this.notifyOccupationsWithoutStaff(camp.id);
+    }
+  }
+
+  private toCalendarDate(date: Date): Date {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  }
+
+  private async createDailyCollectionRecords(campId: number, now: Date): Promise<void> {
+    const recorderUserId = await this.temporalAutomationRepository.findAutomationRecorderUserId(
+      campId,
+    );
+
+    if (recorderUserId === null) {
+      this.logger.warn(
+        `Skipping daily collection records for camp ${campId}: no ACTIVE system user available to record automation`,
+      );
+      return;
+    }
+
+    const rows = await this.temporalAutomationRepository.findDailyCollectionRows(
+      campId,
+      now.toISOString(),
+    );
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    const recordDate = this.toCalendarDate(now);
+
+    for (const row of rows) {
+      const existing = await this.dailyCollectionRecordRepo.findOne({
+        where: {
+          campId,
+          personId: row.personId,
+          resourceTypeId: row.resourceTypeId,
+          date: recordDate,
+        },
+      });
+
+      if (existing) {
+        continue;
+      }
+
+      await this.dailyCollectionRecordRepo.save(
+        this.dailyCollectionRecordRepo.create({
+          campId,
+          personId: row.personId,
+          resourceTypeId: row.resourceTypeId,
+          date: recordDate,
+          expectedAmount: row.expectedAmount,
+          actualAmount: row.expectedAmount,
+          differenceReason: null,
+          recordedBy: recorderUserId,
+          movementId: null,
+        }),
+      );
     }
   }
 
