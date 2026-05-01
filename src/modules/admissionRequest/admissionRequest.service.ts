@@ -12,6 +12,7 @@ import type { SystemRole } from '../systemUser/systemUser.model';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { PersonEntity } from '../person/person.entity';
 import { DecisionTreeService } from '../decisionTree/decisionTree.service';
+import { SystemTimeService } from '../systemTime/systemTime.service';
 import { AdmissionRequestRepository } from './admissionRequest.repository';
 import {
   CreateAdmissionRequestDTO,
@@ -52,6 +53,7 @@ export class AdmissionRequestService {
     private readonly dataSource: DataSource,
     private readonly decisionTreeService: DecisionTreeService,
     private readonly notificationService: NotificationService,
+    private readonly systemTimeService: SystemTimeService,
     private readonly storageService: SupabaseStorageService,
   ) {
     this.repository = repository;
@@ -351,7 +353,7 @@ export class AdmissionRequestService {
 
     const updateData: UpdateAdmissionRequestDTO = {
       reviewedBy: adminUserId,
-      reviewDate: new Date(),
+      reviewDate: this.systemTimeService.now(),
       status: approved ? 'APPROVED' : 'REJECTED',
       finalOccupationId: assignedOccupationIdOnApproval,
       rejectionReason: approved ? null : rejectionReason || 'Solicitud rechazada',
