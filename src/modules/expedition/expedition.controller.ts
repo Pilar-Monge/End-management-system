@@ -335,6 +335,54 @@ export class ExpeditionController {
     }
   }
 
+  @Post(':id/force-update-state')
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @ApiOperation({
+    summary: 'Force update expedition state based on current time',
+    description: 'Manually trigger state update for an expedition (auto-transition from PLANNED→IN_PROGRESS→DELAYED→LOST)',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
+  @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition state updated' })
+  async forceUpdateState(@Param('id') id: string, @Req() req: Request) {
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid ID');
+    }
+
+    try {
+      const currentUser = this.getCurrentUser(req);
+      const expedition = await this.service.getExpeditionById(parsedId);
+      if (!expedition) {
+        throw new NotFoundException('Expedition not found');
+      }
+
+      if (!this.isSystemAdmin(currentUser.rol) && expedition.campId !== currentUser.campId) {
+        throw new BadRequestException(
+          'You can only update expedition states from your own camp',
+        );
+      }
+
+      const updated = await this.service.forceUpdateExpeditionState(parsedId);
+      if (!updated) {
+        throw new NotFoundException('Expedition not found');
+      }
+
+      return {
+        success: true,
+        data: updated,
+        message: 'Expedition state updated successfully',
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error updating expedition state',
+      );
+    }
+  }
+
   @Delete(':id')
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Expedition' })
