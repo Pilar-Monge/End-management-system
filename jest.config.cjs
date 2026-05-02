@@ -11,6 +11,9 @@ module.exports = {
       },
     ],
   },
+  moduleNameMapper: {
+    '^uuid$': '<rootDir>/tests/helpers/uuid-mock.js',
+  },
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.entity.ts',
@@ -19,5 +22,13 @@ module.exports = {
     '!src/**/index.ts',
   ],
   coverageDirectory: 'coverage',
+  coverageThreshold: {
+    global: {
+      statements: 60,
+      branches: 50,
+      functions: 60,
+      lines: 60,
+    },
+  },
   clearMocks: true,
 };

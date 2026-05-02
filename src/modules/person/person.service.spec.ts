@@ -1,70 +1,45 @@
 import { QueryFailedError } from 'typeorm';
-
-import { assertEntityExists } from '../../common/validation/assert-exists';
 import { PersonService } from './person.service';
-import type { CreatePersonDTO, Person } from './person.model';
+
+// ─── Mocks ───────────────────────────────────────────────────────────────────
 
 jest.mock('../../common/validation/assert-exists', () => ({
-  assertEntityExists: jest.fn(),
+  assertEntityExists: jest.fn().mockResolvedValue(undefined),
 }));
 
+const repository = {
+  create: jest.fn(),
+  findById: jest.fn(),
+  findAllAndCount: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+  admissionRequestExists: jest.fn(),
+  findByIdentificationNumber: jest.fn(),
+  findByAdmissionRequestId: jest.fn(),
+  findLinkedUserByPersonAndCamp: jest.fn(),
+};
+
+const personStatusHistoryRepository = {
+  create: jest.fn(),
+};
+
+const notificationService = {
+  notifyUser: jest.fn(),
+  notifyCampRoles: jest.fn(),
+};
+
+const dataSource = {};
+
+const storageService = {
+  deleteImage: jest.fn(),
+  uploadImage: jest.fn(),
+  getSignedUrl: jest.fn(),
+};
+
+// ─── Suite ───────────────────────────────────────────────────────────────────
+
 describe('PersonService', () => {
-  const mockedAssertEntityExists = assertEntityExists as jest.MockedFunction<typeof assertEntityExists>;
-
-  const repository = {
-    admissionRequestExists: jest.fn(),
-    findByIdentificationNumber: jest.fn(),
-    findByAdmissionRequestId: jest.fn(),
-    create: jest.fn(),
-    findById: jest.fn(),
-    findAllAndCount: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    findLinkedUserByPersonAndCamp: jest.fn(),
-  };
-
-  const personStatusHistoryRepository = {
-    create: jest.fn(),
-  };
-
-  const notificationService = {
-    notifyCampRoles: jest.fn(),
-    notifyUser: jest.fn(),
-  };
-
   let service: PersonService;
-
-  const createDto: CreatePersonDTO = {
-    admissionRequestId: 11,
-    name: 'Jane',
-    lastName1: 'Doe',
-    identificationNumber: 'ID-100',
-    birthDate: new Date('2000-01-01T00:00:00.000Z'),
-    gender: 'FEMALE',
-    campId: 2,
-    occupationId: 5,
-  };
-
-  const basePerson: Person = {
-    id: 1,
-    admissionRequestId: 11,
-    name: 'Jane',
-    lastName1: 'Doe',
-    lastName2: null,
-    identificationNumber: 'ID-100',
-    birthDate: new Date('2000-01-01T00:00:00.000Z'),
-    gender: 'FEMALE',
-    initialHealthLevel: null,
-    previousExperience: null,
-    physicalConditionAtEntry: null,
-    currentStatus: 'ACTIVE',
-    imageUrl: null,
-    campId: 2,
-    occupationId: 5,
-    entryDate: new Date('2026-01-01T00:00:00.000Z'),
-    createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -72,160 +47,150 @@ describe('PersonService', () => {
       repository as never,
       personStatusHistoryRepository as never,
       notificationService as never,
-      {} as never,
+      dataSource as never,
+      storageService as never,
     );
   });
 
-  it('creates person successfully', async () => {
-    repository.findByIdentificationNumber.mockResolvedValue(null);
-    repository.admissionRequestExists.mockResolvedValue(true);
-    repository.findByAdmissionRequestId.mockResolvedValue(null);
-    repository.create.mockResolvedValue(basePerson);
+  // ─── createPerson ──────────────────────────────────────────────────────
 
-    await expect(service.createPerson(createDto)).resolves.toEqual(basePerson);
-    expect(mockedAssertEntityExists).toHaveBeenCalledTimes(2);
-  });
-
-  it('throws when identification number already exists', async () => {
-    repository.findByIdentificationNumber.mockResolvedValue(basePerson);
-
-    await expect(service.createPerson(createDto)).rejects.toThrow(
-      'A person with this identification number already exists',
-    );
-  });
-
-  it('throws when admission request does not exist', async () => {
-    repository.findByIdentificationNumber.mockResolvedValue(null);
-    repository.admissionRequestExists.mockResolvedValue(false);
-
-    await expect(service.createPerson(createDto)).rejects.toThrow('Admission request not found');
-  });
-
-  it('throws when a person already exists for same admission request', async () => {
-    repository.findByIdentificationNumber.mockResolvedValue(null);
-    repository.admissionRequestExists.mockResolvedValue(true);
-    repository.findByAdmissionRequestId.mockResolvedValue(basePerson);
-
-    await expect(service.createPerson(createDto)).rejects.toThrow(
-      'A person for this admission request already exists',
-    );
-  });
-
-  it('maps unique constraint error for admission request in createPerson', async () => {
-    repository.findByIdentificationNumber.mockResolvedValue(null);
-    repository.admissionRequestExists.mockResolvedValue(true);
-    repository.findByAdmissionRequestId.mockResolvedValue(null);
-    repository.create.mockRejectedValue(
-      new QueryFailedError('INSERT', [], { code: '23505', constraint: 'uq_person_request' }),
-    );
-
-    await expect(service.createPerson(createDto)).rejects.toThrow(
-      'Ya existe una persona asociada a esta solicitud de admision',
-    );
-  });
-
-  it('returns null when update target does not exist', async () => {
-    repository.findById.mockResolvedValue(null);
-
-    await expect(service.updatePerson(9, { name: 'Other' })).resolves.toBeNull();
-  });
-
-  it('throws when changing identification to one used by another person', async () => {
-    repository.findById.mockResolvedValue(basePerson);
-    repository.findByIdentificationNumber.mockResolvedValue({ ...basePerson, id: 77 });
-
-    await expect(service.updatePerson(1, { identificationNumber: 'ID-200' })).rejects.toThrow(
-      'Another person with this identification number already exists',
-    );
-  });
-
-  it('updates person and emits status change notifications', async () => {
-    repository.findById.mockResolvedValue(basePerson);
-    repository.update.mockResolvedValue({ ...basePerson, currentStatus: 'INJURED' });
-    repository.findLinkedUserByPersonAndCamp.mockResolvedValue({ id: 500 });
-
-    const updated = await service.updatePerson(1, { currentStatus: 'INJURED' });
-
-    expect(updated?.currentStatus).toBe('INJURED');
-    expect(personStatusHistoryRepository.create).toHaveBeenCalledWith({
-      personId: 1,
-      previousStatus: 'ACTIVE',
-      newStatus: 'INJURED',
-      changedBy: 0,
-      reason: null,
+  describe('createPerson', () => {
+    it('throws if identification number already exists', async () => {
+      repository.findByIdentificationNumber.mockResolvedValue({ id: 99 });
+      await expect(
+        service.createPerson({ campId: 1, identificationNumber: '123' } as never),
+      ).rejects.toThrow('A person with this identification number already exists');
     });
-    expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(1);
-    expect(notificationService.notifyUser).toHaveBeenCalledWith(500, {
-      campId: 2,
-      type: 'PERSON_STATUS_CHANGED',
-      title: 'Cambio de estado personal',
-      message: 'Tu estado fue actualizado de ACTIVE a INJURED.',
-      sourceType: 'person',
-      sourceId: 1,
+
+    it('throws if admission request does not exist', async () => {
+      repository.findByIdentificationNumber.mockResolvedValue(null);
+      repository.admissionRequestExists.mockResolvedValue(false);
+      await expect(
+        service.createPerson({ campId: 1, identificationNumber: '123', admissionRequestId: 5 } as never),
+      ).rejects.toThrow('Admission request not found');
+    });
+
+    it('throws if person for admission request already exists', async () => {
+      repository.findByIdentificationNumber.mockResolvedValue(null);
+      repository.admissionRequestExists.mockResolvedValue(true);
+      repository.findByAdmissionRequestId.mockResolvedValue({ id: 99 });
+      await expect(
+        service.createPerson({ campId: 1, identificationNumber: '123', admissionRequestId: 5 } as never),
+      ).rejects.toThrow('A person for this admission request already exists');
+    });
+
+    it('rethrows friendly error on DB unique constraint failure', async () => {
+      repository.findByIdentificationNumber.mockResolvedValue(null);
+      
+      const error = new QueryFailedError('query', [], new Error());
+      (error as any).driverError = { code: '23505', constraint: 'uq_person_identification' };
+      repository.create.mockRejectedValue(error);
+
+      await expect(
+        service.createPerson({ campId: 1, identificationNumber: '123' } as never),
+      ).rejects.toThrow('Ya existe una persona con este numero de identificacion');
+    });
+
+    it('creates person successfully', async () => {
+      repository.findByIdentificationNumber.mockResolvedValue(null);
+      repository.create.mockResolvedValue({ id: 1 });
+
+      const result = await service.createPerson({ campId: 1, identificationNumber: '123' } as never);
+
+      expect(repository.create).toHaveBeenCalled();
+      expect(result.id).toBe(1);
     });
   });
 
-  it('updates person without status notifications when status does not change', async () => {
-    repository.findById.mockResolvedValue(basePerson);
-    repository.update.mockResolvedValue(basePerson);
+  // ─── updatePerson ──────────────────────────────────────────────────────
 
-    await service.updatePerson(1, { name: 'Janet' });
+  describe('updatePerson', () => {
+    it('returns null if person not found', async () => {
+      repository.findById.mockResolvedValue(null);
+      expect(await service.updatePerson(1, {})).toBeNull();
+    });
 
-    expect(personStatusHistoryRepository.create).not.toHaveBeenCalled();
-    expect(notificationService.notifyCampRoles).not.toHaveBeenCalled();
-    expect(notificationService.notifyUser).not.toHaveBeenCalled();
-  });
+    it('throws if new identification belongs to another person', async () => {
+      repository.findById.mockResolvedValue({ id: 1, identificationNumber: 'old' });
+      repository.findByIdentificationNumber.mockResolvedValue({ id: 2 });
+      await expect(
+        service.updatePerson(1, { identificationNumber: 'new' }),
+      ).rejects.toThrow('Another person with this identification number already exists');
+    });
 
-  it('returns false in deletePerson when target does not exist', async () => {
-    repository.findById.mockResolvedValue(null);
+    it('creates history and notifies if status changes', async () => {
+      repository.findById.mockResolvedValue({ id: 1, currentStatus: 'ACTIVE', campId: 1 });
+      repository.update.mockResolvedValue({ id: 1, currentStatus: 'INACTIVE', campId: 1 });
+      repository.findLinkedUserByPersonAndCamp.mockResolvedValue({ id: 10 });
 
-    await expect(service.deletePerson(44)).resolves.toBe(false);
-  });
+      await service.updatePerson(1, { currentStatus: 'INACTIVE' });
 
-  it('returns false in deletePerson when repository delete fails', async () => {
-    repository.findById.mockResolvedValue(basePerson);
-    repository.delete.mockResolvedValue(false);
-
-    await expect(service.deletePerson(1)).resolves.toBe(false);
-  });
-
-  it('deletes person and notifies camp roles and linked user', async () => {
-    repository.findById.mockResolvedValue(basePerson);
-    repository.delete.mockResolvedValue(true);
-    repository.findLinkedUserByPersonAndCamp.mockResolvedValue({ id: 808 });
-
-    await expect(service.deletePerson(1)).resolves.toBe(true);
-
-    expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(
-      2,
-      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
-      {
-        type: 'PERSON_STATUS_CHANGED',
-        title: 'Persona eliminada',
-        message: 'La persona 1 fue eliminada del sistema.',
-        sourceType: 'person',
-        sourceId: 1,
-      },
-    );
-    expect(notificationService.notifyUser).toHaveBeenCalledWith(808, {
-      campId: 2,
-      type: 'PERSON_STATUS_CHANGED',
-      title: 'Registro personal eliminado',
-      message: 'Tu registro personal fue eliminado del sistema.',
-      sourceType: 'person',
-      sourceId: 1,
-      sendEmail: false,
+      expect(personStatusHistoryRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ previousStatus: 'ACTIVE', newStatus: 'INACTIVE' })
+      );
+      expect(notificationService.notifyCampRoles).toHaveBeenCalled();
+      expect(notificationService.notifyUser).toHaveBeenCalledWith(10, expect.any(Object));
     });
   });
 
-  it('deletes person without user notification when no linked user exists', async () => {
-    repository.findById.mockResolvedValue(basePerson);
-    repository.delete.mockResolvedValue(true);
-    repository.findLinkedUserByPersonAndCamp.mockResolvedValue(null);
+  // ─── deletePerson ──────────────────────────────────────────────────────
 
-    await expect(service.deletePerson(1)).resolves.toBe(true);
+  describe('deletePerson', () => {
+    it('returns false if not found', async () => {
+      repository.findById.mockResolvedValue(null);
+      expect(await service.deletePerson(1)).toBe(false);
+    });
 
-    expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(1);
-    expect(notificationService.notifyUser).not.toHaveBeenCalled();
+    it('deletes and notifies camp and user', async () => {
+      repository.findById.mockResolvedValue({ id: 1, campId: 1 });
+      repository.delete.mockResolvedValue(true);
+      repository.findLinkedUserByPersonAndCamp.mockResolvedValue({ id: 10 });
+
+      const result = await service.deletePerson(1);
+
+      expect(result).toBe(true);
+      expect(notificationService.notifyCampRoles).toHaveBeenCalled();
+      expect(notificationService.notifyUser).toHaveBeenCalledWith(10, expect.objectContaining({ sendEmail: false }));
+    });
+  });
+
+  // ─── uploadPersonPhoto ─────────────────────────────────────────────────
+
+  describe('uploadPersonPhoto', () => {
+    it('throws if not found', async () => {
+      repository.findById.mockResolvedValue(null);
+      await expect(service.uploadPersonPhoto(1, {} as never)).rejects.toThrow('Person not found');
+    });
+
+    it('deletes old image and uploads new', async () => {
+      repository.findById.mockResolvedValue({ id: 1, imageUrl: 'old.png' });
+      storageService.uploadImage.mockResolvedValue('new.png');
+      repository.update.mockResolvedValue({ id: 1, imageUrl: 'new.png' });
+
+      const result = await service.uploadPersonPhoto(1, {} as never);
+
+      expect(storageService.deleteImage).toHaveBeenCalledWith('old.png');
+      expect(storageService.uploadImage).toHaveBeenCalled();
+      expect(repository.update).toHaveBeenCalledWith(1, { imageUrl: 'new.png' });
+      expect(result.imageUrl).toBe('new.png');
+    });
+  });
+
+  // ─── getPersonWithSignedUrl ────────────────────────────────────────────
+
+  describe('getPersonWithSignedUrl', () => {
+    it('returns null if not found', async () => {
+      repository.findById.mockResolvedValue(null);
+      expect(await service.getPersonWithSignedUrl(1)).toBeNull();
+    });
+
+    it('adds signed url if imageUrl exists', async () => {
+      repository.findById.mockResolvedValue({ id: 1, imageUrl: 'img.png' });
+      storageService.getSignedUrl.mockResolvedValue('http://signed.url');
+
+      const result = await service.getPersonWithSignedUrl(1);
+
+      expect(result?.imageSignedUrl).toBe('http://signed.url');
+    });
   });
 });

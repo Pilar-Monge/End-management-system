@@ -12,11 +12,17 @@ describe('DashboardService', () => {
     findConsumptionRows: jest.fn(),
   };
 
+  const systemTimeService = {
+    now: jest.fn(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers().setSystemTime(new Date('2026-04-26T10:00:00.000Z'));
-    service = new DashboardService(repository as never);
+    systemTimeService.now.mockReturnValue(new Date('2026-04-26T10:00:00.000Z'));
+    service = new DashboardService(repository as never, systemTimeService as never);
   });
+
 
   afterEach(() => {
     jest.useRealTimers();

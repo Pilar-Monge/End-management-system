@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
@@ -11,34 +10,34 @@ import type { OccupationCoverage } from '../src/modules/occupationCoverage/occup
 
 describe('Occupation Coverage Unit Tests', () => {
   const coverageRepository = {
-    getOccupationCoverageByCamp: vi.fn(),
-    getOccupationCoverageById: vi.fn(),
-    getCriticalOccupationsByCamp: vi.fn(),
-    getAvailablePersonsForReplacement: vi.fn(),
+    getOccupationCoverageByCamp: jest.fn(),
+    getOccupationCoverageById: jest.fn(),
+    getCriticalOccupationsByCamp: jest.fn(),
+    getAvailablePersonsForReplacement: jest.fn(),
   };
 
   const assignmentRepository = {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findPersonById: vi.fn(),
-    findOccupationById: vi.fn(),
-    findActiveLinkedUserByPersonAndCamp: vi.fn(),
-    findAllAndCount: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
+    create: jest.fn(),
+    findById: jest.fn(),
+    findPersonById: jest.fn(),
+    findOccupationById: jest.fn(),
+    findActiveLinkedUserByPersonAndCamp: jest.fn(),
+    findAllAndCount: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
   };
 
   const personRepo = {
-    findOne: vi.fn(),
-    exist: vi.fn(),
+    findOne: jest.fn(),
+    exist: jest.fn(),
   };
 
   const genericRepo = {
-    exist: vi.fn(),
+    exist: jest.fn(),
   };
 
   const dataSource = {
-    getRepository: vi.fn((entity) => {
+    getRepository: jest.fn((entity) => {
       if (entity === PersonEntity) {
         return personRepo;
       }
@@ -48,8 +47,8 @@ describe('Occupation Coverage Unit Tests', () => {
   } as unknown as DataSource;
 
   const notificationService = {
-    notifyCampRoles: vi.fn(),
-    notifyUser: vi.fn(),
+    notifyCampRoles: jest.fn(),
+    notifyUser: jest.fn(),
   };
 
   const coverageService = new OccupationCoverageService(
@@ -64,7 +63,7 @@ describe('Occupation Coverage Unit Tests', () => {
   );
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('calculates coverage metrics by occupation', async () => {
@@ -84,7 +83,7 @@ describe('Occupation Coverage Unit Tests', () => {
       campId: 1,
     };
 
-    vi.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue(mockCoverage);
+    jest.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue(mockCoverage);
 
     const result = await coverageService.getCoverageById(1, 1);
 
@@ -110,7 +109,7 @@ describe('Occupation Coverage Unit Tests', () => {
       campId: 1,
     };
 
-    vi.mocked(coverageRepository.getCriticalOccupationsByCamp).mockResolvedValue([critical]);
+    jest.mocked(coverageRepository.getCriticalOccupationsByCamp).mockResolvedValue([critical]);
 
     const result = await coverageService.getCriticalOccupations(1);
 
@@ -151,12 +150,12 @@ describe('Occupation Coverage Unit Tests', () => {
       campId: 1,
     };
 
-    vi.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue(targetCoverage);
-    vi.mocked(coverageRepository.getOccupationCoverageByCamp).mockResolvedValue([
+    jest.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue(targetCoverage);
+    jest.mocked(coverageRepository.getOccupationCoverageByCamp).mockResolvedValue([
       targetCoverage,
       surplusCoverage,
     ]);
-    vi.mocked(coverageRepository.getAvailablePersonsForReplacement).mockResolvedValue([
+    jest.mocked(coverageRepository.getAvailablePersonsForReplacement).mockResolvedValue([
       { id: 101, name: 'Alice', lastName1: 'Smith', currentStatus: 'ACTIVE' },
       { id: 102, name: 'Bob', lastName1: 'Jones', currentStatus: 'ACTIVE' },
     ]);
@@ -204,7 +203,7 @@ describe('Occupation Coverage Unit Tests', () => {
     personRepo.exist.mockResolvedValue(true);
     genericRepo.exist.mockResolvedValue(true);
 
-    vi.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue({
+    jest.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue({
       occupationId: 1,
       occupationName: 'Doctor',
       minimumRequiredWorkers: 2,
@@ -242,7 +241,7 @@ describe('Occupation Coverage Unit Tests', () => {
     personRepo.exist.mockResolvedValue(true);
     genericRepo.exist.mockResolvedValue(true);
 
-    vi.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue({
+    jest.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue({
       occupationId: 1,
       occupationName: 'Chef',
       minimumRequiredWorkers: 2,
