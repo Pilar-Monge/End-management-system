@@ -286,7 +286,7 @@ export class ExpeditionController {
   }
 
   @Post(':id/complete')
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Complete exploration' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseData(ExpeditionEntity, { description: 'Exploration completed' })
