@@ -34,3 +34,9 @@ export interface UpdateDailyCollectionRecordDTO {
   recordedBy?: number;
   movementId?: number | null;
 }
+
+export interface AdjustDailyCollectionRecordDTO {
+  actualAmount: string;
+  differenceReason?: string | null;
+  recordedBy: number;
+}

@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { EmailOutboxService } from '../email/emailOutbox.service';
 import { CampEntity } from '../camp/camp.entity';
+import { SystemTimeService } from '../systemTime/systemTime.service';
 import { NotificationRepository } from './notification.repository';
 import type {
   CreateNotificationDTO,
@@ -47,6 +48,7 @@ export class NotificationService {
     private readonly repository: NotificationRepository,
     private readonly dataSource: DataSource,
     private readonly emailOutboxService: EmailOutboxService,
+    private readonly systemTimeService: SystemTimeService,
   ) {}
 
   private shouldSendEmail(type: NotificationType, explicitValue?: boolean): boolean {
@@ -244,7 +246,7 @@ export class NotificationService {
     await this.validateUserCamp(finalCampId, finalUserId);
 
     if (data.read === true) {
-      data.readDate = new Date();
+      data.readDate = this.systemTimeService.now();
     } else if (data.read === false) {
       data.readDate = null;
     }

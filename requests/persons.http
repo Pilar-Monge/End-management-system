@@ -145,7 +145,8 @@ Content-Type: application/json
   "identificationNumber": "99999999",
   "birthDate": "1995-06-15",
   "gender": "MALE",
-  "campId": 1
+  "campId": 1,
+  "character": 1
 }
 
 ###
@@ -161,7 +162,8 @@ Content-Type: application/json
   "identificationNumber": "99999999",
   "birthDate": "1995-06-15",
   "gender": "MALE",
-  "campId": 1
+  "campId": 1,
+  "character": 2
 }
 
 ###
@@ -177,7 +179,8 @@ Content-Type: application/json
   "identificationNumber": "99999999",
   "birthDate": "1995-06-15",
   "gender": "MALE",
-  "campId": 1
+  "campId": 1,
+  "character": 3
 }
 
 ###
@@ -187,7 +190,8 @@ PUT {{baseUrl}}/api/persons/1
 Content-Type: application/json
 
 {
-  "currentStatus": "ACTIVE"
+  "currentStatus": "ACTIVE",
+  "character": 4
 }
 
 ###
@@ -198,7 +202,8 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "currentStatus": "ACTIVE"
+  "currentStatus": "ACTIVE",
+  "character": 5
 }
 
 ###
@@ -209,7 +214,8 @@ Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
-  "currentStatus": "ACTIVE"
+  "currentStatus": "ACTIVE",
+  "character": 1
 }
 
 ###
@@ -220,7 +226,8 @@ Authorization: Bearer {{resourceToken}}
 Content-Type: application/json
 
 {
-  "currentStatus": "ACTIVE"
+  "currentStatus": "ACTIVE",
+  "character": 2
 }
 
 ###
@@ -231,7 +238,8 @@ Authorization: Bearer {{travelToken}}
 Content-Type: application/json
 
 {
-  "currentStatus": "ACTIVE"
+  "currentStatus": "ACTIVE",
+  "character": 3
 }
 
 ###
@@ -242,7 +250,8 @@ Authorization: Bearer {{visitorToken}}
 Content-Type: application/json
 
 {
-  "currentStatus": "ACTIVE"
+  "currentStatus": "ACTIVE",
+  "character": 4
 }
 
 ###

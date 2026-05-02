@@ -1,9 +1,8 @@
-import { Check, Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Check, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity({ name: 'expedition_resource_consumed' })
-@Unique('uq_exp_cons_recurso', ['expeditionId', 'resourceTypeId'])
 @Check('chk_exp_cons_cant', `"amount" > 0`)
 export class ExpeditionResourceConsumedEntity {
   @PrimaryGeneratedColumn()

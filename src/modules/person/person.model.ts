@@ -29,6 +29,7 @@ export interface Person {
   imageUrl: string | null;
   campId: number;
   occupationId: number | null;
+  character: number;
   entryDate: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +48,7 @@ export interface CreatePersonDTO {
   physicalConditionAtEntry?: string | null;
   imageUrl?: string | null;
   campId: number;
+  character: number;
   occupationId?: number | null;
 }
 
@@ -65,4 +67,5 @@ export interface UpdatePersonDTO {
   imageUrl?: string | null;
   campId?: number;
   occupationId?: number | null;
+  character?: number;
 }

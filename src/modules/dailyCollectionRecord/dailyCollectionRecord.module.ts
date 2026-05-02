@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationModule } from '../notification/notification.module';
+import { InventoryMovementModule } from '../inventoryMovement/inventoryMovement.module';
 
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
 import { PersonEntity } from '../person/person.entity';
@@ -19,6 +20,7 @@ import { DailyCollectionRecordService } from './dailyCollectionRecord.service';
       InventoryMovementEntity,
     ]),
     NotificationModule,
+    InventoryMovementModule,
   ],
   controllers: [DailyCollectionRecordController],
   providers: [DailyCollectionRecordRepository, DailyCollectionRecordService],

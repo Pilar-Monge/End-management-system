@@ -7,12 +7,20 @@ export const INTERCAMP_REQUEST_STATUS_VALUES = [
 
 export type IntercampRequestStatus = (typeof INTERCAMP_REQUEST_STATUS_VALUES)[number];
 
+export interface IntercampPersonRequirement {
+  occupationId: number;
+  quantity: number;
+}
+
 export interface IntercampRequest {
   id: number;
   originCampId: number;
   destinationCampId: number;
   status: IntercampRequestStatus;
   description: string | null;
+  plannedDepartureDate: Date | null;
+  plannedArrivalDate: Date | null;
+  personRequirements: IntercampPersonRequirement[];
   createdDate: Date;
   responseDate: Date | null;
   createdBy: number;
@@ -24,6 +32,9 @@ export interface CreateIntercampRequestDTO {
   destinationCampId: number;
   status?: IntercampRequestStatus;
   description?: string | null;
+  plannedDepartureDate?: Date | null;
+  plannedArrivalDate?: Date | null;
+  personRequirements?: IntercampPersonRequirement[];
   createdDate?: Date;
   responseDate?: Date | null;
   createdBy: number;
@@ -35,6 +46,9 @@ export interface UpdateIntercampRequestDTO {
   destinationCampId?: number;
   status?: IntercampRequestStatus;
   description?: string | null;
+  plannedDepartureDate?: Date | null;
+  plannedArrivalDate?: Date | null;
+  personRequirements?: IntercampPersonRequirement[];
   createdDate?: Date;
   responseDate?: Date | null;
   createdBy?: number;

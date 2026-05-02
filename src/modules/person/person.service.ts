@@ -7,6 +7,7 @@ import { assertEntityExists } from '../../common/validation/assert-exists';
 import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
 import { PersonStatusHistoryRepository } from '../personStatusHistory/personStatusHistory.repository';
+import { SupabaseStorageService } from '../../services/supabase-storage.service';
 
 @Injectable()
 export class PersonService {
@@ -15,6 +16,7 @@ export class PersonService {
     private readonly personStatusHistoryRepository: PersonStatusHistoryRepository,
     private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
+    private readonly storageService: SupabaseStorageService,
   ) {}
 
   private async assertAdmissionRequestExists(admissionRequestId: number): Promise<void> {
@@ -222,5 +224,57 @@ export class PersonService {
     if (driverError.constraint === 'uq_person_identification') {
       throw new Error('Ya existe una persona con este numero de identificacion');
     }
+  }
+
+  async uploadPersonPhoto(id: number, file: Express.Multer.File): Promise<Person> {
+    const existing = await this.repository.findById(id);
+    if (!existing) throw new Error('Person not found');
+
+    if (existing.imageUrl) {
+      try {
+        await this.storageService.deleteImage(existing.imageUrl);
+      } catch (error) {
+        this.rethrowFriendlyUniqueErrors(error);
+      }
+    }
+
+    const filePath = await this.storageService.uploadImage(file, 'person-photos');
+    const updated = await this.repository.update(id, { imageUrl: filePath });
+    if (!updated) throw new Error('Person not found');
+    return updated;
+  }
+
+  private async addSignedUrlToPerson(
+    person: Person,
+  ): Promise<Person & { imageSignedUrl?: string }> {
+    const result: Person & { imageSignedUrl?: string } = { ...person };
+    if (person.imageUrl) {
+      try {
+        result.imageSignedUrl = await this.storageService.getSignedUrl(person.imageUrl);
+      } catch (error) {
+        this.rethrowFriendlyUniqueErrors(error);
+      }
+    }
+    return result;
+  }
+
+  async getPersonWithSignedUrl(id: number): Promise<(Person & { imageSignedUrl?: string }) | null> {
+    const person = await this.getPersonById(id);
+    if (!person) return null;
+    return await this.addSignedUrlToPerson(person);
+  }
+
+  async getAllPersonsWithSignedUrls(filters?: {
+    campId?: number;
+    currentStatus?: PersonStatus;
+    occupationId?: number;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: (Person & { imageSignedUrl?: string })[]; total: number }> {
+    const result = await this.getAllPersons(filters);
+    const dataWithUrls = await Promise.all(
+      result.data.map((person) => this.addSignedUrlToPerson(person)),
+    );
+    return { data: dataWithUrls, total: result.total };
   }
 }

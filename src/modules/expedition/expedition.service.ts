@@ -252,7 +252,10 @@ export class ExpeditionService {
     }
 
     if (existing.status !== 'IN_PROGRESS' && updated.status === 'IN_PROGRESS') {
-      await this.repository.applyDepartureProvisioningIfNeeded(updated.id, this.systemTimeService.now());
+      await this.repository.applyDepartureProvisioningIfNeeded(
+        updated.id,
+        this.systemTimeService.now(),
+      );
     }
 
     if (existing.status !== updated.status) {
@@ -272,6 +275,74 @@ export class ExpeditionService {
     );
 
     return updated;
+  }
+
+  async forceUpdateExpeditionState(id: number): Promise<Expedition | null> {
+    const expedition = await this.repository.findById(id);
+    if (!expedition) {
+      return null;
+    }
+
+    const now = this.systemTimeService.now();
+    const departure = expedition.plannedDepartureDate;
+    const estimatedReturn = expedition.plannedReturnDate;
+    const lossLimit = new Date(
+      estimatedReturn.getTime() + Math.max(0, expedition.extraDaysAvailable) * 24 * 60 * 60 * 1000,
+    );
+
+    let nextStatus: ExpeditionStatus = expedition.status;
+
+    if (expedition.actualReturnDate) {
+      nextStatus =
+        expedition.status === 'LOST' ? 'RETURNED_AFTER_LOST' : 'COMPLETED';
+    } else if (now.getTime() > lossLimit.getTime()) {
+      nextStatus = 'LOST';
+    } else if (now.getTime() > estimatedReturn.getTime()) {
+      nextStatus = 'DELAYED';
+    } else if (now.getTime() >= departure.getTime()) {
+      nextStatus = 'IN_PROGRESS';
+    } else {
+      nextStatus = 'PLANNED';
+    }
+
+    const extraDaysUsed =
+      now.getTime() > estimatedReturn.getTime()
+        ? Math.max(0, Math.ceil((now.getTime() - estimatedReturn.getTime()) / (24 * 60 * 60 * 1000)))
+        : 0;
+
+    if (nextStatus !== expedition.status || extraDaysUsed !== expedition.extraDaysUsed) {
+      const previousStatus = expedition.status;
+      const updated = await this.repository.update(id, {
+        status: nextStatus,
+        extraDaysUsed: Math.min(extraDaysUsed, expedition.extraDaysAvailable),
+      });
+
+      if (!updated) {
+        return null;
+      }
+
+      if (previousStatus !== 'IN_PROGRESS' && nextStatus === 'IN_PROGRESS') {
+        await this.repository.applyDepartureProvisioningIfNeeded(id, now);
+      }
+
+      await this.syncParticipantPersonStatuses(id);
+
+      await this.notificationService.notifyCampRoles(
+        expedition.campId,
+        ['SYSTEM_ADMIN', 'TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT'],
+        {
+          type: 'EXPEDITION_STATUS_UPDATED',
+          title: 'Estado de expedicion actualizado automaticamente',
+          message: `La expedicion ${expedition.name} cambio de ${previousStatus} a ${nextStatus}.`,
+          sourceType: 'expedition',
+          sourceId: id,
+        },
+      );
+
+      return updated;
+    }
+
+    return expedition;
   }
 
   async deleteExpedition(id: number): Promise<boolean> {

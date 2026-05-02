@@ -90,16 +90,20 @@ export class ExpeditionResourceConsumedService {
       data.movementId,
     );
 
-    const existing = await this.repository.findByExpeditionAndResourceType(
-      data.expeditionId,
-      data.resourceTypeId,
-    );
-    if (existing) {
-      throw new Error('Este registro de recursos consumidos ya existe para esta expedicion');
+    const expedition = await this.repository.findExpeditionById(data.expeditionId);
+    if (!expedition) {
+      throw new NotFoundException('Expedicion no encontrada');
+    }
+
+    const validStatuses = ['IN_PROGRESS', 'DELAYED'];
+    if (!validStatuses.includes(expedition.status)) {
+      throw new BadRequestException(
+        `No se pueden registrar recursos consumidos en una expedicion con estado ${expedition.status}. ` +
+          `Solo se permite durante IN_PROGRESS o DELAYED`,
+      );
     }
 
     const created = await this.repository.create(data);
-    const expedition = await this.repository.findExpeditionById(data.expeditionId);
 
     if (expedition) {
       await this.notificationService.notifyCampRoles(
@@ -164,12 +168,23 @@ export class ExpeditionResourceConsumedService {
     const movementId = data.movementId !== undefined ? data.movementId : existing.movementId;
     await this.validateRecorder(expeditionId, recordedBy, resourceTypeId, movementId);
 
+    const expedition = await this.repository.findExpeditionById(expeditionId);
+    if (!expedition) {
+      throw new NotFoundException('Expedicion no encontrada');
+    }
+
+    const validStatuses = ['IN_PROGRESS', 'DELAYED'];
+    if (!validStatuses.includes(expedition.status)) {
+      throw new BadRequestException(
+        `No se pueden actualizar recursos consumidos en una expedicion con estado ${expedition.status}`,
+      );
+    }
+
     const updated = await this.repository.update(id, data);
     if (!updated) {
       return null;
     }
 
-    const expedition = await this.repository.findExpeditionById(updated.expeditionId);
     if (expedition) {
       await this.notificationService.notifyCampRoles(
         expedition.campId,

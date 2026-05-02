@@ -9,8 +9,13 @@ import { TransferRepository } from './transfer.repository';
 import { TransferService } from './transfer.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TransferEntity]), NotificationModule, InventoryMovementModule],
+  imports: [
+    TypeOrmModule.forFeature([TransferEntity]),
+    NotificationModule,
+    InventoryMovementModule,
+  ],
   controllers: [TransferController],
   providers: [TransferRepository, TransferService],
+  exports: [TransferService],
 })
 export class TransferModule {}

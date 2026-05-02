@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InventoryMovementService } from '../inventoryMovement/inventoryMovement.service';
+import { TransferPersonService } from '../transferPerson/transferPerson.service';
+import { TransferService } from '../transfer/transfer.service';
 import { NotificationService } from '../notification/notification.service';
 import { IntercampRequestRepository } from './intercampRequest.repository';
 import type {
@@ -14,51 +15,62 @@ export class IntercampRequestService {
   constructor(
     private readonly repository: IntercampRequestRepository,
     private readonly notificationService: NotificationService,
-    private readonly inventoryMovementService: InventoryMovementService,
+    private readonly transferService: TransferService,
+    private readonly transferPersonService: TransferPersonService,
   ) {}
 
-  private async applyApprovedRequestInventory(request: IntercampRequest): Promise<void> {
-    const existingTransferCount = await this.repository.countTransfersByRequestId(request.id);
-    if (existingTransferCount > 0) {
-      return;
+  private resolvePlannedTransferDates(request: IntercampRequest): {
+    plannedDepartureDate: Date;
+    plannedArrivalDate: Date;
+  } {
+    const plannedDepartureDate =
+      request.plannedDepartureDate ?? request.responseDate ?? request.createdDate;
+
+    const plannedArrivalDate =
+      request.plannedArrivalDate ?? new Date(plannedDepartureDate.getTime() + 24 * 60 * 60 * 1000);
+
+    if (plannedArrivalDate.getTime() <= plannedDepartureDate.getTime()) {
+      throw new BadRequestException('plannedArrivalDate must be later than plannedDepartureDate');
     }
 
-    const alreadyAppliedCount = await this.repository.countAppliedInventoryByRequestId(request.id);
-    if (alreadyAppliedCount > 0) {
-      return;
-    }
+    return {
+      plannedDepartureDate,
+      plannedArrivalDate,
+    };
+  }
 
+  private hasAutoTransferNeeds(request: IntercampRequest): boolean {
+    return request.personRequirements.length > 0;
+  }
+
+  private async ensureApprovedRequestTransfer(request: IntercampRequest): Promise<void> {
     const detailRows = await this.repository.findRequestResourceAmountsByRequestId(request.id);
+    const needsTransfer = detailRows.length > 0 || this.hasAutoTransferNeeds(request);
 
-    if (detailRows.length === 0) {
+    if (!needsTransfer) {
       return;
     }
 
-    const actorUserId = request.respondedBy ?? request.createdBy;
-
-    for (const detail of detailRows) {
-      await this.inventoryMovementService.createMovement({
-        campId: request.originCampId,
-        resourceTypeId: detail.resourceTypeId,
-        amount: detail.amount,
-        movementType: 'TRANSFER_SENT',
-        sourceId: request.id,
-        sourceType: 'intercamp_request',
-        recordedBy: actorUserId,
-        description: `Auto movement on intercamp request approval #${request.id}`,
-      });
-
-      await this.inventoryMovementService.createMovement({
-        campId: request.destinationCampId,
-        resourceTypeId: detail.resourceTypeId,
-        amount: detail.amount,
-        movementType: 'TRANSFER_RECEIVED',
-        sourceId: request.id,
-        sourceType: 'intercamp_request',
-        recordedBy: actorUserId,
-        description: `Auto movement on intercamp request approval #${request.id}`,
+    let transfer = await this.transferService.getTransferByRequestId(request.id);
+    if (!transfer) {
+      const plannedDates = this.resolvePlannedTransferDates(request);
+      transfer = await this.transferService.createTransfer({
+        requestId: request.id,
+        plannedDepartureDate: plannedDates.plannedDepartureDate,
+        plannedArrivalDate: plannedDates.plannedArrivalDate,
+        status: 'PENDING_DEPARTURE',
       });
     }
+
+    if (request.personRequirements.length > 0) {
+      await this.transferPersonService.autoAssignGroupForTransfer(
+        transfer.id,
+        request.originCampId,
+        request.personRequirements,
+      );
+    }
+
+    await this.transferService.syncTransferRations(transfer.id);
   }
 
   private async validateRoutingAndOwnership(
@@ -194,6 +206,14 @@ export class IntercampRequestService {
     const destinationCampId = data.destinationCampId ?? existing.destinationCampId;
     const createdBy = data.createdBy ?? existing.createdBy;
     const respondedBy = data.respondedBy !== undefined ? data.respondedBy : existing.respondedBy;
+    const resolvedPersonRequirements = data.personRequirements ?? existing.personRequirements;
+
+    if (data.status === 'APPROVED' && resolvedPersonRequirements.length > 0) {
+      await this.transferPersonService.canFulfillRequirements(
+        originCampId,
+        resolvedPersonRequirements,
+      );
+    }
 
     await this.validateRoutingAndOwnership(originCampId, destinationCampId, createdBy, respondedBy);
 
@@ -205,7 +225,7 @@ export class IntercampRequestService {
     const statusChanged = updated.status !== existing.status;
     if (statusChanged) {
       if (updated.status === 'APPROVED') {
-        await this.applyApprovedRequestInventory(updated);
+        await this.ensureApprovedRequestTransfer(updated);
       }
 
       const notificationType =

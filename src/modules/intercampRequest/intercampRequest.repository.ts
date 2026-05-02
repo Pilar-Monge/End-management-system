@@ -25,6 +25,9 @@ export class IntercampRequestRepository {
       destinationCampId: data.destinationCampId,
       status: data.status ?? 'PENDING',
       description: data.description ?? null,
+      plannedDepartureDate: data.plannedDepartureDate ?? null,
+      plannedArrivalDate: data.plannedArrivalDate ?? null,
+      personRequirements: data.personRequirements ?? [],
       ...(data.createdDate !== undefined ? { createdDate: data.createdDate } : {}),
       responseDate: data.responseDate ?? null,
       createdBy: data.createdBy,
@@ -151,6 +154,10 @@ export class IntercampRequestRepository {
     const cleaned = Object.fromEntries(
       Object.entries(data).filter(([, value]) => value !== undefined),
     ) as Partial<IntercampRequestEntity>;
+
+    if (cleaned.personRequirements === undefined) {
+      delete cleaned.personRequirements;
+    }
 
     Object.assign(existing, cleaned);
     return await this.repo.save(existing);

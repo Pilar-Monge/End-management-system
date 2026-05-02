@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CampEntity } from '../camp/camp.entity';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
+import { DailyCollectionRecordEntity } from '../dailyCollectionRecord/dailyCollectionRecord.entity';
 import { DailyConsumptionEntity } from '../dailyConsumption/dailyConsumption.entity';
 import { ExpeditionEntity } from '../expedition/expedition.entity';
 import { ExpeditionRepository } from '../expedition/expedition.repository';
@@ -25,6 +26,7 @@ import { TemporalAutomationService } from './temporalAutomation.service';
     TypeOrmModule.forFeature([
       CampEntity,
       CampInventoryEntity,
+      DailyCollectionRecordEntity,
       DailyConsumptionEntity,
       ExpeditionEntity,
       ExpeditionParticipantEntity,

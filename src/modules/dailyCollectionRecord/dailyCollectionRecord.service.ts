@@ -3,10 +3,12 @@ import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { CampEntity } from '../camp/camp.entity';
+import { InventoryMovementService } from '../inventoryMovement/inventoryMovement.service';
 import { NotificationService } from '../notification/notification.service';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { DailyCollectionRecordRepository } from './dailyCollectionRecord.repository';
 import type {
+  AdjustDailyCollectionRecordDTO,
   CreateDailyCollectionRecordDTO,
   DailyCollectionRecord,
   UpdateDailyCollectionRecordDTO,
@@ -16,9 +18,27 @@ import type {
 export class DailyCollectionRecordService {
   constructor(
     private readonly repository: DailyCollectionRecordRepository,
+    private readonly inventoryMovementService: InventoryMovementService,
     private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
   ) {}
+
+  private roundToTwo(value: number): string {
+    return (Math.round(value * 100) / 100).toFixed(2);
+  }
+
+  private parseAmount(value: string): number {
+    const parsed = Number.parseFloat(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      throw new BadRequestException('La cantidad debe ser un numero valido mayor o igual a 0');
+    }
+
+    return parsed;
+  }
+
+  private toCalendarDate(value: Date): Date {
+    return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+  }
 
   private async validateCampConsistency(
     campId: number,
@@ -104,6 +124,60 @@ export class DailyCollectionRecordService {
       },
     );
     return created;
+  }
+
+  async adjustRecord(
+    id: number,
+    data: AdjustDailyCollectionRecordDTO,
+  ): Promise<DailyCollectionRecord | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      return null;
+    }
+
+    const recordedByUser = await this.repository.findUserById(data.recordedBy);
+    if (!recordedByUser) {
+      throw new NotFoundException('No se encontro el usuario que registro el ajuste');
+    }
+
+    if (recordedByUser.campId !== existing.campId) {
+      throw new BadRequestException('El usuario que registra el ajuste no pertenece al campamento');
+    }
+
+    const previousActualAmount = this.parseAmount(existing.actualAmount);
+    const nextActualAmount = this.parseAmount(data.actualAmount);
+    const delta = this.roundToTwo(nextActualAmount - previousActualAmount);
+
+    const updated = await this.repository.update(id, {
+      actualAmount: nextActualAmount.toFixed(2),
+      differenceReason: data.differenceReason ?? existing.differenceReason,
+      recordedBy: data.recordedBy,
+    });
+
+    if (!updated) {
+      return null;
+    }
+
+    if (Number.parseFloat(delta) !== 0) {
+      const movement = await this.inventoryMovementService.createMovement({
+        campId: existing.campId,
+        resourceTypeId: existing.resourceTypeId,
+        amount: delta,
+        movementType: 'MANUAL_ADJUSTMENT',
+        sourceId: existing.id,
+        sourceType: 'daily_collection_record',
+        recordedBy: data.recordedBy,
+        date: this.toCalendarDate(existing.date),
+        description:
+          data.differenceReason ??
+          `Ajuste manual del ingreso diario del registro ${existing.id}`,
+      });
+
+      await this.repository.update(id, { movementId: movement.id });
+      return await this.repository.findById(id);
+    }
+
+    return updated;
   }
 
   async getRecordById(id: number): Promise<DailyCollectionRecord | null> {

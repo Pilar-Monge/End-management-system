@@ -30,6 +30,7 @@ export class PersonRepository {
       imageUrl: data.imageUrl ?? null,
       campId: data.campId,
       occupationId: data.occupationId ?? null,
+      character: data.character,
     });
 
     return await this.repo.save(entity);

@@ -12,6 +12,7 @@ import type { SystemRole } from '../systemUser/systemUser.model';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { PersonEntity } from '../person/person.entity';
 import { DecisionTreeService } from '../decisionTree/decisionTree.service';
+import { SystemTimeService } from '../systemTime/systemTime.service';
 import { AdmissionRequestRepository } from './admissionRequest.repository';
 import {
   CreateAdmissionRequestDTO,
@@ -20,6 +21,7 @@ import {
   AdmissionRequestStatus,
 } from './admissionRequest.model';
 import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admissionFeatures.util';
+import { SupabaseStorageService } from '../../services/supabase-storage.service';
 
 const ADMISSION_MODEL_NAME = 'admission-acceptance-v1';
 
@@ -51,6 +53,8 @@ export class AdmissionRequestService {
     private readonly dataSource: DataSource,
     private readonly decisionTreeService: DecisionTreeService,
     private readonly notificationService: NotificationService,
+    private readonly systemTimeService: SystemTimeService,
+    private readonly storageService: SupabaseStorageService,
   ) {
     this.repository = repository;
   }
@@ -124,7 +128,7 @@ export class AdmissionRequestService {
         roleReason: aiExplain.roleAssignment.reason,
       });
     } catch (error) {
-      // If auto-recommendation fails, keep the request in PENDING_AI for manual fallback.
+     
       this.logger.warn(
         `AI auto-review failed for admission request ${createdRequest.id} (camp ${createdRequest.campId}): ${
           error instanceof Error ? error.message : 'unknown error'
@@ -349,7 +353,7 @@ export class AdmissionRequestService {
 
     const updateData: UpdateAdmissionRequestDTO = {
       reviewedBy: adminUserId,
-      reviewDate: new Date(),
+      reviewDate: this.systemTimeService.now(),
       status: approved ? 'APPROVED' : 'REJECTED',
       finalOccupationId: assignedOccupationIdOnApproval,
       rejectionReason: approved ? null : rejectionReason || 'Solicitud rechazada',
@@ -362,8 +366,7 @@ export class AdmissionRequestService {
     }
 
     if (approved && assignedOccupationIdOnApproval && createdAccess === null) {
-      // Ensure access provisioning is persisted for approved requests, even if a
-      // previous attempt partially completed.
+
       createdAccess = await this.createPersonAndUserForApprovedRequest(
         updatedRequest,
         assignedOccupationIdOnApproval,
@@ -827,5 +830,61 @@ export class AdmissionRequestService {
       occupationName: occupation.name,
       occupationDescription: occupation.description ?? 'Sin descripcion disponible',
     };
+  }
+
+  async uploadAdmissionRequestPhoto(
+    id: number,
+    file: Express.Multer.File,
+  ): Promise<AdmissionRequest> {
+    const existing = await this.repository.findById(id);
+    if (!existing) throw new Error('Admission request not found');
+
+    if (existing.photoUrl) {
+      try {
+        await this.storageService.deleteImage(existing.photoUrl);
+      } catch (error) {
+
+      }
+    }
+
+    const filePath = await this.storageService.uploadImage(file, 'admission-photos');
+    const updated = await this.repository.update(id, { photoUrl: filePath });
+    if (!updated) throw new Error('Admission request not found');
+    return updated;
+  }
+
+  private async addSignedUrlToAdmissionRequest(
+    request: AdmissionRequest,
+  ): Promise<AdmissionRequest & { photoSignedUrl?: string }> {
+    const result: AdmissionRequest & { photoSignedUrl?: string } = { ...request };
+    if (request.photoUrl) {
+      try {
+        result.photoSignedUrl = await this.storageService.getSignedUrl(request.photoUrl);
+      } catch (error) {
+        // If signed URL generation fails, just return without it
+      }
+    }
+    return result;
+  }
+
+  async getAdmissionRequestWithSignedUrl(
+    id: number,
+  ): Promise<(AdmissionRequest & { photoSignedUrl?: string }) | null> {
+    const request = await this.getRequestById(id);
+    if (!request) return null;
+    return await this.addSignedUrlToAdmissionRequest(request);
+  }
+
+  async getAllAdmissionRequestsWithSignedUrls(filters?: {
+    campId?: number;
+    status?: AdmissionRequestStatus;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: (AdmissionRequest & { photoSignedUrl?: string })[]; total: number }> {
+    const result = await this.getAllRequests(filters);
+    const dataWithUrls = await Promise.all(
+      result.data.map((request) => this.addSignedUrlToAdmissionRequest(request)),
+    );
+    return { data: dataWithUrls, total: result.total };
   }
 }
