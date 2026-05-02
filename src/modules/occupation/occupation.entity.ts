@@ -57,6 +57,32 @@ export class OccupationEntity {
   @ApiProperty()
   dailyRationConsumed!: string;
 
+  @Column({
+    name: 'minimum_required_workers',
+    type: 'int',
+    default: 1,
+  })
+  @ApiProperty({ description: 'Mínimo de trabajadores requeridos para esta ocupación', default: 1 })
+  minimumRequiredWorkers!: number;
+
+  @Column({
+    name: 'preferred_workers',
+    type: 'int',
+    nullable: true,
+  })
+  @ApiProperty({ nullable: true, description: 'Cantidad preferida de trabajadores (para optimización)' })
+  preferredWorkers!: number | null;
+
+  @Column({
+    name: 'critical_threshold_percent',
+    type: 'numeric',
+    precision: 5,
+    scale: 2,
+    default: '50.00',
+  })
+  @ApiProperty({ description: 'Porcentaje mínimo de cobertura antes de marcar como crítica (0-100)', default: '50.00' })
+  criticalThresholdPercent!: string;
+
   @CreateDateColumn({
     name: 'created_at',
     type: 'timestamptz',

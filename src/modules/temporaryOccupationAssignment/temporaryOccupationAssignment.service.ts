@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { NotificationService } from '../notification/notification.service';
+import { OccupationCoverageService } from '../occupationCoverage/occupationCoverage.service';
 import { OccupationEntity } from '../occupation/occupation.entity';
 import { PersonEntity } from '../person/person.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
@@ -20,6 +21,7 @@ export class TemporaryOccupationAssignmentService {
     private readonly repository: TemporaryOccupationAssignmentRepository,
     private readonly dataSource: DataSource,
     private readonly notificationService: NotificationService,
+    private readonly coverageService: OccupationCoverageService,
   ) {}
 
   private async notifyAssignmentChange(
@@ -67,7 +69,20 @@ export class TemporaryOccupationAssignmentService {
   async createAssignment(
     data: CreateTemporaryOccupationAssignmentDTO,
   ): Promise<TemporaryOccupationAssignment> {
-    await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
+    const person = await this.dataSource.getRepository(PersonEntity).findOne({
+      where: { id: data.personId },
+    });
+    if (!person) {
+      throw new BadRequestException(`Person with ID ${data.personId} not found`);
+    }
+
+    const unavailableStatuses = ['SICK', 'INJURED', 'OUTSIDE_CAMP', 'ON_EXPEDITION'];
+    if (unavailableStatuses.includes(person.currentStatus)) {
+      throw new BadRequestException(
+        `Person is in '${person.currentStatus}' status and cannot be temporarily reassigned.`,
+      );
+    }
+
     await assertEntityExists(
       this.dataSource,
       OccupationEntity,
@@ -75,6 +90,22 @@ export class TemporaryOccupationAssignmentService {
       'Occupation',
     );
     await assertEntityExists(this.dataSource, UserEntity, data.assignedBy, 'User');
+
+    if (person.occupationId) {
+      const sourceCoverage = await this.coverageService.getCoverageById(
+        person.occupationId,
+        person.campId,
+      );
+
+      if (sourceCoverage) {
+        const remainingAvailable = sourceCoverage.availableWorkers - 1;
+        if (remainingAvailable < sourceCoverage.minimumRequiredWorkers) {
+          throw new BadRequestException(
+            `Cannot reassign ${person.name} from '${sourceCoverage.occupationName}' as it would leave that occupation below minimum coverage.`,
+          );
+        }
+      }
+    }
 
     const created = await this.repository.create(data);
     await this.notifyAssignmentChange(
