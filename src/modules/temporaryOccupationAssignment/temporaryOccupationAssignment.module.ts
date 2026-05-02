@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit, Inject } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationModule } from '../notification/notification.module';
 import { OccupationCoverageModule } from '../occupationCoverage/occupationCoverage.module';
@@ -7,6 +7,7 @@ import { TemporaryOccupationAssignmentController } from './temporaryOccupationAs
 import { TemporaryOccupationAssignmentEntity } from './temporaryOccupationAssignment.entity';
 import { TemporaryOccupationAssignmentRepository } from './temporaryOccupationAssignment.repository';
 import { TemporaryOccupationAssignmentService } from './temporaryOccupationAssignment.service';
+import { OccupationCoverageService } from '../occupationCoverage/occupationCoverage.service';
 
 @Module({
   imports: [
@@ -17,4 +18,14 @@ import { TemporaryOccupationAssignmentService } from './temporaryOccupationAssig
   controllers: [TemporaryOccupationAssignmentController],
   providers: [TemporaryOccupationAssignmentRepository, TemporaryOccupationAssignmentService],
 })
-export class TemporaryOccupationAssignmentModule {}
+export class TemporaryOccupationAssignmentModule implements OnModuleInit {
+  constructor(
+    private readonly temporaryAssignmentService: TemporaryOccupationAssignmentService,
+    @Inject(OccupationCoverageService)
+    private readonly occupationCoverageService: OccupationCoverageService,
+  ) {}
+
+  onModuleInit(): void {
+    this.occupationCoverageService.setTemporaryAssignmentService(this.temporaryAssignmentService);
+  }
+}

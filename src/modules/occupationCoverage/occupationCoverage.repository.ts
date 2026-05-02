@@ -90,7 +90,7 @@ export class OccupationCoverageRepository {
         isAtRisk: coveragePercent < criticalThreshold && availableWorkers < minimumRequired,
         deficit: Math.max(0, minimumRequired - availableWorkers),
         surplus: Math.max(0, availableWorkers - minimumRequired),
-        campId: row.campId,
+        campId: Number(row.campId),
       };
     });
   }

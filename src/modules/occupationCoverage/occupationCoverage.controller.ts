@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Post, Req, BadRequestException } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { AuthGuard, RolesGuard } from '../../common/guards';
@@ -48,5 +48,31 @@ export class OccupationCoverageController {
       Number(occupationId),
       Number(campId),
     );
+  }
+
+  @Post(':campId/auto-assign/:occupationId')
+  async autoAssignReplacement(
+    @Param('campId') campId: string,
+    @Param('occupationId') occupationId: string,
+    @Req() req: any,
+  ): Promise<{ success: boolean; message: string; assignedPerson?: any }> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new BadRequestException('User ID not found in request');
+      }
+
+      const result = await this.coverageService.autoAssignReplacement(
+        Number(occupationId),
+        Number(campId),
+        userId,
+      );
+
+      return result;
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error during auto-assignment',
+      );
+    }
   }
 }
