@@ -17,13 +17,11 @@ export class OccupationCoverageScheduler {
     private readonly notificationService: NotificationService,
   ) {}
 
-  // Run every 30 minutes to check for critical occupations
   @Cron(CronExpression.EVERY_30_MINUTES)
   async checkCriticalOccupations(): Promise<void> {
     try {
       this.logger.debug('Starting critical occupation check...');
 
-      // Get all active camps
       const camps = await this.dataSource.query(`
         SELECT DISTINCT c.id
         FROM camp c
@@ -43,20 +41,21 @@ export class OccupationCoverageScheduler {
             `Critical: Occupation "${occupation.occupationName}" in camp ${campId} has NO available workers!`,
           );
 
-          // Get suggestions for replacement
           const suggestions = await this.coverageService.getSuggestedReplacements(
             occupation.occupationId,
             campId,
           );
 
           if (suggestions.length > 0) {
-            // Auto-assign the first suggestion if possible
             const topSuggestion = suggestions[0];
+            if (!topSuggestion) {
+              continue;
+            }
+
             this.logger.log(
               `Auto-assigning ${topSuggestion.personName} to ${occupation.occupationName}`,
             );
 
-            // Get system admin user for auto-assignment
             const systemAdmin = await this.dataSource.query(
               `
                 SELECT u.id
@@ -102,7 +101,6 @@ export class OccupationCoverageScheduler {
               });
             }
           } else {
-            // Notify camp admins about critical situation
             await this.notificationService.notifyCampRoles(campId, ['SYSTEM_ADMIN'], {
               type: 'OCCUPATION_WITHOUT_STAFF',
               title: 'Ocupacion sin cobertura',

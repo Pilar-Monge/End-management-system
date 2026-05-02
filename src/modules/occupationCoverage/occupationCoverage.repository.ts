@@ -3,6 +3,17 @@ import { DataSource } from 'typeorm';
 
 import type { OccupationCoverage } from './occupationCoverage.model';
 
+type OccupationCoverageRow = {
+  occupationId: number;
+  occupationName: string;
+  minimumRequiredWorkers: number | string;
+  preferredWorkers: number | string | null;
+  criticalThresholdPercent: number | string;
+  campId: number | string;
+  activeWorkers: number | string;
+  availableWorkers: number | string;
+};
+
 @Injectable()
 export class OccupationCoverageRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -56,7 +67,7 @@ export class OccupationCoverageRepository {
       ORDER BY o.name
     `;
 
-    const results = await this.dataSource.query(query, [campId]);
+    const results: OccupationCoverageRow[] = await this.dataSource.query(query, [campId]);
 
     return results.map((row) => {
       const availableWorkers = Number(row.availableWorkers);
@@ -71,7 +82,7 @@ export class OccupationCoverageRepository {
         occupationName: row.occupationName,
         minimumRequiredWorkers: minimumRequired,
         preferredWorkers: row.preferredWorkers ? Number(row.preferredWorkers) : null,
-        criticalThresholdPercent: row.criticalThresholdPercent,
+        criticalThresholdPercent: String(row.criticalThresholdPercent),
         availableWorkers,
         activeWorkers: Number(row.activeWorkers),
         coveragePercent,
