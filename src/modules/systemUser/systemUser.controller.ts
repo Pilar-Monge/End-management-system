@@ -24,6 +24,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import {
   ApiCreatedResponseData,
@@ -69,6 +70,7 @@ export class UserController {
   @ApiBadRequestResponse()
   @ApiUnauthorizedResponse()
   @ApiInternalServerErrorResponse()
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create() {
     throw new ForbiddenException(
       'Manual user creation is disabled. Users must be created through the automated Admission Request flow.',
@@ -103,6 +105,7 @@ export class UserController {
   @ApiBadRequestResponse()
   @ApiNotFoundResponse()
   @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async findById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('ID not provided');
     const parsedId = Number.parseInt(id, 10);
@@ -126,6 +129,7 @@ export class UserController {
   @ApiNotFoundResponse()
   @ApiUnauthorizedResponse()
   @ApiInternalServerErrorResponse()
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateSystemUserDto, @Req() req: Request) {
     if (!id) throw new BadRequestException('ID not provided');
     const parsedId = Number.parseInt(id, 10);
@@ -155,6 +159,7 @@ export class UserController {
   @ApiNotFoundResponse()
   @ApiUnauthorizedResponse()
   @ApiInternalServerErrorResponse()
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('ID not provided');
     const parsedId = Number.parseInt(id, 10);

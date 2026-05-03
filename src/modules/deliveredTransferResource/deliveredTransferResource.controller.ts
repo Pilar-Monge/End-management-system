@@ -18,11 +18,13 @@ import { DataSource } from 'typeorm';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -120,6 +122,8 @@ export class DeliveredTransferResourceController {
     description: 'Delivered Transfer Resource created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateDeliveredTransferResourceDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -152,6 +156,8 @@ export class DeliveredTransferResourceController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -186,6 +192,8 @@ export class DeliveredTransferResourceController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,

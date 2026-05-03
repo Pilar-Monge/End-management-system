@@ -17,11 +17,13 @@ import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -67,6 +69,8 @@ export class AccessLogController {
   @ApiBody({ type: CreateAccessLogDto })
   @ApiCreatedResponseData(AccessLogEntity, { description: 'Access Log created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateAccessLogDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -96,6 +100,8 @@ export class AccessLogController {
   @ApiOkResponseData(AccessLogEntity, { description: 'Access Log found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -120,6 +126,8 @@ export class AccessLogController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('userId') userId?: string,
     @Query('campId') campId?: string,
@@ -211,6 +219,8 @@ export class AccessLogController {
   @ApiOkResponseData(AccessLogEntity, { description: 'Access Log updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateAccessLogDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -249,6 +259,8 @@ export class AccessLogController {
   @ApiOkResponseMessage({ description: 'Access Log deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Access Log not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 

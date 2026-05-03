@@ -22,6 +22,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -70,6 +72,8 @@ export class UserRoleHistoryController {
   @ApiBody({ type: CreateUserRoleHistoryDto })
   @ApiCreatedResponseData(UserRoleHistoryEntity, { description: 'User Role History created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateUserRoleHistoryDTO) {
     try {
       const entry = await this.service.createEntry(body);
@@ -96,6 +100,8 @@ export class UserRoleHistoryController {
   @ApiOkResponseData(UserRoleHistoryEntity, { description: 'User Role History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -126,6 +132,8 @@ export class UserRoleHistoryController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('userId') userId?: string,
     @Query('changedBy') changedBy?: string,
@@ -220,6 +228,8 @@ export class UserRoleHistoryController {
   @ApiOkResponseData(UserRoleHistoryEntity, { description: 'User Role History updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateUserRoleHistoryDTO,
@@ -263,6 +273,8 @@ export class UserRoleHistoryController {
   @ApiOkResponseMessage({ description: 'User Role History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'User Role History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 

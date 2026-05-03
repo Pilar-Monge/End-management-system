@@ -20,6 +20,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -45,6 +47,8 @@ export class OccupationController {
   @ApiBody({ type: CreateOccupationDto })
   @ApiCreatedResponseData(OccupationEntity, { description: 'Occupation created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateOccupationDTO) {
     try {
       const occupation = await this.service.createOccupation(body);
@@ -66,6 +70,8 @@ export class OccupationController {
   @ApiOkResponseData(OccupationEntity, { description: 'Occupation found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -89,6 +95,8 @@ export class OccupationController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('collectsResources') collectsResources?: string,
     @Query('participatesInExpeditions') participatesInExpeditions?: string,
@@ -171,6 +179,8 @@ export class OccupationController {
   @ApiOkResponseData(OccupationEntity, { description: 'Occupation updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateOccupationDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -199,6 +209,8 @@ export class OccupationController {
   @ApiOkResponseMessage({ description: 'Occupation deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Occupation not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

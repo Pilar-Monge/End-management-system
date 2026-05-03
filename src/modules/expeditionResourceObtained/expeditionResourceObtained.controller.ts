@@ -23,6 +23,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -79,6 +81,8 @@ export class ExpeditionResourceObtainedController {
     description: 'Expedition Resource Obtained created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateExpeditionResourceObtainedDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -112,6 +116,8 @@ export class ExpeditionResourceObtainedController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -141,6 +147,8 @@ export class ExpeditionResourceObtainedController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
@@ -245,6 +253,8 @@ export class ExpeditionResourceObtainedController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateExpeditionResourceObtainedDTO,
@@ -304,6 +314,8 @@ export class ExpeditionResourceObtainedController {
   @ApiOkResponseMessage({ description: 'Expedition Resource Obtained deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Resource Obtained not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException('Resource records cannot be deleted for audit reasons.');
   }

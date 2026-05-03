@@ -25,6 +25,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -71,6 +73,8 @@ export class PersonController {
   @ApiBody({ type: CreatePersonDto })
   @ApiCreatedResponseData(PersonEntity, { description: 'Person created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreatePersonDTO) {
     try {
       const person = await this.service.createPerson(body);
@@ -92,6 +96,8 @@ export class PersonController {
   @ApiOkResponseData(PersonEntity, { description: 'Person found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -120,6 +126,8 @@ export class PersonController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('currentStatus') currentStatus?: PersonStatus,
@@ -213,6 +221,8 @@ export class PersonController {
   @ApiOkResponseData(PersonEntity, { description: 'Person updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Person not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdatePersonDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -261,6 +271,8 @@ export class PersonController {
   })
   @ApiOkResponseData(PersonEntity, { description: 'Photo uploaded successfully' })
   @UseInterceptors(FileInterceptor('file'))
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async uploadPhoto(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -322,6 +334,8 @@ export class PersonController {
   })
   @ApiOkResponseData(PersonEntity, { description: 'Photo updated successfully' })
   @UseInterceptors(FileInterceptor('file'))
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async updatePhoto(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -372,6 +386,8 @@ export class PersonController {
   @ApiOkResponseMessage({ description: 'Person deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

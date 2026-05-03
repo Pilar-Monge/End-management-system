@@ -16,11 +16,13 @@ import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -65,6 +67,8 @@ export class CampAchievementController {
   @ApiBody({ type: CreateCampAchievementDto })
   @ApiCreatedResponseData(CampAchievementEntity, { description: 'Camp Achievement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateCampAchievementDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -86,6 +90,13 @@ export class CampAchievementController {
   }
 
   @Get(':campId/:achievementId')
+  @ApiOperation({ summary: 'Get Camp Achievement by campId and achievementId' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'achievementId', type: Number, description: 'Achievement id' })
+  @ApiBadRequestResponse({ description: 'Invalid campId or achievementId' })
+  @ApiNotFoundResponse({ description: 'Camp Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getByKey(
     @Param('campId') campId: string,
     @Param('achievementId') achievementId: string,
@@ -121,6 +132,8 @@ export class CampAchievementController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('achievementId') achievementId?: string,
@@ -209,6 +222,14 @@ export class CampAchievementController {
   }
 
   @Put(':campId/:achievementId')
+  @ApiOperation({ summary: 'Update Camp Achievement' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'achievementId', type: Number, description: 'Achievement id' })
+  @ApiBody({ type: UpdateCampAchievementDto })
+  @ApiBadRequestResponse({ description: 'Invalid campId, achievementId, or payload' })
+  @ApiNotFoundResponse({ description: 'Camp Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('campId') campId: string,
     @Param('achievementId') achievementId: string,
@@ -247,6 +268,13 @@ export class CampAchievementController {
   }
 
   @Delete(':campId/:achievementId')
+  @ApiOperation({ summary: 'Delete Camp Achievement' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'achievementId', type: Number, description: 'Achievement id' })
+  @ApiBadRequestResponse({ description: 'Invalid campId or achievementId' })
+  @ApiNotFoundResponse({ description: 'Camp Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(
     @Param('campId') campId: string,
     @Param('achievementId') achievementId: string,

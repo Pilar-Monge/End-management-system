@@ -23,6 +23,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -122,6 +124,8 @@ export class TransferPersonController {
   @ApiBody({ type: CreateTransferPersonDto })
   @ApiCreatedResponseData(TransferPersonEntity, { description: 'Transfer Person created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateTransferPersonDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -148,6 +152,8 @@ export class TransferPersonController {
   @ApiOkResponseData(TransferPersonEntity, { description: 'Transfer Person found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -176,6 +182,8 @@ export class TransferPersonController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('personId') personId?: string,
@@ -269,6 +277,8 @@ export class TransferPersonController {
   @ApiOkResponseData(TransferPersonEntity, { description: 'Transfer Person updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateTransferPersonDTO,
@@ -309,6 +319,8 @@ export class TransferPersonController {
   @ApiOkResponseMessage({ description: 'Transfer Person deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer Person not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete() {
     throw new ForbiddenException('Transfer person records cannot be deleted for audit reasons.');
   }

@@ -12,6 +12,16 @@ import {
 import type { Request } from 'express';
 
 import { Roles } from '../../common/decorators';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiBody,
+  ApiParam,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+} from '@nestjs/swagger';
 
 import { DecisionTreeService } from './decisionTree.service';
 import type {
@@ -22,6 +32,7 @@ import type {
 
 @Controller('decision-tree')
 @Roles('SYSTEM_ADMIN')
+@ApiTags('Decision Tree')
 export class DecisionTreeController {
   constructor(private readonly service: DecisionTreeService) {}
 
@@ -47,6 +58,11 @@ export class DecisionTreeController {
   }
 
   @Post('train')
+  @ApiOperation({ summary: 'Train decision tree model' })
+  @ApiBody({ type: Object })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async train(@Body() body: TrainDecisionTreeDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -72,6 +88,11 @@ export class DecisionTreeController {
   }
 
   @Post('predict')
+  @ApiOperation({ summary: 'Predict using decision tree model' })
+  @ApiBody({ type: Object })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async predict(@Body() body: PredictDecisionTreeDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -89,6 +110,11 @@ export class DecisionTreeController {
   }
 
   @Post('explain')
+  @ApiOperation({ summary: 'Explain prediction from decision tree model' })
+  @ApiBody({ type: Object })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async explain(@Body() body: ExplainDecisionTreeDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -106,6 +132,12 @@ export class DecisionTreeController {
   }
 
   @Get('models/:id')
+  @ApiOperation({ summary: 'Get decision tree model by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Model id' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Model not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getModelById(@Param('id') id: string, @Req() req: Request) {
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) {
@@ -134,6 +166,10 @@ export class DecisionTreeController {
   }
 
   @Get('models')
+  @ApiOperation({ summary: 'List decision tree models' })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async listModels(
     @Query('modelName') modelName?: string,
     @Query('isActive') isActive?: string,

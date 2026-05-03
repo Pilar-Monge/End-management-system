@@ -23,6 +23,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -119,6 +121,8 @@ export class TransferHistoryController {
   @ApiBody({ type: CreateTransferHistoryDto })
   @ApiCreatedResponseData(TransferHistoryEntity, { description: 'Transfer History created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateTransferHistoryDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -149,6 +153,8 @@ export class TransferHistoryController {
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -183,6 +189,8 @@ export class TransferHistoryController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('userId') userId?: string,
@@ -286,6 +294,8 @@ export class TransferHistoryController {
   @ApiOkResponseMessage({
     description: 'Transfer history is immutable and cannot be updated',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -301,6 +311,8 @@ export class TransferHistoryController {
   @ApiOkResponseMessage({ description: 'Transfer History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }
