@@ -92,4 +92,77 @@ describe('Notification email payload camp name masking', () => {
     expect(detailChangedFields[0]?.previous).toBe('Campamento Aurora');
     expect(detailChangedFields[0]?.current).toBe('Campamento Aurora');
   });
+
+  test('replaces nested camp ids when queueEmail is called directly', async () => {
+    const notificationRepository = {
+      findUserById: vi.fn(),
+      create: vi.fn(),
+      findById: vi.fn(),
+      findAllAndCount: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findActiveUsersByCampAndRoles: vi.fn(),
+    };
+
+    const enqueue = vi.fn().mockResolvedValue(undefined);
+    const emailOutboxService = {
+      enqueue,
+    };
+
+    const dataSource = {
+      getRepository: vi.fn().mockImplementation(() => ({
+        exist: vi.fn().mockResolvedValue(true),
+        findOne: vi.fn().mockResolvedValue({ name: 'Campamento Aurora' }),
+      })),
+    } as unknown as DataSource;
+
+    const systemTimeService = { now: vi.fn(() => new Date()) };
+
+    const service = new NotificationService(
+      notificationRepository as never,
+      dataSource,
+      emailOutboxService as never,
+      systemTimeService as never,
+    );
+
+    await service.queueEmail({
+      toEmail: 'test@example.com',
+      subject: 'Prueba campamento',
+      templateKey: 'admission_request_pending',
+      payload: {
+        title: 'Solicitud recibida',
+        details: {
+          campId: 1,
+          nested: {
+            originCampId: 1,
+            destinationCampId: 2,
+          },
+          items: [
+            { campId: 1 },
+            { originCampId: '1', destinationCampId: '2' },
+          ],
+        },
+      },
+    });
+
+    expect(enqueue).toHaveBeenCalledTimes(1);
+    const sent = enqueue.mock.calls[0][0];
+    const payload = sent.payload as Record<string, unknown>;
+    const details = payload.details as Record<string, unknown>;
+    const nested = details.nested as Record<string, unknown>;
+    const items = details.items as Array<Record<string, unknown>>;
+
+    expect(details.campName).toBe('Campamento Aurora');
+    expect(details.campId).toBeUndefined();
+    expect(nested.originCampName).toBe('Campamento Aurora');
+    expect(nested.destinationCampName).toBe('Campamento Aurora');
+    expect(nested.originCampId).toBeUndefined();
+    expect(nested.destinationCampId).toBeUndefined();
+    expect(items[0]?.campName).toBe('Campamento Aurora');
+    expect(items[0]?.campId).toBeUndefined();
+    expect(items[1]?.originCampName).toBe('Campamento Aurora');
+    expect(items[1]?.destinationCampName).toBe('Campamento Aurora');
+    expect(items[1]?.originCampId).toBeUndefined();
+    expect(items[1]?.destinationCampId).toBeUndefined();
+  });
 });

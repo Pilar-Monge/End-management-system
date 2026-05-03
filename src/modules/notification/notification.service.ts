@@ -163,6 +163,51 @@ export class NotificationService {
     return camp?.name ?? null;
   }
 
+  private async enrichCampReferences(value: unknown): Promise<unknown> {
+    if (Array.isArray(value)) {
+      return await Promise.all(value.map(async (item) => await this.enrichCampReferences(item)));
+    }
+
+    if (value === null || value === undefined || value instanceof Date) {
+      return value;
+    }
+
+    if (typeof value !== 'object') {
+      return value;
+    }
+
+    const record = value as Record<string, unknown>;
+    const enrichedRecord: Record<string, unknown> = {};
+
+    for (const [key, rawChildValue] of Object.entries(record)) {
+      if (key === 'changedFields') {
+        const enrichedChangedFields = await this.enrichChangedFieldsWithCampNames(rawChildValue);
+        enrichedRecord[key] = enrichedChangedFields ?? rawChildValue;
+        continue;
+      }
+
+      const childValue = await this.enrichCampReferences(rawChildValue);
+
+      if (key === 'campId' || key === 'originCampId' || key === 'destinationCampId') {
+        const campName = await this.getCampNameById(childValue);
+        if (campName) {
+          const replacementKey =
+            key === 'campId'
+              ? 'campName'
+              : key === 'originCampId'
+                ? 'originCampName'
+                : 'destinationCampName';
+          enrichedRecord[replacementKey] = campName;
+          continue;
+        }
+      }
+
+      enrichedRecord[key] = childValue;
+    }
+
+    return enrichedRecord;
+  }
+
   private async enrichChangedFieldsWithCampNames(
     changedFields: unknown,
   ): Promise<Array<Record<string, unknown>> | null> {
@@ -229,64 +274,7 @@ export class NotificationService {
   private async enrichPayloadWithCampNames(
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
-    const enriched: Record<string, unknown> = { ...payload };
-
-    const rootCampName = await this.getCampNameById(enriched.campId);
-    if (rootCampName) {
-      enriched.campName = rootCampName;
-      delete enriched.campId;
-    }
-
-    const rootOriginCampName = await this.getCampNameById(enriched.originCampId);
-    if (rootOriginCampName) {
-      enriched.originCampName = rootOriginCampName;
-      delete enriched.originCampId;
-    }
-
-    const rootDestinationCampName = await this.getCampNameById(enriched.destinationCampId);
-    if (rootDestinationCampName) {
-      enriched.destinationCampName = rootDestinationCampName;
-      delete enriched.destinationCampId;
-    }
-
-    const rootChangedFields = await this.enrichChangedFieldsWithCampNames(enriched.changedFields);
-    if (rootChangedFields) {
-      enriched.changedFields = rootChangedFields;
-    }
-
-    const details =
-      typeof enriched.details === 'object' && enriched.details !== null
-        ? ({ ...(enriched.details as Record<string, unknown>) } as Record<string, unknown>)
-        : null;
-
-    if (details) {
-      const detailCampName = await this.getCampNameById(details.campId);
-      if (detailCampName) {
-        details.campName = detailCampName;
-        delete details.campId;
-      }
-
-      const detailOriginCampName = await this.getCampNameById(details.originCampId);
-      if (detailOriginCampName) {
-        details.originCampName = detailOriginCampName;
-        delete details.originCampId;
-      }
-
-      const detailDestinationCampName = await this.getCampNameById(details.destinationCampId);
-      if (detailDestinationCampName) {
-        details.destinationCampName = detailDestinationCampName;
-        delete details.destinationCampId;
-      }
-
-      const detailChangedFields = await this.enrichChangedFieldsWithCampNames(details.changedFields);
-      if (detailChangedFields) {
-        details.changedFields = detailChangedFields;
-      }
-
-      enriched.details = details;
-    }
-
-    return enriched;
+    return (await this.enrichCampReferences(payload)) as Record<string, unknown>;
   }
 
   async queueEmail(data: {
@@ -310,7 +298,7 @@ export class NotificationService {
       toEmail: data.toEmail.trim(),
       subject: data.subject,
       templateKey: data.templateKey ?? 'generic_notification',
-      payload: data.payload ?? {},
+      payload: await this.enrichPayloadWithCampNames(data.payload ?? {}),
     };
 
     if (data.maxAttempts !== undefined) {
@@ -332,13 +320,12 @@ export class NotificationService {
     }
 
     const payload = this.buildEmailPayload(title, message, email?.payload);
-    const enrichedPayload = await this.enrichPayloadWithCampNames(payload);
 
     await this.queueEmail({
       toEmail: user.email.trim(),
       subject: email?.subject ?? title,
       templateKey: email?.templateKey ?? this.resolveTemplateKeyForType(notificationType),
-      payload: enrichedPayload,
+      payload,
     });
   }
 
