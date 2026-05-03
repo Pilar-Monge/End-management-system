@@ -18,11 +18,13 @@ import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -83,6 +85,8 @@ export class DailyCollectionRecordController {
     description: 'Daily Collection Record created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateDailyCollectionRecordDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -121,6 +125,8 @@ export class DailyCollectionRecordController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async adjust(
     @Param('id') id: string,
     @Body() body: AdjustDailyCollectionRecordDTO,
@@ -169,6 +175,8 @@ export class DailyCollectionRecordController {
   @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -197,6 +205,8 @@ export class DailyCollectionRecordController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('personId') personId?: string,
@@ -305,6 +315,8 @@ export class DailyCollectionRecordController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateDailyCollectionRecordDTO,
@@ -359,6 +371,8 @@ export class DailyCollectionRecordController {
   @ApiOkResponseMessage({ description: 'Daily Collection Record deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Daily Collection Record not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException('Daily collection records cannot be deleted for audit reasons');
   }

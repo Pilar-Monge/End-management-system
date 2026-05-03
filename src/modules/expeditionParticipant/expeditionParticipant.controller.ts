@@ -23,6 +23,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -80,6 +82,8 @@ export class ExpeditionParticipantController {
   @ApiOperation({ summary: 'Create Expedition Participant' })
   @ApiBody({ type: CreateExpeditionParticipantDto })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateExpeditionParticipantDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -110,6 +114,8 @@ export class ExpeditionParticipantController {
   @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -138,6 +144,8 @@ export class ExpeditionParticipantController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('expeditionId') expeditionId?: string,
     @Query('personId') personId?: string,
@@ -233,6 +241,8 @@ export class ExpeditionParticipantController {
   @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateExpeditionParticipantDTO,
@@ -277,6 +287,8 @@ export class ExpeditionParticipantController {
   @ApiOkResponseMessage({ description: 'Expedition Participant deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException('Expedition records cannot be deleted for audit reasons.');
   }

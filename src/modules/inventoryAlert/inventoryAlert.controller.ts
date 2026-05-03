@@ -22,6 +22,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -74,6 +76,8 @@ export class InventoryAlertController {
   @ApiBody({ type: CreateInventoryAlertDto })
   @ApiCreatedResponseData(InventoryAlertEntity, { description: 'Inventory Alert created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateInventoryAlertDTO) {
     throw new ForbiddenException(
       'Inventory alerts are system-generated and cannot be created or deleted manually',
@@ -86,6 +90,8 @@ export class InventoryAlertController {
   @ApiOkResponseData(InventoryAlertEntity, { description: 'Inventory Alert found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -114,6 +120,8 @@ export class InventoryAlertController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
@@ -212,6 +220,8 @@ export class InventoryAlertController {
   @ApiOkResponseData(InventoryAlertEntity, { description: 'Inventory Alert updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateInventoryAlertDTO,
@@ -258,6 +268,8 @@ export class InventoryAlertController {
   @ApiOkResponseMessage({ description: 'Inventory Alert deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Alert not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException(
       'Inventory alerts are system-generated and cannot be created or deleted manually',

@@ -21,6 +21,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -68,6 +70,8 @@ export class SessionController {
   @ApiBody({ type: CreateSessionDto })
   @ApiCreatedResponseData(SessionEntity, { description: 'Session created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateSessionDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -94,6 +98,8 @@ export class SessionController {
   @ApiOkResponseData(SessionEntity, { description: 'Session found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Session not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -119,6 +125,8 @@ export class SessionController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('userId') userId?: string,
     @Query('campId') campId?: string,
@@ -206,6 +214,8 @@ export class SessionController {
   @ApiOkResponseData(SessionEntity, { description: 'Session updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Session not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateSessionDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -241,6 +251,8 @@ export class SessionController {
   @ApiOkResponseMessage({ description: 'Session deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Session not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 

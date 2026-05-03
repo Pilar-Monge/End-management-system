@@ -1,4 +1,5 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../../common/decorators';
@@ -15,6 +16,18 @@ import type {
 @Controller('occupation-coverage')
 export class OccupationCoverageController {
   constructor(private readonly coverageService: OccupationCoverageService) {}
+
+  private getCurrentUser(req: Request): { userId: number } {
+    const currentUser = req.user as { userId?: number } | undefined;
+
+    if (typeof currentUser?.userId !== 'number' || currentUser.userId <= 0) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+    };
+  }
 
   @Get(':campId/coverage')
   async getCoverageByCamp(@Param('campId') campId: string): Promise<OccupationCoverage[]> {
@@ -48,5 +61,28 @@ export class OccupationCoverageController {
       Number(occupationId),
       Number(campId),
     );
+  }
+
+  @Post(':campId/auto-assign/:occupationId')
+  async autoAssignReplacement(
+    @Param('campId') campId: string,
+    @Param('occupationId') occupationId: string,
+    @Req() req: Request,
+  ): Promise<{ success: boolean; message: string; assignedPerson?: any }> {
+    try {
+      const currentUser = this.getCurrentUser(req);
+
+      const result = await this.coverageService.autoAssignReplacement(
+        Number(occupationId),
+        Number(campId),
+        currentUser.userId,
+      );
+
+      return result;
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error during auto-assignment',
+      );
+    }
   }
 }

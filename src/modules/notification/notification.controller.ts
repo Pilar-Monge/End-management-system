@@ -14,7 +14,17 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+} from '@nestjs/swagger';
 import {
   ApiCreatedResponseData,
   ApiOkResponseData,
@@ -68,6 +78,9 @@ export class NotificationController {
   @ApiOperation({ summary: 'Create Notification manually' })
   @ApiBody({ type: CreateNotificationDto })
   @ApiCreatedResponseData(NotificationEntity, { description: 'Notification created' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateNotificationDTO) {
     try {
       const notification = await this.service.createNotification(body);
@@ -91,6 +104,10 @@ export class NotificationController {
   @ApiOperation({ summary: 'Get Notification by id' })
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponseData(NotificationEntity)
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Notification not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -124,6 +141,9 @@ export class NotificationController {
   @ApiOkResponseList(NotificationEntity)
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('targetRole') targetRole?: SystemRoleType,
@@ -196,6 +216,10 @@ export class NotificationController {
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateNotificationDto })
   @ApiOkResponseData(NotificationEntity)
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Notification not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateNotificationDTO, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -229,6 +253,8 @@ export class NotificationController {
   @Roles(SystemRole.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Delete Notification (DISABLED)' })
   @ApiParam({ name: 'id', type: Number })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete() {
     // HARD LOCK: Endpoint exists for API completeness but throws 403 Forbidden for everyone.
     throw new ForbiddenException(

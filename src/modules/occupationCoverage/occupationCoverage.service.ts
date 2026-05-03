@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 
 import { OccupationCoverageRepository } from './occupationCoverage.repository';
 import type {
@@ -7,9 +7,26 @@ import type {
   ReplacementSuggestion,
 } from './occupationCoverage.model';
 
+export interface AutoAssignmentResult {
+  success: boolean;
+  message: string;
+  assignedPerson?: {
+    id: number;
+    name: string;
+    fromOccupation: string;
+    toOccupation: string;
+  };
+}
+
 @Injectable()
 export class OccupationCoverageService {
   constructor(private readonly repository: OccupationCoverageRepository) {}
+
+  setTemporaryAssignmentService(service: any): void {
+    this.temporaryAssignmentService = service;
+  }
+
+  private temporaryAssignmentService: any;
 
   async getCoverageByCamp(campId: number): Promise<OccupationCoverage[]> {
     return await this.repository.getOccupationCoverageByCamp(campId);
@@ -100,5 +117,65 @@ export class OccupationCoverageService {
     }
 
     return replacementSuggestions;
+  }
+
+  async autoAssignReplacement(
+    occupationId: number,
+    campId: number,
+    assignedByUserId: number,
+  ): Promise<AutoAssignmentResult> {
+    if (!this.temporaryAssignmentService) {
+      throw new BadRequestException('Temporary assignment service not initialized');
+    }
+
+    const coverage = await this.getCoverageById(occupationId, campId);
+    if (!coverage || !coverage.isAtRisk) {
+      return {
+        success: false,
+        message: 'Occupation is not at risk or does not require auto-assignment',
+      };
+    }
+
+    const suggestions = await this.getSuggestedReplacements(occupationId, campId);
+    if (suggestions.length === 0) {
+      return {
+        success: false,
+        message: `No available workers found to reassign to '${coverage.occupationName}'`,
+      };
+    }
+
+    const topSuggestion = suggestions[0];
+    if (!topSuggestion) {
+      return {
+        success: false,
+        message: 'No suitable replacement found',
+      };
+    }
+
+    try {
+      const assignment = await this.temporaryAssignmentService.createAssignment({
+        personId: topSuggestion.personId,
+        temporaryOccupationId: occupationId,
+        assignedBy: assignedByUserId,
+        reason: `Auto-assigned to cover critical shortage in ${coverage.occupationName}`,
+      });
+
+      return {
+        success: true,
+        message: `Successfully auto-assigned ${topSuggestion.personName} to ${coverage.occupationName}`,
+        assignedPerson: {
+          id: topSuggestion.personId,
+          name: topSuggestion.personName,
+          fromOccupation: topSuggestion.currentOccupationName,
+          toOccupation: topSuggestion.targetOccupationName,
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return {
+        success: false,
+        message: `Failed to auto-assign: ${errorMessage}`,
+      };
+    }
   }
 }

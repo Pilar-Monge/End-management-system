@@ -17,11 +17,13 @@ import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -74,6 +76,8 @@ export class AiAdmissionReportController {
   @ApiBody({ type: CreateAiAdmissionReportDto })
   @ApiCreatedResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateAiAdmissionReportDTO, @Req() req: Request) {
     const currentUser = this.getCurrentUser(req);
     const requestCampId = await this.service.getAdmissionRequestCampId(body.requestId);
@@ -105,6 +109,8 @@ export class AiAdmissionReportController {
   @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -134,6 +140,8 @@ export class AiAdmissionReportController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('aiDecision') aiDecision?: AiDecision,
@@ -229,6 +237,8 @@ export class AiAdmissionReportController {
   @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateAiAdmissionReportDTO,
@@ -278,6 +288,8 @@ export class AiAdmissionReportController {
   @ApiOkResponseMessage({ description: 'Ai Admission Report deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 

@@ -23,6 +23,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -77,6 +79,8 @@ export class IntercampRequestController {
   @ApiBody({ type: CreateIntercampRequestDto })
   @ApiCreatedResponseData(IntercampRequestEntity, { description: 'Intercamp Request created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateIntercampRequestDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -113,6 +117,8 @@ export class IntercampRequestController {
   @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -145,6 +151,8 @@ export class IntercampRequestController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('originCampId') originCampId?: string,
     @Query('destinationCampId') destinationCampId?: string,
@@ -262,6 +270,8 @@ export class IntercampRequestController {
   @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateIntercampRequestDTO,
@@ -322,6 +332,8 @@ export class IntercampRequestController {
   @ApiOkResponseMessage({ description: 'Intercamp Request deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }

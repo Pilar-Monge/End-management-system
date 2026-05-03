@@ -1,5 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
 import { OccupationCoverageScheduler } from '../src/modules/occupationCoverage/occupationCoverage.scheduler';
 import { OccupationCoverageService } from '../src/modules/occupationCoverage/occupationCoverage.service';
 import { TemporaryOccupationAssignmentEntity } from '../src/modules/temporaryOccupationAssignment/temporaryOccupationAssignment.entity';
@@ -8,22 +6,22 @@ import type { OccupationCoverage } from '../src/modules/occupationCoverage/occup
 
 describe('Occupation Coverage Scheduler Integration', () => {
   const coverageService = {
-    getCriticalOccupations: vi.fn(),
-    getSuggestedReplacements: vi.fn(),
+    getCriticalOccupations: jest.fn(),
+    getSuggestedReplacements: jest.fn(),
   } as unknown as OccupationCoverageService;
 
   const assignmentRepository = {
-    create: vi.fn(),
-    save: vi.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
   };
 
   const personRepo = {
-    findOne: vi.fn(),
+    findOne: jest.fn(),
   };
 
   const dataSource = {
-    query: vi.fn(),
-    getRepository: vi.fn((entity) => {
+    query: jest.fn(),
+    getRepository: jest.fn((entity) => {
       if (entity === TemporaryOccupationAssignmentEntity) {
         return assignmentRepository;
       }
@@ -37,7 +35,7 @@ describe('Occupation Coverage Scheduler Integration', () => {
   };
 
   const notificationService = {
-    notifyCampRoles: vi.fn(),
+    notifyCampRoles: jest.fn(),
   };
 
   const scheduler = new OccupationCoverageScheduler(
@@ -47,7 +45,7 @@ describe('Occupation Coverage Scheduler Integration', () => {
   );
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('auto-assigns a worker when a critical gap has a suggestion', async () => {
@@ -70,8 +68,8 @@ describe('Occupation Coverage Scheduler Integration', () => {
     dataSource.query
       .mockResolvedValueOnce([{ id: 1 }])
       .mockResolvedValueOnce([{ id: 77 }]);
-    vi.mocked(coverageService.getCriticalOccupations).mockResolvedValue([criticalOccupation]);
-    vi.mocked(coverageService.getSuggestedReplacements).mockResolvedValue([
+    jest.mocked(coverageService.getCriticalOccupations).mockResolvedValue([criticalOccupation]);
+    jest.mocked(coverageService.getSuggestedReplacements).mockResolvedValue([
       {
         personId: 101,
         personName: 'Alice Smith',
@@ -111,8 +109,8 @@ describe('Occupation Coverage Scheduler Integration', () => {
     };
 
     dataSource.query.mockResolvedValueOnce([{ id: 1 }]);
-    vi.mocked(coverageService.getCriticalOccupations).mockResolvedValue([criticalOccupation]);
-    vi.mocked(coverageService.getSuggestedReplacements).mockResolvedValue([]);
+    jest.mocked(coverageService.getCriticalOccupations).mockResolvedValue([criticalOccupation]);
+    jest.mocked(coverageService.getSuggestedReplacements).mockResolvedValue([]);
 
     await scheduler.checkCriticalOccupations();
 
@@ -157,8 +155,8 @@ describe('Occupation Coverage Scheduler Integration', () => {
       .mockResolvedValueOnce([{ id: 1 }])
       .mockResolvedValueOnce([{ id: 77 }])
       .mockResolvedValueOnce([{ id: 77 }]);
-    vi.mocked(coverageService.getCriticalOccupations).mockResolvedValue(criticalOccupations);
-    vi.mocked(coverageService.getSuggestedReplacements).mockResolvedValue([
+    jest.mocked(coverageService.getCriticalOccupations).mockResolvedValue(criticalOccupations);
+    jest.mocked(coverageService.getSuggestedReplacements).mockResolvedValue([
       {
         personId: 101,
         personName: 'Alice Smith',

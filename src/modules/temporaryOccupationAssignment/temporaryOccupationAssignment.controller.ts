@@ -20,6 +20,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -53,6 +55,8 @@ export class TemporaryOccupationAssignmentController {
     description: 'Temporary Occupation Assignment created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateTemporaryOccupationAssignmentDTO) {
     try {
       const assignment = await this.service.createAssignment(body);
@@ -75,6 +79,8 @@ export class TemporaryOccupationAssignmentController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -99,6 +105,8 @@ export class TemporaryOccupationAssignmentController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('personId') personId?: string,
     @Query('temporaryOccupationId') temporaryOccupationId?: string,
@@ -180,6 +188,8 @@ export class TemporaryOccupationAssignmentController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateTemporaryOccupationAssignmentDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -209,6 +219,8 @@ export class TemporaryOccupationAssignmentController {
   @ApiOkResponseMessage({ description: 'Temporary Occupation Assignment deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

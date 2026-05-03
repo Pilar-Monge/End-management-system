@@ -1,5 +1,11 @@
 import { BadRequestException, Controller, Get, Req } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 
 import { Roles } from '../../common/decorators';
@@ -23,6 +29,9 @@ export class DashboardController {
   @Get('general')
   @Roles(SystemRole.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'View general camp dashboard' })
+  @ApiBadRequestResponse({ description: 'Invalid request or missing context' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getGeneralDashboard(@Req() req: Request) {
     const campId = this.getCampIdFromRequest(req);
     return {
@@ -36,6 +45,9 @@ export class DashboardController {
   @Get('inventory')
   @Roles(SystemRole.SYSTEM_ADMIN, SystemRole.RESOURCE_MANAGEMENT)
   @ApiOperation({ summary: 'View inventory dashboard' })
+  @ApiBadRequestResponse({ description: 'Invalid request or missing context' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getInventoryDashboard(@Req() req: Request) {
     const campId = this.getCampIdFromRequest(req);
     const [inventoryData, consumptionTrend] = await Promise.all([
@@ -55,6 +67,9 @@ export class DashboardController {
   @Get('expeditions')
   @Roles(SystemRole.SYSTEM_ADMIN, SystemRole.TRAVEL_MANAGER)
   @ApiOperation({ summary: 'View expeditions dashboard' })
+  @ApiBadRequestResponse({ description: 'Invalid request or missing context' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getExpeditionsDashboard(@Req() req: Request) {
     const campId = this.getCampIdFromRequest(req);
     return {
@@ -74,6 +89,9 @@ export class DashboardController {
     SystemRole.VISITOR,
   )
   @ApiOperation({ summary: 'View personal panel for assigned resources' })
+  @ApiBadRequestResponse({ description: 'Invalid request or missing context' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getPersonalPanel(@Req() req: Request) {
     const currentUser = req.user as { userId?: number; campId?: number } | undefined;
     const userId = typeof currentUser?.userId === 'number' ? currentUser.userId : null;

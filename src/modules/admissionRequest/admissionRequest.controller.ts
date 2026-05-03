@@ -20,11 +20,13 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiConsumes,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
   ApiCreatedResponseData,
@@ -73,6 +75,13 @@ export class AdmissionRequestController {
 
   @Get(':id/ai-features')
   @Roles('SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Get AI features for admission request' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiOkResponseData(Object, { description: 'AI features' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAiFeatures(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -115,6 +124,8 @@ export class AdmissionRequestController {
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Admission request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getRequestById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -146,6 +157,8 @@ export class AdmissionRequestController {
   @ApiOperation({ summary: 'List admission requests' })
   @ApiOkResponseList(AdmissionRequestEntity, { description: 'Admission requests list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAllRequests(
     @Query('campId') campId?: string,
     @Query('status') status?: AdmissionRequestStatus,
@@ -215,6 +228,9 @@ export class AdmissionRequestController {
     },
   })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Photo uploaded successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid id or file' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @UseInterceptors(FileInterceptor('file'))
   async uploadPhoto(
     @Param('id') id: string,
@@ -274,6 +290,9 @@ export class AdmissionRequestController {
     },
   })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Photo updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid id or file' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @UseInterceptors(FileInterceptor('file'))
   async updatePhoto(
     @Param('id') id: string,
@@ -323,6 +342,8 @@ export class AdmissionRequestController {
   @ApiBody({ type: UpdateAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async updateRequest(
     @Param('id') id: string,
     @Body() body: UpdateAdmissionRequestDto,
@@ -369,6 +390,8 @@ export class AdmissionRequestController {
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request processed by AI' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async processWithAI(
     @Param('id') id: string,
     @Body() body: ProcessAiAdmissionRequestDto,
@@ -401,6 +424,8 @@ export class AdmissionRequestController {
   @ApiBody({ type: ReviewAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request reviewed by admin' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async reviewByAdmin(
     @Param('id') id: string,
     @Body() body: ReviewAdmissionRequestDto,
@@ -445,6 +470,8 @@ export class AdmissionRequestController {
   @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
   @ApiOkResponseList(AdmissionRequestEntity, { description: 'Pending admission requests list' })
   @ApiBadRequestResponse({ description: 'Invalid camp id' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getPendingByCamp(@Param('campId') campId: string, @Req() req: Request) {
     if (!campId) throw new BadRequestException('Invalid camp ID');
     const parsedCampId = Number.parseInt(campId, 10);
