@@ -21,6 +21,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -53,6 +55,8 @@ export class PersonStatusHistoryController {
     description: 'Person Status History created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreatePersonStatusHistoryDTO) {
     try {
       const entry = await this.service.createEntry(body);
@@ -78,6 +82,8 @@ export class PersonStatusHistoryController {
   @ApiOkResponseData(PersonStatusHistoryEntity, { description: 'Person Status History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person Status History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -101,6 +107,8 @@ export class PersonStatusHistoryController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('personId') personId?: string,
     @Query('changedBy') changedBy?: string,
@@ -183,6 +191,8 @@ export class PersonStatusHistoryController {
   @ApiOkResponseData(PersonStatusHistoryEntity, { description: 'Person Status History updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Person Status History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdatePersonStatusHistoryDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -215,6 +225,8 @@ export class PersonStatusHistoryController {
   @ApiOkResponseMessage({ description: 'Person Status History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Person Status History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

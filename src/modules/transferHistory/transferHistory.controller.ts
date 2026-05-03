@@ -23,6 +23,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -34,11 +36,11 @@ import {
 import { Roles } from '../../common/decorators';
 
 import { TransferHistoryService } from './transferHistory.service';
-import type { CreateTransferHistoryDTO, UpdateTransferHistoryDTO } from './transferHistory.model';
+import type { CreateTransferHistoryDTO } from './transferHistory.model';
 import type { TransferStatus } from '../transfer/transfer.model';
 import { TransferHistoryEntity } from './transferHistory.entity';
 
-import { CreateTransferHistoryDto, UpdateTransferHistoryDto } from './dto';
+import { CreateTransferHistoryDto } from './dto';
 @Controller('transfer-history')
 @ApiTags('Transfer History')
 export class TransferHistoryController {
@@ -119,6 +121,8 @@ export class TransferHistoryController {
   @ApiBody({ type: CreateTransferHistoryDto })
   @ApiCreatedResponseData(TransferHistoryEntity, { description: 'Transfer History created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateTransferHistoryDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -149,6 +153,8 @@ export class TransferHistoryController {
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -183,6 +189,8 @@ export class TransferHistoryController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('userId') userId?: string,
@@ -280,61 +288,21 @@ export class TransferHistoryController {
     }
   }
   @Put(':id')
-  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
-  @ApiOperation({ summary: 'Update Transfer History' })
+  @Roles('NO_ACCESS')
+  @ApiOperation({ summary: 'Update Transfer History (disabled for audit immutability)' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
-  @ApiBody({ type: UpdateTransferHistoryDto })
-  @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History updated' })
-  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  @ApiNotFoundResponse({ description: 'Transfer History not found' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateTransferHistoryDTO,
-    @Req() req: Request,
-  ) {
+  @ApiOkResponseMessage({
+    description: 'Transfer history is immutable and cannot be updated',
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async update(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
-    try {
-      const currentUser = this.getCurrentUser(req);
-      const existing = await this.service.getEntryById(parsedId);
-      if (!existing) {
-        throw new NotFoundException('Transfer history entry not found');
-      }
-
-      if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertHistoryCampAccess(parsedId, currentUser.campId);
-
-        if (existing.userId !== currentUser.userId) {
-          throw new BadRequestException(
-            'You can only update transfer history entries created by your user',
-          );
-        }
-
-        if (body.transferId !== undefined) {
-          await this.assertTransferCampAccess(body.transferId, currentUser.campId);
-        }
-
-        if (body.userId !== undefined && body.userId !== currentUser.userId) {
-          throw new BadRequestException('userId must match the authenticated user');
-        }
-      }
-
-      const entry = await this.service.updateEntry(parsedId, body);
-      if (!entry) throw new NotFoundException('Transfer history entry not found');
-
-      return {
-        success: true,
-        data: entry,
-        message: 'Transfer history entry updated successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error updating transfer history entry',
-      );
-    }
+    throw new ForbiddenException('Transfer history records cannot be updated for audit reasons.');
   }
   @Delete(':id')
   @Roles('NO_ACCESS')
@@ -343,6 +311,8 @@ export class TransferHistoryController {
   @ApiOkResponseMessage({ description: 'Transfer History deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Transfer History not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }

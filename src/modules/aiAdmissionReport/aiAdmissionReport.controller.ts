@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -16,11 +17,13 @@ import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -73,11 +76,17 @@ export class AiAdmissionReportController {
   @ApiBody({ type: CreateAiAdmissionReportDto })
   @ApiCreatedResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateAiAdmissionReportDTO, @Req() req: Request) {
     const currentUser = this.getCurrentUser(req);
-    const requestCampId = await this.service.getReportCampId(body.requestId);
-    if (requestCampId !== null && requestCampId !== currentUser.campId) {
-      throw new BadRequestException('You cannot create a report for another camp');
+    const requestCampId = await this.service.getAdmissionRequestCampId(body.requestId);
+    if (requestCampId === null) {
+      throw new NotFoundException('Admission request not found');
+    }
+
+    if (requestCampId !== currentUser.campId) {
+      throw new NotFoundException('Admission request not found');
     }
 
     try {
@@ -100,6 +109,8 @@ export class AiAdmissionReportController {
   @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -129,6 +140,8 @@ export class AiAdmissionReportController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('aiDecision') aiDecision?: AiDecision,
@@ -147,13 +160,20 @@ export class AiAdmissionReportController {
         requestId?: number;
         aiDecision?: AiDecision;
         suggestedOccupationId?: number;
+        campId?: number;
         page?: number;
         limit?: number;
-      } = {};
+      } = {
+        campId: currentUser.campId,
+      };
 
       if (requestId) {
         const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
+        const requestCampId = await this.service.getAdmissionRequestCampId(parsedRequestId);
+        if (requestCampId === null || requestCampId !== currentUser.campId) {
+          throw new NotFoundException('AI admission report not found');
+        }
         filters.requestId = parsedRequestId;
       }
 
@@ -186,29 +206,24 @@ export class AiAdmissionReportController {
       }
 
       const result = await this.service.getAllReports(filters);
-      const campScopedData = [] as typeof result.data;
-
-      for (const report of result.data) {
-        const reportCampId = await this.service.getReportCampId(report.id);
-        if (reportCampId === currentUser.campId) {
-          campScopedData.push(report);
-        }
-      }
-
       const resolvedPage = filters.page ?? 1;
       const resolvedLimit = filters.limit ?? 10;
 
       return {
         success: true,
-        data: campScopedData,
+        data: result.data,
         pagination: {
           page: resolvedPage,
           limit: resolvedLimit,
-          total: campScopedData.length,
-          pages: Math.ceil(campScopedData.length / resolvedLimit),
+          total: result.total,
+          pages: Math.ceil(result.total / resolvedLimit),
         },
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error getting AI admission reports',
       );
@@ -222,6 +237,8 @@ export class AiAdmissionReportController {
   @ApiOkResponseData(AiAdmissionReportEntity, { description: 'Ai Admission Report updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateAiAdmissionReportDTO,
@@ -239,6 +256,13 @@ export class AiAdmissionReportController {
         throw new NotFoundException('AI admission report not found');
       }
 
+      if (body.requestId !== undefined) {
+        const requestCampId = await this.service.getAdmissionRequestCampId(body.requestId);
+        if (requestCampId === null || requestCampId !== currentUser.campId) {
+          throw new NotFoundException('Admission request not found');
+        }
+      }
+
       const report = await this.service.updateReport(parsedId, body);
       if (!report) throw new NotFoundException('AI admission report not found');
 
@@ -248,6 +272,10 @@ export class AiAdmissionReportController {
         message: 'AI admission report updated successfully',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating AI admission report',
       );
@@ -260,6 +288,8 @@ export class AiAdmissionReportController {
   @ApiOkResponseMessage({ description: 'Ai Admission Report deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Ai Admission Report not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -278,6 +308,10 @@ export class AiAdmissionReportController {
 
       return { success: true, message: 'AI admission report deleted successfully' };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error deleting AI admission report',
       );

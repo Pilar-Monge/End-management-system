@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { assertEntityExists } from '../../common/validation/assert-exists';
 import { EmailOutboxService } from '../email/emailOutbox.service';
 import { CampEntity } from '../camp/camp.entity';
+import { SystemTimeService } from '../systemTime/systemTime.service';
 import { NotificationRepository } from './notification.repository';
 import type {
   CreateNotificationDTO,
@@ -47,12 +48,10 @@ export class NotificationService {
     private readonly repository: NotificationRepository,
     private readonly dataSource: DataSource,
     private readonly emailOutboxService: EmailOutboxService,
+    private readonly systemTimeService: SystemTimeService,
   ) {}
 
-  private shouldSendEmail(
-    type: NotificationType,
-    explicitValue?: boolean,
-  ): boolean {
+  private shouldSendEmail(type: NotificationType, explicitValue?: boolean): boolean {
     if (explicitValue !== undefined) {
       return explicitValue;
     }
@@ -130,6 +129,154 @@ export class NotificationService {
     };
   }
 
+  private normalizeCampId(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const parsed = Number.parseInt(trimmed, 10);
+      if (Number.isInteger(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  private async getCampNameById(campId: unknown): Promise<string | null> {
+    const normalizedCampId = this.normalizeCampId(campId);
+    if (!normalizedCampId) {
+      return null;
+    }
+
+    const camp = await this.dataSource.getRepository(CampEntity).findOne({
+      where: { id: normalizedCampId },
+      select: { name: true },
+    });
+
+    return camp?.name ?? null;
+  }
+
+  private async enrichCampReferences(value: unknown): Promise<unknown> {
+    if (Array.isArray(value)) {
+      return await Promise.all(value.map(async (item) => await this.enrichCampReferences(item)));
+    }
+
+    if (value === null || value === undefined || value instanceof Date) {
+      return value;
+    }
+
+    if (typeof value !== 'object') {
+      return value;
+    }
+
+    const record = value as Record<string, unknown>;
+    const enrichedRecord: Record<string, unknown> = {};
+
+    for (const [key, rawChildValue] of Object.entries(record)) {
+      if (key === 'changedFields') {
+        const enrichedChangedFields = await this.enrichChangedFieldsWithCampNames(rawChildValue);
+        enrichedRecord[key] = enrichedChangedFields ?? rawChildValue;
+        continue;
+      }
+
+      const childValue = await this.enrichCampReferences(rawChildValue);
+
+      if (key === 'campId' || key === 'originCampId' || key === 'destinationCampId') {
+        const campName = await this.getCampNameById(childValue);
+        if (campName) {
+          const replacementKey =
+            key === 'campId'
+              ? 'campName'
+              : key === 'originCampId'
+                ? 'originCampName'
+                : 'destinationCampName';
+          enrichedRecord[replacementKey] = campName;
+          continue;
+        }
+      }
+
+      enrichedRecord[key] = childValue;
+    }
+
+    return enrichedRecord;
+  }
+
+  private async enrichChangedFieldsWithCampNames(
+    changedFields: unknown,
+  ): Promise<Array<Record<string, unknown>> | null> {
+    if (!Array.isArray(changedFields)) {
+      return null;
+    }
+
+    const mapped = await Promise.all(
+      changedFields.map(async (item) => {
+        if (typeof item !== 'object' || item === null) {
+          return item as Record<string, unknown>;
+        }
+
+        const row = { ...(item as Record<string, unknown>) };
+        const field =
+          typeof row.field === 'string' ? row.field.trim().toLowerCase().replaceAll(' ', '') : '';
+
+        const isCampField =
+          field === 'campid' ||
+          field === 'campname' ||
+          field === 'campamento' ||
+          field === 'origincampid' ||
+          field === 'origincampname' ||
+          field === 'campamentoorigen' ||
+          field === 'destinationcampid' ||
+          field === 'destinationcampname' ||
+          field === 'campamentodestino';
+
+        if (!isCampField) {
+          return row;
+        }
+
+        if ('previous' in row) {
+          const previousCampName = await this.getCampNameById(row.previous);
+          if (previousCampName) {
+            row.previous = previousCampName;
+          }
+        }
+
+        if ('current' in row) {
+          const currentCampName = await this.getCampNameById(row.current);
+          if (currentCampName) {
+            row.current = currentCampName;
+          }
+        }
+
+        if (field === 'campid') {
+          row.field = 'campName';
+        }
+        if (field === 'origincampid') {
+          row.field = 'originCampName';
+        }
+        if (field === 'destinationcampid') {
+          row.field = 'destinationCampName';
+        }
+
+        return row;
+      }),
+    );
+
+    return mapped;
+  }
+
+  private async enrichPayloadWithCampNames(
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return (await this.enrichCampReferences(payload)) as Record<string, unknown>;
+  }
+
   async queueEmail(data: {
     toEmail: string;
     subject: string;
@@ -151,7 +298,7 @@ export class NotificationService {
       toEmail: data.toEmail.trim(),
       subject: data.subject,
       templateKey: data.templateKey ?? 'generic_notification',
-      payload: data.payload ?? {},
+      payload: await this.enrichPayloadWithCampNames(data.payload ?? {}),
     };
 
     if (data.maxAttempts !== undefined) {
@@ -172,11 +319,13 @@ export class NotificationService {
       return;
     }
 
+    const payload = this.buildEmailPayload(title, message, email?.payload);
+
     await this.queueEmail({
       toEmail: user.email.trim(),
       subject: email?.subject ?? title,
       templateKey: email?.templateKey ?? this.resolveTemplateKeyForType(notificationType),
-      payload: this.buildEmailPayload(title, message, email?.payload),
+      payload,
     });
   }
 
@@ -247,7 +396,7 @@ export class NotificationService {
     await this.validateUserCamp(finalCampId, finalUserId);
 
     if (data.read === true) {
-      data.readDate = new Date();
+      data.readDate = this.systemTimeService.now();
     } else if (data.read === false) {
       data.readDate = null;
     }

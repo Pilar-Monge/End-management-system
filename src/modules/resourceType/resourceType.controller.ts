@@ -20,6 +20,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -49,6 +51,8 @@ export class ResourceTypeController {
   @ApiBody({ type: CreateResourceTypeDto })
   @ApiCreatedResponseData(ResourceTypeEntity, { description: 'Resource Type created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateResourceTypeDTO) {
     throw new ForbiddenException(
       'Resource types are system catalogs and cannot be modified via API',
@@ -61,6 +65,8 @@ export class ResourceTypeController {
   @ApiOkResponseData(ResourceTypeEntity, { description: 'Resource Type found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -84,6 +90,8 @@ export class ResourceTypeController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('category') category?: ResourceCategory,
     @Query('page') page?: string,
@@ -144,6 +152,8 @@ export class ResourceTypeController {
   @ApiOkResponseData(ResourceTypeEntity, { description: 'Resource Type updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateResourceTypeDTO) {
     throw new ForbiddenException(
       'Resource types are system catalogs and cannot be modified via API',
@@ -156,6 +166,8 @@ export class ResourceTypeController {
   @ApiOkResponseMessage({ description: 'Resource Type deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Resource Type not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException(
       'Resource types are system catalogs and cannot be modified via API',

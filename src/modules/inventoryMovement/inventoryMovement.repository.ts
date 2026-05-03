@@ -18,20 +18,76 @@ export class InventoryMovementRepository {
     private readonly repo: Repository<InventoryMovementEntity>,
   ) {}
 
-  async create(data: CreateInventoryMovementDTO): Promise<InventoryMovement> {
-    const entity = this.repo.create({
-      campId: data.campId,
-      resourceTypeId: data.resourceTypeId,
-      amount: data.amount,
-      movementType: data.movementType,
-      sourceId: data.sourceId ?? null,
-      sourceType: data.sourceType ?? null,
-      recordedBy: data.recordedBy,
-      ...(data.date !== undefined ? { date: data.date } : {}),
-      description: data.description ?? null,
-    });
+  private getSignedDelta(movementType: InventoryMovementType, amount: number): number {
+    if (movementType === 'MANUAL_ADJUSTMENT') {
+      return amount;
+    }
 
-    return await this.repo.save(entity);
+    if (
+      movementType === 'DAILY_RATION' ||
+      movementType === 'EXPEDITION_DEPARTURE' ||
+      movementType === 'TRANSFER_SENT'
+    ) {
+      return -amount;
+    }
+
+    return amount;
+  }
+
+  async create(data: CreateInventoryMovementDTO): Promise<InventoryMovement> {
+    return await this.repo.manager.transaction(async (manager) => {
+      const movementRepo = manager.getRepository(InventoryMovementEntity);
+      const entity = movementRepo.create({
+        campId: data.campId,
+        resourceTypeId: data.resourceTypeId,
+        amount: data.amount,
+        movementType: data.movementType,
+        sourceId: data.sourceId ?? null,
+        sourceType: data.sourceType ?? null,
+        recordedBy: data.recordedBy,
+        ...(data.date !== undefined ? { date: data.date } : {}),
+        description: data.description ?? null,
+      });
+
+      const saved = await movementRepo.save(entity);
+      const numericAmount = Number.parseFloat(String(data.amount));
+      const delta = this.getSignedDelta(data.movementType, numericAmount);
+
+      if (delta >= 0) {
+        await manager.query(
+          `INSERT INTO public.camp_inventory (
+              camp_id,
+              resource_type_id,
+              current_amount,
+              minimum_alert_amount,
+              last_update
+           ) VALUES ($1, $2, $3, '0.00', NOW())
+           ON CONFLICT (camp_id, resource_type_id)
+           DO UPDATE SET
+             current_amount = (public.camp_inventory.current_amount::numeric + EXCLUDED.current_amount::numeric)::numeric(12,2),
+             last_update = NOW()`,
+          [data.campId, data.resourceTypeId, delta.toFixed(2)],
+        );
+      } else {
+        const consumedAmount = Math.abs(delta);
+        const updateResult = (await manager.query(
+          `UPDATE public.camp_inventory
+           SET current_amount = (current_amount::numeric - $3::numeric)::numeric(12,2),
+               last_update = NOW()
+           WHERE camp_id = $1
+             AND resource_type_id = $2
+             AND current_amount::numeric >= $3::numeric
+           RETURNING camp_id`,
+          [data.campId, data.resourceTypeId, consumedAmount.toFixed(2)],
+        )) as Array<{ camp_id: number }>;
+
+        if (updateResult.length === 0) {
+          throw new Error('Insufficient camp inventory for this movement');
+        }
+      }
+
+      return saved;
+    });
   }
 
   async findById(id: number): Promise<InventoryMovement | null> {

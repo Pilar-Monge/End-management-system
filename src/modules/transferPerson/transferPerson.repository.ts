@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryRunner } from 'typeorm';
 
 import { UserEntity } from '../systemUser/systemUser.entity';
+import { PersonEntity } from '../person/person.entity';
 import { TransferPersonEntity } from './transferPerson.entity';
 import type {
   CreateTransferPersonDTO,
@@ -39,6 +40,87 @@ export class TransferPersonRepository {
     personId: number,
   ): Promise<TransferPerson | null> {
     return await this.repo.findOne({ where: { transferId, personId } });
+  }
+
+  async countByTransferId(transferId: number): Promise<number> {
+    return await this.repo.count({ where: { transferId } });
+  }
+
+  async findEligiblePersonIdsByCampAndOccupation(
+    campId: number,
+    occupationId: number,
+  ): Promise<number[]> {
+    const rows = (await this.repo.query(
+      `SELECT p.id
+       FROM public.person p
+       WHERE p.camp_id = $1
+         AND p.occupation_id = $2
+         AND p.current_status = 'ACTIVE'
+         AND NOT EXISTS (
+           SELECT 1
+           FROM public.transfer_person tp
+           JOIN public.transfer t ON t.id = tp.transfer_id
+           WHERE tp.person_id = p.id
+             AND t.status <> 'CANCELED'
+         )
+       ORDER BY p.created_at ASC, p.id ASC`,
+      [campId, occupationId],
+    )) as Array<{ id: number }>;
+
+    return rows.map((row) => row.id);
+  }
+
+  async findEligiblePersonIdsByCampAndOccupationForUpdate(
+    queryRunner: QueryRunner,
+    campId: number,
+    occupationId: number,
+  ): Promise<number[]> {
+    const rows = (await queryRunner.query(
+      `SELECT p.id
+       FROM public.person p
+       WHERE p.camp_id = $1
+         AND p.occupation_id = $2
+         AND p.current_status = 'ACTIVE'
+         AND NOT EXISTS (
+           SELECT 1
+           FROM public.transfer_person tp
+           JOIN public.transfer t ON t.id = tp.transfer_id
+           WHERE tp.person_id = p.id
+             AND t.status <> 'CANCELED'
+         )
+       ORDER BY p.created_at ASC, p.id ASC
+       FOR UPDATE SKIP LOCKED`,
+      [campId, occupationId],
+    )) as Array<{ id: number }>;
+
+    return rows.map((row) => row.id);
+  }
+
+  async insertTransferPersonWithQueryRunner(
+    queryRunner: QueryRunner,
+    transferId: number,
+    personId: number,
+    status: PersonTransferStatus,
+  ): Promise<TransferPerson> {
+    const insertRes = await queryRunner.query(
+      `INSERT INTO public.transfer_person (transfer_id, person_id, status, departure_date, arrival_date)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, transfer_id AS "transferId", person_id AS "personId", status, departure_date AS "departureDate", arrival_date AS "arrivalDate"`,
+      [transferId, personId, status, null, null],
+    );
+
+    return insertRes[0] as unknown as TransferPerson;
+  }
+
+  async findPeopleByIds(personIds: number[]): Promise<PersonEntity[]> {
+    if (personIds.length === 0) {
+      return [];
+    }
+
+    return await this.repo.manager.getRepository(PersonEntity).find({
+      where: personIds.map((id) => ({ id })),
+      order: { id: 'ASC' },
+    });
   }
 
   async resolveTransferScope(transferId: number): Promise<{

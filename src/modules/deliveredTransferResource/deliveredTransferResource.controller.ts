@@ -18,11 +18,13 @@ import { DataSource } from 'typeorm';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -34,13 +36,10 @@ import {
 import { Roles } from '../../common/decorators';
 
 import { DeliveredTransferResourceService } from './deliveredTransferResource.service';
-import type {
-  CreateDeliveredTransferResourceDTO,
-  UpdateDeliveredTransferResourceDTO,
-} from './deliveredTransferResource.model';
+import type { CreateDeliveredTransferResourceDTO } from './deliveredTransferResource.model';
 import { DeliveredTransferResourceEntity } from './deliveredTransferResource.entity';
 
-import { CreateDeliveredTransferResourceDto, UpdateDeliveredTransferResourceDto } from './dto';
+import { CreateDeliveredTransferResourceDto } from './dto';
 @Controller('delivered-transfer-resources')
 @ApiTags('Delivered Transfer Resource')
 export class DeliveredTransferResourceController {
@@ -123,6 +122,8 @@ export class DeliveredTransferResourceController {
     description: 'Delivered Transfer Resource created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateDeliveredTransferResourceDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -155,6 +156,8 @@ export class DeliveredTransferResourceController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -189,6 +192,8 @@ export class DeliveredTransferResourceController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('transferId') transferId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
@@ -276,65 +281,21 @@ export class DeliveredTransferResourceController {
     }
   }
   @Put(':id')
-  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
-  @ApiOperation({ summary: 'Update Delivered Transfer Resource' })
+  @Roles('NO_ACCESS')
+  @ApiOperation({ summary: 'Update Delivered Transfer Resource (disabled for audit immutability)' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
-  @ApiBody({ type: UpdateDeliveredTransferResourceDto })
-  @ApiOkResponseData(DeliveredTransferResourceEntity, {
-    description: 'Delivered Transfer Resource updated',
+  @ApiOkResponseMessage({
+    description: 'Delivered transfer resource is immutable and cannot be updated',
   })
-  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
-  @ApiNotFoundResponse({ description: 'Delivered Transfer Resource not found' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateDeliveredTransferResourceDTO,
-    @Req() req: Request,
-  ) {
+  async update(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
-    try {
-      const currentUser = this.getCurrentUser(req);
-      const existing = await this.service.getDeliveredResourceById(parsedId);
-      if (!existing) {
-        throw new NotFoundException('Delivered transfer resource not found');
-      }
-
-      if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertDeliveredCampAccess(parsedId, currentUser.campId);
-
-        if (existing.recordedBy !== currentUser.userId) {
-          throw new BadRequestException(
-            'You can only update delivered resources created by your user',
-          );
-        }
-
-        if (body.transferId !== undefined) {
-          await this.assertTransferCampAccess(body.transferId, currentUser.campId);
-        }
-
-        if (body.recordedBy !== undefined && body.recordedBy !== currentUser.userId) {
-          throw new BadRequestException('recordedBy must match the authenticated user');
-        }
-      }
-
-      const delivered = await this.service.updateDeliveredResource(parsedId, body);
-      if (!delivered) {
-        throw new NotFoundException('Delivered transfer resource not found');
-      }
-
-      return {
-        success: true,
-        data: delivered,
-        message: 'Delivered transfer resource updated successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Error updating delivered transfer resource',
-      );
-    }
+    throw new ForbiddenException(
+      'Delivered transfer resource records cannot be updated for audit reasons.',
+    );
   }
   @Delete(':id')
   @Roles('NO_ACCESS')

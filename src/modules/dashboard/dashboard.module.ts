@@ -8,6 +8,7 @@ import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.
 import { NotificationEntity } from '../notification/notification.entity';
 import { PersonEntity } from '../person/person.entity';
 import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
+import { SystemTimeModule } from '../systemTime/systemTime.module';
 
 import { DashboardController } from './dashboard.controller';
 import { DashboardRepository } from './dashboard.repository';
@@ -24,6 +25,7 @@ import { DashboardService } from './dashboard.service';
       ExpeditionEntity,
       InventoryMovementEntity,
     ]),
+    SystemTimeModule,
   ],
   controllers: [DashboardController],
   providers: [DashboardService, DashboardRepository],

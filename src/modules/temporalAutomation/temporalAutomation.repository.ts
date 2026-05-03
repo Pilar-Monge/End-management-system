@@ -58,7 +58,7 @@ export class TemporalAutomationRepository {
   async findExpeditionsForAutoStateUpdate(): Promise<ExpeditionEntity[]> {
     return await this.expeditionRepo.find({
       where: {
-        status: Not(In(['COMPLETED', 'CANCELED', 'LOST'])),
+        status: Not(In(['COMPLETED', 'CANCELED', 'LOST', 'RETURNED_AFTER_LOST'])),
       },
     });
   }
@@ -109,6 +109,47 @@ export class TemporalAutomationRepository {
       `,
       [campId, nowIso],
     )) as Array<{ occupation_id: string | number }>;
+  }
+
+  async findDailyCollectionRows(
+    campId: number,
+    nowIso: string,
+  ): Promise<
+    Array<{
+      personId: number;
+      resourceTypeId: number;
+      expectedAmount: string;
+    }>
+  > {
+    return (await this.personRepo.query(
+      `
+      SELECT
+        p.id AS "personId",
+        o.resource_type_id AS "resourceTypeId",
+        o.daily_amount_produced::text AS "expectedAmount"
+      FROM person p
+      LEFT JOIN LATERAL (
+        SELECT temporary_occupation_id
+        FROM temporary_occupation_assignment
+        WHERE person_id = p.id
+          AND start_date <= $2
+          AND (end_date IS NULL OR end_date >= $2)
+        ORDER BY start_date DESC
+        LIMIT 1
+      ) ta ON true
+      JOIN occupation o ON o.id = COALESCE(ta.temporary_occupation_id, p.occupation_id)
+      WHERE p.camp_id = $1
+        AND p.current_status NOT IN ('SICK', 'INJURED', 'OUTSIDE_CAMP')
+        AND o.resource_type_id IS NOT NULL
+        AND o.daily_amount_produced::numeric > 0
+      ORDER BY p.id ASC
+      `,
+      [campId, nowIso],
+    )) as Array<{
+      personId: number;
+      resourceTypeId: number;
+      expectedAmount: string;
+    }>;
   }
 
   async findProductionOccupationsByIds(
@@ -223,5 +264,47 @@ export class TemporalAutomationRepository {
     });
 
     return users.map((user) => user.id);
+  }
+
+  async findAutomationRecorderUserId(campId: number): Promise<number | null> {
+    const preferred = await this.userRepo.findOne({
+      where: [
+        {
+          campId,
+          status: 'ACTIVE',
+          role: 'RESOURCE_MANAGEMENT',
+        },
+        {
+          campId,
+          status: 'ACTIVE',
+          role: 'SYSTEM_ADMIN',
+        },
+      ],
+      order: {
+        id: 'ASC',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (preferred) {
+      return preferred.id;
+    }
+
+    const fallback = await this.userRepo.findOne({
+      where: {
+        campId,
+        status: 'ACTIVE',
+      },
+      order: {
+        id: 'ASC',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return fallback?.id ?? null;
   }
 }

@@ -57,7 +57,11 @@ export class InventoryMovementService {
 
   async createMovement(data: CreateInventoryMovementDTO): Promise<InventoryMovement> {
     const amount = Number.parseFloat(`${data.amount}`);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (data.movementType === 'MANUAL_ADJUSTMENT') {
+      if (!Number.isFinite(amount) || amount === 0) {
+        throw new BadRequestException('La cantidad debe ser distinta de 0 para un ajuste manual');
+      }
+    } else if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException('La cantidad debe ser mayor que 0');
     }
 
@@ -70,9 +74,18 @@ export class InventoryMovementService {
     );
     await assertEntityExists(this.dataSource, UserEntity, data.recordedBy, 'User');
 
+    if (this.isConsumptionMovement(data.movementType)) {
+      const inventory = await this.repository.findCampInventory(data.campId, data.resourceTypeId);
+      const currentAmount = Number.parseFloat(inventory?.currentAmount ?? '0');
+
+      if (!Number.isFinite(currentAmount) || currentAmount < amount) {
+        throw new BadRequestException('Inventario insuficiente para registrar este movimiento');
+      }
+    }
+
     const movement = await this.repository.create(data);
 
-    if (this.isConsumptionMovement(data.movementType)) {
+    if (this.isConsumptionMovement(data.movementType) || (data.movementType === 'MANUAL_ADJUSTMENT' && amount < 0)) {
       await this.notifyLowInventory(data.campId, data.resourceTypeId, movement.id);
     }
 

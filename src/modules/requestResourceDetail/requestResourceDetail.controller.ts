@@ -11,6 +11,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -20,6 +21,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -43,6 +46,54 @@ import { CreateRequestResourceDetailDto, UpdateRequestResourceDetailDto } from '
 @Roles('SYSTEM_ADMIN')
 export class RequestResourceDetailController {
   constructor(private readonly service: RequestResourceDetailService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private async assertRequestCampAccess(requestId: number, currentCampId: number): Promise<void> {
+    const scope = await this.service.getRequestScope(requestId);
+    if (!scope) {
+      throw new NotFoundException('Intercamp request not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException(
+        'You can only access request resource details involving your camp',
+      );
+    }
+  }
+
+  private async assertDetailCampAccess(detailId: number, currentCampId: number): Promise<void> {
+    const scope = await this.service.getDetailScope(detailId);
+    if (!scope) {
+      throw new NotFoundException('Request resource detail not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException(
+        'You can only access request resource details involving your camp',
+      );
+    }
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create Request Resource Detail' })
   @ApiBody({ type: CreateRequestResourceDetailDto })
@@ -50,8 +101,13 @@ export class RequestResourceDetailController {
     description: 'Request Resource Detail created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateRequestResourceDetailDTO) {
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async create(@Body() body: CreateRequestResourceDetailDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+
       const detail = await this.service.createDetail(body);
       return {
         success: true,
@@ -70,11 +126,16 @@ export class RequestResourceDetailController {
   @ApiOkResponseData(RequestResourceDetailEntity, { description: 'Request Resource Detail found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
-  async getById(@Param('id') id: string) {
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    await this.assertDetailCampAccess(parsedId, currentUser.campId);
 
     const detail = await this.service.getDetailById(parsedId);
     if (!detail) throw new NotFoundException('Request resource detail not found');
@@ -92,23 +153,36 @@ export class RequestResourceDetailController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+
       const filters: {
         requestId?: number;
         resourceTypeId?: number;
+        involvedCampId?: number;
         page?: number;
         limit?: number;
       } = {};
 
+      filters.involvedCampId = currentUser.campId;
+
       if (requestId) {
         const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
+        await this.assertRequestCampAccess(parsedRequestId, currentUser.campId);
         filters.requestId = parsedRequestId;
       }
 
@@ -165,13 +239,25 @@ export class RequestResourceDetailController {
   })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
-  async update(@Param('id') id: string, @Body() body: UpdateRequestResourceDetailDTO) {
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateRequestResourceDetailDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      await this.assertDetailCampAccess(parsedId, currentUser.campId);
+      if (body.requestId !== undefined) {
+        await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+      }
+
       const detail = await this.service.updateDetail(parsedId, body);
       if (!detail) throw new NotFoundException('Request resource detail not found');
 
@@ -192,13 +278,18 @@ export class RequestResourceDetailController {
   @ApiOkResponseMessage({ description: 'Request Resource Detail deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Resource Detail not found' })
-  async delete(@Param('id') id: string) {
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      await this.assertDetailCampAccess(parsedId, currentUser.campId);
+
       const deleted = await this.service.deleteDetail(parsedId);
       if (!deleted) throw new NotFoundException('Request resource detail not found');
 

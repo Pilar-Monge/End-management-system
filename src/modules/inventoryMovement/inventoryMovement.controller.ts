@@ -22,6 +22,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -77,6 +79,8 @@ export class InventoryMovementController {
   @ApiBody({ type: CreateInventoryMovementDto })
   @ApiCreatedResponseData(InventoryMovementEntity, { description: 'Inventory Movement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateInventoryMovementDTO, @Req() req: Request) {
     try {
       const currentUser = this.getCurrentUser(req);
@@ -107,6 +111,8 @@ export class InventoryMovementController {
   @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -135,6 +141,8 @@ export class InventoryMovementController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
@@ -245,6 +253,8 @@ export class InventoryMovementController {
   @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateInventoryMovementDTO,
@@ -295,6 +305,8 @@ export class InventoryMovementController {
   @ApiOkResponseMessage({ description: 'Inventory Movement deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Inventory Movement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     throw new ForbiddenException('Inventory movements cannot be deleted for audit reasons');
   }

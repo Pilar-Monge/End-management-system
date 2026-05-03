@@ -19,6 +19,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -51,6 +53,8 @@ export class RequestPersonDetailController {
     description: 'Request Person Detail created',
   })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateRequestPersonDetailDTO) {
     try {
       const detail = await this.service.createDetail(body);
@@ -71,6 +75,8 @@ export class RequestPersonDetailController {
   @ApiOkResponseData(RequestPersonDetailEntity, { description: 'Request Person Detail found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -93,6 +99,8 @@ export class RequestPersonDetailController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('requestId') requestId?: string,
     @Query('detailType') detailType?: PersonDetailType,
@@ -184,6 +192,8 @@ export class RequestPersonDetailController {
   @ApiOkResponseData(RequestPersonDetailEntity, { description: 'Request Person Detail updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateRequestPersonDetailDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
 
@@ -211,6 +221,8 @@ export class RequestPersonDetailController {
   @ApiOkResponseMessage({ description: 'Request Person Detail deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 

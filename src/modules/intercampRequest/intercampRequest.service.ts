@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { TransferPersonService } from '../transferPerson/transferPerson.service';
+import { TransferService } from '../transfer/transfer.service';
 import { NotificationService } from '../notification/notification.service';
 import { IntercampRequestRepository } from './intercampRequest.repository';
 import type {
@@ -13,7 +15,63 @@ export class IntercampRequestService {
   constructor(
     private readonly repository: IntercampRequestRepository,
     private readonly notificationService: NotificationService,
+    private readonly transferService: TransferService,
+    private readonly transferPersonService: TransferPersonService,
   ) {}
+
+  private resolvePlannedTransferDates(request: IntercampRequest): {
+    plannedDepartureDate: Date;
+    plannedArrivalDate: Date;
+  } {
+    const plannedDepartureDate =
+      request.plannedDepartureDate ?? request.responseDate ?? request.createdDate;
+
+    const plannedArrivalDate =
+      request.plannedArrivalDate ?? new Date(plannedDepartureDate.getTime() + 24 * 60 * 60 * 1000);
+
+    if (plannedArrivalDate.getTime() <= plannedDepartureDate.getTime()) {
+      throw new BadRequestException('plannedArrivalDate must be later than plannedDepartureDate');
+    }
+
+    return {
+      plannedDepartureDate,
+      plannedArrivalDate,
+    };
+  }
+
+  private hasAutoTransferNeeds(request: IntercampRequest): boolean {
+    return request.personRequirements.length > 0;
+  }
+
+  private async ensureApprovedRequestTransfer(request: IntercampRequest): Promise<void> {
+    const detailRows = await this.repository.findRequestResourceAmountsByRequestId(request.id);
+    const needsTransfer = detailRows.length > 0 || this.hasAutoTransferNeeds(request);
+
+    if (!needsTransfer) {
+      return;
+    }
+
+    let transfer = await this.transferService.getTransferByRequestId(request.id);
+    if (!transfer) {
+      const plannedDates = this.resolvePlannedTransferDates(request);
+      transfer = await this.transferService.createTransfer({
+        requestId: request.id,
+        plannedDepartureDate: plannedDates.plannedDepartureDate,
+        plannedArrivalDate: plannedDates.plannedArrivalDate,
+        status: 'PENDING_DEPARTURE',
+      });
+    }
+
+    if (request.personRequirements.length > 0) {
+      await this.transferPersonService.autoAssignGroupForTransfer(
+        transfer.id,
+        request.originCampId,
+        request.personRequirements,
+      );
+    }
+
+    await this.transferService.syncTransferRations(transfer.id);
+  }
 
   private async validateRoutingAndOwnership(
     originCampId: number,
@@ -70,11 +128,19 @@ export class IntercampRequestService {
 
     const created = await this.repository.create(data);
 
+    const [originCamp, destinationCamp] = await Promise.all([
+      this.repository.findCampById(created.originCampId),
+      this.repository.findCampById(created.destinationCampId),
+    ]);
+
+    const originCampName = originCamp?.name ?? 'campamento origen';
+    const destinationCampName = destinationCamp?.name ?? 'campamento destino';
+
     await this.notificationService.notifyUser(created.createdBy, {
       campId: created.originCampId,
       type: 'INTERCAMP_REQUEST_RECEIVED',
       title: 'Solicitud intercampamento creada',
-      message: `Tu solicitud intercampamento #${created.id} fue registrada y enviada al campamento ${created.destinationCampId}.`,
+      message: `Tu solicitud intercampamento #${created.id} fue registrada y enviada al campamento ${destinationCampName}.`,
       sourceType: 'intercamp_request',
       sourceId: created.id,
     });
@@ -85,7 +151,7 @@ export class IntercampRequestService {
       {
         type: 'INTERCAMP_REQUEST_RECEIVED',
         title: 'Nueva solicitud intercampamento',
-        message: `Se recibio una solicitud intercampamento #${created.id} desde el campamento ${created.originCampId}.`,
+        message: `Se recibio una solicitud intercampamento #${created.id} desde el campamento ${originCampName}.`,
         sourceType: 'intercamp_request',
         sourceId: created.id,
       },
@@ -148,6 +214,14 @@ export class IntercampRequestService {
     const destinationCampId = data.destinationCampId ?? existing.destinationCampId;
     const createdBy = data.createdBy ?? existing.createdBy;
     const respondedBy = data.respondedBy !== undefined ? data.respondedBy : existing.respondedBy;
+    const resolvedPersonRequirements = data.personRequirements ?? existing.personRequirements;
+
+    if (data.status === 'APPROVED' && resolvedPersonRequirements.length > 0) {
+      await this.transferPersonService.canFulfillRequirements(
+        originCampId,
+        resolvedPersonRequirements,
+      );
+    }
 
     await this.validateRoutingAndOwnership(originCampId, destinationCampId, createdBy, respondedBy);
 
@@ -158,6 +232,10 @@ export class IntercampRequestService {
 
     const statusChanged = updated.status !== existing.status;
     if (statusChanged) {
+      if (updated.status === 'APPROVED') {
+        await this.ensureApprovedRequestTransfer(updated);
+      }
+
       const notificationType =
         updated.status === 'APPROVED'
           ? 'INTERCAMP_REQUEST_APPROVED'

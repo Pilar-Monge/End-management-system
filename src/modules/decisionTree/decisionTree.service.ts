@@ -257,7 +257,7 @@ export class DecisionTreeService {
       roleReason: string;
     };
   }> {
-    const model = await this.getActiveModelByNameOrThrow(modelName, campId);
+    const model = await this.getActiveModelByNameWithFallbackOrThrow(modelName, campId);
     return await this.explainWithModel(model, features);
   }
 
@@ -389,6 +389,23 @@ export class DecisionTreeService {
     return model;
   }
 
+  private async getActiveModelByNameWithFallbackOrThrow(
+    modelName: string,
+    campId?: number,
+  ): Promise<DecisionTreeModel> {
+    const campModel = await this.repository.findActiveByModelName(modelName, campId);
+    if (campModel) {
+      return campModel;
+    }
+
+    const globalModel = await this.repository.findActiveGlobalByModelName(modelName);
+    if (globalModel) {
+      return globalModel;
+    }
+
+    throw new Error(`Active decision tree model not found for ${modelName}`);
+  }
+
   private async explainWithModel(
     model: DecisionTreeModel,
     features: Record<string, number>,
@@ -410,7 +427,7 @@ export class DecisionTreeService {
     const rawPrediction = loaded.predict([row])[0];
     const prediction = this.decodePrediction(model, rawPrediction);
     const rules = this.extractRulePath(model.featureNames, features, payload, loaded.root);
-    const roleAssignment = await this.predictRoleAssignment(features);
+    const roleAssignment = await this.predictRoleAssignment(features, model.campId ?? undefined);
 
     const explanation = {
       admissionSummary: this.buildTreeSummary('Admisión', prediction, rules),
@@ -428,8 +445,11 @@ export class DecisionTreeService {
     };
   }
 
-  private async predictRoleAssignment(features: Record<string, number>): Promise<RoleAssignment> {
-    const roleModel = await this.getActiveModelByNameOrThrow(ROLE_MODEL_NAME);
+  private async predictRoleAssignment(
+    features: Record<string, number>,
+    campId?: number,
+  ): Promise<RoleAssignment> {
+    const roleModel = await this.getActiveModelByNameWithFallbackOrThrow(ROLE_MODEL_NAME, campId);
     const row = this.buildSingleRow(roleModel.featureNames, features);
 
     const { loaded, payload } = await this.loadModelFromModel(roleModel);

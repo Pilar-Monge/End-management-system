@@ -132,6 +132,23 @@ export class ExpeditionParticipantService {
       );
     }
 
+    if (person.occupationId === null) {
+      throw new BadRequestException(
+        'La persona debe tener una ocupacion asignada para participar en expediciones',
+      );
+    }
+
+    const occupation = await this.repository.findOccupationById(person.occupationId);
+    if (!occupation) {
+      throw new NotFoundException('Ocupacion no encontrada para la persona seleccionada');
+    }
+
+    if (!occupation.participatesInExpeditions) {
+      throw new BadRequestException(
+        `La ocupacion ${occupation.name} no esta habilitada para participar en expediciones`,
+      );
+    }
+
     return { expedition, person };
   }
 

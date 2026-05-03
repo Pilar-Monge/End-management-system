@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { UserRoleHistoryRepository } from './userRoleHistory.repository';
+import { UserEntity } from '../systemUser/systemUser.entity';
 import type {
   CreateUserRoleHistoryDTO,
   UserRoleHistory,
@@ -8,7 +10,10 @@ import type {
 
 @Injectable()
 export class UserRoleHistoryService {
-  constructor(private readonly repository: UserRoleHistoryRepository) {}
+  constructor(
+    private readonly repository: UserRoleHistoryRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async createEntry(data: CreateUserRoleHistoryDTO): Promise<UserRoleHistory> {
     try {

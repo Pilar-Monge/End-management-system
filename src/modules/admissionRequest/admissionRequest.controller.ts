@@ -11,16 +11,22 @@ import {
   Put,
   Query,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConsumes,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
   ApiCreatedResponseData,
@@ -69,6 +75,13 @@ export class AdmissionRequestController {
 
   @Get(':id/ai-features')
   @Roles('SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Get AI features for admission request' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiOkResponseData(Object, { description: 'AI features' })
+  @ApiBadRequestResponse({ description: 'Invalid id' })
+  @ApiNotFoundResponse({ description: 'Request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAiFeatures(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -111,18 +124,19 @@ export class AdmissionRequestController {
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Admission request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getRequestById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
     try {
       const currentUser = this.getCurrentUser(req);
-      const requestEntity = await this.service.getRequestById(parsedId);
-      if (requestEntity.campId !== currentUser.campId) {
+      const request = await this.service.getAdmissionRequestWithSignedUrl(parsedId);
+      if (!request || request.campId !== currentUser.campId) {
         throw new NotFoundException('Request not found');
       }
 
-      const request = await this.service.getRequestById(parsedId);
       return { success: true, data: request };
     } catch (error) {
       throw new NotFoundException(error instanceof Error ? error.message : 'Request not found');
@@ -143,6 +157,8 @@ export class AdmissionRequestController {
   @ApiOperation({ summary: 'List admission requests' })
   @ApiOkResponseList(AdmissionRequestEntity, { description: 'Admission requests list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAllRequests(
     @Query('campId') campId?: string,
     @Query('status') status?: AdmissionRequestStatus,
@@ -175,7 +191,7 @@ export class AdmissionRequestController {
       if (status) filters.status = status;
       if (page) filters.page = Number.parseInt(page, 10);
       if (limit) filters.limit = Number.parseInt(limit, 10);
-      const result = await this.service.getAllRequests(filters);
+      const result = await this.service.getAllAdmissionRequestsWithSignedUrls(filters);
       const resolvedPage = filters.page || 1;
       const resolvedLimit = filters.limit || 10;
       return {
@@ -195,6 +211,130 @@ export class AdmissionRequestController {
     }
   }
 
+  @Post(':id/photo')
+  @Roles('SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Upload admission request photo' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOkResponseData(AdmissionRequestEntity, { description: 'Photo uploaded successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid id or file' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadPhoto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    if (!id) throw new BadRequestException('Invalid ID');
+    if (!file) throw new BadRequestException('No file uploaded');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const currentUser = this.getCurrentUser(req);
+      const existingRequest = await this.service.getRequestById(parsedId);
+      if (!existingRequest || existingRequest.campId !== currentUser.campId) {
+        throw new NotFoundException('Request not found');
+      }
+
+      const request = await this.service.uploadAdmissionRequestPhoto(parsedId, file);
+      return {
+        success: true,
+        data: request,
+        message: 'Photo uploaded successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error uploading photo',
+      );
+    }
+  }
+
+  @Put(':id/photo')
+  @Roles('SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Update admission request photo' })
+  @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOkResponseData(AdmissionRequestEntity, { description: 'Photo updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid id or file' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  @UseInterceptors(FileInterceptor('file'))
+  async updatePhoto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    if (!id) throw new BadRequestException('Invalid ID');
+    if (!file) throw new BadRequestException('No file uploaded');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const currentUser = this.getCurrentUser(req);
+      const existingRequest = await this.service.getRequestById(parsedId);
+      if (!existingRequest || existingRequest.campId !== currentUser.campId) {
+        throw new NotFoundException('Request not found');
+      }
+
+      const request = await this.service.uploadAdmissionRequestPhoto(parsedId, file);
+      return {
+        success: true,
+        data: request,
+        message: 'Photo updated successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error updating photo',
+      );
+    }
+  }
+
   @Put(':id')
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update an admission request' })
@@ -202,6 +342,8 @@ export class AdmissionRequestController {
   @ApiBody({ type: UpdateAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async updateRequest(
     @Param('id') id: string,
     @Body() body: UpdateAdmissionRequestDto,
@@ -215,6 +357,10 @@ export class AdmissionRequestController {
       const existingRequest = await this.service.getRequestById(parsedId);
       if (existingRequest.campId !== currentUser.campId) {
         throw new NotFoundException('Request not found');
+      }
+
+      if (body.campId !== undefined && body.campId !== currentUser.campId) {
+        throw new BadRequestException('You cannot move requests to another camp');
       }
 
       const request = await this.service.updateRequest(parsedId, body);
@@ -244,6 +390,8 @@ export class AdmissionRequestController {
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request processed by AI' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async processWithAI(
     @Param('id') id: string,
     @Body() body: ProcessAiAdmissionRequestDto,
@@ -276,6 +424,8 @@ export class AdmissionRequestController {
   @ApiBody({ type: ReviewAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request reviewed by admin' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async reviewByAdmin(
     @Param('id') id: string,
     @Body() body: ReviewAdmissionRequestDto,
@@ -320,6 +470,8 @@ export class AdmissionRequestController {
   @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
   @ApiOkResponseList(AdmissionRequestEntity, { description: 'Pending admission requests list' })
   @ApiBadRequestResponse({ description: 'Invalid camp id' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getPendingByCamp(@Param('campId') campId: string, @Req() req: Request) {
     if (!campId) throw new BadRequestException('Invalid camp ID');
     const parsedCampId = Number.parseInt(campId, 10);

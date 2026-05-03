@@ -11,15 +11,18 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -37,13 +40,42 @@ import { CreateCampAchievementDto, UpdateCampAchievementDto } from './dto';
 @Roles('SYSTEM_ADMIN')
 export class CampAchievementController {
   constructor(private readonly service: CampAchievementService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create Camp Achievement' })
   @ApiBody({ type: CreateCampAchievementDto })
   @ApiCreatedResponseData(CampAchievementEntity, { description: 'Camp Achievement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async create(@Body() body: CreateCampAchievementDTO) {
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async create(@Body() body: CreateCampAchievementDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      if (body.campId !== currentUser.campId) {
+        throw new BadRequestException('You cannot create achievements for another camp');
+      }
+
       const campAchievement = await this.service.createCampAchievement(body);
       return {
         success: true,
@@ -58,11 +90,27 @@ export class CampAchievementController {
   }
 
   @Get(':campId/:achievementId')
-  async getByKey(@Param('campId') campId: string, @Param('achievementId') achievementId: string) {
+  @ApiOperation({ summary: 'Get Camp Achievement by campId and achievementId' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'achievementId', type: Number, description: 'Achievement id' })
+  @ApiBadRequestResponse({ description: 'Invalid campId or achievementId' })
+  @ApiNotFoundResponse({ description: 'Camp Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async getByKey(
+    @Param('campId') campId: string,
+    @Param('achievementId') achievementId: string,
+    @Req() req: Request,
+  ) {
     const parsedCampId = Number.parseInt(campId, 10);
     const parsedAchievementId = Number.parseInt(achievementId, 10);
     if (Number.isNaN(parsedCampId) || Number.isNaN(parsedAchievementId)) {
       throw new BadRequestException('Invalid campId or achievementId');
+    }
+
+    const currentUser = this.getCurrentUser(req);
+    if (parsedCampId !== currentUser.campId) {
+      throw new BadRequestException('You cannot view achievements from another camp');
     }
 
     const campAchievement = await this.service.getCampAchievementByKey(
@@ -84,14 +132,23 @@ export class CampAchievementController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('achievementId') achievementId?: string,
     @Query('unlockedBy') unlockedBy?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+
       const filters: {
         campId?: number;
         achievementId?: number;
@@ -100,9 +157,14 @@ export class CampAchievementController {
         limit?: number;
       } = {};
 
+      filters.campId = currentUser.campId;
+
       if (campId) {
         const parsedCampId = Number.parseInt(campId, 10);
         if (Number.isNaN(parsedCampId)) throw new BadRequestException('Invalid campId');
+        if (parsedCampId !== currentUser.campId) {
+          throw new BadRequestException('You cannot query achievements from another camp');
+        }
         filters.campId = parsedCampId;
       }
 
@@ -160,15 +222,29 @@ export class CampAchievementController {
   }
 
   @Put(':campId/:achievementId')
+  @ApiOperation({ summary: 'Update Camp Achievement' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'achievementId', type: Number, description: 'Achievement id' })
+  @ApiBody({ type: UpdateCampAchievementDto })
+  @ApiBadRequestResponse({ description: 'Invalid campId, achievementId, or payload' })
+  @ApiNotFoundResponse({ description: 'Camp Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(
     @Param('campId') campId: string,
     @Param('achievementId') achievementId: string,
     @Body() body: UpdateCampAchievementDTO,
+    @Req() req: Request,
   ) {
     const parsedCampId = Number.parseInt(campId, 10);
     const parsedAchievementId = Number.parseInt(achievementId, 10);
     if (Number.isNaN(parsedCampId) || Number.isNaN(parsedAchievementId)) {
       throw new BadRequestException('Invalid campId or achievementId');
+    }
+
+    const currentUser = this.getCurrentUser(req);
+    if (parsedCampId !== currentUser.campId) {
+      throw new BadRequestException('You cannot update achievements from another camp');
     }
 
     try {
@@ -192,11 +268,27 @@ export class CampAchievementController {
   }
 
   @Delete(':campId/:achievementId')
-  async delete(@Param('campId') campId: string, @Param('achievementId') achievementId: string) {
+  @ApiOperation({ summary: 'Delete Camp Achievement' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'achievementId', type: Number, description: 'Achievement id' })
+  @ApiBadRequestResponse({ description: 'Invalid campId or achievementId' })
+  @ApiNotFoundResponse({ description: 'Camp Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async delete(
+    @Param('campId') campId: string,
+    @Param('achievementId') achievementId: string,
+    @Req() req: Request,
+  ) {
     const parsedCampId = Number.parseInt(campId, 10);
     const parsedAchievementId = Number.parseInt(achievementId, 10);
     if (Number.isNaN(parsedCampId) || Number.isNaN(parsedAchievementId)) {
       throw new BadRequestException('Invalid campId or achievementId');
+    }
+
+    const currentUser = this.getCurrentUser(req);
+    if (parsedCampId !== currentUser.campId) {
+      throw new BadRequestException('You cannot delete achievements from another camp');
     }
 
     try {

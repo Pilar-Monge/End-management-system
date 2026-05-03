@@ -39,6 +39,23 @@ export class IntercampRequestEntity {
   @ApiProperty({ nullable: true })
   description!: string | null;
 
+  @Column({ name: 'planned_departure_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
+  plannedDepartureDate!: Date | null;
+
+  @Column({ name: 'planned_arrival_date', type: 'timestamptz', nullable: true })
+  @ApiProperty({ nullable: true })
+  plannedArrivalDate!: Date | null;
+
+  @Column({
+    name: 'person_requirements',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'::jsonb",
+  })
+  @ApiProperty({ type: 'array', isArray: true, nullable: false })
+  personRequirements!: Array<{ occupationId: number; quantity: number }>;
+
   @Column({
     name: 'created_date',
     type: 'timestamptz',

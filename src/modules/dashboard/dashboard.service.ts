@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { SystemTimeService } from '../systemTime/systemTime.service';
 import { DashboardRepository } from './dashboard.repository';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly repository: DashboardRepository) {}
+  constructor(
+    private readonly repository: DashboardRepository,
+    private readonly systemTimeService: SystemTimeService,
+  ) {}
 
   async getGeneralStats(campId: number) {
     const [unreadNotifications, totalPersons, pendingAdmissionRequests] = await Promise.all([
@@ -53,7 +57,11 @@ export class DashboardService {
 
     const base = {
       PLANNED: 0,
+      IN_PROGRESS: 0,
+      DELAYED: 0,
       COMPLETED: 0,
+      LOST: 0,
+      RETURNED_AFTER_LOST: 0,
       CANCELED: 0,
     };
 
@@ -67,7 +75,7 @@ export class DashboardService {
   }
 
   async getConsumptionTrend(campId: number) {
-    const startDate = new Date();
+    const startDate = this.systemTimeService.now();
     startDate.setHours(0, 0, 0, 0);
     startDate.setDate(startDate.getDate() - 6);
 

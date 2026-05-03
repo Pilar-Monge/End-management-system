@@ -4,6 +4,7 @@ export const EXPEDITION_STATUS_VALUES = [
   'DELAYED',
   'COMPLETED',
   'LOST',
+  'RETURNED_AFTER_LOST',
   'CANCELED',
 ] as const;
 

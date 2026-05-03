@@ -39,6 +39,17 @@ export class AiAdmissionReportRepository {
     return await this.repo.findOne({ where: { requestId } });
   }
 
+  async findReportCampId(reportId: number): Promise<number | null> {
+    const row = await this.repo
+      .createQueryBuilder('rep')
+      .innerJoin(AdmissionRequestEntity, 'request', 'request.id = rep.requestId')
+      .select('request.campId', 'campId')
+      .where('rep.id = :reportId', { reportId })
+      .getRawOne<{ campId: number }>();
+
+    return row?.campId ?? null;
+  }
+
   async admissionRequestExists(requestId: number): Promise<boolean> {
     return await this.repo.manager.getRepository(AdmissionRequestEntity).exist({
       where: { id: requestId },
@@ -57,6 +68,7 @@ export class AiAdmissionReportRepository {
   }
 
   async findAllAndCount(filters?: {
+    campId?: number;
     requestId?: number;
     aiDecision?: AiDecision;
     suggestedOccupationId?: number;
@@ -64,6 +76,11 @@ export class AiAdmissionReportRepository {
     limit?: number;
   }): Promise<{ data: AiAdmissionReport[]; total: number }> {
     const qb = this.repo.createQueryBuilder('rep');
+
+    if (filters?.campId !== undefined) {
+      qb.innerJoin(AdmissionRequestEntity, 'request', 'request.id = rep.requestId');
+      qb.andWhere('request.campId = :campId', { campId: filters.campId });
+    }
 
     if (filters?.requestId !== undefined) {
       qb.andWhere('rep.requestId = :requestId', { requestId: filters.requestId });

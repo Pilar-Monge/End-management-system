@@ -99,8 +99,20 @@ export class AdmissionRequestRepository {
     return await this.repo.count({ where: { campId, status } });
   }
 
-  async findByEmail(email: string): Promise<AdmissionRequest | null> {
-    return await this.repo.findOne({ where: { email } });
+  async findByEmailAndCamp(email: string, campId: number): Promise<AdmissionRequest | null> {
+    return await this.repo.findOne({ where: { email, campId } });
+  }
+
+  async findApprovedByEmailExcludingId(
+    email: string,
+    excludedId: number,
+  ): Promise<AdmissionRequest | null> {
+    return await this.repo
+      .createQueryBuilder('req')
+      .where('LOWER(req.email) = LOWER(:email)', { email })
+      .andWhere('req.status = :status', { status: 'APPROVED' })
+      .andWhere('req.id <> :excludedId', { excludedId })
+      .getOne();
   }
 
   async findOccupationByName(name: string): Promise<OccupationEntity | null> {

@@ -25,6 +25,9 @@ export class IntercampRequestRepository {
       destinationCampId: data.destinationCampId,
       status: data.status ?? 'PENDING',
       description: data.description ?? null,
+      plannedDepartureDate: data.plannedDepartureDate ?? null,
+      plannedArrivalDate: data.plannedArrivalDate ?? null,
+      personRequirements: data.personRequirements ?? [],
       ...(data.createdDate !== undefined ? { createdDate: data.createdDate } : {}),
       responseDate: data.responseDate ?? null,
       createdBy: data.createdBy,
@@ -44,6 +47,46 @@ export class IntercampRequestRepository {
 
   async findUserById(id: number): Promise<UserEntity | null> {
     return await this.repo.manager.getRepository(UserEntity).findOne({ where: { id } });
+  }
+
+  async countTransfersByRequestId(requestId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total FROM public.transfer WHERE request_id = $1`,
+      [requestId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async countAppliedInventoryByRequestId(requestId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.inventory_movement
+       WHERE source_type = 'intercamp_request'
+         AND source_id = $1
+         AND movement_type IN ('TRANSFER_SENT', 'TRANSFER_RECEIVED')`,
+      [requestId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async findRequestResourceAmountsByRequestId(
+    requestId: number,
+  ): Promise<Array<{ resourceTypeId: number; amount: string }>> {
+    const rows = (await this.repo.query(
+      `SELECT resource_type_id,
+              COALESCE(approved_amount, requested_amount)::text AS amount
+       FROM public.request_resource_detail
+       WHERE request_id = $1
+         AND COALESCE(approved_amount, requested_amount) > 0`,
+      [requestId],
+    )) as Array<{ resource_type_id: number; amount: string }>;
+
+    return rows.map((row) => ({
+      resourceTypeId: row.resource_type_id,
+      amount: row.amount,
+    }));
   }
 
   async findAllAndCount(filters?: {
@@ -111,6 +154,10 @@ export class IntercampRequestRepository {
     const cleaned = Object.fromEntries(
       Object.entries(data).filter(([, value]) => value !== undefined),
     ) as Partial<IntercampRequestEntity>;
+
+    if (cleaned.personRequirements === undefined) {
+      delete cleaned.personRequirements;
+    }
 
     Object.assign(existing, cleaned);
     return await this.repo.save(existing);

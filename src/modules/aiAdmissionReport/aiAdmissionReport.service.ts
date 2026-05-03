@@ -68,22 +68,15 @@ export class AiAdmissionReportService {
   }
 
   async getReportCampId(reportId: number): Promise<number | null> {
-    const report = await this.repository.findById(reportId);
-    if (!report) {
-      return null;
-    }
+    return await this.repository.findReportCampId(reportId);
+  }
 
-    const request = await this.admissionRequestRepo.findOne({
-      where: { id: report.requestId },
-      select: {
-        campId: true,
-      },
-    });
-
-    return request?.campId ?? null;
+  async getAdmissionRequestCampId(requestId: number): Promise<number | null> {
+    return await this.repository.findAdmissionRequestCampId(requestId);
   }
 
   async getAllReports(filters?: {
+    campId?: number;
     requestId?: number;
     aiDecision?: AiDecision;
     suggestedOccupationId?: number;
@@ -95,6 +88,7 @@ export class AiAdmissionReportService {
     const offset = (page - 1) * limit;
 
     const repoFilters: {
+      campId?: number;
       requestId?: number;
       aiDecision?: AiDecision;
       suggestedOccupationId?: number;
@@ -105,6 +99,7 @@ export class AiAdmissionReportService {
       limit,
     };
 
+    if (filters?.campId !== undefined) repoFilters.campId = filters.campId;
     if (filters?.requestId !== undefined) repoFilters.requestId = filters.requestId;
     if (filters?.aiDecision !== undefined) repoFilters.aiDecision = filters.aiDecision;
     if (filters?.suggestedOccupationId !== undefined) {

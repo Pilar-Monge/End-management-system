@@ -17,11 +17,13 @@ import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -77,6 +79,13 @@ export class CampInventoryController {
 
   @Get(':campId/:resourceTypeId')
   @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @ApiOperation({ summary: 'Get Camp Inventory by campId and resourceTypeId' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'resourceTypeId', type: Number, description: 'Resource Type id' })
+  @ApiBadRequestResponse({ description: 'Invalid campId or resourceTypeId' })
+  @ApiNotFoundResponse({ description: 'Camp Inventory not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getByKey(
     @Param('campId') campId: string,
     @Param('resourceTypeId') resourceTypeId: string,
@@ -112,6 +121,8 @@ export class CampInventoryController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('campId') campId?: string,
     @Query('resourceTypeId') resourceTypeId?: string,
@@ -233,6 +244,13 @@ export class CampInventoryController {
 
   @Delete(':campId/:resourceTypeId')
   @Roles('SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Delete Camp Inventory' })
+  @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
+  @ApiParam({ name: 'resourceTypeId', type: Number, description: 'Resource Type id' })
+  @ApiBadRequestResponse({ description: 'Invalid campId or resourceTypeId' })
+  @ApiNotFoundResponse({ description: 'Camp Inventory not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('campId') campId: string, @Param('resourceTypeId') resourceTypeId: string) {
     throw new ForbiddenException(
       'Inventory records are system-managed and cannot be created or deleted manually',

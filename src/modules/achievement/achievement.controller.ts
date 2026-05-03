@@ -14,11 +14,13 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import {
@@ -44,6 +46,8 @@ export class AchievementController {
   @ApiBody({ type: CreateAchievementDto })
   @ApiCreatedResponseData(AchievementEntity, { description: 'Achievement created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateAchievementDTO) {
     try {
       const achievement = await this.service.createAchievement(body);
@@ -64,6 +68,8 @@ export class AchievementController {
   @ApiOkResponseData(AchievementEntity, { description: 'Achievement found' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -84,6 +90,8 @@ export class AchievementController {
     type: Number,
     description: 'Items per page (pagination)',
   })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getAll(
     @Query('name') name?: string,
     @Query('page') page?: string,
@@ -137,6 +145,8 @@ export class AchievementController {
   @ApiOkResponseData(AchievementEntity, { description: 'Achievement updated' })
   @ApiBadRequestResponse({ description: 'Invalid id or payload' })
   @ApiNotFoundResponse({ description: 'Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async update(@Param('id') id: string, @Body() body: UpdateAchievementDTO) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
@@ -162,6 +172,8 @@ export class AchievementController {
   @ApiOkResponseMessage({ description: 'Achievement deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Achievement not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
