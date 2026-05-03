@@ -128,11 +128,19 @@ export class IntercampRequestService {
 
     const created = await this.repository.create(data);
 
+    const [originCamp, destinationCamp] = await Promise.all([
+      this.repository.findCampById(created.originCampId),
+      this.repository.findCampById(created.destinationCampId),
+    ]);
+
+    const originCampName = originCamp?.name ?? 'campamento origen';
+    const destinationCampName = destinationCamp?.name ?? 'campamento destino';
+
     await this.notificationService.notifyUser(created.createdBy, {
       campId: created.originCampId,
       type: 'INTERCAMP_REQUEST_RECEIVED',
       title: 'Solicitud intercampamento creada',
-      message: `Tu solicitud intercampamento #${created.id} fue registrada y enviada al campamento ${created.destinationCampId}.`,
+      message: `Tu solicitud intercampamento #${created.id} fue registrada y enviada al campamento ${destinationCampName}.`,
       sourceType: 'intercamp_request',
       sourceId: created.id,
     });
@@ -143,7 +151,7 @@ export class IntercampRequestService {
       {
         type: 'INTERCAMP_REQUEST_RECEIVED',
         title: 'Nueva solicitud intercampamento',
-        message: `Se recibio una solicitud intercampamento #${created.id} desde el campamento ${created.originCampId}.`,
+        message: `Se recibio una solicitud intercampamento #${created.id} desde el campamento ${originCampName}.`,
         sourceType: 'intercamp_request',
         sourceId: created.id,
       },

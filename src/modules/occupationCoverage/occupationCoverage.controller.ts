@@ -1,7 +1,7 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { AuthGuard, RolesGuard } from '../../common/guards';
+import { Roles } from '../../common/decorators';
 import { OccupationCoverageService } from './occupationCoverage.service';
 import type {
   OccupationAtRisk,
@@ -11,7 +11,7 @@ import type {
 
 @ApiTags('occupationCoverage')
 @ApiBearerAuth()
-@UseGuards(AuthGuard, RolesGuard)
+@Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
 @Controller('occupation-coverage')
 export class OccupationCoverageController {
   constructor(private readonly coverageService: OccupationCoverageService) {}

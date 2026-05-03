@@ -129,6 +129,166 @@ export class NotificationService {
     };
   }
 
+  private normalizeCampId(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const parsed = Number.parseInt(trimmed, 10);
+      if (Number.isInteger(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  private async getCampNameById(campId: unknown): Promise<string | null> {
+    const normalizedCampId = this.normalizeCampId(campId);
+    if (!normalizedCampId) {
+      return null;
+    }
+
+    const camp = await this.dataSource.getRepository(CampEntity).findOne({
+      where: { id: normalizedCampId },
+      select: { name: true },
+    });
+
+    return camp?.name ?? null;
+  }
+
+  private async enrichChangedFieldsWithCampNames(
+    changedFields: unknown,
+  ): Promise<Array<Record<string, unknown>> | null> {
+    if (!Array.isArray(changedFields)) {
+      return null;
+    }
+
+    const mapped = await Promise.all(
+      changedFields.map(async (item) => {
+        if (typeof item !== 'object' || item === null) {
+          return item as Record<string, unknown>;
+        }
+
+        const row = { ...(item as Record<string, unknown>) };
+        const field =
+          typeof row.field === 'string' ? row.field.trim().toLowerCase().replaceAll(' ', '') : '';
+
+        const isCampField =
+          field === 'campid' ||
+          field === 'campname' ||
+          field === 'campamento' ||
+          field === 'origincampid' ||
+          field === 'origincampname' ||
+          field === 'campamentoorigen' ||
+          field === 'destinationcampid' ||
+          field === 'destinationcampname' ||
+          field === 'campamentodestino';
+
+        if (!isCampField) {
+          return row;
+        }
+
+        if ('previous' in row) {
+          const previousCampName = await this.getCampNameById(row.previous);
+          if (previousCampName) {
+            row.previous = previousCampName;
+          }
+        }
+
+        if ('current' in row) {
+          const currentCampName = await this.getCampNameById(row.current);
+          if (currentCampName) {
+            row.current = currentCampName;
+          }
+        }
+
+        if (field === 'campid') {
+          row.field = 'campName';
+        }
+        if (field === 'origincampid') {
+          row.field = 'originCampName';
+        }
+        if (field === 'destinationcampid') {
+          row.field = 'destinationCampName';
+        }
+
+        return row;
+      }),
+    );
+
+    return mapped;
+  }
+
+  private async enrichPayloadWithCampNames(
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const enriched: Record<string, unknown> = { ...payload };
+
+    const rootCampName = await this.getCampNameById(enriched.campId);
+    if (rootCampName) {
+      enriched.campName = rootCampName;
+      delete enriched.campId;
+    }
+
+    const rootOriginCampName = await this.getCampNameById(enriched.originCampId);
+    if (rootOriginCampName) {
+      enriched.originCampName = rootOriginCampName;
+      delete enriched.originCampId;
+    }
+
+    const rootDestinationCampName = await this.getCampNameById(enriched.destinationCampId);
+    if (rootDestinationCampName) {
+      enriched.destinationCampName = rootDestinationCampName;
+      delete enriched.destinationCampId;
+    }
+
+    const rootChangedFields = await this.enrichChangedFieldsWithCampNames(enriched.changedFields);
+    if (rootChangedFields) {
+      enriched.changedFields = rootChangedFields;
+    }
+
+    const details =
+      typeof enriched.details === 'object' && enriched.details !== null
+        ? ({ ...(enriched.details as Record<string, unknown>) } as Record<string, unknown>)
+        : null;
+
+    if (details) {
+      const detailCampName = await this.getCampNameById(details.campId);
+      if (detailCampName) {
+        details.campName = detailCampName;
+        delete details.campId;
+      }
+
+      const detailOriginCampName = await this.getCampNameById(details.originCampId);
+      if (detailOriginCampName) {
+        details.originCampName = detailOriginCampName;
+        delete details.originCampId;
+      }
+
+      const detailDestinationCampName = await this.getCampNameById(details.destinationCampId);
+      if (detailDestinationCampName) {
+        details.destinationCampName = detailDestinationCampName;
+        delete details.destinationCampId;
+      }
+
+      const detailChangedFields = await this.enrichChangedFieldsWithCampNames(details.changedFields);
+      if (detailChangedFields) {
+        details.changedFields = detailChangedFields;
+      }
+
+      enriched.details = details;
+    }
+
+    return enriched;
+  }
+
   async queueEmail(data: {
     toEmail: string;
     subject: string;
@@ -171,11 +331,14 @@ export class NotificationService {
       return;
     }
 
+    const payload = this.buildEmailPayload(title, message, email?.payload);
+    const enrichedPayload = await this.enrichPayloadWithCampNames(payload);
+
     await this.queueEmail({
       toEmail: user.email.trim(),
       subject: email?.subject ?? title,
       templateKey: email?.templateKey ?? this.resolveTemplateKeyForType(notificationType),
-      payload: this.buildEmailPayload(title, message, email?.payload),
+      payload: enrichedPayload,
     });
   }
 

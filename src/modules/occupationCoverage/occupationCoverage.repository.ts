@@ -26,13 +26,13 @@ export class OccupationCoverageRepository {
         o.minimum_required_workers as "minimumRequiredWorkers",
         o.preferred_workers as "preferredWorkers",
         o.critical_threshold_percent as "criticalThresholdPercent",
-        $1 as "campId",
+        $1::int as "campId",
         COALESCE(
           (SELECT COUNT(DISTINCT p.id)
            FROM person p
            LEFT JOIN temporary_occupation_assignment taa
              ON taa.person_id = p.id AND taa.end_date IS NULL
-           WHERE p.camp_id = $1
+           WHERE p.camp_id = $1::int
            AND p.current_status IN ('ACTIVE', 'INACTIVE')
            AND (
              (taa.id IS NULL AND p.occupation_id = o.id)
@@ -45,7 +45,7 @@ export class OccupationCoverageRepository {
            FROM person p
            LEFT JOIN temporary_occupation_assignment taa
              ON taa.person_id = p.id AND taa.end_date IS NULL
-           WHERE p.camp_id = $1
+           WHERE p.camp_id = $1::int
            AND p.current_status = 'ACTIVE'
            AND (
              (taa.id IS NULL AND p.occupation_id = o.id)
@@ -57,12 +57,12 @@ export class OccupationCoverageRepository {
       WHERE o.id IN (
         SELECT DISTINCT p.occupation_id
         FROM person p
-        WHERE p.camp_id = $1 AND p.occupation_id IS NOT NULL
+        WHERE p.camp_id = $1::int AND p.occupation_id IS NOT NULL
         UNION
         SELECT DISTINCT taa.temporary_occupation_id
         FROM temporary_occupation_assignment taa
         JOIN person p ON p.id = taa.person_id
-        WHERE p.camp_id = $1 AND taa.end_date IS NULL
+        WHERE p.camp_id = $1::int AND taa.end_date IS NULL
       )
       ORDER BY o.name
     `;

@@ -248,9 +248,26 @@ export class EmailTemplateService {
     return Object.entries(details)
       .filter(([key]) => key !== 'changedFields')
       .map(([key, value]) => ({
-        label: key,
+        label: this.prettifyDetailLabel(key),
         value: this.formatDetailValue(value),
       }));
+  }
+
+  private prettifyDetailLabel(key: string): string {
+    const labelMap: Record<string, string> = {
+      campName: 'Campamento',
+      originCampName: 'Campamento origen',
+      destinationCampName: 'Campamento destino',
+      campId: 'Campamento',
+      originCampId: 'Campamento origen',
+      destinationCampId: 'Campamento destino',
+    };
+
+    if (labelMap[key]) {
+      return labelMap[key];
+    }
+
+    return key;
   }
 
   private formatDetailValue(value: unknown): string {
