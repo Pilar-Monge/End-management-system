@@ -128,7 +128,7 @@ export class AdmissionRequestService {
         roleReason: aiExplain.roleAssignment.reason,
       });
     } catch (error) {
-      // If auto-recommendation fails, keep the request in PENDING_AI for manual fallback.
+     
       this.logger.warn(
         `AI auto-review failed for admission request ${createdRequest.id} (camp ${createdRequest.campId}): ${
           error instanceof Error ? error.message : 'unknown error'
@@ -366,8 +366,7 @@ export class AdmissionRequestService {
     }
 
     if (approved && assignedOccupationIdOnApproval && createdAccess === null) {
-      // Ensure access provisioning is persisted for approved requests, even if a
-      // previous attempt partially completed.
+
       createdAccess = await this.createPersonAndUserForApprovedRequest(
         updatedRequest,
         assignedOccupationIdOnApproval,
@@ -844,7 +843,7 @@ export class AdmissionRequestService {
       try {
         await this.storageService.deleteImage(existing.photoUrl);
       } catch (error) {
-        // If deletion fails, just continue with upload
+
       }
     }
 

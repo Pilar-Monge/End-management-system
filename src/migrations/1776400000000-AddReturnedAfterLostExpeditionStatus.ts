@@ -10,6 +10,5 @@ export class AddReturnedAfterLostExpeditionStatus1776400000000 implements Migrat
   }
 
   public async down(): Promise<void> {
-    // PostgreSQL does not support dropping enum values directly without rebuilding the enum type.
   }
 }

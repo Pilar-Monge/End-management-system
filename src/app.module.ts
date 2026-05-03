@@ -23,6 +23,7 @@ import { InventoryAlertModule } from './modules/inventoryAlert/inventoryAlert.mo
 import { InventoryMovementModule } from './modules/inventoryMovement/inventoryMovement.module';
 import { IntercampRequestModule } from './modules/intercampRequest/intercampRequest.module';
 import { OccupationModule } from './modules/occupation/occupation.module';
+import { OccupationCoverageModule } from './modules/occupationCoverage/occupationCoverage.module';
 import { PersonModule } from './modules/person/person.module';
 import { PersonStatusHistoryModule } from './modules/personStatusHistory/personStatusHistory.module';
 import { TemporaryOccupationAssignmentModule } from './modules/temporaryOccupationAssignment/temporaryOccupationAssignment.module';
@@ -90,6 +91,7 @@ import { TemporalAutomationModule } from './modules/temporalAutomation/temporalA
     CampModule,
     ResourceTypeModule,
     OccupationModule,
+    OccupationCoverageModule,
     CampInventoryModule,
     ExpeditionModule,
     ExpeditionParticipantModule,
