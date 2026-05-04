@@ -42,6 +42,13 @@ import type { CreatePersonDTO, PersonStatus, UpdatePersonDTO } from './person.mo
 import { PersonEntity } from './person.entity';
 import { CreatePersonDto, UpdatePersonDto } from './dto';
 
+const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
+const imageUploadOptions = {
+  limits: {
+    fileSize: MAX_IMAGE_UPLOAD_BYTES,
+  },
+};
+
 @Controller('persons')
 @ApiTags('Person')
 export class PersonController {
@@ -270,7 +277,7 @@ export class PersonController {
     },
   })
   @ApiOkResponseData(PersonEntity, { description: 'Photo uploaded successfully' })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async uploadPhoto(
@@ -286,8 +293,7 @@ export class PersonController {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
     }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       throw new BadRequestException('File too large. Maximum size is 5MB');
     }
 
@@ -333,7 +339,7 @@ export class PersonController {
     },
   })
   @ApiOkResponseData(PersonEntity, { description: 'Photo updated successfully' })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async updatePhoto(
@@ -349,8 +355,7 @@ export class PersonController {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
     }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       throw new BadRequestException('File too large. Maximum size is 5MB');
     }
 

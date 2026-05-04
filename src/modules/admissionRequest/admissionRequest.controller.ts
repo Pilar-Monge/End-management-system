@@ -47,6 +47,13 @@ import {
   UpdateAdmissionRequestDto,
 } from './dto';
 
+const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
+const imageUploadOptions = {
+  limits: {
+    fileSize: MAX_IMAGE_UPLOAD_BYTES,
+  },
+};
+
 @Controller('admission-requests')
 @ApiTags('Admission Requests')
 export class AdmissionRequestController {
@@ -231,7 +238,7 @@ export class AdmissionRequestController {
   @ApiBadRequestResponse({ description: 'Invalid id or file' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   async uploadPhoto(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -245,8 +252,7 @@ export class AdmissionRequestController {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
     }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       throw new BadRequestException('File too large. Maximum size is 5MB');
     }
 
@@ -293,7 +299,7 @@ export class AdmissionRequestController {
   @ApiBadRequestResponse({ description: 'Invalid id or file' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   async updatePhoto(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -307,8 +313,7 @@ export class AdmissionRequestController {
       throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
     }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       throw new BadRequestException('File too large. Maximum size is 5MB');
     }
 
