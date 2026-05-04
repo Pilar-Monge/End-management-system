@@ -72,9 +72,8 @@ export class OccupationCoverageRepository {
     return results.map((row) => {
       const availableWorkers = Number(row.availableWorkers);
       const minimumRequired = Number(row.minimumRequiredWorkers);
-      const coveragePercent = minimumRequired > 0 
-        ? Number(((availableWorkers / minimumRequired) * 100).toFixed(2))
-        : 100;
+      const coveragePercent =
+        minimumRequired > 0 ? Number(((availableWorkers / minimumRequired) * 100).toFixed(2)) : 100;
       const criticalThreshold = Number(row.criticalThresholdPercent);
 
       return {
@@ -95,7 +94,10 @@ export class OccupationCoverageRepository {
     });
   }
 
-  async getOccupationCoverageById(occupationId: number, campId: number): Promise<OccupationCoverage | null> {
+  async getOccupationCoverageById(
+    occupationId: number,
+    campId: number,
+  ): Promise<OccupationCoverage | null> {
     const coverages = await this.getOccupationCoverageByCamp(campId);
     return coverages.find((c) => c.occupationId === occupationId) || null;
   }

@@ -169,8 +169,7 @@ export class DailyCollectionRecordService {
         recordedBy: data.recordedBy,
         date: this.toCalendarDate(existing.date),
         description:
-          data.differenceReason ??
-          `Ajuste manual del ingreso diario del registro ${existing.id}`,
+          data.differenceReason ?? `Ajuste manual del ingreso diario del registro ${existing.id}`,
       });
 
       await this.repository.update(id, { movementId: movement.id });

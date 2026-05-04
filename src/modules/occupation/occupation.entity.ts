@@ -70,7 +70,10 @@ export class OccupationEntity {
     type: 'int',
     nullable: true,
   })
-  @ApiProperty({ nullable: true, description: 'Cantidad preferida de trabajadores (para optimización)' })
+  @ApiProperty({
+    nullable: true,
+    description: 'Cantidad preferida de trabajadores (para optimización)',
+  })
   preferredWorkers!: number | null;
 
   @Column({
@@ -80,7 +83,10 @@ export class OccupationEntity {
     scale: 2,
     default: '50.00',
   })
-  @ApiProperty({ description: 'Porcentaje mínimo de cobertura antes de marcar como crítica (0-100)', default: '50.00' })
+  @ApiProperty({
+    description: 'Porcentaje mínimo de cobertura antes de marcar como crítica (0-100)',
+    default: '50.00',
+  })
   criticalThresholdPercent!: string;
 
   @CreateDateColumn({

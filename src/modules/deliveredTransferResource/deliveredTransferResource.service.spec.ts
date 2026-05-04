@@ -9,7 +9,7 @@ jest.mock('../../common/validation/assert-exists', () => ({
 
 describe('DeliveredTransferResourceService', () => {
   let service: DeliveredTransferResourceService;
-  
+
   const repository = {
     resolveTransferScope: jest.fn(),
     findByTransferAndResourceType: jest.fn(),
@@ -28,11 +28,7 @@ describe('DeliveredTransferResourceService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new DeliveredTransferResourceService(
-      repository,
-      notificationService,
-      dataSource,
-    );
+    service = new DeliveredTransferResourceService(repository, notificationService, dataSource);
   });
 
   describe('createDeliveredResource', () => {
@@ -44,7 +40,9 @@ describe('DeliveredTransferResourceService', () => {
 
     it('throws if already exists', async () => {
       repository.findByTransferAndResourceType.mockResolvedValue({ id: 1 } as never);
-      await expect(service.createDeliveredResource(validDto)).rejects.toThrow('Este recurso entregado del traslado ya existe');
+      await expect(service.createDeliveredResource(validDto)).rejects.toThrow(
+        'Este recurso entregado del traslado ya existe',
+      );
     });
 
     it('creates and notifies', async () => {
@@ -81,7 +79,9 @@ describe('DeliveredTransferResourceService', () => {
       repository.findById.mockResolvedValue({ id: 1, transferId: 1, resourceTypeId: 1 } as never);
       repository.findByTransferAndResourceType.mockResolvedValue({ id: 2 } as never);
 
-      await expect(service.updateDeliveredResource(1, { resourceTypeId: 2 })).rejects.toThrow('Este recurso entregado del traslado ya existe');
+      await expect(service.updateDeliveredResource(1, { resourceTypeId: 2 })).rejects.toThrow(
+        'Este recurso entregado del traslado ya existe',
+      );
     });
 
     it('updates and notifies', async () => {

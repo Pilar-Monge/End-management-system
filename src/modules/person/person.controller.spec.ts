@@ -58,7 +58,9 @@ describe('PersonController', () => {
 
     it('should throw BadRequestException if camp mismatch', async () => {
       service.getPersonWithSignedUrl.mockResolvedValue({ id: 1, campId: 2 } as any);
-      await expect(controller.getById('1', mockRequest)).rejects.toThrow('You do not have permission to view this person');
+      await expect(controller.getById('1', mockRequest)).rejects.toThrow(
+        'You do not have permission to view this person',
+      );
     });
 
     it('should throw NotFoundException if not found', async () => {
@@ -71,14 +73,23 @@ describe('PersonController', () => {
     it('should return paginated results', async () => {
       service.getAllPersonsWithSignedUrls.mockResolvedValue({ data: [], total: 0 });
 
-      const result = await controller.getAll(undefined, undefined, undefined, '1', '10', mockRequest);
+      const result = await controller.getAll(
+        undefined,
+        undefined,
+        undefined,
+        '1',
+        '10',
+        mockRequest,
+      );
 
       expect(result.success).toBe(true);
       expect(result.pagination.total).toBe(0);
     });
 
     it('should throw BadRequestException if campId mismatch', async () => {
-      await expect(controller.getAll('2', undefined, undefined, undefined, undefined, mockRequest)).rejects.toThrow('You cannot query persons from another camp');
+      await expect(
+        controller.getAll('2', undefined, undefined, undefined, undefined, mockRequest),
+      ).rejects.toThrow('You cannot query persons from another camp');
     });
   });
 
@@ -108,7 +119,9 @@ describe('PersonController', () => {
 
     it('should throw BadRequestException for invalid mimetype', async () => {
       const mockFile = { mimetype: 'application/pdf', size: 100 } as any;
-      await expect(controller.uploadPhoto('1', mockFile, mockRequest)).rejects.toThrow('Invalid file type');
+      await expect(controller.uploadPhoto('1', mockFile, mockRequest)).rejects.toThrow(
+        'Invalid file type',
+      );
     });
   });
 

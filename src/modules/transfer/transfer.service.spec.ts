@@ -62,7 +62,9 @@ describe('TransferService', () => {
       repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
       dataSource.getRepository().findOne.mockResolvedValue(null);
 
-      await expect(service.syncTransferRations(1)).rejects.toThrow('Campamento de origen no encontrado');
+      await expect(service.syncTransferRations(1)).rejects.toThrow(
+        'Campamento de origen no encontrado',
+      );
     });
 
     it('sets rations to 0 if dates missing', async () => {
@@ -79,7 +81,12 @@ describe('TransferService', () => {
     it('sets rations to 0 if people count is 0', async () => {
       const dep = new Date('2026-05-15T00:00:00Z');
       const arr = new Date('2026-05-16T00:00:00Z');
-      repository.findById.mockResolvedValue({ id: 1, requestId: 10, plannedDepartureDate: dep, plannedArrivalDate: arr });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        requestId: 10,
+        plannedDepartureDate: dep,
+        plannedArrivalDate: arr,
+      });
       repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
       dataSource.getRepository().findOne.mockResolvedValue({ minimumDailyRationPerPerson: '1.5' });
       repository.countTransferPeople.mockResolvedValue(0);
@@ -93,7 +100,12 @@ describe('TransferService', () => {
     it('calculates total rations successfully', async () => {
       const dep = new Date('2026-05-15T00:00:00Z');
       const arr = new Date('2026-05-17T00:00:00Z'); // 2 days diff
-      repository.findById.mockResolvedValue({ id: 1, requestId: 10, plannedDepartureDate: dep, plannedArrivalDate: arr });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        requestId: 10,
+        plannedDepartureDate: dep,
+        plannedArrivalDate: arr,
+      });
       repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
       dataSource.getRepository().findOne.mockResolvedValue({ minimumDailyRationPerPerson: '1.5' });
       repository.countTransferPeople.mockResolvedValue(4);
@@ -111,7 +123,9 @@ describe('TransferService', () => {
   describe('createTransfer', () => {
     it('throws if transfer already exists for request', async () => {
       repository.findByRequestId.mockResolvedValue({ id: 99 });
-      await expect(service.createTransfer({ requestId: 1 } as never)).rejects.toThrow('Ya existe un traslado para esta solicitud');
+      await expect(service.createTransfer({ requestId: 1 } as never)).rejects.toThrow(
+        'Ya existe un traslado para esta solicitud',
+      );
     });
 
     it('creates transfer, syncs rations and notifies', async () => {
@@ -138,28 +152,50 @@ describe('TransferService', () => {
     });
 
     it('throws if completing without approvals', async () => {
-      repository.findById.mockResolvedValue({ id: 1, departureApprovedBy: null, arrivalApprovedBy: null });
-      await expect(service.updateTransfer(1, { status: 'COMPLETED' })).rejects.toThrow('se requieren aprobaciones');
+      repository.findById.mockResolvedValue({
+        id: 1,
+        departureApprovedBy: null,
+        arrivalApprovedBy: null,
+      });
+      await expect(service.updateTransfer(1, { status: 'COMPLETED' })).rejects.toThrow(
+        'se requieren aprobaciones',
+      );
     });
 
     it('throws if changing request and new request already has a transfer', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 10 });
       repository.findByRequestId.mockResolvedValue({ id: 2 }); // Another transfer exists for 20
-      
-      await expect(service.updateTransfer(1, { requestId: 20 })).rejects.toThrow('Ya existe un traslado para esta solicitud');
+
+      await expect(service.updateTransfer(1, { requestId: 20 })).rejects.toThrow(
+        'Ya existe un traslado para esta solicitud',
+      );
     });
 
     it('updates, creates history and applies inventory if COMPLETED', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 10, status: 'PENDING_DEPARTURE' });
-      repository.update.mockResolvedValue({ id: 1, requestId: 10, status: 'COMPLETED', departureApprovedBy: 5, arrivalApprovedBy: 5 });
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2, createdBy: 1 });
+      repository.update.mockResolvedValue({
+        id: 1,
+        requestId: 10,
+        status: 'COMPLETED',
+        departureApprovedBy: 5,
+        arrivalApprovedBy: 5,
+      });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 1,
+      });
       repository.countAppliedTransferMovements.mockResolvedValue(0);
       repository.findDeliveredResourcesByTransferId.mockResolvedValue([
-        { id: 100, resourceTypeId: 50, sentAmount: '10', receivedAmount: '10' }
+        { id: 100, resourceTypeId: 50, sentAmount: '10', receivedAmount: '10' },
       ]);
       dataSource.getRepository().findOne.mockResolvedValue({ minimumDailyRationPerPerson: '1.5' });
 
-      await service.updateTransfer(1, { status: 'COMPLETED', arrivalApprovedBy: 5, departureApprovedBy: 5 });
+      await service.updateTransfer(1, {
+        status: 'COMPLETED',
+        arrivalApprovedBy: 5,
+        departureApprovedBy: 5,
+      });
 
       expect(repository.update).toHaveBeenCalled();
       expect(repository.createTransferHistoryEntry).toHaveBeenCalled();

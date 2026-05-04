@@ -36,14 +36,19 @@ describe('TransferHistoryService', () => {
       repository.create.mockResolvedValue(entry);
       repository.resolveTransferScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
 
-      const result = await service.createEntry({ transferId: 10, userId: 5, previousStatus: 'PENDING', newStatus: 'COMPLETED' } as any);
-      
+      const result = await service.createEntry({
+        transferId: 10,
+        userId: 5,
+        previousStatus: 'PENDING',
+        newStatus: 'COMPLETED',
+      } as any);
+
       expect(result).toEqual(entry);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(
         1,
         expect.anything(),
-        expect.objectContaining({ type: 'TRANSFER_COMPLETED' })
+        expect.objectContaining({ type: 'TRANSFER_COMPLETED' }),
       );
     });
   });
@@ -59,7 +64,7 @@ describe('TransferHistoryService', () => {
       expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(
         2,
         expect.anything(),
-        expect.objectContaining({ type: 'TRANSFER_CANCELED' })
+        expect.objectContaining({ type: 'TRANSFER_CANCELED' }),
       );
     });
   });

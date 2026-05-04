@@ -10,7 +10,7 @@ jest.mock('../../common/validation/assert-exists', () => ({
 
 describe('InventoryMovementService', () => {
   let service: InventoryMovementService;
-  
+
   const repository = {
     findCampInventory: jest.fn(),
     create: jest.fn(),
@@ -28,11 +28,7 @@ describe('InventoryMovementService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new InventoryMovementService(
-      repository,
-      notificationService,
-      dataSource,
-    );
+    service = new InventoryMovementService(repository, notificationService, dataSource);
   });
 
   describe('createMovement', () => {
@@ -46,42 +42,71 @@ describe('InventoryMovementService', () => {
     };
 
     it('throws if amount is 0 for MANUAL_ADJUSTMENT', async () => {
-      await expect(service.createMovement({ ...validDto, amount: '0' })).rejects.toThrow('La cantidad debe ser distinta de 0');
+      await expect(service.createMovement({ ...validDto, amount: '0' })).rejects.toThrow(
+        'La cantidad debe ser distinta de 0',
+      );
     });
 
     it('throws if amount is <= 0 for non MANUAL_ADJUSTMENT', async () => {
-      await expect(service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '0' })).rejects.toThrow('La cantidad debe ser mayor que 0');
-      await expect(service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '-5.00' })).rejects.toThrow('La cantidad debe ser mayor que 0');
+      await expect(
+        service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '0' }),
+      ).rejects.toThrow('La cantidad debe ser mayor que 0');
+      await expect(
+        service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '-5.00' }),
+      ).rejects.toThrow('La cantidad debe ser mayor que 0');
     });
 
     it('throws if insufficient inventory for consumption movement', async () => {
       repository.findCampInventory.mockResolvedValue({ currentAmount: '2.00' } as never);
-      await expect(service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '5.00' })).rejects.toThrow('Inventario insuficiente');
+      await expect(
+        service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '5.00' }),
+      ).rejects.toThrow('Inventario insuficiente');
     });
 
     it('creates movement and does not notify if inventory is above minimum', async () => {
-      repository.findCampInventory.mockResolvedValue({ currentAmount: '10.00', minimumAlertAmount: '5.00' } as never);
+      repository.findCampInventory.mockResolvedValue({
+        currentAmount: '10.00',
+        minimumAlertAmount: '5.00',
+      } as never);
       repository.create.mockResolvedValue({ id: 1, ...validDto } as never);
 
-      const result = await service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '2.00' });
+      const result = await service.createMovement({
+        ...validDto,
+        movementType: 'DAILY_RATION',
+        amount: '2.00',
+      });
       expect(result.id).toBe(1);
       expect(notificationService.notifyCampRoles).not.toHaveBeenCalled();
     });
 
     it('creates movement and notifies if inventory is below minimum', async () => {
-      repository.findCampInventory.mockResolvedValue({ currentAmount: '4.00', minimumAlertAmount: '5.00' } as never);
+      repository.findCampInventory.mockResolvedValue({
+        currentAmount: '4.00',
+        minimumAlertAmount: '5.00',
+      } as never);
       repository.create.mockResolvedValue({ id: 1, ...validDto } as never);
 
-      const result = await service.createMovement({ ...validDto, movementType: 'DAILY_RATION', amount: '2.00' });
+      const result = await service.createMovement({
+        ...validDto,
+        movementType: 'DAILY_RATION',
+        amount: '2.00',
+      });
       expect(result.id).toBe(1);
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
     });
 
     it('creates movement and notifies if manual adjustment brings inventory below minimum', async () => {
-      repository.findCampInventory.mockResolvedValue({ currentAmount: '4.00', minimumAlertAmount: '5.00' } as never);
+      repository.findCampInventory.mockResolvedValue({
+        currentAmount: '4.00',
+        minimumAlertAmount: '5.00',
+      } as never);
       repository.create.mockResolvedValue({ id: 1, ...validDto, amount: '-2.00' } as never);
 
-      const result = await service.createMovement({ ...validDto, movementType: 'MANUAL_ADJUSTMENT', amount: '-2.00' });
+      const result = await service.createMovement({
+        ...validDto,
+        movementType: 'MANUAL_ADJUSTMENT',
+        amount: '-2.00',
+      });
       expect(result.id).toBe(1);
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
     });
@@ -89,7 +114,11 @@ describe('InventoryMovementService', () => {
     it('creates movement and does NOT notify if manual adjustment is positive', async () => {
       repository.create.mockResolvedValue({ id: 1, ...validDto, amount: '2.00' } as never);
 
-      const result = await service.createMovement({ ...validDto, movementType: 'MANUAL_ADJUSTMENT', amount: '2.00' });
+      const result = await service.createMovement({
+        ...validDto,
+        movementType: 'MANUAL_ADJUSTMENT',
+        amount: '2.00',
+      });
       expect(result.id).toBe(1);
       expect(notificationService.notifyCampRoles).not.toHaveBeenCalled();
     });
@@ -118,7 +147,11 @@ describe('InventoryMovementService', () => {
       repository.findById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.update.mockResolvedValue({ id: 1, campId: 1 } as never);
 
-      const result = await service.updateMovement(1, { campId: 1, resourceTypeId: 1, recordedBy: 1 });
+      const result = await service.updateMovement(1, {
+        campId: 1,
+        resourceTypeId: 1,
+        recordedBy: 1,
+      });
       expect(result?.id).toBe(1);
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
     });

@@ -10,7 +10,7 @@ jest.mock('../../common/validation/assert-exists', () => ({
 
 describe('ExpeditionResourceObtainedService', () => {
   let service: ExpeditionResourceObtainedService;
-  
+
   const repository = {
     findExpeditionById: jest.fn(),
     findUserById: jest.fn(),
@@ -30,11 +30,7 @@ describe('ExpeditionResourceObtainedService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new ExpeditionResourceObtainedService(
-      repository,
-      dataSource,
-      notificationService,
-    );
+    service = new ExpeditionResourceObtainedService(repository, dataSource, notificationService);
   });
 
   describe('createRecord', () => {
@@ -52,52 +48,127 @@ describe('ExpeditionResourceObtainedService', () => {
     });
 
     it('throws if user not found', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
       repository.findUserById.mockResolvedValue(null);
       await expect(service.createRecord(validDto)).rejects.toThrow(NotFoundException);
     });
 
     it('throws if user is not ACTIVE', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'INACTIVE', role: 'SYSTEM_ADMIN' } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'INACTIVE',
+        role: 'SYSTEM_ADMIN',
+      } as never);
       await expect(service.createRecord(validDto)).rejects.toThrow(ForbiddenException);
     });
 
     it('throws if user role is not authorized', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'SCOUT' } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'ACTIVE',
+        role: 'SCOUT',
+      } as never);
       await expect(service.createRecord(validDto)).rejects.toThrow(ForbiddenException);
     });
 
     it('throws if user camp mismatches', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'SYSTEM_ADMIN', campId: 2 } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'ACTIVE',
+        role: 'SYSTEM_ADMIN',
+        campId: 2,
+      } as never);
       await expect(service.createRecord(validDto)).rejects.toThrow(BadRequestException);
     });
 
     it('throws if movementId is provided but not found', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'SYSTEM_ADMIN', campId: 1 } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'ACTIVE',
+        role: 'SYSTEM_ADMIN',
+        campId: 1,
+      } as never);
       repository.findMovementById.mockResolvedValue(null);
-      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(NotFoundException);
+      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws if movement camp mismatches', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'SYSTEM_ADMIN', campId: 1 } as never);
-      repository.findMovementById.mockResolvedValue({ id: 1, campId: 2, resourceTypeId: 1 } as never);
-      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(BadRequestException);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'ACTIVE',
+        role: 'SYSTEM_ADMIN',
+        campId: 1,
+      } as never);
+      repository.findMovementById.mockResolvedValue({
+        id: 1,
+        campId: 2,
+        resourceTypeId: 1,
+      } as never);
+      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws if expedition status is invalid', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'PLANNED' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'SYSTEM_ADMIN', campId: 1 } as never);
-      await expect(service.createRecord(validDto)).rejects.toThrow('No se pueden registrar recursos obtenidos');
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'PLANNED',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'ACTIVE',
+        role: 'SYSTEM_ADMIN',
+        campId: 1,
+      } as never);
+      await expect(service.createRecord(validDto)).rejects.toThrow(
+        'No se pueden registrar recursos obtenidos',
+      );
     });
 
     it('creates record and notifies (COMPLETED is valid)', async () => {
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'COMPLETED' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'SYSTEM_ADMIN', campId: 1 } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'COMPLETED',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'ACTIVE',
+        role: 'SYSTEM_ADMIN',
+        campId: 1,
+      } as never);
       repository.create.mockResolvedValue({ id: 1, ...validDto } as never);
 
       const result = await service.createRecord(validDto);
@@ -127,8 +198,17 @@ describe('ExpeditionResourceObtainedService', () => {
 
     it('updates and notifies', async () => {
       repository.findById.mockResolvedValue({ id: 1, expeditionId: 1 } as never);
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'SYSTEM_ADMIN', campId: 1 } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
+      repository.findUserById.mockResolvedValue({
+        id: 1,
+        status: 'ACTIVE',
+        role: 'SYSTEM_ADMIN',
+        campId: 1,
+      } as never);
       repository.update.mockResolvedValue({ id: 1, expeditionId: 1 } as never);
 
       const result = await service.updateRecord(1, {});
@@ -151,7 +231,11 @@ describe('ExpeditionResourceObtainedService', () => {
 
     it('deletes and notifies', async () => {
       repository.findById.mockResolvedValue({ id: 1, expeditionId: 1 } as never);
-      repository.findExpeditionById.mockResolvedValue({ id: 1, campId: 1, status: 'IN_PROGRESS' } as never);
+      repository.findExpeditionById.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        status: 'IN_PROGRESS',
+      } as never);
       repository.delete.mockResolvedValue(true);
 
       await expect(service.deleteRecord(1)).resolves.toBe(true);

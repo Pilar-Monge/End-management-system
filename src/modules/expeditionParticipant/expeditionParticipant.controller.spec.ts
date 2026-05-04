@@ -58,7 +58,7 @@ describe('ExpeditionParticipantController', () => {
     it('should return a participant if authorized', async () => {
       service.assertParticipantCampAccess.mockResolvedValue(undefined);
       service.getParticipantById.mockResolvedValue({ id: 10 } as any);
-      
+
       const result = await controller.getById('10', mockRequest);
       expect(result.success).toBe(true);
     });
@@ -68,13 +68,15 @@ describe('ExpeditionParticipantController', () => {
     it('should return paginated results', async () => {
       service.assertExpeditionCampAccess.mockResolvedValue(undefined);
       service.getAllParticipants.mockResolvedValue({ data: [], total: 0 });
-      
+
       const result = await controller.getAll('1', undefined, undefined, '1', '10', mockRequest);
       expect(result.success).toBe(true);
     });
 
     it('should throw if non-admin does not provide expeditionId', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, undefined, mockRequest)).rejects.toThrow('Non-admin users must provide expeditionId');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, undefined, mockRequest),
+      ).rejects.toThrow('Non-admin users must provide expeditionId');
     });
   });
 

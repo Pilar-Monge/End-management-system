@@ -46,7 +46,9 @@ describe('CampAchievementService', () => {
 
     it('should throw if already exists', async () => {
       repository.findByKey.mockResolvedValue({ id: 1 });
-      await expect(service.createCampAchievement({ campId: 1, achievementId: 1 } as any)).rejects.toThrow('Este logro de campamento ya existe');
+      await expect(
+        service.createCampAchievement({ campId: 1, achievementId: 1 } as any),
+      ).rejects.toThrow('Este logro de campamento ya existe');
     });
   });
 

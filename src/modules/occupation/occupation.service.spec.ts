@@ -9,7 +9,9 @@ jest.mock('../../common/validation/assert-exists', () => ({
 }));
 
 describe('OccupationService', () => {
-  const mockedAssertEntityExists = assertEntityExists as jest.MockedFunction<typeof assertEntityExists>;
+  const mockedAssertEntityExists = assertEntityExists as jest.MockedFunction<
+    typeof assertEntityExists
+  >;
 
   const repository = {
     findByName: jest.fn(),
@@ -30,9 +32,9 @@ describe('OccupationService', () => {
   it('createOccupation validates resourceType and throws on duplicate name', async () => {
     repository.findByName.mockResolvedValue({ id: 1, name: 'Scout' });
 
-    await expect(service.createOccupation({ name: 'Scout', resourceTypeId: 5 } as never)).rejects.toThrow(
-      'An occupation with this name already exists',
-    );
+    await expect(
+      service.createOccupation({ name: 'Scout', resourceTypeId: 5 } as never),
+    ).rejects.toThrow('An occupation with this name already exists');
 
     expect(mockedAssertEntityExists).toHaveBeenCalledWith(
       expect.anything(),

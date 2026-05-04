@@ -27,7 +27,12 @@ describe('PersonStatusHistoryService', () => {
 
   describe('createEntry', () => {
     it('should create an entry and notify', async () => {
-      const data = { personId: 1, previousStatus: 'ACTIVE', newStatus: 'INACTIVE', changedBy: 5 } as any;
+      const data = {
+        personId: 1,
+        previousStatus: 'ACTIVE',
+        newStatus: 'INACTIVE',
+        changedBy: 5,
+      } as any;
       repository.createEntryTransactional.mockResolvedValue({ id: 10, ...data });
       repository.findPersonCampInfo.mockResolvedValue({ campId: 1 });
       repository.findAssociatedUserByPersonAndCamp.mockResolvedValue({ id: 100 });

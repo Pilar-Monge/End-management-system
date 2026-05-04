@@ -108,9 +108,7 @@ describe('UserService', () => {
         campId: 1,
       } as never);
 
-      expect(userRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ role: 'VISITOR' }),
-      );
+      expect(userRepo.create).toHaveBeenCalledWith(expect.objectContaining({ role: 'VISITOR' }));
     });
   });
 

@@ -9,7 +9,10 @@ describe('EmailTemplateService', () => {
 
   describe('render (general routing)', () => {
     it('routes to password reset request', () => {
-      const result = service.render('password_reset_request', { resetUrl: 'http://test.com', expirationMinutes: 15 });
+      const result = service.render('password_reset_request', {
+        resetUrl: 'http://test.com',
+        expirationMinutes: 15,
+      });
       expect(result.subject).toBe('Recuperacion de contrasena');
       expect(result.html).toContain('http://test.com');
       expect(result.text).toContain('15 minutos');
@@ -79,10 +82,10 @@ describe('EmailTemplateService', () => {
           Activo: true,
           Nulo: null,
           Array: [1, 2],
-          Obj: { a: 1 }
-        }
+          Obj: { a: 1 },
+        },
       });
-      
+
       expect(result.html).toContain('Detalle de solicitud');
       expect(result.html).toContain('Campamento');
       expect(result.html).toContain('Camp A');
@@ -97,9 +100,7 @@ describe('EmailTemplateService', () => {
 
     it('renders changed fields from top level', () => {
       const result = service.render('role_updated', {
-        changedFields: [
-          { field: 'Rol', previous: 'VISITOR', current: 'WORKER' }
-        ]
+        changedFields: [{ field: 'Rol', previous: 'VISITOR', current: 'WORKER' }],
       });
       expect(result.html).toContain('Datos modificados');
       expect(result.html).toContain('Rol');
@@ -111,10 +112,8 @@ describe('EmailTemplateService', () => {
     it('renders changed fields from details level', () => {
       const result = service.render('role_updated', {
         details: {
-          changedFields: [
-            { field: 'Status', previous: 'ACTIVE', current: 'INACTIVE' }
-          ]
-        }
+          changedFields: [{ field: 'Status', previous: 'ACTIVE', current: 'INACTIVE' }],
+        },
       });
       expect(result.html).toContain('Status');
       expect(result.html).toContain('INACTIVE');
@@ -131,7 +130,7 @@ describe('EmailTemplateService', () => {
     it('handles formatting dates in details', () => {
       const date = new Date('2026-05-15T10:00:00.000Z');
       const result = service.render('role_updated', {
-        details: { Fecha: date }
+        details: { Fecha: date },
       });
       expect(result.html).toContain('2026-05-15T10:00:00.000Z');
     });

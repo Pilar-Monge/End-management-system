@@ -31,9 +31,7 @@ describe('AuthGuard', () => {
   });
 
   it('allows public routes', async () => {
-    (reflector.getAllAndOverride as jest.Mock)
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(false);
+    (reflector.getAllAndOverride as jest.Mock).mockReturnValueOnce(true).mockReturnValueOnce(false);
 
     await expect(guard.canActivate(makeContext({ headers: {} }))).resolves.toBe(true);
   });
@@ -43,7 +41,9 @@ describe('AuthGuard', () => {
       .mockReturnValueOnce(false)
       .mockReturnValueOnce(false);
 
-    await expect(guard.canActivate(makeContext({ headers: {} }))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(makeContext({ headers: {} }))).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('throws when bearer token is empty', async () => {
@@ -79,9 +79,7 @@ describe('AuthGuard', () => {
     authService.validateSession.mockResolvedValue(payload);
     authService.rotateSessionToken.mockResolvedValue('new-token');
 
-    (reflector.getAllAndOverride as jest.Mock)
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
+    (reflector.getAllAndOverride as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true);
 
     const req: Record<string, unknown> = {
       headers: { authorization: 'Bearer old-token' },

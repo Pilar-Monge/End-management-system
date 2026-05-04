@@ -75,7 +75,10 @@ describe('ResourceTypeService', () => {
     repository.findByName.mockResolvedValue(null);
     repository.update.mockResolvedValue({ id: 1, name: 'New' });
 
-    await expect(service.updateResourceType(1, { name: 'New' })).resolves.toEqual({ id: 1, name: 'New' });
+    await expect(service.updateResourceType(1, { name: 'New' })).resolves.toEqual({
+      id: 1,
+      name: 'New',
+    });
   });
 
   it('deleteResourceType delegates to repository', async () => {

@@ -128,7 +128,6 @@ export class AdmissionRequestService {
         roleReason: aiExplain.roleAssignment.reason,
       });
     } catch (error) {
-     
       this.logger.warn(
         `AI auto-review failed for admission request ${createdRequest.id} (camp ${createdRequest.campId}): ${
           error instanceof Error ? error.message : 'unknown error'
@@ -366,7 +365,6 @@ export class AdmissionRequestService {
     }
 
     if (approved && assignedOccupationIdOnApproval && createdAccess === null) {
-
       createdAccess = await this.createPersonAndUserForApprovedRequest(
         updatedRequest,
         assignedOccupationIdOnApproval,
@@ -842,9 +840,7 @@ export class AdmissionRequestService {
     if (existing.photoUrl) {
       try {
         await this.storageService.deleteImage(existing.photoUrl);
-      } catch (error) {
-
-      }
+      } catch (error) {}
     }
 
     const filePath = await this.storageService.uploadImage(file, 'admission-photos');

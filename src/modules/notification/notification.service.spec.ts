@@ -97,7 +97,12 @@ describe('NotificationService', () => {
 
     it('creates notification successfully with userId', async () => {
       repository.findUserById.mockResolvedValue({ id: 5, campId: 1, email: 'u@test.com' });
-      repository.create.mockResolvedValue({ id: 100, campId: 1, userId: 5, type: 'INVENTORY_ALERT' });
+      repository.create.mockResolvedValue({
+        id: 100,
+        campId: 1,
+        userId: 5,
+        type: 'INVENTORY_ALERT',
+      });
 
       const result = await service.createNotification({
         campId: 1,
@@ -245,7 +250,12 @@ describe('NotificationService', () => {
 
   describe('queueEmail', () => {
     it('does nothing when email is empty/whitespace', async () => {
-      await service.queueEmail({ toEmail: '   ', subject: 'Hello', templateKey: 'generic_notification', payload: {} });
+      await service.queueEmail({
+        toEmail: '   ',
+        subject: 'Hello',
+        templateKey: 'generic_notification',
+        payload: {},
+      });
       expect(emailOutboxService.enqueue).not.toHaveBeenCalled();
     });
 
@@ -403,10 +413,7 @@ describe('NotificationService', () => {
     });
 
     it('notifies each user in camp with the role', async () => {
-      repository.findActiveUsersByCampAndRoles.mockResolvedValue([
-        { id: 1 },
-        { id: 2 },
-      ]);
+      repository.findActiveUsersByCampAndRoles.mockResolvedValue([{ id: 1 }, { id: 2 }]);
       repository.findUserById
         .mockResolvedValueOnce({ id: 1, campId: 1, email: 'a@test.com' })
         .mockResolvedValueOnce({ id: 2, campId: 1, email: 'b@test.com' });
@@ -431,10 +438,7 @@ describe('NotificationService', () => {
         message: 'M',
       });
 
-      expect(repository.findActiveUsersByCampAndRoles).toHaveBeenCalledWith(
-        1,
-        ['SYSTEM_ADMIN'],
-      );
+      expect(repository.findActiveUsersByCampAndRoles).toHaveBeenCalledWith(1, ['SYSTEM_ADMIN']);
     });
   });
 });

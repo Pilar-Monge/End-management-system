@@ -9,6 +9,5 @@ export class AddReturnedAfterLostExpeditionStatus1776400000000 implements Migrat
     );
   }
 
-  public async down(): Promise<void> {
-  }
+  public async down(): Promise<void> {}
 }

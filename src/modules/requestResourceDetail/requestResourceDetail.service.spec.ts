@@ -9,7 +9,7 @@ jest.mock('../../common/validation/assert-exists', () => ({
 
 describe('RequestResourceDetailService', () => {
   let service: RequestResourceDetailService;
-  
+
   const repository = {
     resolveRequestScope: jest.fn(),
     findByRequestAndResourceType: jest.fn(),
@@ -28,11 +28,7 @@ describe('RequestResourceDetailService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new RequestResourceDetailService(
-      repository,
-      notificationService,
-      dataSource,
-    );
+    service = new RequestResourceDetailService(repository, notificationService, dataSource);
   });
 
   describe('createDetail', () => {
@@ -44,7 +40,9 @@ describe('RequestResourceDetailService', () => {
 
     it('throws if already exists', async () => {
       repository.findByRequestAndResourceType.mockResolvedValue({ id: 1 } as never);
-      await expect(service.createDetail(validDto)).rejects.toThrow('Este detalle de recurso de solicitud ya existe');
+      await expect(service.createDetail(validDto)).rejects.toThrow(
+        'Este detalle de recurso de solicitud ya existe',
+      );
     });
 
     it('creates and notifies', async () => {
@@ -61,7 +59,10 @@ describe('RequestResourceDetailService', () => {
   describe('getDetailScope and getRequestScope', () => {
     it('getRequestScope returns scope', async () => {
       repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
-      await expect(service.getRequestScope(1)).resolves.toEqual({ originCampId: 1, destinationCampId: 2 });
+      await expect(service.getRequestScope(1)).resolves.toEqual({
+        originCampId: 1,
+        destinationCampId: 2,
+      });
     });
 
     it('getDetailScope returns null if not found', async () => {
@@ -72,7 +73,10 @@ describe('RequestResourceDetailService', () => {
     it('getDetailScope returns scope', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1 } as never);
       repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
-      await expect(service.getDetailScope(1)).resolves.toEqual({ originCampId: 1, destinationCampId: 2 });
+      await expect(service.getDetailScope(1)).resolves.toEqual({
+        originCampId: 1,
+        destinationCampId: 2,
+      });
     });
   });
 
@@ -99,7 +103,9 @@ describe('RequestResourceDetailService', () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1, resourceTypeId: 1 } as never);
       repository.findByRequestAndResourceType.mockResolvedValue({ id: 2 } as never);
 
-      await expect(service.updateDetail(1, { resourceTypeId: 2 })).rejects.toThrow('Este detalle de recurso de solicitud ya existe');
+      await expect(service.updateDetail(1, { resourceTypeId: 2 })).rejects.toThrow(
+        'Este detalle de recurso de solicitud ya existe',
+      );
     });
 
     it('updates and notifies', async () => {

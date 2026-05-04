@@ -85,7 +85,10 @@ export class InventoryMovementService {
 
     const movement = await this.repository.create(data);
 
-    if (this.isConsumptionMovement(data.movementType) || (data.movementType === 'MANUAL_ADJUSTMENT' && amount < 0)) {
+    if (
+      this.isConsumptionMovement(data.movementType) ||
+      (data.movementType === 'MANUAL_ADJUSTMENT' && amount < 0)
+    ) {
       await this.notifyLowInventory(data.campId, data.resourceTypeId, movement.id);
     }
 

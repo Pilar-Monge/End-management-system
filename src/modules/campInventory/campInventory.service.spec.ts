@@ -42,7 +42,9 @@ describe('CampInventoryService', () => {
 
     it('should throw if already exists', async () => {
       repository.findByKey.mockResolvedValue({ id: 1 });
-      await expect(service.createItem({ campId: 1, resourceTypeId: 10 } as any)).rejects.toThrow('Este elemento de inventario del campamento ya existe');
+      await expect(service.createItem({ campId: 1, resourceTypeId: 10 } as any)).rejects.toThrow(
+        'Este elemento de inventario del campamento ya existe',
+      );
     });
   });
 

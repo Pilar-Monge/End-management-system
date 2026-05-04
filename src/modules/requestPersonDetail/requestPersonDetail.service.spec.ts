@@ -9,7 +9,7 @@ jest.mock('../../common/validation/assert-exists', () => ({
 
 describe('RequestPersonDetailService', () => {
   let service: RequestPersonDetailService;
-  
+
   const repository = {
     resolveRequestScope: jest.fn(),
     create: jest.fn(),
@@ -27,11 +27,7 @@ describe('RequestPersonDetailService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new RequestPersonDetailService(
-      repository,
-      notificationService,
-      dataSource,
-    );
+    service = new RequestPersonDetailService(repository, notificationService, dataSource);
   });
 
   describe('createDetail', () => {

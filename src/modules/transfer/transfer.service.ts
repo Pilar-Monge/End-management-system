@@ -233,9 +233,7 @@ export class TransferService {
       const resolvedArrivalApprovedBy = data.arrivalApprovedBy ?? existing.arrivalApprovedBy;
 
       if (resolvedDepartureApprovedBy === null || resolvedArrivalApprovedBy === null) {
-        throw new Error(
-          'Para completar el traslado se requieren aprobaciones de salida y llegada',
-        );
+        throw new Error('Para completar el traslado se requieren aprobaciones de salida y llegada');
       }
     }
 

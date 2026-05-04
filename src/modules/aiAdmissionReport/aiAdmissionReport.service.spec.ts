@@ -10,7 +10,9 @@ jest.mock('../../common/validation/assert-exists', () => ({
 }));
 
 describe('AiAdmissionReportService', () => {
-  const mockedAssertEntityExists = assertEntityExists as jest.MockedFunction<typeof assertEntityExists>;
+  const mockedAssertEntityExists = assertEntityExists as jest.MockedFunction<
+    typeof assertEntityExists
+  >;
 
   const repository = {
     admissionRequestExists: jest.fn(),

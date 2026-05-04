@@ -10,7 +10,7 @@ jest.mock('../../common/validation/assert-exists', () => ({
 
 describe('TransferPersonService', () => {
   let service: TransferPersonService;
-  
+
   const repository = {
     findEligiblePersonIdsByCampAndOccupation: jest.fn(),
     findEligiblePersonIdsByCampAndOccupationForUpdate: jest.fn(),
@@ -49,7 +49,12 @@ describe('TransferPersonService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     dataSource.createQueryRunner.mockReturnValue(queryRunner);
-    service = new TransferPersonService(repository, notificationService, transferService, dataSource);
+    service = new TransferPersonService(
+      repository,
+      notificationService,
+      transferService,
+      dataSource,
+    );
   });
 
   describe('canFulfillRequirements', () => {
@@ -58,18 +63,26 @@ describe('TransferPersonService', () => {
     });
 
     it('throws error if requirements are invalid', async () => {
-      await expect(service.canFulfillRequirements(1, [{ occupationId: 0, quantity: 1 }])).rejects.toThrow('occupationId must be a positive integer');
-      await expect(service.canFulfillRequirements(1, [{ occupationId: 1, quantity: 0 }])).rejects.toThrow('quantity must be a positive integer');
+      await expect(
+        service.canFulfillRequirements(1, [{ occupationId: 0, quantity: 1 }]),
+      ).rejects.toThrow('occupationId must be a positive integer');
+      await expect(
+        service.canFulfillRequirements(1, [{ occupationId: 1, quantity: 0 }]),
+      ).rejects.toThrow('quantity must be a positive integer');
     });
 
     it('throws error if not enough eligible people', async () => {
       repository.findEligiblePersonIdsByCampAndOccupation.mockResolvedValue([1]); // only 1 person
-      await expect(service.canFulfillRequirements(1, [{ occupationId: 1, quantity: 2 }])).rejects.toThrow('No hay suficientes personas elegibles para el oficio 1');
+      await expect(
+        service.canFulfillRequirements(1, [{ occupationId: 1, quantity: 2 }]),
+      ).rejects.toThrow('No hay suficientes personas elegibles para el oficio 1');
     });
 
     it('passes if requirements can be fulfilled', async () => {
       repository.findEligiblePersonIdsByCampAndOccupation.mockResolvedValue([1, 2]);
-      await expect(service.canFulfillRequirements(1, [{ occupationId: 1, quantity: 2 }])).resolves.toBeUndefined();
+      await expect(
+        service.canFulfillRequirements(1, [{ occupationId: 1, quantity: 2 }]),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -80,16 +93,23 @@ describe('TransferPersonService', () => {
 
     it('throws and rolls back if not enough eligible people', async () => {
       repository.findEligiblePersonIdsByCampAndOccupationForUpdate.mockResolvedValue([1]); // 1 person
-      await expect(service.autoAssignGroupForTransfer(1, 1, [{ occupationId: 1, quantity: 2 }])).rejects.toThrow('No hay suficientes personas elegibles para el oficio 1');
+      await expect(
+        service.autoAssignGroupForTransfer(1, 1, [{ occupationId: 1, quantity: 2 }]),
+      ).rejects.toThrow('No hay suficientes personas elegibles para el oficio 1');
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
       expect(queryRunner.release).toHaveBeenCalled();
     });
 
     it('assigns group successfully and syncs rations', async () => {
       repository.findEligiblePersonIdsByCampAndOccupationForUpdate.mockResolvedValue([1, 2]);
-      repository.insertTransferPersonWithQueryRunner.mockResolvedValue({ id: 10, personId: 1 } as never);
+      repository.insertTransferPersonWithQueryRunner.mockResolvedValue({
+        id: 10,
+        personId: 1,
+      } as never);
 
-      const result = await service.autoAssignGroupForTransfer(1, 1, [{ occupationId: 1, quantity: 1 }]);
+      const result = await service.autoAssignGroupForTransfer(1, 1, [
+        { occupationId: 1, quantity: 1 },
+      ]);
 
       expect(result).toHaveLength(1);
       expect(queryRunner.commitTransaction).toHaveBeenCalled();
@@ -100,16 +120,27 @@ describe('TransferPersonService', () => {
   describe('createTransferPerson', () => {
     it('throws if already assigned', async () => {
       repository.findByTransferAndPerson.mockResolvedValue({ id: 1 } as never);
-      await expect(service.createTransferPerson({ transferId: 1, personId: 1, status: 'CONFIRMED' })).rejects.toThrow('Esta persona ya esta asignada a este traslado');
+      await expect(
+        service.createTransferPerson({ transferId: 1, personId: 1, status: 'CONFIRMED' }),
+      ).rejects.toThrow('Esta persona ya esta asignada a este traslado');
     });
 
     it('creates, notifies and syncs rations', async () => {
       repository.findByTransferAndPerson.mockResolvedValue(null);
-      repository.create.mockResolvedValue({ id: 1, transferId: 1, personId: 1, status: 'CONFIRMED' } as never);
+      repository.create.mockResolvedValue({
+        id: 1,
+        transferId: 1,
+        personId: 1,
+        status: 'CONFIRMED',
+      } as never);
       repository.resolveTransferScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
       repository.findLinkedUserByPersonId.mockResolvedValue({ id: 10, campId: 1 } as never);
 
-      const result = await service.createTransferPerson({ transferId: 1, personId: 1, status: 'CONFIRMED' });
+      const result = await service.createTransferPerson({
+        transferId: 1,
+        personId: 1,
+        status: 'CONFIRMED',
+      });
 
       expect(result.id).toBe(1);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);
@@ -125,15 +156,32 @@ describe('TransferPersonService', () => {
     });
 
     it('throws if trying to reassign to an existing pair', async () => {
-      repository.findById.mockResolvedValue({ id: 1, transferId: 1, personId: 1, status: 'CONFIRMED' } as never);
+      repository.findById.mockResolvedValue({
+        id: 1,
+        transferId: 1,
+        personId: 1,
+        status: 'CONFIRMED',
+      } as never);
       repository.findByTransferAndPerson.mockResolvedValue({ id: 2 } as never); // different id
 
-      await expect(service.updateTransferPerson(1, { personId: 2 })).rejects.toThrow('Esta persona ya esta asignada a este traslado');
+      await expect(service.updateTransferPerson(1, { personId: 2 })).rejects.toThrow(
+        'Esta persona ya esta asignada a este traslado',
+      );
     });
 
     it('updates, notifies if status changed, and syncs rations', async () => {
-      repository.findById.mockResolvedValue({ id: 1, transferId: 1, personId: 1, status: 'CONFIRMED' } as never);
-      repository.update.mockResolvedValue({ id: 1, transferId: 1, personId: 1, status: 'PENDING' } as never);
+      repository.findById.mockResolvedValue({
+        id: 1,
+        transferId: 1,
+        personId: 1,
+        status: 'CONFIRMED',
+      } as never);
+      repository.update.mockResolvedValue({
+        id: 1,
+        transferId: 1,
+        personId: 1,
+        status: 'PENDING',
+      } as never);
       repository.resolveTransferScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
 
       const result = await service.updateTransferPerson(1, { status: 'PENDING' });
@@ -151,13 +199,23 @@ describe('TransferPersonService', () => {
     });
 
     it('returns false if delete fails', async () => {
-      repository.findById.mockResolvedValue({ id: 1, transferId: 1, personId: 1, status: 'CONFIRMED' } as never);
+      repository.findById.mockResolvedValue({
+        id: 1,
+        transferId: 1,
+        personId: 1,
+        status: 'CONFIRMED',
+      } as never);
       repository.delete.mockResolvedValue(false);
       await expect(service.deleteTransferPerson(1)).resolves.toBe(false);
     });
 
     it('deletes, notifies and syncs rations', async () => {
-      repository.findById.mockResolvedValue({ id: 1, transferId: 1, personId: 1, status: 'CONFIRMED' } as never);
+      repository.findById.mockResolvedValue({
+        id: 1,
+        transferId: 1,
+        personId: 1,
+        status: 'CONFIRMED',
+      } as never);
       repository.delete.mockResolvedValue(true);
       repository.resolveTransferScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
 

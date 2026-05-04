@@ -21,13 +21,19 @@ describe('AuthController', () => {
     service.login.mockResolvedValue({ token: 'abc' });
 
     await expect(
-      controller.login({ username: 'u', password: 'p', campId: 1 } as never, { ip: '1.1.1.1' } as never),
+      controller.login(
+        { username: 'u', password: 'p', campId: 1 } as never,
+        { ip: '1.1.1.1' } as never,
+      ),
     ).resolves.toEqual({
       success: true,
       data: { token: 'abc' },
     });
 
-    expect(service.login).toHaveBeenCalledWith({ username: 'u', password: 'p', campId: 1 }, '1.1.1.1');
+    expect(service.login).toHaveBeenCalledWith(
+      { username: 'u', password: 'p', campId: 1 },
+      '1.1.1.1',
+    );
   });
 
   it('logout throws when authorization header is missing', async () => {
@@ -66,7 +72,10 @@ describe('AuthController', () => {
 
   it('forgotPassword always returns generic success message', async () => {
     await expect(
-      controller.forgotPassword({ email: 'a@a.com', campId: 4 } as never, { ip: '3.3.3.3' } as never),
+      controller.forgotPassword(
+        { email: 'a@a.com', campId: 4 } as never,
+        { ip: '3.3.3.3' } as never,
+      ),
     ).resolves.toEqual({
       success: true,
       message:
