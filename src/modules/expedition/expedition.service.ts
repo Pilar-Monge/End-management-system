@@ -293,8 +293,7 @@ export class ExpeditionService {
     let nextStatus: ExpeditionStatus = expedition.status;
 
     if (expedition.actualReturnDate) {
-      nextStatus =
-        expedition.status === 'LOST' ? 'RETURNED_AFTER_LOST' : 'COMPLETED';
+      nextStatus = expedition.status === 'LOST' ? 'RETURNED_AFTER_LOST' : 'COMPLETED';
     } else if (now.getTime() > lossLimit.getTime()) {
       nextStatus = 'LOST';
     } else if (now.getTime() > estimatedReturn.getTime()) {
@@ -307,7 +306,10 @@ export class ExpeditionService {
 
     const extraDaysUsed =
       now.getTime() > estimatedReturn.getTime()
-        ? Math.max(0, Math.ceil((now.getTime() - estimatedReturn.getTime()) / (24 * 60 * 60 * 1000)))
+        ? Math.max(
+            0,
+            Math.ceil((now.getTime() - estimatedReturn.getTime()) / (24 * 60 * 60 * 1000)),
+          )
         : 0;
 
     if (nextStatus !== expedition.status || extraDaysUsed !== expedition.extraDaysUsed) {

@@ -27,12 +27,14 @@ describe('DashboardController', () => {
   it('returns general dashboard payload', async () => {
     service.getGeneralStats.mockResolvedValue({ unreadNotifications: 2 });
 
-    await expect(controller.getGeneralDashboard({ user: { campId: 3 } } as never)).resolves.toEqual({
-      success: true,
-      data: {
-        generalStats: { unreadNotifications: 2 },
+    await expect(controller.getGeneralDashboard({ user: { campId: 3 } } as never)).resolves.toEqual(
+      {
+        success: true,
+        data: {
+          generalStats: { unreadNotifications: 2 },
+        },
       },
-    });
+    );
 
     expect(service.getGeneralStats).toHaveBeenCalledWith(3);
   });
@@ -41,7 +43,9 @@ describe('DashboardController', () => {
     service.getInventoryData.mockResolvedValue({ resources: [], criticalStockCount: 0 });
     service.getConsumptionTrend.mockResolvedValue([{ date: '2026-04-27', totalConsumed: 1 }]);
 
-    await expect(controller.getInventoryDashboard({ user: { campId: 3 } } as never)).resolves.toEqual({
+    await expect(
+      controller.getInventoryDashboard({ user: { campId: 3 } } as never),
+    ).resolves.toEqual({
       success: true,
       data: {
         inventoryData: { resources: [], criticalStockCount: 0 },
@@ -53,7 +57,9 @@ describe('DashboardController', () => {
   it('returns expeditions dashboard payload', async () => {
     service.getExpeditionStatus.mockResolvedValue({ PLANNED: 1 });
 
-    await expect(controller.getExpeditionsDashboard({ user: { campId: 5 } } as never)).resolves.toEqual({
+    await expect(
+      controller.getExpeditionsDashboard({ user: { campId: 5 } } as never),
+    ).resolves.toEqual({
       success: true,
       data: {
         expeditionStatus: { PLANNED: 1 },

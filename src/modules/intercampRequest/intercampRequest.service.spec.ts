@@ -46,7 +46,7 @@ describe('IntercampRequestService', () => {
   });
 
   // ─── validateRoutingAndOwnership ───────────────────────────────────────
-  
+
   // This is a private method but we test its side effects through public ones
   const setupValidRouting = () => {
     repository.findCampById.mockImplementation(async (id) => ({ id }));
@@ -81,7 +81,12 @@ describe('IntercampRequestService', () => {
 
     it('creates request and notifies on success', async () => {
       setupValidRouting();
-      repository.create.mockResolvedValue({ id: 1, originCampId: 1, destinationCampId: 2, createdBy: 10 });
+      repository.create.mockResolvedValue({
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 10,
+      });
 
       const result = await service.createRequest({
         originCampId: 1,
@@ -92,7 +97,11 @@ describe('IntercampRequestService', () => {
 
       expect(repository.create).toHaveBeenCalled();
       expect(notificationService.notifyUser).toHaveBeenCalledWith(10, expect.any(Object));
-      expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(2, expect.any(Array), expect.any(Object));
+      expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(
+        2,
+        expect.any(Array),
+        expect.any(Object),
+      );
       expect(result.id).toBe(1);
     });
   });
@@ -107,26 +116,46 @@ describe('IntercampRequestService', () => {
 
     it('validates requirements when approving', async () => {
       setupValidRouting();
-      repository.findById.mockResolvedValue({ id: 1, originCampId: 1, destinationCampId: 2, createdBy: 10, personRequirements: [{ count: 5 }] });
-      repository.update.mockResolvedValue({ id: 1, originCampId: 1, destinationCampId: 2, createdBy: 10, status: 'APPROVED', personRequirements: [] });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 10,
+        personRequirements: [{ count: 5 }],
+      });
+      repository.update.mockResolvedValue({
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 10,
+        status: 'APPROVED',
+        personRequirements: [],
+      });
       repository.findRequestResourceAmountsByRequestId.mockResolvedValue([]);
       transferService.getTransferByRequestId.mockResolvedValue({ id: 1 });
 
       await service.updateRequest(1, { status: 'APPROVED' });
 
-      expect(transferPersonService.canFulfillRequirements).toHaveBeenCalledWith(1, expect.any(Array));
+      expect(transferPersonService.canFulfillRequirements).toHaveBeenCalledWith(
+        1,
+        expect.any(Array),
+      );
     });
 
     it('creates auto-transfer when approved and needs it', async () => {
       setupValidRouting();
       const req = {
-        id: 1, originCampId: 1, destinationCampId: 2, createdBy: 10, 
-        status: 'PENDING', personRequirements: [{ count: 2 }],
-        plannedDepartureDate: new Date()
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 10,
+        status: 'PENDING',
+        personRequirements: [{ count: 2 }],
+        plannedDepartureDate: new Date(),
       };
       repository.findById.mockResolvedValue(req);
       repository.update.mockResolvedValue({ ...req, status: 'APPROVED' });
-      
+
       // Needs transfer
       repository.findRequestResourceAmountsByRequestId.mockResolvedValue([]);
       // Doesn't exist
@@ -137,7 +166,11 @@ describe('IntercampRequestService', () => {
       await service.updateRequest(1, { status: 'APPROVED' });
 
       expect(transferService.createTransfer).toHaveBeenCalled();
-      expect(transferPersonService.autoAssignGroupForTransfer).toHaveBeenCalledWith(100, 1, expect.any(Array));
+      expect(transferPersonService.autoAssignGroupForTransfer).toHaveBeenCalledWith(
+        100,
+        1,
+        expect.any(Array),
+      );
       expect(transferService.syncTransferRations).toHaveBeenCalledWith(100);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2); // Origin and Dest
     });
@@ -147,9 +180,14 @@ describe('IntercampRequestService', () => {
       const past = new Date('2026-05-15T10:00:00Z');
       const older = new Date('2026-05-14T10:00:00Z');
       const req = {
-        id: 1, originCampId: 1, destinationCampId: 2, createdBy: 10, 
-        status: 'PENDING', personRequirements: [{ count: 2 }],
-        plannedDepartureDate: past, plannedArrivalDate: older // Invalid dates
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 10,
+        status: 'PENDING',
+        personRequirements: [{ count: 2 }],
+        plannedDepartureDate: past,
+        plannedArrivalDate: older, // Invalid dates
       };
       repository.findById.mockResolvedValue(req);
       repository.update.mockResolvedValue({ ...req, status: 'APPROVED' });
@@ -157,7 +195,9 @@ describe('IntercampRequestService', () => {
       transferService.getTransferByRequestId.mockResolvedValue(null);
       transferPersonService.canFulfillRequirements.mockResolvedValue(true);
 
-      await expect(service.updateRequest(1, { status: 'APPROVED' })).rejects.toThrow('plannedArrivalDate must be later than plannedDepartureDate');
+      await expect(service.updateRequest(1, { status: 'APPROVED' })).rejects.toThrow(
+        'plannedArrivalDate must be later than plannedDepartureDate',
+      );
     });
   });
 

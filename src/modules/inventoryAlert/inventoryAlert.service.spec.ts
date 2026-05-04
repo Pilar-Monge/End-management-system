@@ -54,7 +54,9 @@ describe('InventoryAlertService', () => {
       repository.findAllAndCount.mockResolvedValue({ data: [], total: 0 });
       const result = await service.getAllAlerts({ page: 2, limit: 5 });
       expect(result.total).toBe(0);
-      expect(repository.findAllAndCount).toHaveBeenCalledWith(expect.objectContaining({ offset: 5, limit: 5 }));
+      expect(repository.findAllAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ offset: 5, limit: 5 }),
+      );
     });
   });
 

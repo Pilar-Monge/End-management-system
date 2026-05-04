@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, NotFoundException, HttpException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  HttpException,
+} from '@nestjs/common';
 import { IntercampRequestController } from './intercampRequest.controller';
 import type { IntercampRequestService } from './intercampRequest.service';
 import type { Request } from 'express';
@@ -46,12 +51,16 @@ describe('IntercampRequestController', () => {
 
     it('should throw if originCampId mismatch', async () => {
       const dto = { originCampId: 2, createdBy: 1 } as any;
-      await expect(controller.create(dto, mockRequest)).rejects.toThrow('originCampId must match your authenticated camp');
+      await expect(controller.create(dto, mockRequest)).rejects.toThrow(
+        'originCampId must match your authenticated camp',
+      );
     });
 
     it('should throw if createdBy mismatch', async () => {
       const dto = { originCampId: 1, createdBy: 2 } as any;
-      await expect(controller.create(dto, mockRequest)).rejects.toThrow('createdBy must match the authenticated user');
+      await expect(controller.create(dto, mockRequest)).rejects.toThrow(
+        'createdBy must match the authenticated user',
+      );
     });
 
     it('should allow admin to create with any originCampId', async () => {
@@ -65,32 +74,66 @@ describe('IntercampRequestController', () => {
 
   describe('getById', () => {
     it('should return a request if authorized (origin)', async () => {
-      service.getRequestById.mockResolvedValue({ id: 1, originCampId: 1, destinationCampId: 2 } as any);
+      service.getRequestById.mockResolvedValue({
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+      } as any);
       const result = await controller.getById('1', mockRequest);
       expect(result.success).toBe(true);
     });
 
     it('should return a request if authorized (destination)', async () => {
-      service.getRequestById.mockResolvedValue({ id: 1, originCampId: 3, destinationCampId: 1 } as any);
+      service.getRequestById.mockResolvedValue({
+        id: 1,
+        originCampId: 3,
+        destinationCampId: 1,
+      } as any);
       const result = await controller.getById('1', mockRequest);
       expect(result.success).toBe(true);
     });
 
     it('should throw if unauthorized camp access', async () => {
-      service.getRequestById.mockResolvedValue({ id: 1, originCampId: 2, destinationCampId: 3 } as any);
-      await expect(controller.getById('1', mockRequest)).rejects.toThrow('You do not have permission to view this intercamp request');
+      service.getRequestById.mockResolvedValue({
+        id: 1,
+        originCampId: 2,
+        destinationCampId: 3,
+      } as any);
+      await expect(controller.getById('1', mockRequest)).rejects.toThrow(
+        'You do not have permission to view this intercamp request',
+      );
     });
   });
 
   describe('getAll', () => {
     it('should return paginated results', async () => {
       service.getAllRequests.mockResolvedValue({ data: [], total: 0 });
-      const result = await controller.getAll('1', '2', 'PENDING' as any, '1', undefined, '1', '10', mockRequest);
+      const result = await controller.getAll(
+        '1',
+        '2',
+        'PENDING' as any,
+        '1',
+        undefined,
+        '1',
+        '10',
+        mockRequest,
+      );
       expect(result.success).toBe(true);
     });
 
     it('should throw if createdBy filter mismatch for non-admin', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, '2', undefined, undefined, undefined, mockRequest)).rejects.toThrow('createdBy filter must match the authenticated user');
+      await expect(
+        controller.getAll(
+          undefined,
+          undefined,
+          undefined,
+          '2',
+          undefined,
+          undefined,
+          undefined,
+          mockRequest,
+        ),
+      ).rejects.toThrow('createdBy filter must match the authenticated user');
     });
   });
 
@@ -99,7 +142,11 @@ describe('IntercampRequestController', () => {
       service.getRequestById.mockResolvedValue({ id: 1, originCampId: 1 } as any);
       service.updateRequest.mockResolvedValue({ id: 1 } as any);
 
-      const result = await controller.update('1', { originCampId: 1, createdBy: 1 } as any, mockRequest);
+      const result = await controller.update(
+        '1',
+        { originCampId: 1, createdBy: 1 } as any,
+        mockRequest,
+      );
       expect(result.success).toBe(true);
     });
   });

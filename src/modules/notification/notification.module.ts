@@ -10,7 +10,11 @@ import { NotificationRepository } from './notification.repository';
 import { NotificationService } from './notification.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([NotificationEntity, UserEntity]), EmailModule, SystemTimeModule],
+  imports: [
+    TypeOrmModule.forFeature([NotificationEntity, UserEntity]),
+    EmailModule,
+    SystemTimeModule,
+  ],
   controllers: [NotificationController],
   providers: [NotificationRepository, NotificationService],
   exports: [NotificationService],

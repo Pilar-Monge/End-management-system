@@ -20,9 +20,9 @@ describe('CampController', () => {
   });
 
   it('getById validates id format', async () => {
-    await expect(controller.getById('abc', { user: { userId: 1, campId: 1, rol: 'SYSTEM_ADMIN' } } as never)).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.getById('abc', { user: { userId: 1, campId: 1, rol: 'SYSTEM_ADMIN' } } as never),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('getById denies access for non-admin requesting other camp', async () => {
@@ -75,7 +75,9 @@ describe('CampController', () => {
   });
 
   it('update always throws ForbiddenException', async () => {
-    await expect(controller.update('1', { name: 'x' } as never)).rejects.toThrow(ForbiddenException);
+    await expect(controller.update('1', { name: 'x' } as never)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('delete always throws ForbiddenException', async () => {

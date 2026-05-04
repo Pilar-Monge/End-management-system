@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class RemoveExpeditionResourceUniqueConstraints1777100000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
- await queryRunner.query(
+    await queryRunner.query(
       `ALTER TABLE "expedition_resource_obtained" DROP CONSTRAINT IF EXISTS "uq_exp_obten_recurso"`,
     );
     await queryRunner.query(

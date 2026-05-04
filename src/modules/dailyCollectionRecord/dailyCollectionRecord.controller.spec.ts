@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, NotFoundException, HttpException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  HttpException,
+} from '@nestjs/common';
 import { DailyCollectionRecordController } from './dailyCollectionRecord.controller';
 import type { DailyCollectionRecordService } from './dailyCollectionRecord.service';
 import type { Request } from 'express';
@@ -47,12 +52,16 @@ describe('DailyCollectionRecordController', () => {
 
     it('should throw if camp mismatch', async () => {
       const dto = { campId: 2, recordedBy: 1 } as any;
-      await expect(controller.create(dto, mockRequest)).rejects.toThrow('You can only create records in your own camp');
+      await expect(controller.create(dto, mockRequest)).rejects.toThrow(
+        'You can only create records in your own camp',
+      );
     });
 
     it('should throw if recordedBy mismatch', async () => {
       const dto = { campId: 1, recordedBy: 2 } as any;
-      await expect(controller.create(dto, mockRequest)).rejects.toThrow('recordedBy must match the authenticated user');
+      await expect(controller.create(dto, mockRequest)).rejects.toThrow(
+        'recordedBy must match the authenticated user',
+      );
     });
   });
 
@@ -61,13 +70,19 @@ describe('DailyCollectionRecordController', () => {
       service.getRecordById.mockResolvedValue({ id: 1, campId: 1 } as any);
       service.adjustRecord.mockResolvedValue({ id: 1, actualAmount: '15.00' } as any);
 
-      const result = await controller.adjust('1', { recordedBy: 1, actualAmount: '15.00' } as any, mockRequest);
+      const result = await controller.adjust(
+        '1',
+        { recordedBy: 1, actualAmount: '15.00' } as any,
+        mockRequest,
+      );
       expect(result.success).toBe(true);
     });
 
     it('should throw if record not found', async () => {
       service.getRecordById.mockResolvedValue(null);
-      await expect(controller.adjust('1', { recordedBy: 1 } as any, mockRequest)).rejects.toThrow(NotFoundException);
+      await expect(controller.adjust('1', { recordedBy: 1 } as any, mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -80,19 +95,39 @@ describe('DailyCollectionRecordController', () => {
 
     it('should throw if unauthorized camp access', async () => {
       service.getRecordById.mockResolvedValue({ id: 1, campId: 2 } as any);
-      await expect(controller.getById('1', mockRequest)).rejects.toThrow('You do not have permission to view this record');
+      await expect(controller.getById('1', mockRequest)).rejects.toThrow(
+        'You do not have permission to view this record',
+      );
     });
   });
 
   describe('getAll', () => {
     it('should return paginated results', async () => {
       service.getAllRecords.mockResolvedValue({ data: [], total: 0 });
-      const result = await controller.getAll('1', undefined, undefined, '2026-05-01', '1', '10', mockRequest);
+      const result = await controller.getAll(
+        '1',
+        undefined,
+        undefined,
+        '2026-05-01',
+        '1',
+        '10',
+        mockRequest,
+      );
       expect(result.success).toBe(true);
     });
 
     it('should throw if invalid date format', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, 'invalid', undefined, undefined, mockRequest)).rejects.toThrow('Invalid date');
+      await expect(
+        controller.getAll(
+          undefined,
+          undefined,
+          undefined,
+          'invalid',
+          undefined,
+          undefined,
+          mockRequest,
+        ),
+      ).rejects.toThrow('Invalid date');
     });
   });
 

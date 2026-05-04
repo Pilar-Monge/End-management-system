@@ -58,7 +58,12 @@ describe('ExpeditionService', () => {
 
   describe('createExpedition', () => {
     it('creates expedition that starts immediately', async () => {
-      repository.create.mockResolvedValue({ id: 1, campId: 1, name: 'Exp 1', status: 'IN_PROGRESS' });
+      repository.create.mockResolvedValue({
+        id: 1,
+        campId: 1,
+        name: 'Exp 1',
+        status: 'IN_PROGRESS',
+      });
       repository.applyDepartureProvisioningIfNeeded.mockResolvedValue(undefined);
 
       const result = await service.createExpedition({
@@ -70,7 +75,7 @@ describe('ExpeditionService', () => {
       });
 
       expect(repository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'IN_PROGRESS', extraDaysAvailable: 1 })
+        expect.objectContaining({ status: 'IN_PROGRESS', extraDaysAvailable: 1 }),
       );
       expect(repository.applyDepartureProvisioningIfNeeded).toHaveBeenCalledWith(1, NOW);
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
@@ -90,7 +95,7 @@ describe('ExpeditionService', () => {
       });
 
       expect(repository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'PLANNED' })
+        expect.objectContaining({ status: 'PLANNED' }),
       );
       expect(repository.applyDepartureProvisioningIfNeeded).not.toHaveBeenCalled();
     });
@@ -108,7 +113,7 @@ describe('ExpeditionService', () => {
       });
 
       expect(repository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'PLANNED' })
+        expect.objectContaining({ status: 'PLANNED' }),
       );
     });
 
@@ -120,7 +125,7 @@ describe('ExpeditionService', () => {
           name: 'Past',
           plannedDepartureDate: past,
           estimatedDurationDays: 1,
-        })
+        }),
       ).rejects.toThrow('plannedDepartureDate debe ser la hora actual o futura');
     });
   });
@@ -171,7 +176,9 @@ describe('ExpeditionService', () => {
 
     it('throws if completedBy is invalid', async () => {
       repository.findById.mockResolvedValue({ id: 1 });
-      await expect(service.completeExploration(1, 0)).rejects.toThrow('Usuario autenticado no valido');
+      await expect(service.completeExploration(1, 0)).rejects.toThrow(
+        'Usuario autenticado no valido',
+      );
     });
 
     it('throws if user is not active participant', async () => {
@@ -183,29 +190,49 @@ describe('ExpeditionService', () => {
     it('throws if user is INACTIVE', async () => {
       repository.findById.mockResolvedValue({ id: 1 });
       repository.findActiveParticipantPersonStatus.mockResolvedValue({ currentStatus: 'INACTIVE' });
-      await expect(service.completeExploration(1, 5)).rejects.toThrow('Las personas inactivas no pueden completar');
+      await expect(service.completeExploration(1, 5)).rejects.toThrow(
+        'Las personas inactivas no pueden completar',
+      );
     });
 
     it('throws if trying to complete before estimated return', async () => {
       const future = new Date(NOW.getTime() + 1000);
-      repository.findById.mockResolvedValue({ id: 1, plannedReturnDate: future, status: 'IN_PROGRESS' });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        plannedReturnDate: future,
+        status: 'IN_PROGRESS',
+      });
       repository.findActiveParticipantPersonStatus.mockResolvedValue({ currentStatus: 'ACTIVE' });
-      
-      await expect(service.completeExploration(1, 5)).rejects.toThrow('despues de la fecha estimada');
+
+      await expect(service.completeExploration(1, 5)).rejects.toThrow(
+        'despues de la fecha estimada',
+      );
     });
 
     it('throws if state does not allow completion', async () => {
       const past = new Date(NOW.getTime() - 1000);
-      repository.findById.mockResolvedValue({ id: 1, plannedReturnDate: past, status: 'COMPLETED' });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        plannedReturnDate: past,
+        status: 'COMPLETED',
+      });
       repository.findActiveParticipantPersonStatus.mockResolvedValue({ currentStatus: 'ACTIVE' });
 
-      await expect(service.completeExploration(1, 5)).rejects.toThrow('no puede completarse desde su estado actual');
+      await expect(service.completeExploration(1, 5)).rejects.toThrow(
+        'no puede completarse desde su estado actual',
+      );
     });
 
     it('completes expedition and notifies', async () => {
       const past = new Date(NOW.getTime() - 1000);
       repository.findById
-        .mockResolvedValueOnce({ id: 1, campId: 1, name: 'Exp 1', plannedReturnDate: past, status: 'IN_PROGRESS' }) // first find
+        .mockResolvedValueOnce({
+          id: 1,
+          campId: 1,
+          name: 'Exp 1',
+          plannedReturnDate: past,
+          status: 'IN_PROGRESS',
+        }) // first find
         .mockResolvedValueOnce({ id: 1, campId: 1, name: 'Exp 1', status: 'COMPLETED' }); // after save
       repository.findActiveParticipantPersonStatus.mockResolvedValue({ currentStatus: 'ACTIVE' });
       repository.completeExplorationWithLoot.mockResolvedValue(undefined);
@@ -217,7 +244,7 @@ describe('ExpeditionService', () => {
         expect.objectContaining({ id: 1 }),
         5,
         NOW,
-        'COMPLETED'
+        'COMPLETED',
       );
       expect(result?.status).toBe('COMPLETED');
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
@@ -247,15 +274,23 @@ describe('ExpeditionService', () => {
 
     it('recalculates plannedReturnDate if estimatedDurationDays is provided', async () => {
       const departure = new Date(NOW.getTime() - 100000);
-      repository.findById.mockResolvedValue({ id: 1, status: 'PLANNED', campId: 1, plannedDepartureDate: departure });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        status: 'PLANNED',
+        campId: 1,
+        plannedDepartureDate: departure,
+      });
       repository.update.mockResolvedValue({ id: 1, status: 'PLANNED', campId: 1, name: 'Upd' });
 
       await service.updateExpedition(1, { estimatedDurationDays: 10 });
 
-      expect(repository.update).toHaveBeenCalledWith(1, expect.objectContaining({
-        estimatedDurationDays: 10,
-        plannedReturnDate: new Date(departure.getTime() + 10 * 86400000)
-      }));
+      expect(repository.update).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          estimatedDurationDays: 10,
+          plannedReturnDate: new Date(departure.getTime() + 10 * 86400000),
+        }),
+      );
     });
   });
 

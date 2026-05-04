@@ -54,11 +54,17 @@ describe('ResourceTypeController', () => {
       },
     });
 
-    expect(service.getAllResourceTypes).toHaveBeenCalledWith({ category: 'FOOD', page: 2, limit: 2 });
+    expect(service.getAllResourceTypes).toHaveBeenCalledWith({
+      category: 'FOOD',
+      page: 2,
+      limit: 2,
+    });
   });
 
   it('update always throws ForbiddenException', async () => {
-    await expect(controller.update('1', { name: 'x' } as never)).rejects.toThrow(ForbiddenException);
+    await expect(controller.update('1', { name: 'x' } as never)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('delete always throws ForbiddenException', async () => {

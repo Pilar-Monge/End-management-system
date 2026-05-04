@@ -24,7 +24,9 @@ export class TransferPersonService {
     private readonly dataSource: DataSource,
   ) {}
 
-  private validateRequirementPayload(requirements: Array<{ occupationId: number; quantity: number }>): void {
+  private validateRequirementPayload(
+    requirements: Array<{ occupationId: number; quantity: number }>,
+  ): void {
     for (const requirement of requirements) {
       if (!Number.isInteger(requirement.occupationId) || requirement.occupationId <= 0) {
         throw new Error('occupationId must be a positive integer');
@@ -54,7 +56,9 @@ export class TransferPersonService {
         requirement.occupationId,
       );
 
-      const availablePersonIds = eligiblePersonIds.filter((personId) => !selectedPersonIds.has(personId));
+      const availablePersonIds = eligiblePersonIds.filter(
+        (personId) => !selectedPersonIds.has(personId),
+      );
       if (availablePersonIds.length < requirement.quantity) {
         throw new Error(
           `No hay suficientes personas elegibles para el oficio ${requirement.occupationId}`,
@@ -86,15 +90,20 @@ export class TransferPersonService {
 
     try {
       for (const requirement of requirements) {
-        const eligiblePersonIds = await this.repository.findEligiblePersonIdsByCampAndOccupationForUpdate(
-          queryRunner,
-          originCampId,
-          requirement.occupationId,
-        );
+        const eligiblePersonIds =
+          await this.repository.findEligiblePersonIdsByCampAndOccupationForUpdate(
+            queryRunner,
+            originCampId,
+            requirement.occupationId,
+          );
 
-        const availablePersonIds = eligiblePersonIds.filter((personId) => !selectedPersonIds.has(personId));
+        const availablePersonIds = eligiblePersonIds.filter(
+          (personId) => !selectedPersonIds.has(personId),
+        );
         if (availablePersonIds.length < requirement.quantity) {
-          throw new Error(`No hay suficientes personas elegibles para el oficio ${requirement.occupationId}`);
+          throw new Error(
+            `No hay suficientes personas elegibles para el oficio ${requirement.occupationId}`,
+          );
         }
 
         for (const personId of availablePersonIds.slice(0, requirement.quantity)) {

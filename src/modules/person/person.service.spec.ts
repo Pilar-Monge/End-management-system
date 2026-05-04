@@ -66,7 +66,11 @@ describe('PersonService', () => {
       repository.findByIdentificationNumber.mockResolvedValue(null);
       repository.admissionRequestExists.mockResolvedValue(false);
       await expect(
-        service.createPerson({ campId: 1, identificationNumber: '123', admissionRequestId: 5 } as never),
+        service.createPerson({
+          campId: 1,
+          identificationNumber: '123',
+          admissionRequestId: 5,
+        } as never),
       ).rejects.toThrow('Admission request not found');
     });
 
@@ -75,13 +79,17 @@ describe('PersonService', () => {
       repository.admissionRequestExists.mockResolvedValue(true);
       repository.findByAdmissionRequestId.mockResolvedValue({ id: 99 });
       await expect(
-        service.createPerson({ campId: 1, identificationNumber: '123', admissionRequestId: 5 } as never),
+        service.createPerson({
+          campId: 1,
+          identificationNumber: '123',
+          admissionRequestId: 5,
+        } as never),
       ).rejects.toThrow('A person for this admission request already exists');
     });
 
     it('rethrows friendly error on DB unique constraint failure', async () => {
       repository.findByIdentificationNumber.mockResolvedValue(null);
-      
+
       const error = new QueryFailedError('query', [], new Error());
       (error as any).driverError = { code: '23505', constraint: 'uq_person_identification' };
       repository.create.mockRejectedValue(error);
@@ -95,7 +103,10 @@ describe('PersonService', () => {
       repository.findByIdentificationNumber.mockResolvedValue(null);
       repository.create.mockResolvedValue({ id: 1 });
 
-      const result = await service.createPerson({ campId: 1, identificationNumber: '123' } as never);
+      const result = await service.createPerson({
+        campId: 1,
+        identificationNumber: '123',
+      } as never);
 
       expect(repository.create).toHaveBeenCalled();
       expect(result.id).toBe(1);
@@ -113,9 +124,9 @@ describe('PersonService', () => {
     it('throws if new identification belongs to another person', async () => {
       repository.findById.mockResolvedValue({ id: 1, identificationNumber: 'old' });
       repository.findByIdentificationNumber.mockResolvedValue({ id: 2 });
-      await expect(
-        service.updatePerson(1, { identificationNumber: 'new' }),
-      ).rejects.toThrow('Another person with this identification number already exists');
+      await expect(service.updatePerson(1, { identificationNumber: 'new' })).rejects.toThrow(
+        'Another person with this identification number already exists',
+      );
     });
 
     it('creates history and notifies if status changes', async () => {
@@ -126,7 +137,7 @@ describe('PersonService', () => {
       await service.updatePerson(1, { currentStatus: 'INACTIVE' });
 
       expect(personStatusHistoryRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ previousStatus: 'ACTIVE', newStatus: 'INACTIVE' })
+        expect.objectContaining({ previousStatus: 'ACTIVE', newStatus: 'INACTIVE' }),
       );
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
       expect(notificationService.notifyUser).toHaveBeenCalledWith(10, expect.any(Object));
@@ -150,7 +161,10 @@ describe('PersonService', () => {
 
       expect(result).toBe(true);
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
-      expect(notificationService.notifyUser).toHaveBeenCalledWith(10, expect.objectContaining({ sendEmail: false }));
+      expect(notificationService.notifyUser).toHaveBeenCalledWith(
+        10,
+        expect.objectContaining({ sendEmail: false }),
+      );
     });
   });
 

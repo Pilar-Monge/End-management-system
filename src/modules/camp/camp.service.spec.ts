@@ -93,7 +93,11 @@ describe('CampService', () => {
 
   it('updateCamp notifies with changed fields summary', async () => {
     repository.findById.mockResolvedValue(camp);
-    repository.update.mockResolvedValue({ ...camp, description: 'changed', maxPersonCapacity: 120 });
+    repository.update.mockResolvedValue({
+      ...camp,
+      description: 'changed',
+      maxPersonCapacity: 120,
+    });
     repository.findActiveSystemAdmins.mockResolvedValue([{ id: 10, campId: 1 }]);
 
     const updated = await service.updateCamp(1, {

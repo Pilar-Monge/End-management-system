@@ -144,9 +144,8 @@ export class TemporalAutomationService {
   }
 
   private async createDailyCollectionRecords(campId: number, now: Date): Promise<void> {
-    const recorderUserId = await this.temporalAutomationRepository.findAutomationRecorderUserId(
-      campId,
-    );
+    const recorderUserId =
+      await this.temporalAutomationRepository.findAutomationRecorderUserId(campId);
 
     if (recorderUserId === null) {
       this.logger.warn(

@@ -41,7 +41,13 @@ const MOCK_MODEL = {
   id: 1,
   campId: 1,
   modelName: 'admission-acceptance-v1',
-  featureNames: ['age_years', 'health_level_score', 'physical_condition_score', 'experience_years', 'skills_score'],
+  featureNames: [
+    'age_years',
+    'health_level_score',
+    'physical_condition_score',
+    'experience_years',
+    'skills_score',
+  ],
   modelPayload: MOCK_PAYLOAD,
   modelFilePath: null,
   isActive: true,
@@ -58,7 +64,13 @@ const MOCK_ROLE_MODEL = {
   id: 2,
   campId: 0,
   modelName: 'admission-role-assignment-v1',
-  featureNames: ['age_years', 'health_level_score', 'physical_condition_score', 'experience_years', 'skills_score'],
+  featureNames: [
+    'age_years',
+    'health_level_score',
+    'physical_condition_score',
+    'experience_years',
+    'skills_score',
+  ],
   modelPayload: MOCK_ROLE_PAYLOAD,
   modelFilePath: null,
   isActive: true,
@@ -221,18 +233,19 @@ describe('DecisionTreeService', () => {
       repository.findActiveByModelName.mockResolvedValue(null);
       repository.findActiveGlobalByModelName.mockResolvedValue(null);
 
-      await expect(
-        service.explainByModelName('unknown-model', SAMPLE_FEATURES, 1),
-      ).rejects.toThrow('Active decision tree model not found for unknown-model');
+      await expect(service.explainByModelName('unknown-model', SAMPLE_FEATURES, 1)).rejects.toThrow(
+        'Active decision tree model not found for unknown-model',
+      );
     });
 
     it('uses camp-specific model first', async () => {
-      const predictSpy = jest.spyOn(DecisionTreeClassifier.prototype, 'predict')
+      const predictSpy = jest
+        .spyOn(DecisionTreeClassifier.prototype, 'predict')
         .mockReturnValueOnce([1]) // 1 is index for ACCEPT in MOCK_MODEL
         .mockReturnValueOnce([0]); // 0 is index for Explorador in MOCK_ROLE_MODEL
 
       repository.findActiveByModelName
-        .mockResolvedValueOnce(MOCK_MODEL)       // admission model
+        .mockResolvedValueOnce(MOCK_MODEL) // admission model
         .mockResolvedValueOnce(MOCK_ROLE_MODEL); // role model (called inside predictRoleAssignment)
       repository.findActiveGlobalByModelName.mockResolvedValue(null);
 
@@ -247,15 +260,15 @@ describe('DecisionTreeService', () => {
     });
 
     it('falls back to global model when camp model not found', async () => {
-      const predictSpy = jest.spyOn(DecisionTreeClassifier.prototype, 'predict')
+      const predictSpy = jest
+        .spyOn(DecisionTreeClassifier.prototype, 'predict')
         .mockReturnValueOnce([1]) // ACCEPT
         .mockReturnValueOnce([0]); // Explorador
 
       repository.findActiveByModelName
-        .mockResolvedValueOnce(null)             // camp model not found
+        .mockResolvedValueOnce(null) // camp model not found
         .mockResolvedValueOnce(MOCK_ROLE_MODEL); // role model
-      repository.findActiveGlobalByModelName
-        .mockResolvedValueOnce(MOCK_MODEL);      // global fallback
+      repository.findActiveGlobalByModelName.mockResolvedValueOnce(MOCK_MODEL); // global fallback
 
       const result = await service.explainByModelName(
         'admission-acceptance-v1',

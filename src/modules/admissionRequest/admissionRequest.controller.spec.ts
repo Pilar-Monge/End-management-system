@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 import { AdmissionRequestController } from './admissionRequest.controller';
 
@@ -79,9 +75,14 @@ describe('AdmissionRequestController', () => {
   });
 
   it('getAllRequests defaults to authenticated camp and computes pagination', async () => {
-    service.getAllAdmissionRequestsWithSignedUrls.mockResolvedValue({ data: [{ id: 1 }], total: 11 });
+    service.getAllAdmissionRequestsWithSignedUrls.mockResolvedValue({
+      data: [{ id: 1 }],
+      total: 11,
+    });
 
-    await expect(controller.getAllRequests(undefined, 'PENDING_AI', '2', '5', req)).resolves.toEqual({
+    await expect(
+      controller.getAllRequests(undefined, 'PENDING_AI', '2', '5', req),
+    ).resolves.toEqual({
       success: true,
       data: [{ id: 1 }],
       pagination: {
@@ -101,9 +102,9 @@ describe('AdmissionRequestController', () => {
   });
 
   it('getAllRequests rejects querying another camp', async () => {
-    await expect(controller.getAllRequests('8', undefined, undefined, undefined, req)).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.getAllRequests('8', undefined, undefined, undefined, req),
+    ).rejects.toThrow(BadRequestException);
   });
 
   describe('uploadPhoto and updatePhoto', () => {
@@ -136,9 +137,9 @@ describe('AdmissionRequestController', () => {
   it('updateRequest rejects moving request to another camp', async () => {
     service.getRequestById.mockResolvedValue({ id: 1, campId: 7 });
 
-    await expect(
-      controller.updateRequest('1', { campId: 8 } as never, req),
-    ).rejects.toThrow(BadRequestException);
+    await expect(controller.updateRequest('1', { campId: 8 } as never, req)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('updateRequest succeeds for same camp', async () => {
@@ -165,11 +166,7 @@ describe('AdmissionRequestController', () => {
 
   it('reviewByAdmin rejects mismatched authenticated admin', async () => {
     await expect(
-      controller.reviewByAdmin(
-        '1',
-        { adminUserId: 999, approved: true } as never,
-        req,
-      ),
+      controller.reviewByAdmin('1', { adminUserId: 999, approved: true } as never, req),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -177,7 +174,11 @@ describe('AdmissionRequestController', () => {
     service.getRequestById.mockResolvedValue({ id: 1, campId: 7 });
     service.reviewByAdmin.mockResolvedValue({ id: 1, status: 'APPROVED' });
 
-    const res = await controller.reviewByAdmin('1', { adminUserId: 100, approved: true } as any, req);
+    const res = await controller.reviewByAdmin(
+      '1',
+      { adminUserId: 100, approved: true } as any,
+      req,
+    );
     expect(res.success).toBe(true);
     expect(res.data.status).toBe('APPROVED');
   });

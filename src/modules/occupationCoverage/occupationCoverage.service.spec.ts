@@ -37,9 +37,11 @@ describe('OccupationCoverageService', () => {
       repository.getOccupationCoverageById.mockResolvedValue(mockCoverage);
       repository.getOccupationCoverageByCamp.mockResolvedValue([
         mockCoverage,
-        { occupationId: 2, occupationName: 'Nurse', surplus: 5, deficit: 0 }
+        { occupationId: 2, occupationName: 'Nurse', surplus: 5, deficit: 0 },
       ]);
-      repository.getAvailablePersonsForReplacement.mockResolvedValue([{ id: 10, name: 'John', lastName1: 'Doe' }]);
+      repository.getAvailablePersonsForReplacement.mockResolvedValue([
+        { id: 10, name: 'John', lastName1: 'Doe' },
+      ]);
 
       const result = await service.getOccupationsAtRisk(1);
       expect(result).toHaveLength(1);
@@ -55,13 +57,20 @@ describe('OccupationCoverageService', () => {
     });
 
     it('should auto-assign top suggestion', async () => {
-      const mockCoverage = { occupationId: 1, occupationName: 'Doctor', isAtRisk: true, deficit: 1 };
+      const mockCoverage = {
+        occupationId: 1,
+        occupationName: 'Doctor',
+        isAtRisk: true,
+        deficit: 1,
+      };
       repository.getOccupationCoverageById.mockResolvedValue(mockCoverage);
       repository.getOccupationCoverageByCamp.mockResolvedValue([
         mockCoverage,
-        { occupationId: 2, occupationName: 'Nurse', surplus: 1 }
+        { occupationId: 2, occupationName: 'Nurse', surplus: 1 },
       ]);
-      repository.getAvailablePersonsForReplacement.mockResolvedValue([{ id: 10, name: 'John', lastName1: 'Doe' }]);
+      repository.getAvailablePersonsForReplacement.mockResolvedValue([
+        { id: 10, name: 'John', lastName1: 'Doe' },
+      ]);
       tempAssignmentService.createAssignment.mockResolvedValue({ id: 99 });
 
       const result = await service.autoAssignReplacement(1, 1, 1);

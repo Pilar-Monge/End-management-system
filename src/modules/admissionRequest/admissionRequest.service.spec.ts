@@ -101,9 +101,9 @@ describe('AdmissionRequestService', () => {
     it('throws when email is already used for the same camp', async () => {
       repository.findByEmailAndCamp.mockResolvedValue({ id: 99 });
 
-      await expect(
-        service.createRequest({ ...BASE_REQUEST, campId: 1 }),
-      ).rejects.toThrow('Ya existe una solicitud con este correo para este campamento');
+      await expect(service.createRequest({ ...BASE_REQUEST, campId: 1 })).rejects.toThrow(
+        'Ya existe una solicitud con este correo para este campamento',
+      );
     });
 
     it('creates request and returns it even when AI fails', async () => {
@@ -209,9 +209,9 @@ describe('AdmissionRequestService', () => {
       repository.findById.mockResolvedValue(BASE_REQUEST);
       repository.findByEmailAndCamp.mockResolvedValue({ id: 555 });
 
-      await expect(
-        service.updateRequest(1, { email: 'other@test.com' }),
-      ).rejects.toThrow('Ya existe otra solicitud con este correo para este campamento');
+      await expect(service.updateRequest(1, { email: 'other@test.com' })).rejects.toThrow(
+        'Ya existe otra solicitud con este correo para este campamento',
+      );
     });
 
     it('updates and returns the request on success', async () => {
@@ -298,9 +298,7 @@ describe('AdmissionRequestService', () => {
   describe('reviewByAdmin', () => {
     it('throws when request not found', async () => {
       repository.findById.mockResolvedValue(null);
-      await expect(service.reviewByAdmin(999, 1, true)).rejects.toThrow(
-        'Solicitud no encontrada',
-      );
+      await expect(service.reviewByAdmin(999, 1, true)).rejects.toThrow('Solicitud no encontrada');
     });
 
     it('throws when request is not PENDING_ADMIN', async () => {

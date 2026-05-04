@@ -53,7 +53,9 @@ describe('TransferController', () => {
     it('should throw if request camp mismatch', async () => {
       const dto = { requestId: 1 } as any;
       dataSource.query.mockResolvedValue([{ id: 1, origin_camp_id: 3, destination_camp_id: 4 }]);
-      await expect(controller.create(dto, mockRequest)).rejects.toThrow('You can only access transfers involving your camp');
+      await expect(controller.create(dto, mockRequest)).rejects.toThrow(
+        'You can only access transfers involving your camp',
+      );
     });
   });
 
@@ -61,7 +63,7 @@ describe('TransferController', () => {
     it('should return a transfer if authorized', async () => {
       dataSource.query.mockResolvedValue([{ origin_camp_id: 1, destination_camp_id: 2 }]);
       service.getTransferById.mockResolvedValue({ id: 10 } as any);
-      
+
       const result = await controller.getById('10', mockRequest);
       expect(result.success).toBe(true);
     });
@@ -71,13 +73,15 @@ describe('TransferController', () => {
     it('should return paginated results', async () => {
       dataSource.query.mockResolvedValue([{ origin_camp_id: 1, destination_camp_id: 2 }]);
       service.getAllTransfers.mockResolvedValue({ data: [], total: 0 });
-      
+
       const result = await controller.getAll('1', undefined, '1', '10', mockRequest);
       expect(result.success).toBe(true);
     });
 
     it('should throw if non-admin does not provide requestId', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, mockRequest)).rejects.toThrow('Non-admin users must provide requestId');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, mockRequest),
+      ).rejects.toThrow('Non-admin users must provide requestId');
     });
   });
 

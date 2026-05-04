@@ -23,7 +23,6 @@ describe('DashboardService', () => {
     service = new DashboardService(repository as never, systemTimeService as never);
   });
 
-
   afterEach(() => {
     jest.useRealTimers();
   });
@@ -112,7 +111,10 @@ describe('DashboardService', () => {
 
   it('builds personal panel from all dashboard sections', async () => {
     const general = { unreadNotifications: 1, totalPersons: 2, pendingAdmissionRequests: 3 };
-    const inventory = { resources: [{ resourceName: 'Water', currentAmount: 7 }], criticalStockCount: 0 };
+    const inventory = {
+      resources: [{ resourceName: 'Water', currentAmount: 7 }],
+      criticalStockCount: 0,
+    };
     const expeditions = {
       PLANNED: 1,
       IN_PROGRESS: 0,

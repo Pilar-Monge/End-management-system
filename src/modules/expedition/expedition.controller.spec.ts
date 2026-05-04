@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, NotFoundException, HttpException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  HttpException,
+} from '@nestjs/common';
 import { ExpeditionController } from './expedition.controller';
 import type { ExpeditionService } from './expedition.service';
 import type { Request } from 'express';
@@ -58,7 +63,9 @@ describe('ExpeditionController', () => {
 
     it('should throw BadRequestException if not admin and camp mismatch', async () => {
       const dto = { campId: 2, name: 'Expe 2' } as any;
-      await expect(controller.create(dto, mockRequest)).rejects.toThrow('You can only create expeditions in your own camp');
+      await expect(controller.create(dto, mockRequest)).rejects.toThrow(
+        'You can only create expeditions in your own camp',
+      );
     });
   });
 
@@ -70,7 +77,9 @@ describe('ExpeditionController', () => {
     });
 
     it('should throw if non-admin queries another camp', async () => {
-      await expect(controller.getActive('2', mockRequest)).rejects.toThrow('You cannot query active expeditions from another camp');
+      await expect(controller.getActive('2', mockRequest)).rejects.toThrow(
+        'You cannot query active expeditions from another camp',
+      );
     });
   });
 
@@ -83,7 +92,9 @@ describe('ExpeditionController', () => {
 
     it('should throw if unauthorized camp access', async () => {
       service.getExpeditionById.mockResolvedValue({ id: 1, campId: 2 } as any);
-      await expect(controller.getById('1', mockRequest)).rejects.toThrow('You do not have permission to view this expedition');
+      await expect(controller.getById('1', mockRequest)).rejects.toThrow(
+        'You do not have permission to view this expedition',
+      );
     });
   });
 
@@ -116,9 +127,13 @@ describe('ExpeditionController', () => {
 
     it('should throw ForbiddenException if service throws specific message', async () => {
       service.getExpeditionById.mockResolvedValue({ id: 1, campId: 1 } as any);
-      service.completeExploration.mockRejectedValue(new Error('Solo los participantes activos pueden completar esta expedicion'));
-      
-      await expect(controller.complete('1', mockRequest as any)).rejects.toThrow(ForbiddenException);
+      service.completeExploration.mockRejectedValue(
+        new Error('Solo los participantes activos pueden completar esta expedicion'),
+      );
+
+      await expect(controller.complete('1', mockRequest as any)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 

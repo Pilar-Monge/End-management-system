@@ -353,7 +353,8 @@ export class ExpeditionController {
   @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
   @ApiOperation({
     summary: 'Force update expedition state based on current time',
-    description: 'Manually trigger state update for an expedition (auto-transition from PLANNED→IN_PROGRESS→DELAYED→LOST)',
+    description:
+      'Manually trigger state update for an expedition (auto-transition from PLANNED→IN_PROGRESS→DELAYED→LOST)',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition state updated' })
@@ -373,9 +374,7 @@ export class ExpeditionController {
       }
 
       if (!this.isSystemAdmin(currentUser.rol) && expedition.campId !== currentUser.campId) {
-        throw new BadRequestException(
-          'You can only update expedition states from your own camp',
-        );
+        throw new BadRequestException('You can only update expedition states from your own camp');
       }
 
       const updated = await this.service.forceUpdateExpeditionState(parsedId);

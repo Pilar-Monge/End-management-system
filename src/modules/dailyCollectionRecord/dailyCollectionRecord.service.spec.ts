@@ -11,7 +11,7 @@ jest.mock('../../common/validation/assert-exists', () => ({
 
 describe('DailyCollectionRecordService', () => {
   let service: DailyCollectionRecordService;
-  
+
   const repository = {
     findPersonById: jest.fn(),
     findUserById: jest.fn(),
@@ -81,22 +81,32 @@ describe('DailyCollectionRecordService', () => {
       repository.findPersonById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.findUserById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.findMovementById.mockResolvedValue(null);
-      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(NotFoundException);
+      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws if movement camp mismatches', async () => {
       repository.findPersonById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.findUserById.mockResolvedValue({ id: 1, campId: 1 } as never);
-      repository.findMovementById.mockResolvedValue({ id: 1, campId: 2, resourceTypeId: 1 } as never);
-      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(BadRequestException);
+      repository.findMovementById.mockResolvedValue({
+        id: 1,
+        campId: 2,
+        resourceTypeId: 1,
+      } as never);
+      await expect(service.createRecord({ ...validDto, movementId: 1 })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws if existing record for same person, resource and date', async () => {
       repository.findPersonById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.findUserById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.findByPersonResourceDay.mockResolvedValue({ id: 1 } as never);
-      
-      await expect(service.createRecord(validDto)).rejects.toThrow('Ya existe un registro de recoleccion diaria');
+
+      await expect(service.createRecord(validDto)).rejects.toThrow(
+        'Ya existe un registro de recoleccion diaria',
+      );
     });
 
     it('creates record and notifies', async () => {
@@ -114,25 +124,33 @@ describe('DailyCollectionRecordService', () => {
   describe('adjustRecord', () => {
     it('returns null if record not found', async () => {
       repository.findById.mockResolvedValue(null);
-      await expect(service.adjustRecord(1, { actualAmount: '10.00', recordedBy: 1 })).resolves.toBeNull();
+      await expect(
+        service.adjustRecord(1, { actualAmount: '10.00', recordedBy: 1 }),
+      ).resolves.toBeNull();
     });
 
     it('throws if user not found', async () => {
       repository.findById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.findUserById.mockResolvedValue(null);
-      await expect(service.adjustRecord(1, { actualAmount: '10.00', recordedBy: 1 })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.adjustRecord(1, { actualAmount: '10.00', recordedBy: 1 }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws if user camp mismatches', async () => {
       repository.findById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.findUserById.mockResolvedValue({ id: 1, campId: 2 } as never);
-      await expect(service.adjustRecord(1, { actualAmount: '10.00', recordedBy: 1 })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.adjustRecord(1, { actualAmount: '10.00', recordedBy: 1 }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws if actualAmount is invalid', async () => {
       repository.findById.mockResolvedValue({ id: 1, campId: 1, actualAmount: '10.00' } as never);
       repository.findUserById.mockResolvedValue({ id: 1, campId: 1 } as never);
-      await expect(service.adjustRecord(1, { actualAmount: '-5.00', recordedBy: 1 })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.adjustRecord(1, { actualAmount: '-5.00', recordedBy: 1 }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('updates without movement if delta is 0', async () => {
@@ -146,17 +164,27 @@ describe('DailyCollectionRecordService', () => {
     });
 
     it('updates and creates movement if delta !== 0', async () => {
-      const existing = { id: 1, campId: 1, resourceTypeId: 1, actualAmount: '10.00', date: new Date('2026-05-01') };
-      repository.findById.mockResolvedValueOnce(existing as never).mockResolvedValueOnce({ ...existing, actualAmount: '15.00', movementId: 99 } as never);
+      const existing = {
+        id: 1,
+        campId: 1,
+        resourceTypeId: 1,
+        actualAmount: '10.00',
+        date: new Date('2026-05-01'),
+      };
+      repository.findById
+        .mockResolvedValueOnce(existing as never)
+        .mockResolvedValueOnce({ ...existing, actualAmount: '15.00', movementId: 99 } as never);
       repository.findUserById.mockResolvedValue({ id: 1, campId: 1 } as never);
       repository.update.mockResolvedValue(existing as never);
       inventoryMovementService.createMovement.mockResolvedValue({ id: 99 } as never);
 
       const result = await service.adjustRecord(1, { actualAmount: '15.00', recordedBy: 1 });
-      expect(inventoryMovementService.createMovement).toHaveBeenCalledWith(expect.objectContaining({
-        amount: '5.00',
-        movementType: 'MANUAL_ADJUSTMENT',
-      }));
+      expect(inventoryMovementService.createMovement).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: '5.00',
+          movementType: 'MANUAL_ADJUSTMENT',
+        }),
+      );
       expect(repository.update).toHaveBeenCalledWith(1, { movementId: 99 });
       expect(result?.movementId).toBe(99);
     });

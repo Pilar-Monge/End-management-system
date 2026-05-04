@@ -199,7 +199,9 @@ describe('AuthService', () => {
     });
 
     it('throws UnauthorizedException when token is malformed', () => {
-      expect(() => service.decodeAndVerifyToken('not.a.valid.token')).toThrow(UnauthorizedException);
+      expect(() => service.decodeAndVerifyToken('not.a.valid.token')).toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('returns payload for a valid token', () => {
@@ -224,11 +226,9 @@ describe('AuthService', () => {
 
   describe('validateSession', () => {
     const validToken = () =>
-      jwt.sign(
-        { userId: 1, campId: 5, rol: 'WORKER', jti: 'x' },
-        process.env.JWT_SECRET!,
-        { expiresIn: '20m' },
-      );
+      jwt.sign({ userId: 1, campId: 5, rol: 'WORKER', jti: 'x' }, process.env.JWT_SECRET!, {
+        expiresIn: '20m',
+      });
 
     it('throws UnauthorizedException when session is not found', async () => {
       authRepository.findActiveSessionByToken.mockResolvedValue(null);
@@ -381,9 +381,9 @@ describe('AuthService', () => {
     it('throws BadRequestException when token is invalid/expired', async () => {
       authRepository.findActivePasswordResetTokenByHash.mockResolvedValue(null);
 
-      await expect(
-        service.resetPassword('bad-token', 'newpassword123', '1.1.1.1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.resetPassword('bad-token', 'newpassword123', '1.1.1.1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws BadRequestException when user not found for reset token', async () => {

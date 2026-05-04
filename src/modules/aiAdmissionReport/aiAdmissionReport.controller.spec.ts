@@ -1,7 +1,4 @@
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 import { AiAdmissionReportController } from './aiAdmissionReport.controller';
 
@@ -41,9 +38,9 @@ describe('AiAdmissionReportController', () => {
   it('create rejects when admission request is not in current camp', async () => {
     service.getAdmissionRequestCampId.mockResolvedValue(null);
 
-    await expect(
-      controller.create({ requestId: 1 } as never, req),
-    ).rejects.toThrow(NotFoundException);
+    await expect(controller.create({ requestId: 1 } as never, req)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('create returns success payload', async () => {
@@ -97,9 +94,7 @@ describe('AiAdmissionReportController', () => {
     service.getAdmissionRequestCampId.mockResolvedValue(4);
     service.getAllReports.mockResolvedValue({ data: [report], total: 7 });
 
-    await expect(
-      controller.getAll('33', 'ACCEPT', '9', '2', '3', req),
-    ).resolves.toEqual({
+    await expect(controller.getAll('33', 'ACCEPT', '9', '2', '3', req)).resolves.toEqual({
       success: true,
       data: [report],
       pagination: {
@@ -124,9 +119,9 @@ describe('AiAdmissionReportController', () => {
     service.getReportCampId.mockResolvedValue(4);
     service.getAdmissionRequestCampId.mockResolvedValue(8);
 
-    await expect(
-      controller.update('20', { requestId: 55 } as never, req),
-    ).rejects.toThrow(NotFoundException);
+    await expect(controller.update('20', { requestId: 55 } as never, req)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('update returns success payload', async () => {

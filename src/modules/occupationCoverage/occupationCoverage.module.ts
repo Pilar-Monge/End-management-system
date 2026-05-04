@@ -9,11 +9,7 @@ import { NotificationModule } from '../notification/notification.module';
 @Module({
   imports: [NotificationModule],
   controllers: [OccupationCoverageController],
-  providers: [
-    OccupationCoverageService,
-    OccupationCoverageRepository,
-    OccupationCoverageScheduler,
-  ],
+  providers: [OccupationCoverageService, OccupationCoverageRepository, OccupationCoverageScheduler],
   exports: [OccupationCoverageService],
 })
 export class OccupationCoverageModule {}
