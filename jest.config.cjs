@@ -11,6 +11,9 @@ module.exports = {
       },
     ],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)',
+  ],
   moduleNameMapper: {
     '^uuid$': '<rootDir>/tests/helpers/uuid-mock.js',
   },
