@@ -148,7 +148,7 @@ export class DecisionTreeRepository {
       id: model.id,
       modelName: model.modelName,
       featureNames: model.featureNames,
-      modelFilePath: (model as any).modelFilePath ?? null,
+      modelFilePath: model.modelFilePath ?? null,
       trainingMetrics: metrics,
       isActive: model.isActive,
       createdAt: model.createdAt,

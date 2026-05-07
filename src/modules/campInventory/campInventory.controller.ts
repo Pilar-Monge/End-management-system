@@ -35,7 +35,7 @@ import { Roles } from '../../common/decorators';
 import { CampInventoryService } from './campInventory.service';
 import type { CreateCampInventoryDTO, UpdateCampInventoryDTO } from './campInventory.model';
 import { CampInventoryEntity } from './campInventory.entity';
-import { CreateCampInventoryDto, UpdateCampInventoryDto } from './dto';
+import { CreateCampInventoryDto } from './dto';
 @Controller('camp-inventory')
 @ApiTags('Camp Inventory')
 export class CampInventoryController {

@@ -14,10 +14,7 @@ import { ExpeditionParticipantRepository } from '../expeditionParticipant/expedi
 import { InventoryAlertEntity } from '../inventoryAlert/inventoryAlert.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
 import { NotificationService } from '../notification/notification.service';
-import { OccupationEntity } from '../occupation/occupation.entity';
 import { PersonEntity } from '../person/person.entity';
-import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
-import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
 import { TemporalAutomationRepository } from './temporalAutomation.repository';
 

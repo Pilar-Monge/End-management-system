@@ -840,7 +840,13 @@ export class AdmissionRequestService {
     if (existing.photoUrl) {
       try {
         await this.storageService.deleteImage(existing.photoUrl);
-      } catch (error) {}
+      } catch (error) {
+        this.logger.warn(
+          `Failed to delete previous image for admission request ${id}: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
+      }
     }
 
     const filePath = await this.storageService.uploadImage(file, 'admission-photos');
@@ -857,7 +863,11 @@ export class AdmissionRequestService {
       try {
         result.photoSignedUrl = await this.storageService.getSignedUrl(request.photoUrl);
       } catch (error) {
-        // If signed URL generation fails, just return without it
+        this.logger.debug(
+          `Failed to generate signed URL for admission request ${request.id}: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
       }
     }
     return result;

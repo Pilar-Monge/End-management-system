@@ -9,6 +9,7 @@ import type {
   OccupationCoverage,
   ReplacementSuggestion,
 } from './occupationCoverage.model';
+import type { AutoAssignmentResult } from './occupationCoverage.service';
 
 @ApiTags('occupationCoverage')
 @ApiBearerAuth()
@@ -68,7 +69,7 @@ export class OccupationCoverageController {
     @Param('campId') campId: string,
     @Param('occupationId') occupationId: string,
     @Req() req: Request,
-  ): Promise<{ success: boolean; message: string; assignedPerson?: any }> {
+  ): Promise<AutoAssignmentResult> {
     try {
       const currentUser = this.getCurrentUser(req);
 

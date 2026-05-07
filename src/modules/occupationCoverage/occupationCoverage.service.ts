@@ -18,15 +18,24 @@ export interface AutoAssignmentResult {
   };
 }
 
+interface TemporaryAssignmentServiceInterface {
+  createAssignment(data: {
+    personId: number;
+    temporaryOccupationId: number;
+    assignedBy: number;
+    reason: string;
+  }): Promise<unknown>;
+}
+
 @Injectable()
 export class OccupationCoverageService {
   constructor(private readonly repository: OccupationCoverageRepository) {}
 
-  setTemporaryAssignmentService(service: any): void {
+  setTemporaryAssignmentService(service: TemporaryAssignmentServiceInterface | null): void {
     this.temporaryAssignmentService = service;
   }
 
-  private temporaryAssignmentService: any;
+  private temporaryAssignmentService: TemporaryAssignmentServiceInterface | null = null;
 
   async getCoverageByCamp(campId: number): Promise<OccupationCoverage[]> {
     return await this.repository.getOccupationCoverageByCamp(campId);
@@ -153,7 +162,7 @@ export class OccupationCoverageService {
     }
 
     try {
-      const assignment = await this.temporaryAssignmentService.createAssignment({
+      await this.temporaryAssignmentService.createAssignment({
         personId: topSuggestion.personId,
         temporaryOccupationId: occupationId,
         assignedBy: assignedByUserId,
