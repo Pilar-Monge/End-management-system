@@ -53,7 +53,5 @@ export class FixAccessLogTriggerSessionUser1776100000000 implements MigrationInt
     `);
   }
 
-  public async down(_queryRunner: QueryRunner): Promise<void> {
-    // No-op: previous function body contained an invalid identifier conflict.
-  }
+  public async down(_queryRunner: QueryRunner): Promise<void> {}
 }
