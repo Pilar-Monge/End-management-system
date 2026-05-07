@@ -7,7 +7,7 @@ describe('TransferHistoryController (API controller unit tests)', () => {
   let controller: TransferHistoryController;
 
   const makeReq = (userId = 1, campId = 10, rol = 'RESOURCE_MANAGEMENT') =>
-    ({ user: { userId, campId, rol } } as any);
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {

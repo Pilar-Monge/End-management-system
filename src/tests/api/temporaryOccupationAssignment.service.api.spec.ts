@@ -107,11 +107,20 @@ describe('TemporaryOccupationAssignmentService (API service unit tests)', () => 
       occupationName: 'Farmer',
     });
     repository.create.mockResolvedValue({ id: 5, personId: 1, temporaryOccupationId: 2 });
-    repository.findPersonById.mockResolvedValue({ id: 1, campId: 1, name: 'Ana', lastName1: 'Lopez' });
+    repository.findPersonById.mockResolvedValue({
+      id: 1,
+      campId: 1,
+      name: 'Ana',
+      lastName1: 'Lopez',
+    });
     repository.findOccupationById.mockResolvedValue({ id: 2, name: 'Cook' });
     repository.findActiveLinkedUserByPersonAndCamp.mockResolvedValue({ id: 9 });
 
-    const res = await service.createAssignment({ personId: 1, temporaryOccupationId: 2, assignedBy: 3 } as any);
+    const res = await service.createAssignment({
+      personId: 1,
+      temporaryOccupationId: 2,
+      assignedBy: 3,
+    } as any);
     expect(res).toEqual({ id: 5, personId: 1, temporaryOccupationId: 2 });
     expect(notificationService.notifyCampRoles).toHaveBeenCalled();
     expect(notificationService.notifyUser).toHaveBeenCalled();
@@ -128,7 +137,12 @@ describe('TemporaryOccupationAssignmentService (API service unit tests)', () => 
     personRepo.exist.mockResolvedValue(true);
     personRepo.findOne.mockResolvedValue({ id: 1, campId: 1 });
     repository.update.mockResolvedValue({ id: 1, personId: 1, temporaryOccupationId: 2 });
-    repository.findPersonById.mockResolvedValue({ id: 1, campId: 1, name: 'Ana', lastName1: 'Lopez' });
+    repository.findPersonById.mockResolvedValue({
+      id: 1,
+      campId: 1,
+      name: 'Ana',
+      lastName1: 'Lopez',
+    });
     repository.findOccupationById.mockResolvedValue({ id: 2, name: 'Cook' });
     repository.findActiveLinkedUserByPersonAndCamp.mockResolvedValue(null);
 
@@ -155,7 +169,12 @@ describe('TemporaryOccupationAssignmentService (API service unit tests)', () => 
   it('deleteAssignment returns true and notifies', async () => {
     repository.findById.mockResolvedValue({ id: 1, personId: 1, temporaryOccupationId: 2 });
     repository.delete.mockResolvedValue(true);
-    repository.findPersonById.mockResolvedValue({ id: 1, campId: 1, name: 'Ana', lastName1: 'Lopez' });
+    repository.findPersonById.mockResolvedValue({
+      id: 1,
+      campId: 1,
+      name: 'Ana',
+      lastName1: 'Lopez',
+    });
     repository.findOccupationById.mockResolvedValue({ id: 2, name: 'Cook' });
     repository.findActiveLinkedUserByPersonAndCamp.mockResolvedValue({ id: 9 });
 

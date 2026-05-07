@@ -17,9 +17,9 @@ describe('assertEntityExists', () => {
     const repo = { exist: jest.fn().mockResolvedValue(false) } as any;
     const dataSource = { getRepository: jest.fn().mockReturnValue(repo) } as any;
 
-    await expect(
-      assertEntityExists(dataSource, 'Entity' as any, 2, 'MyLabel'),
-    ).rejects.toThrow('MyLabel not found');
+    await expect(assertEntityExists(dataSource, 'Entity' as any, 2, 'MyLabel')).rejects.toThrow(
+      'MyLabel not found',
+    );
 
     expect(dataSource.getRepository).toHaveBeenCalledWith('Entity');
     expect(repo.exist).toHaveBeenCalledWith({ where: { id: 2 } });

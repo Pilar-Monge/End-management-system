@@ -7,7 +7,7 @@ describe('TransferPersonController (API controller unit tests)', () => {
   let controller: TransferPersonController;
 
   const makeReq = (userId = 1, campId = 10, rol = 'TRAVEL_MANAGER') =>
-    ({ user: { userId, campId, rol } } as any);
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {
@@ -32,9 +32,9 @@ describe('TransferPersonController (API controller unit tests)', () => {
   });
 
   it('getAll rejects when non-admin omits transferId', async () => {
-    await expect(controller.getAll(undefined, undefined, undefined, undefined, undefined, makeReq())).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.getAll(undefined, undefined, undefined, undefined, undefined, makeReq()),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('getById rejects invalid id', async () => {

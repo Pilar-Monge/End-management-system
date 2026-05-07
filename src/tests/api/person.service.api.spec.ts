@@ -22,15 +22,29 @@ describe('PersonService (API-focused unit tests)', () => {
     };
     personStatusHistoryRepository = { create: jest.fn() };
     notificationService = { notifyCampRoles: jest.fn(), notifyUser: jest.fn() };
-    dataSource = { getRepository: jest.fn().mockReturnValue({ exist: jest.fn().mockResolvedValue(true) }) };
-    storageService = { uploadImage: jest.fn().mockResolvedValue('path'), deleteImage: jest.fn(), getSignedUrl: jest.fn().mockResolvedValue('signed-url') };
+    dataSource = {
+      getRepository: jest.fn().mockReturnValue({ exist: jest.fn().mockResolvedValue(true) }),
+    };
+    storageService = {
+      uploadImage: jest.fn().mockResolvedValue('path'),
+      deleteImage: jest.fn(),
+      getSignedUrl: jest.fn().mockResolvedValue('signed-url'),
+    };
 
-    service = new PersonService(repository, personStatusHistoryRepository, notificationService, dataSource as any, storageService);
+    service = new PersonService(
+      repository,
+      personStatusHistoryRepository,
+      notificationService,
+      dataSource as any,
+      storageService,
+    );
   });
 
   it('createPerson throws when identification exists', async () => {
     repository.findByIdentificationNumber.mockResolvedValue({ id: 1 });
-    await expect(service.createPerson({ identificationNumber: '123', campId: 1 } as any)).rejects.toThrow();
+    await expect(
+      service.createPerson({ identificationNumber: '123', campId: 1 } as any),
+    ).rejects.toThrow();
   });
 
   it('getPersonWithSignedUrl returns null when not found', async () => {

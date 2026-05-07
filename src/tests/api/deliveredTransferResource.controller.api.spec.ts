@@ -7,7 +7,7 @@ describe('DeliveredTransferResourceController (API controller unit tests)', () =
   let controller: DeliveredTransferResourceController;
 
   const makeReq = (userId = 1, campId = 10, rol = 'RESOURCE_MANAGEMENT') =>
-    ({ user: { userId, campId, rol } } as any);
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {
@@ -67,21 +67,30 @@ describe('DeliveredTransferResourceController (API controller unit tests)', () =
   });
 
   it('getAll rejects when non-admin omits transferId', async () => {
-    await expect(controller.getAll(undefined, undefined, undefined, undefined, makeReq())).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.getAll(undefined, undefined, undefined, undefined, makeReq()),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('getAll returns pagination data for admin', async () => {
     service.getAllDeliveredResources.mockResolvedValue({ data: [], total: 0 });
-    const res = await controller.getAll(undefined, undefined, '1', '5', makeReq(1, 10, 'SYSTEM_ADMIN'));
+    const res = await controller.getAll(
+      undefined,
+      undefined,
+      '1',
+      '5',
+      makeReq(1, 10, 'SYSTEM_ADMIN'),
+    );
     expect(res.pagination).toEqual({ page: 1, limit: 5, total: 0, pages: 0 });
   });
 
   it('getAll filters data for non-admin', async () => {
     dataSource.query.mockResolvedValue([{ origin_camp_id: 10, destination_camp_id: 20 }]);
     service.getAllDeliveredResources.mockResolvedValue({
-      data: [{ id: 1, recordedBy: 1 }, { id: 2, recordedBy: 2 }],
+      data: [
+        { id: 1, recordedBy: 1 },
+        { id: 2, recordedBy: 2 },
+      ],
       total: 2,
     });
     const res = await controller.getAll('1', undefined, '1', '5', makeReq());

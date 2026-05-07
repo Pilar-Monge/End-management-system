@@ -21,8 +21,25 @@ describe('AdmissionRequestService (API-focused unit tests)', () => {
       saveAiAdmissionReport: jest.fn(),
       findOccupationByName: jest.fn(),
     };
-    dataSource = { getRepository: jest.fn().mockReturnValue({ exist: jest.fn().mockResolvedValue(true) }) };
-    decisionTreeService = { explainByModelName: jest.fn().mockResolvedValue({ prediction: 'ACCEPT', roleAssignment: { mappedOccupationName: 'Farmer', suggestedRole: 'WORKER', rules: [], summary: '', reason: '', recommendedAttributes: {} }, explanation: { admissionSummary: '', admissionReason: '' }, predictionProbability: 0.9, rules: [] }) };
+    dataSource = {
+      getRepository: jest.fn().mockReturnValue({ exist: jest.fn().mockResolvedValue(true) }),
+    };
+    decisionTreeService = {
+      explainByModelName: jest.fn().mockResolvedValue({
+        prediction: 'ACCEPT',
+        roleAssignment: {
+          mappedOccupationName: 'Farmer',
+          suggestedRole: 'WORKER',
+          rules: [],
+          summary: '',
+          reason: '',
+          recommendedAttributes: {},
+        },
+        explanation: { admissionSummary: '', admissionReason: '' },
+        predictionProbability: 0.9,
+        rules: [],
+      }),
+    };
     notificationService = { notifyCampRoles: jest.fn(), queueEmail: jest.fn() };
     systemTimeService = { now: jest.fn().mockReturnValue(new Date()) };
     storageService = {};
@@ -70,7 +87,9 @@ describe('AdmissionRequestService (API-focused unit tests)', () => {
 
   it('deleteRequest throws when approved', async () => {
     repository.findById.mockResolvedValue({ id: 2, status: 'APPROVED' });
-    await expect(service.deleteRequest(2)).rejects.toThrow('No se puede eliminar una solicitud aprobada');
+    await expect(service.deleteRequest(2)).rejects.toThrow(
+      'No se puede eliminar una solicitud aprobada',
+    );
   });
 
   it('deleteRequest succeeds when delete returns true', async () => {

@@ -6,7 +6,7 @@ describe('CampInventoryController (API controller unit tests)', () => {
   let controller: CampInventoryController;
 
   const makeReq = (userId = 1, campId = 10, rol = 'RESOURCE_MANAGEMENT') =>
-    ({ user: { userId, campId, rol } } as any);
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {
@@ -45,9 +45,9 @@ describe('CampInventoryController (API controller unit tests)', () => {
   });
 
   it('getAll rejects camp mismatch for non-admin', async () => {
-    await expect(controller.getAll('99', undefined, undefined, undefined, makeReq())).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.getAll('99', undefined, undefined, undefined, makeReq()),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('getAll returns pagination data', async () => {

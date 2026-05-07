@@ -38,15 +38,14 @@ describe('CampInventoryService (API service unit tests)', () => {
     // But since we are mocking dataSource.getRepository, it should work if assertEntityExists uses it.
     // Wait, assertEntityExists uses dataSource directly.
     // Let's assume it works for now or adjust mock if needed.
-    
     // repository.findByKey will be called after validation.
     // But validation will fail first.
-    // Since we can't easily mock the internal assertEntityExists call which is imported, 
+    // Since we can't easily mock the internal assertEntityExists call which is imported,
     // we have to rely on how it's implemented.
   });
 
   // I will rewrite the tests to match the service methods and expected behavior
-  
+
   it('createItem creates new item', async () => {
     const dto = { campId: 1, resourceTypeId: 1, currentAmount: '10.00' };
     repository.findByKey.mockResolvedValue(null);
@@ -60,12 +59,18 @@ describe('CampInventoryService (API service unit tests)', () => {
   it('createItem throws if already exists', async () => {
     const dto = { campId: 1, resourceTypeId: 1 };
     repository.findByKey.mockResolvedValue({ campId: 1, resourceTypeId: 1 });
-    
-    await expect(service.createItem(dto as any)).rejects.toThrow('Este elemento de inventario del campamento ya existe');
+
+    await expect(service.createItem(dto as any)).rejects.toThrow(
+      'Este elemento de inventario del campamento ya existe',
+    );
   });
 
   it('getItem returns item', async () => {
-    repository.findByKey.mockResolvedValue({ campId: 1, resourceTypeId: 1, currentAmount: '20.00' });
+    repository.findByKey.mockResolvedValue({
+      campId: 1,
+      resourceTypeId: 1,
+      currentAmount: '20.00',
+    });
 
     const res = await service.getItem(1, 1);
     expect(res).toEqual({ campId: 1, resourceTypeId: 1, currentAmount: '20.00' });
@@ -80,7 +85,10 @@ describe('CampInventoryService (API service unit tests)', () => {
 
   it('getAllItems returns all items', async () => {
     repository.findAllAndCount.mockResolvedValue({
-      data: [{ campId: 1, resourceTypeId: 1 }, { campId: 1, resourceTypeId: 2 }],
+      data: [
+        { campId: 1, resourceTypeId: 1 },
+        { campId: 1, resourceTypeId: 2 },
+      ],
       total: 2,
     });
 

@@ -5,7 +5,7 @@ describe('OccupationCoverageController (API controller unit tests)', () => {
   let service: any;
   let controller: OccupationCoverageController;
 
-  const makeReq = (userId = 1) => ({ user: { userId } } as any);
+  const makeReq = (userId = 1) => ({ user: { userId } }) as any;
 
   beforeEach(() => {
     service = {

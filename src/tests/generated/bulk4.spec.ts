@@ -19,13 +19,13 @@ describe('generated bulk4 - objects', () => {
   it('merge prefers second object keys', () => {
     const a = { x: 1, y: 2 };
     const b = { y: 3, z: 4 };
-    const m = merge(a,b);
-    expect(m).toEqual({ x:1, y:3, z:4 });
+    const m = merge(a, b);
+    expect(m).toEqual({ x: 1, y: 3, z: 4 });
   });
 
   it('bulk object modifications are isolated', () => {
-    const base = { i:0 };
-    for (let k=0;k<100;k++) {
+    const base = { i: 0 };
+    for (let k = 0; k < 100; k++) {
       const copy = deepClone(base);
       copy.i = k;
       expect(base.i).toBe(0);

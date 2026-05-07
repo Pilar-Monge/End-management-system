@@ -5,8 +5,7 @@ describe('DecisionTreeController (API controller unit tests)', () => {
   let service: any;
   let controller: DecisionTreeController;
 
-  const makeReq = (campId = 10) =>
-    ({ user: { userId: 1, campId, rol: 'SYSTEM_ADMIN' } } as any);
+  const makeReq = (campId = 10) => ({ user: { userId: 1, campId, rol: 'SYSTEM_ADMIN' } }) as any;
 
   beforeEach(() => {
     service = {

@@ -21,9 +21,9 @@ describe('generated bulk5 - utils', () => {
   });
 
   it('bulk email validation loop', () => {
-    const good = ['u1@d.com','x@y.io','hello.world@company.co'];
-    good.forEach(g=>expect(validateEmail(g)).toBe(true));
-    const bad = ['','@','noatsign.com','a@b@c.com'];
-    bad.forEach(b=>expect(validateEmail(b)).toBe(false));
+    const good = ['u1@d.com', 'x@y.io', 'hello.world@company.co'];
+    good.forEach((g) => expect(validateEmail(g)).toBe(true));
+    const bad = ['', '@', 'noatsign.com', 'a@b@c.com'];
+    bad.forEach((b) => expect(validateEmail(b)).toBe(false));
   });
 });
