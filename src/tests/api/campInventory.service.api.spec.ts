@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { CampInventoryService } from '../../modules/campInventory/campInventory.service';
 import { CampEntity } from '../../modules/camp/camp.entity';
 import { ResourceTypeEntity } from '../../modules/resourceType/resourceType.entity';
@@ -18,42 +17,47 @@ describe('CampInventoryService (API service unit tests)', () => {
       findAllAndCount: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      findById: jest.fn(),
     };
     campRepo = { exist: jest.fn().mockResolvedValue(true) };
     resourceTypeRepo = { exist: jest.fn().mockResolvedValue(true) };
-    notificationService = { notifyCampRoles: jest.fn() };
+    notificationService = { 
+      notifyCampRoles: jest.fn().mockResolvedValue(undefined),
+    };
     dataSource = {
       getRepository: jest.fn((entity) => {
         if (entity === CampEntity) return campRepo;
         if (entity === ResourceTypeEntity) return resourceTypeRepo;
-        return { exist: jest.fn() };
+        return { exist: jest.fn().mockResolvedValue(true) };
       }),
     };
 
     service = new CampInventoryService(repository, dataSource as any, notificationService);
   });
 
-  it('createItem throws when camp not found', async () => {
-    // In current implementation, assertEntityExists is used, which we might need to mock or ensure it works with dataSource mock
-    // But since we are mocking dataSource.getRepository, it should work if assertEntityExists uses it.
-    // Wait, assertEntityExists uses dataSource directly.
-    // Let's assume it works for now or adjust mock if needed.
-    // repository.findByKey will be called after validation.
-    // But validation will fail first.
-    // Since we can't easily mock the internal assertEntityExists call which is imported,
-    // we have to rely on how it's implemented.
-  });
-
-  // I will rewrite the tests to match the service methods and expected behavior
-
-  it('createItem creates new item', async () => {
-    const dto = { campId: 1, resourceTypeId: 1, currentAmount: '10.00' };
+  it('createItem creates new item when valid', async () => {
+    const dto = { campId: 1, resourceTypeId: 1, currentAmount: '10.00', minimumAlertAmount: '5.00' };
+    const created = { id: 1, ...dto };
     repository.findByKey.mockResolvedValue(null);
-    repository.create.mockResolvedValue(dto);
+    repository.create.mockResolvedValue(created);
 
     const res = await service.createItem(dto as any);
-    expect(res).toEqual(dto);
+    expect(res).toEqual(created);
     expect(notificationService.notifyCampRoles).toHaveBeenCalled();
+  });
+
+  it('createItem throws when camp not found', async () => {
+    const dto = { campId: 999, resourceTypeId: 1, currentAmount: '10.00', minimumAlertAmount: '5.00' };
+    campRepo.exist.mockResolvedValue(false);
+
+    await expect(service.createItem(dto as any)).rejects.toThrow();
+  });
+
+  it('createItem throws when resource type not found', async () => {
+    const dto = { campId: 1, resourceTypeId: 999, currentAmount: '10.00', minimumAlertAmount: '5.00' };
+    resourceTypeRepo.exist.mockResolvedValue(false);
+
+    await expect(service.createItem(dto as any)).rejects.toThrow();
   });
 
   it('createItem throws if already exists', async () => {
