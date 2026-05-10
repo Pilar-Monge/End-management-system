@@ -441,4 +441,104 @@ describe('NotificationService', () => {
       expect(repository.findActiveUsersByCampAndRoles).toHaveBeenCalledWith(1, ['SYSTEM_ADMIN']);
     });
   });
+  // ─── queueEmail Enrichment ──────────────────────────────────────────────
+
+  describe('queueEmail Enrichment', () => {
+    it('enriches payload with camp names', async () => {
+      emailOutboxService.enqueue.mockResolvedValue(undefined);
+      const campRepo = {
+        findOne: jest.fn().mockImplementation(({ where }) => {
+          if (where.id === 1) return { name: 'Camp Alpha' };
+          if (where.id === 2) return { name: 'Camp Beta' };
+          return null;
+        }),
+      };
+      dataSource.getRepository.mockReturnValue(campRepo);
+
+      const payload = {
+        campId: 1,
+        originCampId: '2',
+        destinationCampId: 3, // Not found
+        other: 'value',
+        nested: {
+          campId: 1,
+        },
+        list: [{ campId: 2 }],
+      };
+
+      await service.queueEmail({ toEmail: 'u@test.com', subject: 'T', payload });
+
+      expect(emailOutboxService.enqueue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            campName: 'Camp Alpha',
+            originCampName: 'Camp Beta',
+            destinationCampId: 3,
+            other: 'value',
+            nested: expect.objectContaining({ campName: 'Camp Alpha' }),
+            list: [expect.objectContaining({ campName: 'Camp Beta' })],
+          }),
+        }),
+      );
+    });
+
+    it('enriches changedFields in payload', async () => {
+      emailOutboxService.enqueue.mockResolvedValue(undefined);
+      const campRepo = {
+        findOne: jest.fn().mockImplementation(({ where }) => {
+          if (where.id === 1) return { name: 'Old Camp' };
+          if (where.id === 2) return { name: 'New Camp' };
+          return null;
+        }),
+      };
+      dataSource.getRepository.mockReturnValue(campRepo);
+
+      const payload = {
+        changedFields: [
+          { field: 'campId', previous: 1, current: 2 },
+          { field: 'other', previous: 'A', current: 'B' },
+          { field: 'originCampId', previous: 1 },
+        ],
+      };
+
+      await service.queueEmail({ toEmail: 'u@test.com', subject: 'T', payload });
+
+      const enqueuedPayload = emailOutboxService.enqueue.mock.calls[0][0].payload;
+      expect(enqueuedPayload.changedFields[0]).toMatchObject({
+        field: 'campName',
+        previous: 'Old Camp',
+        current: 'New Camp',
+      });
+      expect(enqueuedPayload.changedFields[1]).toMatchObject({
+        field: 'other',
+        previous: 'A',
+      });
+      expect(enqueuedPayload.changedFields[2]).toMatchObject({
+        field: 'originCampName',
+        previous: 'Old Camp',
+      });
+    });
+
+    it('handles various normalized camp IDs', async () => {
+      emailOutboxService.enqueue.mockResolvedValue(undefined);
+      const campRepo = {
+        findOne: jest.fn().mockResolvedValue({ name: 'Test Camp' }),
+      };
+      dataSource.getRepository.mockReturnValue(campRepo);
+
+      await service.queueEmail({
+        toEmail: 'u@test.com',
+        subject: 'T',
+        payload: { campId: ' 123 ' },
+      });
+      expect(campRepo.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 123 } }));
+
+      await service.queueEmail({
+        toEmail: 'u@test.com',
+        subject: 'T',
+        payload: { campId: NaN },
+      });
+      // Should not call findOne for invalid ID
+    });
+  });
 });

@@ -238,6 +238,10 @@ export class PersonStatusHistoryController {
 
       return { success: true, message: 'Person status history entry deleted successfully' };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error deleting person status history entry',
       );
