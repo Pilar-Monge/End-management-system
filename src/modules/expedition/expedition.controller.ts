@@ -44,7 +44,7 @@ import type {
 import { ExpeditionEntity } from './expedition.entity';
 
 import { CreateExpeditionDto, UpdateExpeditionDto } from './dto';
-@Controller(['expeditions', 'explorations'])
+@Controller('expeditions')
 @ApiTags('Expedition')
 export class ExpeditionController {
   constructor(private readonly service: ExpeditionService) {}
@@ -103,8 +103,8 @@ export class ExpeditionController {
 
   @Get('active')
   @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
-  @ApiOperation({ summary: 'List active explorations' })
-  @ApiOkResponseList(ExpeditionEntity, { description: 'Active explorations' })
+  @ApiOperation({ summary: 'List active expeditions' })
+  @ApiOkResponseList(ExpeditionEntity, { description: 'Active expeditions' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async getActive(@Query('campId') campId?: string, @Req() req?: Request) {
@@ -299,9 +299,9 @@ export class ExpeditionController {
 
   @Post(':id/complete')
   @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
-  @ApiOperation({ summary: 'Complete exploration' })
+  @ApiOperation({ summary: 'Complete expedition' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
-  @ApiOkResponseData(ExpeditionEntity, { description: 'Exploration completed' })
+  @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition completed' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async complete(@Param('id') id: string, @Req() req: Request & { user?: { userId?: number } }) {
@@ -329,7 +329,7 @@ export class ExpeditionController {
       return {
         success: true,
         data: completed,
-        message: 'Exploration completed successfully',
+        message: 'Expedition completed successfully',
       };
     } catch (error) {
       if (error instanceof HttpException) {
