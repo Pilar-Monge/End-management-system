@@ -250,6 +250,9 @@ test.describe.serial('Admission Email Flow E2E', () => {
       data: {
         adminUserId,
         approved: true,
+        finalOccupationId:
+          reqData?.finalOccupationId ?? reqData?.suggestedOccupationId ?? suggestedOccupationId ?? 1,
+        finalRole: 'RESOURCE_MANAGEMENT',
       },
     });
 

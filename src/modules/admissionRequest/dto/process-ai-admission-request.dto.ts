@@ -12,7 +12,11 @@ export class ProcessAiAdmissionRequestDto {
   @Min(1)
   oficioSugeridoId!: number;
 
-  @ApiProperty({ enum: AI_DECISION_VALUES, example: 'ACCEPT' })
+  @ApiProperty({
+    enum: AI_DECISION_VALUES,
+    example: 'ACCEPT',
+    description: 'AI recommendation only; final approval or rejection is made by an admin',
+  })
   @IsIn(AI_DECISION_VALUES)
   decision!: AiDecision;
 }

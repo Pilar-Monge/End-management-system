@@ -121,6 +121,11 @@ describe('AdmissionRequestService', () => {
       repository.findByEmailAndCamp.mockResolvedValue(null);
       repository.create.mockResolvedValue(BASE_REQUEST);
       repository.findOccupationByName.mockResolvedValue({ id: 5 });
+      repository.update.mockResolvedValue({
+        ...BASE_REQUEST,
+        status: 'PENDING_ADMIN',
+        suggestedOccupationId: 5,
+      });
       decisionTreeService.explainByModelName.mockResolvedValue({
         prediction: 'ACCEPT',
         rules: ['age > 18'],
@@ -143,6 +148,10 @@ describe('AdmissionRequestService', () => {
       await service.createRequest({ ...BASE_REQUEST });
 
       expect(repository.saveAiAdmissionReport).toHaveBeenCalledTimes(1);
+      expect(repository.update).toHaveBeenCalledWith(
+        BASE_REQUEST.id,
+        expect.objectContaining({ status: 'PENDING_ADMIN', suggestedOccupationId: 5 }),
+      );
     });
   });
 
@@ -283,13 +292,17 @@ describe('AdmissionRequestService', () => {
       );
     });
 
-    it('updates to REJECTED when REJECT decision', async () => {
+    it('keeps request pending admin when AI recommendation is REJECT', async () => {
       repository.findById.mockResolvedValue({ ...BASE_REQUEST, status: 'PENDING_AI' });
-      repository.update.mockResolvedValue({ ...BASE_REQUEST, status: 'REJECTED' });
+      repository.update.mockResolvedValue({ ...BASE_REQUEST, status: 'PENDING_ADMIN' });
 
       const result = await service.processWithAI(1, 10, 'REJECT');
 
-      expect(result.status).toBe('REJECTED');
+      expect(result.status).toBe('PENDING_ADMIN');
+      expect(repository.update).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ status: 'PENDING_ADMIN', suggestedOccupationId: 10 }),
+      );
     });
   });
 
@@ -312,13 +325,13 @@ describe('AdmissionRequestService', () => {
       repository.findById.mockResolvedValue({
         ...BASE_REQUEST,
         status: 'PENDING_ADMIN',
-        suggestedOccupationId: null,
+        suggestedOccupationId: 10,
         finalOccupationId: null,
       });
       repository.findApprovedByEmailExcludingId.mockResolvedValue(null);
 
       await expect(service.reviewByAdmin(1, 1, true)).rejects.toThrow(
-        'No se puede aprobar la solicitud sin un oficio asignado',
+        'No se puede aprobar la solicitud sin un oficio final seleccionado por el administrador',
       );
     });
 
@@ -326,8 +339,17 @@ describe('AdmissionRequestService', () => {
       repository.findById.mockResolvedValue({ ...BASE_REQUEST, status: 'PENDING_ADMIN' });
       repository.findApprovedByEmailExcludingId.mockResolvedValue({ id: 42 });
 
-      await expect(service.reviewByAdmin(1, 1, true)).rejects.toThrow(
+      await expect(service.reviewByAdmin(1, 1, true, 10, 'RESOURCE_MANAGEMENT')).rejects.toThrow(
         'Esta persona ya fue aprobada en otro campamento',
+      );
+    });
+
+    it('throws when approving but no role assigned', async () => {
+      repository.findById.mockResolvedValue({ ...BASE_REQUEST, status: 'PENDING_ADMIN' });
+      repository.findApprovedByEmailExcludingId.mockResolvedValue(null);
+
+      await expect(service.reviewByAdmin(1, 1, true, 10)).rejects.toThrow(
+        'No se puede aprobar la solicitud sin un rol final seleccionado por el administrador',
       );
     });
 
@@ -335,7 +357,7 @@ describe('AdmissionRequestService', () => {
       repository.findById.mockResolvedValue({ ...BASE_REQUEST, status: 'PENDING_ADMIN' });
       repository.update.mockResolvedValue({ ...BASE_REQUEST, status: 'REJECTED' });
 
-      const result = await service.reviewByAdmin(1, 5, false, 'Not qualified');
+      const result = await service.reviewByAdmin(1, 5, false, undefined, undefined, 'Not qualified');
 
       expect(result.status).toBe('REJECTED');
       expect(repository.update).toHaveBeenCalledWith(

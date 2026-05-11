@@ -390,7 +390,11 @@ export class AdmissionRequestController {
 
   @Post(':id/process-ai')
   @Roles('SYSTEM_ADMIN')
-  @ApiOperation({ summary: 'Process an admission request with AI' })
+  @ApiOperation({
+    summary: 'Apply AI recommendation to an admission request',
+    description:
+      'Records the AI recommendation and moves the request to administrative review. The final approval or rejection is always made by an admin.',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request processed by AI' })
@@ -414,7 +418,11 @@ export class AdmissionRequestController {
       }
 
       const request = await this.service.processWithAI(parsedId, oficioSugeridoId, decision);
-      return { success: true, data: request, message: `Request processed by AI: ${decision}` };
+      return {
+        success: true,
+        data: request,
+        message: `AI recommendation recorded: ${decision}. Request pending admin review.`,
+      };
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error processing with AI',
@@ -439,7 +447,7 @@ export class AdmissionRequestController {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-    const { adminUserId, approved, rejectionReason } = body;
+    const { adminUserId, approved, finalOccupationId, finalRole, rejectionReason } = body;
     try {
       const currentUser = this.getCurrentUser(req);
       if (currentUser.userId !== adminUserId) {
@@ -455,6 +463,8 @@ export class AdmissionRequestController {
         parsedId,
         adminUserId,
         approved,
+        finalOccupationId,
+        finalRole,
         rejectionReason,
       );
       return {

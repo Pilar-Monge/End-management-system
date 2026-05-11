@@ -129,6 +129,11 @@ describe('AdmissionRequestService (API-focused unit tests)', () => {
     repository.findByEmailAndCamp.mockResolvedValue(null);
     repository.create.mockResolvedValue(createdRequest);
     repository.findOccupationByName.mockResolvedValue({ id: 7, name: 'Farmer' });
+    repository.update.mockResolvedValue({
+      ...createdRequest,
+      status: 'PENDING_ADMIN',
+      suggestedOccupationId: 7,
+    });
 
     const result = await service.createRequest({
       campId: 1,
@@ -144,10 +149,18 @@ describe('AdmissionRequestService (API-focused unit tests)', () => {
       declaredSkills: 'helpful',
     } as any);
 
-    expect(result).toEqual(createdRequest);
+    expect(result).toEqual({
+      ...createdRequest,
+      status: 'PENDING_ADMIN',
+      suggestedOccupationId: 7,
+    });
     expect(repository.create).toHaveBeenCalledTimes(1);
     expect(decisionTreeService.explainByModelName).toHaveBeenCalledTimes(1);
     expect(repository.saveAiAdmissionReport).toHaveBeenCalledTimes(1);
+    expect(repository.update).toHaveBeenCalledWith(
+      createdRequest.id,
+      expect.objectContaining({ status: 'PENDING_ADMIN', suggestedOccupationId: 7 }),
+    );
     expect(notificationService.notifyCampRoles).toHaveBeenCalled();
     expect(notificationService.queueEmail).toHaveBeenCalled();
   });
@@ -258,7 +271,7 @@ describe('AdmissionRequestService (API-focused unit tests)', () => {
       finalOccupationId: 7,
     });
 
-    const result = await service.reviewByAdmin(20, 99, true);
+    const result = await service.reviewByAdmin(20, 99, true, 7, 'WORKER');
 
     expect(result.status).toBe('APPROVED');
     expect(repository.update).toHaveBeenCalledWith(
@@ -294,7 +307,7 @@ describe('AdmissionRequestService (API-focused unit tests)', () => {
       rejectionReason: 'No cumple',
     });
 
-    const result = await service.reviewByAdmin(21, 99, false, 'No cumple');
+    const result = await service.reviewByAdmin(21, 99, false, undefined, undefined, 'No cumple');
 
     expect(result.status).toBe('REJECTED');
     expect(repository.update).toHaveBeenCalledWith(

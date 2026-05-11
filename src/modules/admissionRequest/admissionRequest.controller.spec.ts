@@ -160,7 +160,7 @@ describe('AdmissionRequestController', () => {
     ).resolves.toEqual({
       success: true,
       data: { id: 1, status: 'PENDING_ADMIN' },
-      message: 'Request processed by AI: ACCEPT',
+      message: 'AI recommendation recorded: ACCEPT. Request pending admin review.',
     });
   });
 
@@ -176,7 +176,7 @@ describe('AdmissionRequestController', () => {
 
     const res = await controller.reviewByAdmin(
       '1',
-      { adminUserId: 100, approved: true } as any,
+      { adminUserId: 100, approved: true, finalOccupationId: 10, finalRole: 'TRAVEL_MANAGER' } as any,
       req,
     );
     expect(res.success).toBe(true);
