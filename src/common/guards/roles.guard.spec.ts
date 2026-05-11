@@ -35,19 +35,32 @@ describe('RolesGuard', () => {
   it('throws when route has no roles metadata and is not public', () => {
     (reflector.getAllAndOverride as jest.Mock)
       .mockReturnValueOnce(false) // isPublic = false
+      .mockReturnValueOnce(false) // authenticatedOnly = false
       .mockReturnValueOnce(undefined); // roles = undefined
 
     expect(() => guard.canActivate(makeContext('SYSTEM_ADMIN'))).toThrow(ForbiddenException);
   });
 
   it('throws when roles is empty array', () => {
-    (reflector.getAllAndOverride as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce([]);
+    (reflector.getAllAndOverride as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce([]);
 
     expect(() => guard.canActivate(makeContext('SYSTEM_ADMIN'))).toThrow(ForbiddenException);
   });
 
+  it('allows authenticated-only routes without role metadata', () => {
+    (reflector.getAllAndOverride as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+
+    expect(guard.canActivate(makeContext('VISITOR'))).toBe(true);
+  });
+
   it('throws when user role is missing', () => {
     (reflector.getAllAndOverride as jest.Mock)
+      .mockReturnValueOnce(false)
       .mockReturnValueOnce(false)
       .mockReturnValueOnce(['SYSTEM_ADMIN']);
 
@@ -57,6 +70,7 @@ describe('RolesGuard', () => {
   it('throws when user role is not allowed', () => {
     (reflector.getAllAndOverride as jest.Mock)
       .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
       .mockReturnValueOnce(['SYSTEM_ADMIN']);
 
     expect(() => guard.canActivate(makeContext('WORKER'))).toThrow(ForbiddenException);
@@ -64,6 +78,7 @@ describe('RolesGuard', () => {
 
   it('allows when user role is included in allowed roles', () => {
     (reflector.getAllAndOverride as jest.Mock)
+      .mockReturnValueOnce(false)
       .mockReturnValueOnce(false)
       .mockReturnValueOnce(['SYSTEM_ADMIN', 'WORKER']);
 

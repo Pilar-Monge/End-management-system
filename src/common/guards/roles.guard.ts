@@ -16,6 +16,15 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
+    const isAuthenticatedOnly = this.reflector.getAllAndOverride<boolean>('authenticatedOnly', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isAuthenticatedOnly) {
+      return true;
+    }
+
     const roles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
       context.getClass(),
