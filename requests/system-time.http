@@ -1,0 +1,84 @@
+### System Time - Get Current Time
+GET http://localhost:3000/system/time
+Content-Type: application/json
+
+###
+
+### System Time - Get Offset (Admin Only)
+GET http://localhost:3000/system/time/offset
+Authorization: Bearer YOUR_ADMIN_TOKEN
+Content-Type: application/json
+
+###
+
+### System Time - Advance by 1 Hour (Admin Only)
+POST http://localhost:3000/system/time/advance
+Authorization: Bearer YOUR_ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "unit": "hours",
+  "amount": 1
+}
+
+###
+
+### System Time - Advance by 30 Minutes (Admin Only)
+POST http://localhost:3000/system/time/advance
+Authorization: Bearer YOUR_ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "unit": "minutes",
+  "amount": 30
+}
+
+###
+
+### System Time - Advance by 2.5 Hours (Admin Only)
+POST http://localhost:3000/system/time/advance
+Authorization: Bearer YOUR_ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "unit": "hours",
+  "amount": 2.5
+}
+
+###
+
+### System Time - Advance by 45 Minutes (Admin Only)
+POST http://localhost:3000/system/time/advance
+Authorization: Bearer YOUR_ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "unit": "minutes",
+  "amount": 45
+}
+
+###
+
+### System Time - Invalid Request (should fail - unit must be hours or minutes)
+POST http://localhost:3000/system/time/advance
+Authorization: Bearer YOUR_ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "unit": "days",
+  "amount": 1
+}
+
+###
+
+### System Time - Invalid Request (should fail - amount must be positive)
+POST http://localhost:3000/system/time/advance
+Authorization: Bearer YOUR_ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "unit": "hours",
+  "amount": -1
+}
+
+###
