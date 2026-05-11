@@ -3,15 +3,40 @@ import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppDataSource } from './data-source';
 import { runSeeder } from './seeds/seeder';
 import { DecisionTreeService } from './modules/decisionTree/decisionTree.service';
+
+const DEFAULT_CORS_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+] as const;
+
+function resolveCorsOrigins(): string[] {
+  const configuredOrigins = process.env.CORS_ORIGIN ?? process.env.CORS_ORIGINS;
+  if (!configuredOrigins?.trim()) {
+    return [...DEFAULT_CORS_ORIGINS];
+  }
+
+  return configuredOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+}
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  app.use(helmet());
+
   app.enableCors({
+    origin: resolveCorsOrigins(),
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Authorization'],
   });
 
