@@ -7,6 +7,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
 import { AuthenticatedOnly, Public, RefreshSession } from '../common/decorators';
@@ -20,6 +21,7 @@ export class AuthController {
   constructor(private readonly service: AuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @ApiOperation({
     summary: 'Login and create a session',
@@ -89,6 +91,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   @ApiOperation({
     summary: 'Request password reset',
@@ -108,6 +111,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
   @ApiOperation({
     summary: 'Reset password',
