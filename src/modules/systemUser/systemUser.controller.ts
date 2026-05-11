@@ -119,6 +119,26 @@ export class UserController {
     return { success: true, data: user };
   }
 
+  @Get('users/username/:username')
+  @Roles('SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Get user by username' })
+  @ApiParam({ name: 'username', type: String })
+  @ApiOkResponseData(SystemUserResponseDto)
+  @ApiBadRequestResponse()
+  @ApiNotFoundResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async findByUsername(@Param('username') username: string, @Req() req: Request) {
+    if (!username) throw new BadRequestException('username not provided');
+    const currentUser = this.getCurrentUser(req);
+    const user = await this.service.findUserByUsername(username, currentUser.campId);
+    if (!user) throw new NotFoundException('User not found');
+    if (user.campId !== currentUser.campId) throw new NotFoundException('User not found');
+
+    const { passwordHash, ...userResp } = user as any;
+    return { success: true, data: userResp };
+  }
+
   @Put('users/:id')
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update user' })
