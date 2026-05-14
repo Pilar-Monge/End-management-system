@@ -93,7 +93,7 @@ export class CampController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Camp by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Camp id' })
   @ApiOkResponseData(CampEntity, { description: 'Camp found' })
@@ -118,7 +118,7 @@ export class CampController {
     return { success: true, data: camp };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Camp' })
   @ApiOkResponseList(CampEntity, { description: 'Camp list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })

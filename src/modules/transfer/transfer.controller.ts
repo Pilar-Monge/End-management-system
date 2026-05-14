@@ -139,7 +139,7 @@ export class TransferController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Transfer by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
   @ApiOkResponseData(TransferEntity, { description: 'Transfer found' })
@@ -164,7 +164,7 @@ export class TransferController {
     return { success: true, data: transfer };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Transfer' })
   @ApiOkResponseList(TransferEntity, { description: 'Transfer list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })

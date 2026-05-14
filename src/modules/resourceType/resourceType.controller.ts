@@ -46,7 +46,7 @@ import { CreateResourceTypeDto, UpdateResourceTypeDto } from './dto';
 export class ResourceTypeController {
   constructor(private readonly service: ResourceTypeService) {}
   @Post()
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Resource Type' })
   @ApiBody({ type: CreateResourceTypeDto })
   @ApiCreatedResponseData(ResourceTypeEntity, { description: 'Resource Type created' })
@@ -59,7 +59,7 @@ export class ResourceTypeController {
     );
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Resource Type by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
   @ApiOkResponseData(ResourceTypeEntity, { description: 'Resource Type found' })
@@ -79,7 +79,7 @@ export class ResourceTypeController {
     return { success: true, data: resourceType };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Resource Type' })
   @ApiOkResponseList(ResourceTypeEntity, { description: 'Resource Type list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -145,7 +145,7 @@ export class ResourceTypeController {
     }
   }
   @Put(':id')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Update Resource Type' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
   @ApiBody({ type: UpdateResourceTypeDto })
@@ -160,7 +160,7 @@ export class ResourceTypeController {
     );
   }
   @Delete(':id')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Delete Resource Type' })
   @ApiParam({ name: 'id', type: Number, description: 'Resource Type id' })
   @ApiOkResponseMessage({ description: 'Resource Type deleted' })

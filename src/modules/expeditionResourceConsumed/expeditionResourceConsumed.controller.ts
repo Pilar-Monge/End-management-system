@@ -44,7 +44,7 @@ import { ExpeditionResourceConsumedEntity } from './expeditionResourceConsumed.e
 import { CreateExpeditionResourceConsumedDto, UpdateExpeditionResourceConsumedDto } from './dto';
 @Controller('expedition-resources-consumed')
 @ApiTags('Expedition Resource Consumed')
-@Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+@Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')
 export class ExpeditionResourceConsumedController {
   constructor(private readonly service: ExpeditionResourceConsumedService) {}
 

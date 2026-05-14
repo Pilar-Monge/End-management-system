@@ -66,7 +66,7 @@ export class CampInventoryController {
     return rol === 'SYSTEM_ADMIN';
   }
   @Post()
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Camp Inventory' })
   @ApiBody({ type: CreateCampInventoryDto })
   @ApiCreatedResponseData(CampInventoryEntity, { description: 'Camp Inventory created' })
@@ -78,7 +78,7 @@ export class CampInventoryController {
   }
 
   @Get(':campId/:resourceTypeId')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Camp Inventory by campId and resourceTypeId' })
   @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
   @ApiParam({ name: 'resourceTypeId', type: Number, description: 'Resource Type id' })
@@ -110,7 +110,7 @@ export class CampInventoryController {
     return { success: true, data: item };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Camp Inventory' })
   @ApiOkResponseList(CampInventoryEntity, { description: 'Camp Inventory list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -243,7 +243,7 @@ export class CampInventoryController {
   }
 
   @Delete(':campId/:resourceTypeId')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Camp Inventory' })
   @ApiParam({ name: 'campId', type: Number, description: 'Camp id' })
   @ApiParam({ name: 'resourceTypeId', type: Number, description: 'Resource Type id' })

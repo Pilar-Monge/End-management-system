@@ -147,7 +147,7 @@ export class TransferHistoryController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Transfer History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History found' })
@@ -178,7 +178,7 @@ export class TransferHistoryController {
     return { success: true, data: entry };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Transfer History' })
   @ApiOkResponseList(TransferHistoryEntity, { description: 'Transfer History list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })

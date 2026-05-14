@@ -99,7 +99,6 @@ export class NotificationController {
     SystemRole.WORKER,
     SystemRole.RESOURCE_MANAGEMENT,
     SystemRole.TRAVEL_MANAGER,
-    SystemRole.VISITOR,
   )
   @ApiOperation({ summary: 'Get Notification by id' })
   @ApiParam({ name: 'id', type: Number })
@@ -117,7 +116,6 @@ export class NotificationController {
     if (!notification) throw new NotFoundException('Notification not found');
 
     const currentUser = this.getCurrentUser(req);
-    // STRICT OWNERSHIP CHECK: Applies to EVERYONE including ADMIN
     if (notification.userId && notification.userId !== currentUser.userId) {
       throw new BadRequestException('You do not have permission to view this notification');
     }
@@ -135,7 +133,6 @@ export class NotificationController {
     SystemRole.WORKER,
     SystemRole.RESOURCE_MANAGEMENT,
     SystemRole.TRAVEL_MANAGER,
-    SystemRole.VISITOR,
   )
   @ApiOperation({ summary: 'List Notification' })
   @ApiOkResponseList(NotificationEntity)
@@ -160,7 +157,6 @@ export class NotificationController {
       }
       const currentUser = this.getCurrentUser(req);
 
-      // STRICT FILTER: Users can ONLY see their own notifications, NO EXCEPTIONS
       filters.userId = currentUser.userId;
       filters.campId = currentUser.campId;
 
@@ -210,7 +206,6 @@ export class NotificationController {
     SystemRole.WORKER,
     SystemRole.RESOURCE_MANAGEMENT,
     SystemRole.TRAVEL_MANAGER,
-    SystemRole.VISITOR,
   )
   @ApiOperation({ summary: 'Update/Mark Notification as read' })
   @ApiParam({ name: 'id', type: Number })
@@ -230,7 +225,6 @@ export class NotificationController {
       if (!existingNotification) throw new NotFoundException('Notification not found');
 
       const currentUser = this.getCurrentUser(req);
-      // STRICT OWNERSHIP CHECK: Applies to EVERYONE including ADMIN
       if (existingNotification.userId && existingNotification.userId !== currentUser.userId) {
         throw new BadRequestException('You can only update your own notifications');
       }
@@ -256,7 +250,6 @@ export class NotificationController {
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async delete() {
-    // HARD LOCK: Endpoint exists for API completeness but throws 403 Forbidden for everyone.
     throw new ForbiddenException(
       'Deleting notifications is strictly disabled for auditing and compliance purposes.',
     );

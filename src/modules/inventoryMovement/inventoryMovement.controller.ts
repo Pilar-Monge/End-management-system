@@ -74,7 +74,7 @@ export class InventoryMovementController {
   }
 
   @Post()
-  @Roles('WORKER', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Inventory Movement' })
   @ApiBody({ type: CreateInventoryMovementDto })
   @ApiCreatedResponseData(InventoryMovementEntity, { description: 'Inventory Movement created' })
@@ -105,7 +105,7 @@ export class InventoryMovementController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Inventory Movement by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
   @ApiOkResponseData(InventoryMovementEntity, { description: 'Inventory Movement found' })
@@ -130,7 +130,7 @@ export class InventoryMovementController {
     return { success: true, data: movement };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Inventory Movement' })
   @ApiOkResponseList(InventoryMovementEntity, { description: 'Inventory Movement list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -299,7 +299,7 @@ export class InventoryMovementController {
     }
   }
   @Delete(':id')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Delete Inventory Movement' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Movement id' })
   @ApiOkResponseMessage({ description: 'Inventory Movement deleted' })

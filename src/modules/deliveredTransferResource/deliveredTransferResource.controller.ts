@@ -115,7 +115,7 @@ export class DeliveredTransferResourceController {
   }
 
   @Post()
-  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Delivered Transfer Resource' })
   @ApiBody({ type: CreateDeliveredTransferResourceDto })
   @ApiCreatedResponseData(DeliveredTransferResourceEntity, {
@@ -148,7 +148,7 @@ export class DeliveredTransferResourceController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Delivered Transfer Resource by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Delivered Transfer Resource id' })
   @ApiOkResponseData(DeliveredTransferResourceEntity, {
@@ -179,7 +179,7 @@ export class DeliveredTransferResourceController {
     return { success: true, data: delivered };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Delivered Transfer Resource' })
   @ApiOkResponseList(DeliveredTransferResourceEntity, {
     description: 'Delivered Transfer Resource list',

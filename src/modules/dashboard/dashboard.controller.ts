@@ -86,7 +86,6 @@ export class DashboardController {
     SystemRole.WORKER,
     SystemRole.RESOURCE_MANAGEMENT,
     SystemRole.TRAVEL_MANAGER,
-    SystemRole.VISITOR,
   )
   @ApiOperation({ summary: 'View personal panel for assigned resources' })
   @ApiBadRequestResponse({ description: 'Invalid request or missing context' })
