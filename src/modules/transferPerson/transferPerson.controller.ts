@@ -13,7 +13,7 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { DataSource } from 'typeorm';
+
 
 import {
   ApiBadRequestResponse,
@@ -47,10 +47,7 @@ import { CreateTransferPersonDto, UpdateTransferPersonDto } from './dto';
 @Controller('transfer-persons')
 @ApiTags('Transfer Person')
 export class TransferPersonController {
-  constructor(
-    private readonly service: TransferPersonService,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly service: TransferPersonService) {}
 
   private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
     const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
@@ -77,46 +74,7 @@ export class TransferPersonController {
     return rol === 'SYSTEM_ADMIN';
   }
 
-  private async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer t
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE t.id = $1
-       LIMIT 1`,
-      [transferId],
-    );
-
-    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!scope) {
-      throw new NotFoundException('Transfer not found');
-    }
-
-    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access transfer persons involving your camp');
-    }
-  }
-
-  private async assertTransferPersonCampAccess(id: number, currentCampId: number): Promise<void> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer_person tp
-       JOIN public.transfer t ON t.id = tp.transfer_id
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE tp.id = $1
-       LIMIT 1`,
-      [id],
-    );
-
-    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!scope) {
-      throw new NotFoundException('Transfer person not found');
-    }
-
-    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access transfer persons involving your camp');
-    }
-  }
+  // Scope checks moved to TransferPersonService
 
   @Post()
   @Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')
@@ -130,7 +88,7 @@ export class TransferPersonController {
     try {
       const currentUser = this.getCurrentUser(req);
       if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+        await this.service.assertTransferCampAccess(body.transferId, currentUser.campId);
       }
 
       const transferPerson = await this.service.createTransferPerson(body);
@@ -162,7 +120,7 @@ export class TransferPersonController {
 
     const currentUser = this.getCurrentUser(req);
     if (!this.isSystemAdmin(currentUser.rol)) {
-      await this.assertTransferPersonCampAccess(parsedId, currentUser.campId);
+      await this.service.assertTransferPersonCampAccess(parsedId, currentUser.campId);
     }
 
     const transferPerson = await this.service.getTransferPersonById(parsedId);
@@ -217,7 +175,7 @@ export class TransferPersonController {
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
 
         if (!isAdmin) {
-          await this.assertTransferCampAccess(parsedTransferId, currentUser.campId);
+          await this.service.assertTransferCampAccess(parsedTransferId, currentUser.campId);
         }
 
         filters.transferId = parsedTransferId;
@@ -292,9 +250,9 @@ export class TransferPersonController {
     try {
       const currentUser = this.getCurrentUser(req);
       if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertTransferPersonCampAccess(parsedId, currentUser.campId);
+        await this.service.assertTransferPersonCampAccess(parsedId, currentUser.campId);
         if (body.transferId !== undefined) {
-          await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+          await this.service.assertTransferCampAccess(body.transferId, currentUser.campId);
         }
       }
 

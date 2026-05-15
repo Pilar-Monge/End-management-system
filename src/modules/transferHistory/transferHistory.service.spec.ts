@@ -1,5 +1,49 @@
 import { TransferHistoryService } from './transferHistory.service';
 
+describe('TransferHistoryService (scope assertions)', () => {
+  let service: TransferHistoryService;
+
+  const repository = {
+    resolveTransferScope: jest.fn(),
+    resolveHistoryScope: jest.fn(),
+  } as any;
+
+  const notificationService = { notifyCampRoles: jest.fn() } as any;
+  const dataSource = {} as any;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    service = new TransferHistoryService(repository, notificationService, dataSource);
+  });
+
+  it('assertTransferCampAccess throws NotFound if no scope', async () => {
+    repository.resolveTransferScope.mockResolvedValue(null);
+    await expect(service.assertTransferCampAccess(1, 1)).rejects.toThrow('Transfer not found');
+  });
+
+  it('assertTransferCampAccess rejects when camp not in scope', async () => {
+    repository.resolveTransferScope.mockResolvedValue({ originCampId: 2, destinationCampId: 3 });
+    await expect(service.assertTransferCampAccess(1, 10)).rejects.toThrow(
+      'You can only access transfer history involving your camp',
+    );
+  });
+
+  it('assertHistoryCampAccess throws NotFound if history scope missing', async () => {
+    repository.resolveHistoryScope.mockResolvedValue(null);
+    await expect(service.assertHistoryCampAccess(99, 1)).rejects.toThrow(
+      'Transfer history entry not found',
+    );
+  });
+
+  it('assertHistoryCampAccess rejects when camp not in scope', async () => {
+    repository.resolveHistoryScope.mockResolvedValue({ originCampId: 7, destinationCampId: 8 });
+    await expect(service.assertHistoryCampAccess(5, 3)).rejects.toThrow(
+      'You can only access transfer history involving your camp',
+    );
+  });
+});
+import { TransferHistoryService } from './transferHistory.service';
+
 jest.mock('../../common/validation/assert-exists', () => ({
   assertEntityExists: jest.fn(),
 }));

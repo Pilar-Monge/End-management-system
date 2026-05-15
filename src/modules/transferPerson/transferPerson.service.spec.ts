@@ -1,4 +1,45 @@
 import { TransferPersonService } from './transferPerson.service';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+
+describe('TransferPersonService (scope assertions)', () => {
+  let service: TransferPersonService;
+
+  const repository = {
+    resolveTransferScope: jest.fn(),
+    resolveTransferPersonScope: jest.fn(),
+  } as any;
+
+  const notificationService = { notifyCampRoles: jest.fn(), notifyUser: jest.fn() } as any;
+  const transferService = { syncTransferRations: jest.fn() } as any;
+  const dataSource = {} as any;
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    service = new TransferPersonService(repository, notificationService, transferService, dataSource);
+  });
+
+  it('assertTransferCampAccess rejects when camp not included in scope', async () => {
+    repository.resolveTransferScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+    await expect(service.assertTransferCampAccess(10, 3)).rejects.toThrow(
+      'You can only access transfer persons involving your camp',
+    );
+  });
+
+  it('assertTransferPersonCampAccess throws NotFound when scope missing', async () => {
+    repository.resolveTransferPersonScope.mockResolvedValue(null);
+    await expect(service.assertTransferPersonCampAccess(99, 1)).rejects.toThrow(
+      'Transfer person not found',
+    );
+  });
+
+  it('assertTransferPersonCampAccess rejects when camp not in scope', async () => {
+    repository.resolveTransferPersonScope.mockResolvedValue({ originCampId: 7, destinationCampId: 8 });
+    await expect(service.assertTransferPersonCampAccess(5, 3)).rejects.toThrow(
+      'You can only access transfer persons involving your camp',
+    );
+  });
+});
+import { TransferPersonService } from './transferPerson.service';
 import type { TransferPersonRepository } from './transferPerson.repository';
 import type { NotificationService } from '../notification/notification.service';
 import type { TransferService } from '../transfer/transfer.service';

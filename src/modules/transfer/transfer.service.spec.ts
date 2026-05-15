@@ -1,12 +1,13 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { TransferService } from './transfer.service';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 jest.mock('../../common/validation/assert-exists', () => ({
-  assertEntityExists: jest.fn().mockResolvedValue(undefined),
+  assertEntityExists: jest.fn(() => Promise.resolve()),
 }));
 
-const repository = {
+const repository: any = {
   findById: jest.fn(),
   findByRequestId: jest.fn(),
   findAllAndCount: jest.fn(),
@@ -14,21 +15,22 @@ const repository = {
   update: jest.fn(),
   delete: jest.fn(),
   resolveRequestScope: jest.fn(),
+  resolveTransferScope: jest.fn(),
   countTransferPeople: jest.fn(),
   countAppliedTransferMovements: jest.fn(),
   findDeliveredResourcesByTransferId: jest.fn(),
   createTransferHistoryEntry: jest.fn(),
 };
 
-const notificationService = {
+const notificationService: any = {
   notifyCampRoles: jest.fn(),
 };
 
-const inventoryMovementService = {
+const inventoryMovementService: any = {
   createMovement: jest.fn(),
 };
 
-const dataSource = {
+const dataSource: any = {
   getRepository: jest.fn().mockReturnValue({
     findOne: jest.fn(),
   }),
@@ -221,6 +223,29 @@ describe('TransferService', () => {
 
       expect(result).toBe(true);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ─── scope assertions ───────────────────────────────────────────────────
+
+  describe('scope assertions', () => {
+    it('assertRequestCampAccess throws if request scope does not include camp', async () => {
+      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      await expect(service.assertRequestCampAccess(10, 3)).rejects.toThrow(
+        'You can only access transfers involving your camp',
+      );
+    });
+
+    it('assertTransferCampAccess throws NotFound if no scope', async () => {
+      repository.resolveTransferScope.mockResolvedValue(null);
+      await expect(service.assertTransferCampAccess(99, 1)).rejects.toThrow('Transfer not found');
+    });
+
+    it('assertTransferCampAccess throws if camp not in scope', async () => {
+      repository.resolveTransferScope.mockResolvedValue({ originCampId: 5, destinationCampId: 6 });
+      await expect(service.assertTransferCampAccess(1, 3)).rejects.toThrow(
+        'You can only access transfers involving your camp',
+      );
     });
   });
 });

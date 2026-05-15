@@ -15,6 +15,8 @@ describe('TransferPersonController (API controller unit tests)', () => {
       getTransferPersonById: jest.fn(),
       getAllTransferPeople: jest.fn(),
       updateTransferPerson: jest.fn(),
+        assertTransferCampAccess: jest.fn().mockResolvedValue(undefined),
+        assertTransferPersonCampAccess: jest.fn().mockResolvedValue(undefined),
     };
     dataSource = { query: jest.fn() };
     controller = new TransferPersonController(service, dataSource as any);

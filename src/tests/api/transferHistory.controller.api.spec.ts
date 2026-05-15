@@ -14,6 +14,8 @@ describe('TransferHistoryController (API controller unit tests)', () => {
       createEntry: jest.fn(),
       getEntryById: jest.fn(),
       getAllEntries: jest.fn(),
+        assertTransferCampAccess: jest.fn().mockResolvedValue(undefined),
+        assertHistoryCampAccess: jest.fn().mockResolvedValue(undefined),
     };
     dataSource = { query: jest.fn() };
     controller = new TransferHistoryController(service, dataSource as any);
