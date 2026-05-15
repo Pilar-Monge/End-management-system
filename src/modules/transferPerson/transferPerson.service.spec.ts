@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { TransferPersonService } from './transferPerson.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
@@ -39,14 +40,13 @@ describe('TransferPersonService (scope assertions)', () => {
     );
   });
 });
-import { TransferPersonService } from './transferPerson.service';
 import type { TransferPersonRepository } from './transferPerson.repository';
 import type { NotificationService } from '../notification/notification.service';
 import type { TransferService } from '../transfer/transfer.service';
 import type { DataSource, QueryRunner } from 'typeorm';
 
 jest.mock('../../common/validation/assert-exists', () => ({
-  assertEntityExists: jest.fn().mockResolvedValue(true),
+  assertEntityExists: jest.fn(() => Promise.resolve()),
 }));
 
 describe('TransferPersonService', () => {
@@ -225,7 +225,7 @@ describe('TransferPersonService', () => {
       } as never);
       repository.resolveTransferScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
 
-      const result = await service.updateTransferPerson(1, { status: 'PENDING' });
+      const result = await service.updateTransferPerson(1, { status: 'PENDING' } as any);
 
       expect(result?.status).toBe('PENDING');
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);

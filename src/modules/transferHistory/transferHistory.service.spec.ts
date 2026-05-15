@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { TransferHistoryService } from './transferHistory.service';
 
 describe('TransferHistoryService (scope assertions)', () => {
@@ -42,7 +43,6 @@ describe('TransferHistoryService (scope assertions)', () => {
     );
   });
 });
-import { TransferHistoryService } from './transferHistory.service';
 
 jest.mock('../../common/validation/assert-exists', () => ({
   assertEntityExists: jest.fn(),

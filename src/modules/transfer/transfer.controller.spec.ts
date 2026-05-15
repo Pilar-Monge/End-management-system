@@ -50,7 +50,6 @@ describe('TransferController', () => {
 
     it('should throw if request camp mismatch', async () => {
       const dto = { requestId: 1 } as any;
-      // simulate service asserting scope and rejecting for mismatch
       service.assertRequestCampAccess.mockRejectedValue(
         new Error('You can only access transfers involving your camp'),
       );
@@ -62,7 +61,6 @@ describe('TransferController', () => {
 
   describe('getById', () => {
     it('should return a transfer if authorized', async () => {
-      // ensure assertion passes
       service.assertTransferCampAccess.mockResolvedValue(undefined);
       service.getTransferById.mockResolvedValue({ id: 10 } as any);
 

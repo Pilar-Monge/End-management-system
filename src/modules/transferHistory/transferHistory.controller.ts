@@ -71,7 +71,6 @@ export class TransferHistoryController {
     return rol === 'SYSTEM_ADMIN';
   }
 
-  // Scope checks moved to TransferHistoryService
 
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')

@@ -74,7 +74,6 @@ export class TransferPersonController {
     return rol === 'SYSTEM_ADMIN';
   }
 
-  // Scope checks moved to TransferPersonService
 
   @Post()
   @Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')

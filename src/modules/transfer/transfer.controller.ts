@@ -69,8 +69,6 @@ export class TransferController {
     return rol === 'SYSTEM_ADMIN';
   }
 
-  // Scope checks moved to TransferService
-
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Transfer' })
