@@ -531,7 +531,9 @@ describe('NotificationService', () => {
         subject: 'T',
         payload: { campId: ' 123 ' },
       });
-      expect(campRepo.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 123 } }));
+      expect(campRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 123 } }),
+      );
 
       await service.queueEmail({
         toEmail: 'u@test.com',

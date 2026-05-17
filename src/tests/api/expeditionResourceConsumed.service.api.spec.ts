@@ -46,11 +46,22 @@ describe('ExpeditionResourceConsumedService (API service unit tests)', () => {
   });
 
   it('createRecord creates when valid', async () => {
-    const dto = { expeditionId: 1, resourceTypeId: 1, quantity: '50.00', recordedBy: 1, consumptionType: 'DAILY_RATION' };
+    const dto = {
+      expeditionId: 1,
+      resourceTypeId: 1,
+      quantity: '50.00',
+      recordedBy: 1,
+      consumptionType: 'DAILY_RATION',
+    };
     const created = { id: 1, ...dto };
     resourceTypeRepo.exist.mockResolvedValue(true);
     repository.findExpeditionById.mockResolvedValue({ id: 1, status: 'IN_PROGRESS', campId: 1 });
-      repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'RESOURCE_MANAGEMENT', campId: 1 });
+    repository.findUserById.mockResolvedValue({
+      id: 1,
+      status: 'ACTIVE',
+      role: 'RESOURCE_MANAGEMENT',
+      campId: 1,
+    });
     repository.findByExpeditionAndResourceType.mockResolvedValue(null);
     repository.create.mockResolvedValue(created);
 
@@ -60,14 +71,26 @@ describe('ExpeditionResourceConsumedService (API service unit tests)', () => {
   });
 
   it('createRecord throws when resource type not found', async () => {
-    const dto = { expeditionId: 1, resourceTypeId: 999, quantity: '50.00', recordedBy: 1, consumptionType: 'DAILY_RATION' };
+    const dto = {
+      expeditionId: 1,
+      resourceTypeId: 999,
+      quantity: '50.00',
+      recordedBy: 1,
+      consumptionType: 'DAILY_RATION',
+    };
     resourceTypeRepo.exist.mockResolvedValue(false);
 
     await expect(service.createRecord(dto as any)).rejects.toThrow();
   });
 
   it('createRecord throws when expedition not found', async () => {
-    const dto = { expeditionId: 999, resourceTypeId: 1, quantity: '50.00', recordedBy: 1, consumptionType: 'DAILY_RATION' };
+    const dto = {
+      expeditionId: 999,
+      resourceTypeId: 1,
+      quantity: '50.00',
+      recordedBy: 1,
+      consumptionType: 'DAILY_RATION',
+    };
     resourceTypeRepo.exist.mockResolvedValue(true);
     repository.findExpeditionById.mockResolvedValue(null);
 
@@ -106,9 +129,19 @@ describe('ExpeditionResourceConsumedService (API service unit tests)', () => {
 
   it('updateRecord returns updated record', async () => {
     const updated = { id: 1, expeditionId: 1, resourceTypeId: 1, quantity: '75.00' };
-    repository.findById.mockResolvedValue({ id: 1, expeditionId: 1, resourceTypeId: 1, quantity: '50.00' });
+    repository.findById.mockResolvedValue({
+      id: 1,
+      expeditionId: 1,
+      resourceTypeId: 1,
+      quantity: '50.00',
+    });
     repository.findExpeditionById.mockResolvedValue({ id: 1, status: 'IN_PROGRESS', campId: 1 });
-    repository.findUserById.mockResolvedValue({ id: 1, status: 'ACTIVE', role: 'RESOURCE_MANAGEMENT', campId: 1 });
+    repository.findUserById.mockResolvedValue({
+      id: 1,
+      status: 'ACTIVE',
+      role: 'RESOURCE_MANAGEMENT',
+      campId: 1,
+    });
     repository.update.mockResolvedValue(updated);
 
     const res = await service.updateRecord(1, { quantity: '75.00' } as any);

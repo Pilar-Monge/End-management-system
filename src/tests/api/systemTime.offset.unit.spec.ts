@@ -32,7 +32,7 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
     });
 
     it('adds milliseconds to offset', () => {
-      service.addOffset(3600000); 
+      service.addOffset(3600000);
       expect(service.getOffset()).toBe(3600000);
     });
 
@@ -100,7 +100,7 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
       const after = service.now().getTime();
 
       const diff = after - before;
-     
+
       expect(diff).toBeGreaterThanOrEqual(offsetMs - 1);
       expect(diff).toBeLessThanOrEqual(offsetMs + 10);
     });
@@ -189,7 +189,7 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
 
   describe('Time progression with offset', () => {
     it('time still progresses forward with offset applied', (done) => {
-      service.addOffset(3600000); 
+      service.addOffset(3600000);
       const first = service.now().getTime();
 
       setTimeout(() => {
@@ -249,7 +249,6 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
       service.addOffset(3000);
       const offset1 = service.getOffset();
 
-    
       for (let i = 0; i < 100; i++) {
         service.now();
       }

@@ -8,8 +8,8 @@ describe('AuthRepository', () => {
 
   beforeEach(() => {
     sessionRepo = {
-      create: jest.fn().mockImplementation(d => d),
-      save: jest.fn().mockImplementation(d => Promise.resolve({ id: 1, ...d })),
+      create: jest.fn().mockImplementation((d) => d),
+      save: jest.fn().mockImplementation((d) => Promise.resolve({ id: 1, ...d })),
       findOne: jest.fn(),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       manager: {
@@ -19,13 +19,13 @@ describe('AuthRepository', () => {
       },
     };
     accessLogRepo = {
-      create: jest.fn().mockImplementation(d => d),
-      save: jest.fn().mockImplementation(d => Promise.resolve({ id: 1, ...d })),
+      create: jest.fn().mockImplementation((d) => d),
+      save: jest.fn().mockImplementation((d) => Promise.resolve({ id: 1, ...d })),
     };
     passwordResetTokenRepo = {
       update: jest.fn().mockResolvedValue({ affected: 1 }),
-      create: jest.fn().mockImplementation(d => d),
-      save: jest.fn().mockImplementation(d => Promise.resolve({ id: 1, ...d })),
+      create: jest.fn().mockImplementation((d) => d),
+      save: jest.fn().mockImplementation((d) => Promise.resolve({ id: 1, ...d })),
       findOne: jest.fn(),
     };
     repository = new AuthRepository(sessionRepo, accessLogRepo, passwordResetTokenRepo);
@@ -40,17 +40,25 @@ describe('AuthRepository', () => {
 
   it('findActiveSessionByToken should call findOne', async () => {
     await repository.findActiveSessionByToken('t');
-    expect(sessionRepo.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { token: 't', status: 'ACTIVE' } }));
+    expect(sessionRepo.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { token: 't', status: 'ACTIVE' } }),
+    );
   });
 
   it('expireSession should call update', async () => {
     await repository.expireSession(1);
-    expect(sessionRepo.update).toHaveBeenCalledWith({ id: 1 }, expect.objectContaining({ status: 'EXPIRED' }));
+    expect(sessionRepo.update).toHaveBeenCalledWith(
+      { id: 1 },
+      expect.objectContaining({ status: 'EXPIRED' }),
+    );
   });
 
   it('closeSession should call update', async () => {
     await repository.closeSession(1);
-    expect(sessionRepo.update).toHaveBeenCalledWith({ id: 1 }, expect.objectContaining({ status: 'CLOSED' }));
+    expect(sessionRepo.update).toHaveBeenCalledWith(
+      { id: 1 },
+      expect.objectContaining({ status: 'CLOSED' }),
+    );
   });
 
   it('updateSessionLastActivity should call update', async () => {
@@ -75,7 +83,10 @@ describe('AuthRepository', () => {
 
   it('invalidateActivePasswordResetTokens should call update', async () => {
     await repository.invalidateActivePasswordResetTokens(1);
-    expect(passwordResetTokenRepo.update).toHaveBeenCalledWith({ userId: 1, status: 'ACTIVE' }, { status: 'EXPIRED' });
+    expect(passwordResetTokenRepo.update).toHaveBeenCalledWith(
+      { userId: 1, status: 'ACTIVE' },
+      { status: 'EXPIRED' },
+    );
   });
 
   it('createPasswordResetToken should call save', async () => {
@@ -95,7 +106,9 @@ describe('AuthRepository', () => {
     passwordResetTokenRepo.findOne.mockResolvedValue(token);
     const result = await repository.findActivePasswordResetTokenByHash('h', new Date());
     expect(result).toBeNull();
-    expect(passwordResetTokenRepo.save).toHaveBeenCalledWith(expect.objectContaining({ status: 'EXPIRED' }));
+    expect(passwordResetTokenRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'EXPIRED' }),
+    );
   });
 
   it('markPasswordResetTokenUsed should call update', async () => {
@@ -105,6 +118,9 @@ describe('AuthRepository', () => {
 
   it('closeActiveSessionsByUser should call update', async () => {
     await repository.closeActiveSessionsByUser(1, new Date());
-    expect(sessionRepo.update).toHaveBeenCalledWith({ userId: 1, status: 'ACTIVE' }, expect.objectContaining({ status: 'CLOSED' }));
+    expect(sessionRepo.update).toHaveBeenCalledWith(
+      { userId: 1, status: 'ACTIVE' },
+      expect.objectContaining({ status: 'CLOSED' }),
+    );
   });
 });

@@ -40,7 +40,7 @@ describe('SupabaseStorageService', () => {
     jest.clearAllMocks();
   });
 
-  it('throws when Supabase credentials are missing', () => {
+  it('disables storage when Supabase credentials are missing', async () => {
     const badConfig = {
       get: jest.fn((key: string, defaultValue?: string) => {
         if (key === 'SUPABASE_BUCKET_NAME') return 'user-images';
@@ -48,9 +48,17 @@ describe('SupabaseStorageService', () => {
       }),
     } as any;
 
-    expect(() => new SupabaseStorageService(badConfig)).toThrow(
-      'Supabase credentials are missing in environment variables',
+    const disabledService = new SupabaseStorageService(badConfig);
+    const file = {
+      originalname: 'photo.jpg',
+      mimetype: 'image/jpeg',
+      buffer: Buffer.from('data'),
+    } as Express.Multer.File;
+
+    await expect(disabledService.uploadImage(file)).rejects.toThrow(
+      'Supabase image storage is not configured',
     );
+    expect(createClient).not.toHaveBeenCalled();
   });
 
   it('uploads image and returns file path', async () => {

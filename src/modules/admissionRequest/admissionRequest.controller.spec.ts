@@ -176,7 +176,12 @@ describe('AdmissionRequestController', () => {
 
     const res = await controller.reviewByAdmin(
       '1',
-      { adminUserId: 100, approved: true, finalOccupationId: 10, finalRole: 'TRAVEL_MANAGER' } as any,
+      {
+        adminUserId: 100,
+        approved: true,
+        finalOccupationId: 10,
+        finalRole: 'TRAVEL_MANAGER',
+      } as any,
       req,
     );
     expect(res.success).toBe(true);

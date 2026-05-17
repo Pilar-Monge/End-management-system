@@ -25,7 +25,9 @@ test.describe('Requirement 4 - Expeditions full flow', () => {
     travelToken = await loginAs(request, 'travel_camp1', 1);
   });
 
-  test('validates participant occupation and applies additional rations on departure', async ({ request }) => {
+  test('validates participant occupation and applies additional rations on departure', async ({
+    request,
+  }) => {
     const eligiblePerson = await db.query<{ id: number }>(
       `
       SELECT p.id
@@ -137,7 +139,10 @@ test.describe('Requirement 4 - Expeditions full flow', () => {
     );
 
     const inventoryBeforeMap = new Map(
-      inventoryBefore.rows.map((row) => [row.resource_type_id, Number.parseFloat(row.current_amount)]),
+      inventoryBefore.rows.map((row) => [
+        row.resource_type_id,
+        Number.parseFloat(row.current_amount),
+      ]),
     );
 
     const startResponse = await request.put(`/api/expeditions/${expeditionId}`, {
@@ -175,7 +180,10 @@ test.describe('Requirement 4 - Expeditions full flow', () => {
     );
 
     const inventoryAfterMap = new Map(
-      inventoryAfter.rows.map((row) => [row.resource_type_id, Number.parseFloat(row.current_amount)]),
+      inventoryAfter.rows.map((row) => [
+        row.resource_type_id,
+        Number.parseFloat(row.current_amount),
+      ]),
     );
 
     const beforeFood = inventoryBeforeMap.get(foodId) ?? 0;

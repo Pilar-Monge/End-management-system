@@ -51,9 +51,7 @@ describe('RolesGuard', () => {
   });
 
   it('allows authenticated-only routes without role metadata', () => {
-    (reflector.getAllAndOverride as jest.Mock)
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
+    (reflector.getAllAndOverride as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true);
 
     expect(guard.canActivate(makeContext('VISITOR'))).toBe(true);
   });

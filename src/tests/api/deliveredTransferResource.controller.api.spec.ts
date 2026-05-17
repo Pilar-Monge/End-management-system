@@ -14,8 +14,8 @@ describe('DeliveredTransferResourceController (API controller unit tests)', () =
       createDeliveredResource: jest.fn(),
       getDeliveredResourceById: jest.fn(),
       getAllDeliveredResources: jest.fn(),
-        assertTransferCampAccess: jest.fn().mockResolvedValue(undefined),
-        assertDeliveredCampAccess: jest.fn().mockResolvedValue(undefined),
+      assertTransferCampAccess: jest.fn().mockResolvedValue(undefined),
+      assertDeliveredCampAccess: jest.fn().mockResolvedValue(undefined),
     };
     dataSource = { query: jest.fn() };
     controller = new DeliveredTransferResourceController(service, dataSource as any);

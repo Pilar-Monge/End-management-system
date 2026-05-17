@@ -21,7 +21,7 @@ describe('CampInventoryService (API service unit tests)', () => {
     };
     campRepo = { exist: jest.fn().mockResolvedValue(true) };
     resourceTypeRepo = { exist: jest.fn().mockResolvedValue(true) };
-    notificationService = { 
+    notificationService = {
       notifyCampRoles: jest.fn().mockResolvedValue(undefined),
     };
     dataSource = {
@@ -36,7 +36,12 @@ describe('CampInventoryService (API service unit tests)', () => {
   });
 
   it('createItem creates new item when valid', async () => {
-    const dto = { campId: 1, resourceTypeId: 1, currentAmount: '10.00', minimumAlertAmount: '5.00' };
+    const dto = {
+      campId: 1,
+      resourceTypeId: 1,
+      currentAmount: '10.00',
+      minimumAlertAmount: '5.00',
+    };
     const created = { id: 1, ...dto };
     repository.findByKey.mockResolvedValue(null);
     repository.create.mockResolvedValue(created);
@@ -47,14 +52,24 @@ describe('CampInventoryService (API service unit tests)', () => {
   });
 
   it('createItem throws when camp not found', async () => {
-    const dto = { campId: 999, resourceTypeId: 1, currentAmount: '10.00', minimumAlertAmount: '5.00' };
+    const dto = {
+      campId: 999,
+      resourceTypeId: 1,
+      currentAmount: '10.00',
+      minimumAlertAmount: '5.00',
+    };
     campRepo.exist.mockResolvedValue(false);
 
     await expect(service.createItem(dto as any)).rejects.toThrow();
   });
 
   it('createItem throws when resource type not found', async () => {
-    const dto = { campId: 1, resourceTypeId: 999, currentAmount: '10.00', minimumAlertAmount: '5.00' };
+    const dto = {
+      campId: 1,
+      resourceTypeId: 999,
+      currentAmount: '10.00',
+      minimumAlertAmount: '5.00',
+    };
     resourceTypeRepo.exist.mockResolvedValue(false);
 
     await expect(service.createItem(dto as any)).rejects.toThrow();

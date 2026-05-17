@@ -51,9 +51,7 @@ describe('Occupation Coverage Unit Tests', () => {
     notifyUser: jest.fn(),
   };
 
-  const coverageService = new OccupationCoverageService(
-    coverageRepository as never,
-  );
+  const coverageService = new OccupationCoverageService(coverageRepository as never);
 
   const assignmentService = new TemporaryOccupationAssignmentService(
     assignmentRepository as never,
@@ -151,10 +149,9 @@ describe('Occupation Coverage Unit Tests', () => {
     };
 
     jest.mocked(coverageRepository.getOccupationCoverageById).mockResolvedValue(targetCoverage);
-    jest.mocked(coverageRepository.getOccupationCoverageByCamp).mockResolvedValue([
-      targetCoverage,
-      surplusCoverage,
-    ]);
+    jest
+      .mocked(coverageRepository.getOccupationCoverageByCamp)
+      .mockResolvedValue([targetCoverage, surplusCoverage]);
     jest.mocked(coverageRepository.getAvailablePersonsForReplacement).mockResolvedValue([
       { id: 101, name: 'Alice', lastName1: 'Smith', currentStatus: 'ACTIVE' },
       { id: 102, name: 'Bob', lastName1: 'Jones', currentStatus: 'ACTIVE' },

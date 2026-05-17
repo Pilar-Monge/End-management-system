@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -73,7 +72,6 @@ export class TransferPersonController {
   private isSystemAdmin(rol: string): boolean {
     return rol === 'SYSTEM_ADMIN';
   }
-
 
   @Post()
   @Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')

@@ -23,7 +23,7 @@ describe('InventoryAlertService (API service unit tests)', () => {
     campRepo = { exist: jest.fn().mockResolvedValue(true) };
     resourceTypeRepo = { exist: jest.fn().mockResolvedValue(true) };
     movementRepo = { exist: jest.fn().mockResolvedValue(true) };
-    notificationService = { 
+    notificationService = {
       notifyCampRoles: jest.fn().mockResolvedValue(undefined),
     };
     dataSource = {

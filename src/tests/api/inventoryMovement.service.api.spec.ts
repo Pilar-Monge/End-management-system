@@ -27,7 +27,7 @@ describe('InventoryMovementService (API service unit tests)', () => {
     userRepo = { exist: jest.fn().mockResolvedValue(true) };
     campRepo = { exist: jest.fn().mockResolvedValue(true) };
     resourceTypeRepo = { exist: jest.fn().mockResolvedValue(true) };
-    notificationService = { 
+    notificationService = {
       notifyCampRoles: jest.fn().mockResolvedValue(undefined),
     };
     dataSource = {
@@ -54,7 +54,10 @@ describe('InventoryMovementService (API service unit tests)', () => {
     };
     const created = { id: 1, ...dto };
     repository.create.mockResolvedValue(created);
-    repository.findCampInventory.mockResolvedValue({ currentAmount: '100.00', minimumAlertAmount: '10.00' });
+    repository.findCampInventory.mockResolvedValue({
+      currentAmount: '100.00',
+      minimumAlertAmount: '10.00',
+    });
 
     const res = await service.createMovement(dto as any);
     expect(res.id).toBe(1);

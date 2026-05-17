@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -70,7 +69,6 @@ export class TransferHistoryController {
   private isSystemAdmin(rol: string): boolean {
     return rol === 'SYSTEM_ADMIN';
   }
-
 
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')

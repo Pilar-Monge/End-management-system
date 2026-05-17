@@ -171,15 +171,18 @@ test.describe.serial('Admission Email Flow E2E', () => {
       );
       expect(occupationRow.rows.length).toBeGreaterThan(0);
 
-      const processResponse = await request.post(`/api/admission-requests/${requestId}/process-ai`, {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
+      const processResponse = await request.post(
+        `/api/admission-requests/${requestId}/process-ai`,
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+          data: {
+            oficioSugeridoId: occupationRow.rows[0].id,
+            decision: 'ACCEPT',
+          },
         },
-        data: {
-          oficioSugeridoId: occupationRow.rows[0].id,
-          decision: 'ACCEPT',
-        },
-      });
+      );
 
       expect(processResponse.status()).toBe(201);
       const processedBody = (await processResponse.json()) as AdmissionBody;
@@ -251,7 +254,10 @@ test.describe.serial('Admission Email Flow E2E', () => {
         adminUserId,
         approved: true,
         finalOccupationId:
-          reqData?.finalOccupationId ?? reqData?.suggestedOccupationId ?? suggestedOccupationId ?? 1,
+          reqData?.finalOccupationId ??
+          reqData?.suggestedOccupationId ??
+          suggestedOccupationId ??
+          1,
         finalRole: 'RESOURCE_MANAGEMENT',
       },
     });
@@ -310,7 +316,9 @@ test.describe.serial('Admission Email Flow E2E', () => {
     expect(approvedPayload?.details?.oficioAsignado).toBeTruthy();
 
     const activeAdminEmails = (usersBody.data ?? [])
-      .filter((u) => u.role === 'SYSTEM_ADMIN' && typeof u.email === 'string' && u.email.trim() !== '')
+      .filter(
+        (u) => u.role === 'SYSTEM_ADMIN' && typeof u.email === 'string' && u.email.trim() !== '',
+      )
       .map((u) => u.email.trim().toLowerCase());
 
     if (activeAdminEmails.length > 0) {

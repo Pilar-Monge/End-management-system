@@ -60,12 +60,15 @@ async function bootstrap(): Promise<void> {
       .setTitle('End Management System')
       .setDescription('API for the camp management system')
       .setVersion('1.0')
-      .addBearerAuth({
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Paste the JWT returned by POST /api/auth/login.',
-      }, 'bearer')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Paste the JWT returned by POST /api/auth/login.',
+        },
+        'bearer',
+      )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
