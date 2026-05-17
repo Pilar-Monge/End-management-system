@@ -42,7 +42,7 @@ describe('SupabaseStorageService', () => {
 
   it('disables storage when Supabase credentials are missing', async () => {
     jest.clearAllMocks();
-    
+
     const badConfig = {
       get: jest.fn((key: string, defaultValue?: string) => {
         if (key === 'SUPABASE_BUCKET_NAME') return 'user-images';
