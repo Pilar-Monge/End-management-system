@@ -65,7 +65,7 @@ async function bootstrap(): Promise<void> {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         description: 'Paste the JWT returned by POST /api/auth/login.',
-      })
+      }, 'bearer')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
