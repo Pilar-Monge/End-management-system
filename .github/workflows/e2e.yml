@@ -1,4 +1,4 @@
-name: CI - lint, build and unit tests
+name: E2E - Playwright
 
 on:
   push:
@@ -9,26 +9,7 @@ on:
       - '**'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint:ci
-
-  unit:
+  e2e:
     runs-on: ubuntu-latest
 
     services:
@@ -48,6 +29,7 @@ jobs:
 
     env:
       NODE_ENV: test
+      BASE_URL: http://127.0.0.1:3000
       DB_HOST: 127.0.0.1
       DB_PORT: 5432
       DB_USER: gestionfin
@@ -81,8 +63,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Build
         run: npm run build
 
-      - name: Test
-        run: npm test -- --runInBand
+      - name: Start application
+        run: |
+          npm run start > app.log 2>&1 &
+          echo $! > app.pid
+
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/api/system/time > /dev/null; then
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          echo "Application failed to start"
+          cat app.log
+          exit 1
+
+      - name: Run Playwright tests
+        run: npm run test:e2e
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) || true
+          fi
