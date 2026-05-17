@@ -199,7 +199,7 @@ export class SystemTimeController {
     const after = new Date(afterTime);
 
     let count = 0;
-    let currentTime = new Date(before);
+    const currentTime = new Date(before);
     currentTime.setUTCHours(0, 0, 0, 0);
     currentTime.setUTCDate(currentTime.getUTCDate() + 1);
 
