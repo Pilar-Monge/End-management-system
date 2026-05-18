@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddCharacterToPersonTable1682790000000 implements MigrationInterface {
+export class AddCharacterToPersonTable1777300000000 implements MigrationInterface {
+  name = 'AddCharacterToPersonTable1777300000000';
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       DO $$
