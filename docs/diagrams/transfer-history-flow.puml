@@ -1,0 +1,33 @@
+@startuml
+' Transfer History module flow (high level)
+
+title Transfer History module - flow overview
+
+start
+partition "POST /transfer-history" {
+  :Validate userId + camp access;
+  :Create entry;
+  :Notify camps;
+}
+
+partition "GET /transfer-history/:id" {
+  :Validate id + camp access;
+  :Return entry (user scoped);
+}
+
+partition "GET /transfer-history" {
+  :Apply role-scoped filters;
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /transfer-history/:id" {
+  :Blocked by policy (audit);
+}
+
+partition "DELETE /transfer-history/:id" {
+  :Blocked by policy (audit);
+}
+
+end
+@enduml

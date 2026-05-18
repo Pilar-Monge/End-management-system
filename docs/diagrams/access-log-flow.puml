@@ -1,0 +1,44 @@
+@startuml
+' Access Log module flow (high level)
+
+title Access Log module - flow overview
+
+start
+partition "POST /access-logs" {
+  :Validate current user + campId;
+  :Validate user/session ownership (service);
+  :Create access log;
+  :Return log;
+}
+
+partition "GET /access-logs/:id" {
+  :Validate id + current user;
+  :Load log;
+  :Verify same camp;
+  :Return log;
+}
+
+partition "GET /access-logs" {
+  :Validate filters + pagination;
+  :Force campId = current user camp;
+  :Fetch list + count;
+  :Return list + pagination;
+}
+
+partition "PUT /access-logs/:id" {
+  :Validate id + current user;
+  :Load log; verify camp;
+  :Validate user/session ownership;
+  :Update log;
+  :Return log;
+}
+
+partition "DELETE /access-logs/:id" {
+  :Validate id + current user;
+  :Load log; verify camp;
+  :Delete log;
+  :Return success;
+}
+
+end
+@enduml

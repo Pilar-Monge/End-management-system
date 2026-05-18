@@ -1,0 +1,43 @@
+@startuml
+' Request Resource Detail module flow (high level)
+
+title Request Resource Detail module - flow overview
+
+start
+partition "POST /request-resource-details" {
+  :Validate camp access (request scope);
+  :Validate request + resource;
+  :Ensure unique request+resource;
+  :Create detail;
+  :Notify origin + destination camps;
+  :Return detail;
+}
+
+partition "GET /request-resource-details/:id" {
+  :Validate id + camp access;
+  :Return detail;
+}
+
+partition "GET /request-resource-details" {
+  :Force involvedCampId = current user camp;
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /request-resource-details/:id" {
+  :Validate id + camp access;
+  :Validate request/resource;
+  :Update detail;
+  :Notify origin + destination camps;
+  :Return detail;
+}
+
+partition "DELETE /request-resource-details/:id" {
+  :Validate id + camp access;
+  :Delete detail;
+  :Notify origin + destination camps;
+  :Return success;
+}
+
+end
+@enduml

@@ -1,0 +1,48 @@
+@startuml
+' Expedition Participant module flow (high level)
+
+title Expedition Participant module - flow overview
+
+start
+partition "POST /expedition-participants" {
+  :Validate camp access;
+  :Validate expedition PLANNED;
+  :Validate person status + occupation;
+  :Ensure unique expedition+person;
+  :Create participant;
+  :Notify assigned user (if any);
+  :Sync person status;
+  :Return participant;
+}
+
+partition "GET /expedition-participants/:id" {
+  :Validate id + camp access;
+  :Return participant;
+}
+
+partition "GET /expedition-participants" {
+  :Validate filters + pagination;
+  if (System admin?) then (yes)
+    :Use filters;
+  else (no)
+    :Require expeditionId + camp access;
+  endif
+  :Return list + pagination;
+}
+
+partition "PUT /expedition-participants/:id" {
+  :Validate id + camp access;
+  :Validate expedition/person;
+  :Update participant;
+  :Notify linked user;
+  :Sync person status;
+  :Return participant;
+}
+
+partition "DELETE /expedition-participants/:id" {
+  :Blocked by policy;
+  :Return 403 (audit reasons);
+}
+
+end
+@enduml

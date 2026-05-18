@@ -1,0 +1,33 @@
+@startuml
+' Resource Type module flow (high level)
+
+title Resource Type module - flow overview
+
+start
+partition "POST /resource-types" {
+  :Blocked by policy (catalog);
+  :Return 403;
+}
+
+partition "GET /resource-types/:id" {
+  :Validate id;
+  :Return resource type;
+}
+
+partition "GET /resource-types" {
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /resource-types/:id" {
+  :Blocked by policy (catalog);
+  :Return 403;
+}
+
+partition "DELETE /resource-types/:id" {
+  :Blocked by policy (catalog);
+  :Return 403;
+}
+
+end
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+' System Time module flow (high level)
+
+title System Time module - flow overview
+
+start
+partition "GET /system/time" {
+  :Return server time (with offset);
+}
+
+partition "GET /system/time/offset" {
+  :Return current offset + time;
+}
+
+partition "POST /system/time/advance" {
+  :Validate unit + amount;
+  :Advance offset;
+  :Execute automations:
+  :daily cycles, expedition updates,
+  :session expirations, token invalidation;
+  :Return new offset + automations;
+}
+
+end
+@enduml

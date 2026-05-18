@@ -1,0 +1,30 @@
+@startuml
+' Email module flow (high level)
+
+title Email module - flow overview
+
+start
+partition "Enqueue Email" {
+  :Queue outbox entry (PENDING);
+  :Set max attempts + nextAttemptAt;
+}
+
+partition "Cron Delivery Processor" {
+  :Skip if email disabled;
+  :Fetch due entries;
+  :Render template;
+  :Send via SMTP;
+  if (Send ok?) then (yes)
+    :Mark SENT;
+  else (no)
+    :Increment attempts;
+    if (Max attempts reached?) then (yes)
+      :Mark FAILED;
+    else (no)
+      :Backoff + reschedule;
+    endif
+  endif
+}
+
+end
+@enduml

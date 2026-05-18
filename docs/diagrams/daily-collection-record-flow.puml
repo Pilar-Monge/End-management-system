@@ -1,0 +1,59 @@
+@startuml
+' Daily Collection Record module flow (high level)
+
+title Daily Collection Record module - flow overview
+
+start
+partition "POST /daily-collection-records" {
+  :Validate campId + recordedBy;
+  :Validate camp/resource/person/user consistency;
+  :Check unique person+resource+date;
+  :Create record;
+  :Notify roles (inventory alert);
+  :Return record;
+}
+
+partition "POST /daily-collection-records/:id/adjustment" {
+  :Validate id + current user;
+  :Validate camp ownership;
+  :Update actualAmount + reason;
+  if (Delta != 0?) then (yes)
+    :Create inventory movement (manual adjustment);
+    :Link movementId;
+  endif
+  :Return record;
+}
+
+partition "GET /daily-collection-records/:id" {
+  :Validate id + current user;
+  :Load record;
+  :Verify camp access;
+  :Return record;
+}
+
+partition "GET /daily-collection-records" {
+  :Validate filters + pagination;
+  if (System admin?) then (yes)
+    :Use requested campId;
+  else (no)
+    :Force campId = current user camp;
+  endif
+  :Fetch list + count;
+  :Return list + pagination;
+}
+
+partition "PUT /daily-collection-records/:id" {
+  :Validate id + current user;
+  :Validate camp/resource/person/user consistency;
+  :Update record;
+  :Notify roles (inventory alert);
+  :Return record;
+}
+
+partition "DELETE /daily-collection-records/:id" {
+  :Blocked by policy;
+  :Return 403 (audit reasons);
+}
+
+end
+@enduml

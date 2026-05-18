@@ -1,0 +1,82 @@
+@startuml
+' Auth module flow (high level)
+
+title Auth module - flow overview
+
+start
+partition "POST /auth/login" {
+  :Validate username/password/campId;
+  if (User exists and ACTIVE?) then (yes)
+    :Compare password hash;
+    if (Password ok?) then (yes)
+      :Create JWT (20 min);
+      :Create session (ACTIVE);
+      :Create access log (LOGIN);
+      :Return token + user;
+    else (no)
+      :Create access log (FAILED_ATTEMPT);
+      :Return 401;
+    endif
+  else (no)
+    :If user exists -> access log (FAILED_ATTEMPT);
+    :Return 401;
+  endif
+}
+
+partition "POST /auth/logout" {
+  :Read Authorization header;
+  if (Bearer token?) then (yes)
+    :Find active session by token;
+    if (Session found?) then (yes)
+      :Close session (CLOSED);
+      :Create access log (LOGOUT);
+      :Return success;
+    else (no)
+      :Return 401;
+    endif
+  else (no)
+    :Return 400;
+  endif
+}
+
+partition "GET /auth/check-session" {
+  :Auth guard validates token;
+  :Session refresh middleware;
+  :Return active=true;
+}
+
+partition "POST /auth/forgot-password" {
+  :Validate email + campId;
+  if (User exists and ACTIVE?) then (yes)
+    :Invalidate previous reset tokens;
+    :Create password reset token;
+    :Create access log (PASSWORD_RESET_REQUEST);
+    :Notify user (no email);
+    :Enqueue email (password reset link);
+  endif
+  :Return generic success message;
+}
+
+partition "POST /auth/reset-password" {
+  :Validate token + newPassword;
+  :Lookup reset token;
+  if (Token valid?) then (yes)
+    :Load user;
+    if (User found?) then (yes)
+      :Hash and update password;
+      :Mark token used + expire others;
+      :Close active sessions;
+      :Create access log (PASSWORD_RESET_COMPLETED);
+      :Notify user (no email);
+      :Enqueue confirmation email;
+      :Return success;
+    else (no)
+      :Return 400;
+    endif
+  else (no)
+    :Return 400;
+  endif
+}
+
+end
+@enduml

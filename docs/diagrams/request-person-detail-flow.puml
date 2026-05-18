@@ -1,0 +1,38 @@
+@startuml
+' Request Person Detail module flow (high level)
+
+title Request Person Detail module - flow overview
+
+start
+partition "POST /request-person-details" {
+  :Validate intercamp request + person/occupation (optional);
+  :Create detail;
+  :Notify origin + destination camps;
+  :Return detail;
+}
+
+partition "GET /request-person-details/:id" {
+  :Validate id;
+  :Return detail;
+}
+
+partition "GET /request-person-details" {
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /request-person-details/:id" {
+  :Validate request/person/occupation (optional);
+  :Update detail;
+  :Notify origin + destination camps;
+  :Return detail;
+}
+
+partition "DELETE /request-person-details/:id" {
+  :Delete detail;
+  :Notify origin + destination camps;
+  :Return success;
+}
+
+end
+@enduml

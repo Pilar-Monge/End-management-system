@@ -1,0 +1,39 @@
+@startuml
+' Transfer module flow (high level)
+
+title Transfer module - flow overview
+
+start
+partition "POST /transfers" {
+  :Validate request access (non-admin);
+  :Create transfer + sync rations;
+  :Notify origin + destination camps;
+}
+
+partition "GET /transfers/:id" {
+  :Validate id + camp access (non-admin);
+  :Return transfer;
+}
+
+partition "GET /transfers" {
+  :Non-admin requires requestId;
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /transfers/:id" {
+  :Validate id + camp access;
+  :Validate request changes;
+  :Update transfer;
+  :If status change:
+  :create history, apply inventory (if completed),
+  :notify camps;
+  :Sync rations;
+}
+
+partition "DELETE /transfers/:id" {
+  :Blocked by policy (audit);
+}
+
+end
+@enduml

@@ -1,0 +1,41 @@
+@startuml
+' Inventory Alert module flow (high level)
+
+title Inventory Alert module - flow overview
+
+start
+partition "POST /inventory-alerts" {
+  :Blocked by policy;
+  :Return 403 (system-generated);
+}
+
+partition "GET /inventory-alerts/:id" {
+  :Validate id + camp access;
+  :Return alert;
+}
+
+partition "GET /inventory-alerts" {
+  :Validate filters + pagination;
+  if (System admin?) then (yes)
+    :Use requested campId;
+  else (no)
+    :Force campId = current user camp;
+  endif
+  :Return list + pagination;
+}
+
+partition "PUT /inventory-alerts/:id" {
+  :Validate id + camp access;
+  :Validate camp/resource/movement (optional);
+  :Update alert (resolved or not);
+  :Notify roles;
+  :Return alert;
+}
+
+partition "DELETE /inventory-alerts/:id" {
+  :Blocked by policy;
+  :Return 403 (system-generated);
+}
+
+end
+@enduml

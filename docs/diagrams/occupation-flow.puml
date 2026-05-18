@@ -1,0 +1,38 @@
+@startuml
+' Occupation module flow (high level)
+
+title Occupation module - flow overview
+
+start
+partition "POST /occupations" {
+  :Validate payload + resourceType (optional);
+  :Check unique name;
+  :Create occupation;
+  :Return occupation;
+}
+
+partition "GET /occupations/:id" {
+  :Validate id;
+  :Return occupation;
+}
+
+partition "GET /occupations" {
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /occupations/:id" {
+  :Validate id + resourceType (optional);
+  :Check unique name (if changed);
+  :Update occupation;
+  :Return occupation;
+}
+
+partition "DELETE /occupations/:id" {
+  :Validate id;
+  :Delete occupation;
+  :Return success;
+}
+
+end
+@enduml

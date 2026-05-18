@@ -1,0 +1,40 @@
+@startuml
+' Achievement module flow (high level)
+
+title Achievement module - flow overview
+
+start
+partition "POST /achievements" {
+  :Validate payload;
+  :Check unique name;
+  :Create achievement;
+  :Return achievement;
+}
+
+partition "GET /achievements/:id" {
+  :Validate id;
+  :Load achievement;
+  :Return achievement;
+}
+
+partition "GET /achievements" {
+  :Validate filters + pagination;
+  :Fetch list + count;
+  :Return list + pagination;
+}
+
+partition "PUT /achievements/:id" {
+  :Validate id;
+  :Check unique name (if changed);
+  :Update achievement;
+  :Return achievement;
+}
+
+partition "DELETE /achievements/:id" {
+  :Validate id;
+  :Delete achievement;
+  :Return success;
+}
+
+end
+@enduml

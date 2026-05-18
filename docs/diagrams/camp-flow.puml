@@ -1,0 +1,45 @@
+@startuml
+' Camp module flow (high level)
+
+title Camp module - flow overview
+
+start
+partition "POST /camps" {
+  :Blocked by policy;
+  :Return 403 (use seeders);
+}
+
+partition "GET /camps/:id" {
+  :Validate id + current user;
+  if (System admin?) then (yes)
+    :Load camp;
+  else (no)
+    :Only allow own camp id;
+    :Load camp;
+  endif
+  :Return camp;
+}
+
+partition "GET /camps" {
+  :Validate current user;
+  if (System admin?) then (yes)
+    :Apply status filter + pagination;
+    :Fetch list + count;
+  else (no)
+    :Return own camp only;
+  endif
+  :Return list + pagination;
+}
+
+partition "PUT /camps/:id" {
+  :Blocked by policy;
+  :Return 403 (use seeders);
+}
+
+partition "DELETE /camps/:id" {
+  :Blocked by policy;
+  :Return 403 (use seeders);
+}
+
+end
+@enduml

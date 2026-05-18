@@ -1,0 +1,92 @@
+@startuml
+' Admission Request module flow (high level)
+
+title Admission Request module - flow overview
+
+start
+partition "POST /admission-requests (public)" {
+  :Validate payload + optional photo;
+  :Check camp exists;
+  :Check duplicate by email + camp;
+  :Create request (PENDING_AI);
+  :Notify admin + applicant email;
+  if (AI decision tree OK?) then (yes)
+    :Build features;
+    :Explain model + suggest role/occupation;
+    :Save AI report;
+    :Update request -> PENDING_ADMIN;
+    :Notify admins + applicant;
+  else (no)
+    :Log warning and continue;
+  endif
+  :Return request;
+}
+
+partition "GET /admission-requests" {
+  :Validate campId + role;
+  :Fetch list (filters + paging);
+  :Attach signed photo URLs;
+  :Return list + pagination;
+}
+
+partition "GET /admission-requests/:id" {
+  :Validate id + role;
+  :Fetch request;
+  :Attach signed photo URL;
+  :Return request;
+}
+
+partition "GET /admission-requests/:id/ai-features" {
+  :Validate id + role;
+  :Load request;
+  :Compute AI features;
+  :Return feature vector;
+}
+
+partition "PUT /admission-requests/:id" {
+  :Validate id + role;
+  :Check duplicates/foreign keys;
+  :Update request;
+  :Return request;
+}
+
+partition "POST|PUT /admission-requests/:id/photo" {
+  :Validate id + file;
+  :Upload to storage (Supabase);
+  :Update photoUrl;
+  :Return request;
+}
+
+partition "POST /admission-requests/:id/ai-process" {
+  :Validate id + role;
+  :Ensure status PENDING_AI;
+  :Update suggestedOccupation + status PENDING_ADMIN;
+  :Notify admin + applicant;
+  :Return request;
+}
+
+partition "POST /admission-requests/:id/admin-review" {
+  :Validate id + role;
+  :Ensure status PENDING_ADMIN;
+  if (approved?) then (yes)
+    :Validate final role/occupation;
+    :Create Person + User access;
+    :Update request -> APPROVED;
+  else (no)
+    :Update request -> REJECTED;
+  endif
+  :Notify admin + applicant email;
+  :Return request;
+}
+
+partition "DELETE /admission-requests/:id" {
+  :Validate id + role;
+  if (Status != APPROVED?) then (yes)
+    :Delete request;
+  else (no)
+    :Reject delete;
+  endif
+}
+
+end
+@enduml

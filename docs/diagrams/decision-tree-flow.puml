@@ -1,0 +1,42 @@
+@startuml
+' Decision Tree module flow (high level)
+
+title Decision Tree module - flow overview
+
+start
+partition "POST /decision-tree/train" {
+  :Validate training payload;
+  :Train model (ml-cart);
+  :Deactivate previous active model;
+  :Persist model metadata + file;
+  :Return model summary;
+}
+
+partition "POST /decision-tree/predict" {
+  :Validate payload + campId;
+  :Load model by id;
+  :Predict + explain;
+  :Return prediction + role assignment;
+}
+
+partition "POST /decision-tree/explain" {
+  :Validate payload + campId;
+  :Load model by id;
+  :Explain rules + summary;
+  :Return explanation;
+}
+
+partition "GET /decision-tree/models/:id" {
+  :Validate id + campId;
+  :Load model;
+  :Return sanitized model summary;
+}
+
+partition "GET /decision-tree/models" {
+  :Validate filters + pagination;
+  :List models;
+  :Return list + pagination;
+}
+
+end
+@enduml

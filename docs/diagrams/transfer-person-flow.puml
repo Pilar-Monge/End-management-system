@@ -1,0 +1,39 @@
+@startuml
+' Transfer Person module flow (high level)
+
+title Transfer Person module - flow overview
+
+start
+partition "POST /transfer-persons" {
+  :Validate transfer + person;
+  :Ensure unique assignment;
+  :Create transfer person;
+  :Notify camps + linked user;
+  :Sync transfer rations;
+}
+
+partition "GET /transfer-persons/:id" {
+  :Validate id + camp access (non-admin);
+  :Return transfer person;
+}
+
+partition "GET /transfer-persons" {
+  :Non-admin requires transferId;
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /transfer-persons/:id" {
+  :Validate id + camp access;
+  :Ensure unique assignment;
+  :Update transfer person;
+  :Notify if status change;
+  :Sync transfer rations;
+}
+
+partition "DELETE /transfer-persons/:id" {
+  :Blocked by policy (audit);
+}
+
+end
+@enduml
