@@ -326,7 +326,10 @@ export class TransferPersonService {
     }
   }
 
-  async assertTransferPersonCampAccess(transferPersonId: number, currentCampId: number): Promise<void> {
+  async assertTransferPersonCampAccess(
+    transferPersonId: number,
+    currentCampId: number,
+  ): Promise<void> {
     const scope = await this.repository.resolveTransferPersonScope(transferPersonId);
     if (!scope) {
       throw new NotFoundException('Transfer person not found');

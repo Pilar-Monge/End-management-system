@@ -16,7 +16,12 @@ describe('TransferPersonService (scope assertions)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new TransferPersonService(repository, notificationService, transferService, dataSource);
+    service = new TransferPersonService(
+      repository,
+      notificationService,
+      transferService,
+      dataSource,
+    );
   });
 
   it('assertTransferCampAccess rejects when camp not included in scope', async () => {
@@ -34,7 +39,10 @@ describe('TransferPersonService (scope assertions)', () => {
   });
 
   it('assertTransferPersonCampAccess rejects when camp not in scope', async () => {
-    repository.resolveTransferPersonScope.mockResolvedValue({ originCampId: 7, destinationCampId: 8 });
+    repository.resolveTransferPersonScope.mockResolvedValue({
+      originCampId: 7,
+      destinationCampId: 8,
+    });
     await expect(service.assertTransferPersonCampAccess(5, 3)).rejects.toThrow(
       'You can only access transfer persons involving your camp',
     );

@@ -61,7 +61,8 @@ export class SystemTimeController {
     description: 'System time advanced successfully',
   })
   @ApiBadRequestResponse({
-    description: 'Invalid unit or amount. Unit must be "hours" or "minutes", and amount must be > 0',
+    description:
+      'Invalid unit or amount. Unit must be "hours" or "minutes", and amount must be > 0',
   })
   @ApiForbiddenResponse({ description: 'Only administrators can access this endpoint' })
   async advanceSystemTime(@Body() dto: AdvanceSystemTimeDto): Promise<{
@@ -70,24 +71,17 @@ export class SystemTimeController {
     message: string;
   }> {
     try {
-
       if (!dto.unit || !Object.values(TimeUnit).includes(dto.unit)) {
-        throw new BadRequestException(
-          'Invalid unit. Must be either "hours" or "minutes"',
-        );
+        throw new BadRequestException('Invalid unit. Must be either "hours" or "minutes"');
       }
 
       if (typeof dto.amount !== 'number' || dto.amount <= 0) {
-        throw new BadRequestException(
-          'Invalid amount. Must be a positive number',
-        );
+        throw new BadRequestException('Invalid amount. Must be a positive number');
       }
 
-     
       const offsetBefore = this.systemTimeService.getOffset();
       const oldSystemTime = this.systemTimeService.now();
 
-   
       let milliseconds = 0;
       if (dto.unit === TimeUnit.HOURS) {
         milliseconds = dto.amount * 60 * 60 * 1000;
@@ -95,21 +89,17 @@ export class SystemTimeController {
         milliseconds = dto.amount * 60 * 1000;
       }
 
-      
       const result = this.systemTimeService.addOffset(milliseconds);
       const offsetAfter = this.systemTimeService.getOffset();
       const newSystemTime = this.systemTimeService.now();
 
-     
       const message =
         dto.unit === TimeUnit.HOURS
           ? `Advanced system time by ${dto.amount} hour(s)`
           : `Advanced system time by ${dto.amount} minute(s)`;
 
-      
       const automations: string[] = [];
 
-      
       try {
         const automationPromise = this.executeTimeAutomations(oldSystemTime, newSystemTime);
         const timeoutPromise = new Promise<string[]>((resolve) => {
@@ -120,7 +110,6 @@ export class SystemTimeController {
       } catch (error) {
         this.logger.error('Error executing automations:', error);
         automations.push('Error executing automations (non-blocking)');
-       
       }
 
       return {
@@ -178,35 +167,25 @@ export class SystemTimeController {
     };
   }
 
- 
-  private async executeTimeAutomations(
-    oldTime: Date,
-    newTime: Date,
-  ): Promise<string[]> {
+  private async executeTimeAutomations(oldTime: Date, newTime: Date): Promise<string[]> {
     const automations: string[] = [];
 
-  
     const midnightsPassed = this.calculateMidnightsPassed(oldTime, newTime);
     if (midnightsPassed > 0) {
       await this.executeDailyCycles(midnightsPassed);
       automations.push(`Executed ${midnightsPassed} daily resource cycle(s)`);
     }
 
-    
     const expeditionsUpdated = await this.updateExpeditionStates();
     if (expeditionsUpdated > 0) {
       automations.push(`Updated states for ${expeditionsUpdated} expedition(s)`);
     }
 
-   
     const sessionsClosed = await this.closeExpiredSessions();
     if (sessionsClosed > 0) {
-      automations.push(
-        `Closed ${sessionsClosed} expired session(s) with notification`,
-      );
+      automations.push(`Closed ${sessionsClosed} expired session(s) with notification`);
     }
 
- 
     const tokensInvalidated = await this.invalidateExpiredTokens();
     if (tokensInvalidated > 0) {
       automations.push(`Invalidated ${tokensInvalidated} expired token(s)`);
@@ -215,13 +194,12 @@ export class SystemTimeController {
     return automations;
   }
 
-  
   private calculateMidnightsPassed(beforeTime: Date, afterTime: Date): number {
     const before = new Date(beforeTime);
     const after = new Date(afterTime);
 
     let count = 0;
-    let currentTime = new Date(before);
+    const currentTime = new Date(before);
     currentTime.setUTCHours(0, 0, 0, 0);
     currentTime.setUTCDate(currentTime.getUTCDate() + 1);
 
@@ -233,10 +211,11 @@ export class SystemTimeController {
     return count;
   }
 
- 
   private async executeDailyCycles(count: number): Promise<void> {
-    const temporalAutomationService = this.moduleRef.get(TemporalAutomationService, { strict: false });
-    
+    const temporalAutomationService = this.moduleRef.get(TemporalAutomationService, {
+      strict: false,
+    });
+
     if (!temporalAutomationService) {
       this.logger.warn('TemporalAutomationService not available');
       return;
@@ -252,10 +231,9 @@ export class SystemTimeController {
     }
   }
 
-  
   private async updateExpeditionStates(): Promise<number> {
     const expeditionService = this.moduleRef.get(ExpeditionService, { strict: false });
-    
+
     if (!expeditionService) {
       this.logger.warn('ExpeditionService not available');
       return 0;
@@ -266,18 +244,12 @@ export class SystemTimeController {
       let updated = 0;
 
       for (const expedition of expeditions) {
-        if (
-          ['COMPLETED', 'CANCELED', 'RETURNED_AFTER_LOST'].includes(
-            expedition.status,
-          )
-        ) {
+        if (['COMPLETED', 'CANCELED', 'RETURNED_AFTER_LOST'].includes(expedition.status)) {
           continue;
         }
 
         try {
-          const result = await expeditionService.forceUpdateExpeditionState(
-            expedition.id,
-          );
+          const result = await expeditionService.forceUpdateExpeditionState(expedition.id);
           if (result && result.status !== expedition.status) {
             updated++;
             this.logger.debug(
@@ -296,7 +268,6 @@ export class SystemTimeController {
     }
   }
 
- 
   private async closeExpiredSessions(): Promise<number> {
     try {
       const allActiveSessions = await this.sessionRepo.find({
@@ -325,7 +296,6 @@ export class SystemTimeController {
     }
   }
 
- 
   private async invalidateExpiredTokens(): Promise<number> {
     try {
       const allActiveTokens = await this.passwordResetTokenRepo.find({
@@ -338,10 +308,7 @@ export class SystemTimeController {
       for (const token of allActiveTokens) {
         if (token.expiresAt && token.expiresAt <= now) {
           try {
-            await this.passwordResetTokenRepo.update(
-              { id: token.id },
-              { status: 'EXPIRED' },
-            );
+            await this.passwordResetTokenRepo.update({ id: token.id }, { status: 'EXPIRED' });
             invalidated++;
             this.logger.debug(`Token ${token.id} invalidated`);
           } catch (error) {
@@ -357,4 +324,3 @@ export class SystemTimeController {
     }
   }
 }
-

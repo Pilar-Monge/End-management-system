@@ -137,10 +137,7 @@ describe('Notification email payload camp name masking', () => {
             originCampId: 1,
             destinationCampId: 2,
           },
-          items: [
-            { campId: 1 },
-            { originCampId: '1', destinationCampId: '2' },
-          ],
+          items: [{ campId: 1 }, { originCampId: '1', destinationCampId: '2' }],
         },
       },
     });

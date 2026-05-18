@@ -25,7 +25,9 @@ test.describe.serial('Intercamp Request - Auto-assign persons and rations', () =
     await db.end();
   });
 
-  test('approve request with personRequirements creates transfer and assigns people', async ({ request }) => {
+  test('approve request with personRequirements creates transfer and assigns people', async ({
+    request,
+  }) => {
     const res = await db.query<{ occupation_id: number; cnt: string }>(
       `SELECT occupation_id, COUNT(*)::text AS cnt
        FROM person p

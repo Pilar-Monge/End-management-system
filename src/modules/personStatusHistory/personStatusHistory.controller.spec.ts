@@ -19,7 +19,12 @@ describe('PersonStatusHistoryController', () => {
 
   describe('create', () => {
     it('should create an entry successfully', async () => {
-      const body = { personId: 1, previousStatus: 'ACTIVE', newStatus: 'INACTIVE', changedBy: 5 } as any;
+      const body = {
+        personId: 1,
+        previousStatus: 'ACTIVE',
+        newStatus: 'INACTIVE',
+        changedBy: 5,
+      } as any;
       service.createEntry.mockResolvedValue({ id: 10, ...body });
 
       const result = await controller.create(body);
@@ -74,19 +79,27 @@ describe('PersonStatusHistoryController', () => {
     });
 
     it('should throw BadRequestException if page is invalid', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, 'abc')).rejects.toThrow('Invalid page');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, 'abc'),
+      ).rejects.toThrow('Invalid page');
     });
 
     it('should throw BadRequestException if page is less than 1', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, '0')).rejects.toThrow('Invalid page');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, '0'),
+      ).rejects.toThrow('Invalid page');
     });
 
     it('should throw BadRequestException if limit is invalid', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, '1', 'abc')).rejects.toThrow('Invalid limit');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, '1', 'abc'),
+      ).rejects.toThrow('Invalid limit');
     });
 
     it('should throw BadRequestException if limit is less than 1', async () => {
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, '1', '0')).rejects.toThrow('Invalid limit');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, '1', '0'),
+      ).rejects.toThrow('Invalid limit');
     });
 
     it('should throw BadRequestException on service error', async () => {

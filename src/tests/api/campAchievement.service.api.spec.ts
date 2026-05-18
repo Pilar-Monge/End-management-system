@@ -24,7 +24,7 @@ describe('CampAchievementService (API service unit tests)', () => {
     campRepo = { exist: jest.fn().mockResolvedValue(true) };
     achievementRepo = { exist: jest.fn().mockResolvedValue(true) };
     userRepo = { exist: jest.fn().mockResolvedValue(true) };
-    notificationService = { 
+    notificationService = {
       notifyCampRoles: jest.fn().mockResolvedValue(undefined),
       notifyUser: jest.fn().mockResolvedValue(undefined),
     };

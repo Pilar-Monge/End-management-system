@@ -54,7 +54,9 @@ test.describe.serial('Operational Notifications Without Email E2E', () => {
     await db.end();
   });
 
-  test('inventory movement update creates notification but does not queue email', async ({ request }) => {
+  test('inventory movement update creates notification but does not queue email', async ({
+    request,
+  }) => {
     const uniqueTag = `${Date.now()}`;
 
     const createResponse = await request.post('/api/inventory-movements', {
@@ -109,7 +111,9 @@ test.describe.serial('Operational Notifications Without Email E2E', () => {
     );
   });
 
-  test('expedition creation notifies in-app but does not queue expedition email', async ({ request }) => {
+  test('expedition creation notifies in-app but does not queue expedition email', async ({
+    request,
+  }) => {
     const uniqueTag = `${Date.now()}`;
 
     const createResponse = await request.post('/api/expeditions', {

@@ -1,0 +1,88 @@
+name: CI - lint, build and unit tests
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint:ci
+
+  unit:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gestionfin
+          POSTGRES_PASSWORD: gestionfin123
+          POSTGRES_DB: gestionfin_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U gestionfin -d gestionfin_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: gestionfin
+      DB_PASSWORD: gestionfin123
+      DB_NAME: gestionfin_db
+      DB_SYNC: false
+      DB_SSL: false
+      JWT_SECRET: ci-jwt-secret-32-chars-minimum
+      CORS_ORIGIN: http://localhost:5173,http://127.0.0.1:5173
+      RATE_LIMIT_TTL_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 120
+      EMAIL_ENABLED: false
+      EMAIL_FROM: no-reply@example.com
+      EMAIL_MAX_ATTEMPTS: 5
+      EMAIL_PROCESSING_LEASE_MINUTES: 10
+      EMAIL_PROCESSOR_CRON: '*/1 * * * *'
+      EMAIL_BATCH_SIZE: 20
+      PASSWORD_RESET_TTL_MINUTES: 30
+      FRONTEND_RESET_PASSWORD_URL: http://localhost:5173/reset-password
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --runInBand

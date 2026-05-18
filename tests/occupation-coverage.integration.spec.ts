@@ -65,9 +65,7 @@ describe('Occupation Coverage Scheduler Integration', () => {
       campId: 1,
     };
 
-    dataSource.query
-      .mockResolvedValueOnce([{ id: 1 }])
-      .mockResolvedValueOnce([{ id: 77 }]);
+    dataSource.query.mockResolvedValueOnce([{ id: 1 }]).mockResolvedValueOnce([{ id: 77 }]);
     jest.mocked(coverageService.getCriticalOccupations).mockResolvedValue([criticalOccupation]);
     jest.mocked(coverageService.getSuggestedReplacements).mockResolvedValue([
       {

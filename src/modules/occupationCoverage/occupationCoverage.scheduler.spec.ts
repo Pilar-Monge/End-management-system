@@ -15,7 +15,7 @@ describe('OccupationCoverageScheduler', () => {
       query: jest.fn(),
       getRepository: jest.fn().mockReturnValue({
         save: jest.fn().mockResolvedValue({ id: 1 }),
-        create: jest.fn().mockImplementation(d => d),
+        create: jest.fn().mockImplementation((d) => d),
         findOne: jest.fn().mockResolvedValue({ name: 'John', lastName1: 'Doe' }),
       }),
     };
@@ -38,9 +38,13 @@ describe('OccupationCoverageScheduler', () => {
 
       await scheduler.checkCriticalOccupations();
 
-      expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(1, ['SYSTEM_ADMIN'], expect.objectContaining({
-        type: 'TEMPORARY_OCCUPATION_ASSIGNED',
-      }));
+      expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(
+        1,
+        ['SYSTEM_ADMIN'],
+        expect.objectContaining({
+          type: 'TEMPORARY_OCCUPATION_ASSIGNED',
+        }),
+      );
     });
 
     it('should notify if no suggestions available', async () => {
@@ -52,9 +56,13 @@ describe('OccupationCoverageScheduler', () => {
 
       await scheduler.checkCriticalOccupations();
 
-      expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(1, ['SYSTEM_ADMIN'], expect.objectContaining({
-        type: 'OCCUPATION_WITHOUT_STAFF',
-      }));
+      expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(
+        1,
+        ['SYSTEM_ADMIN'],
+        expect.objectContaining({
+          type: 'OCCUPATION_WITHOUT_STAFF',
+        }),
+      );
     });
 
     it('should skip if not critical', async () => {

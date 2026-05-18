@@ -1,6 +1,9 @@
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import { AdvanceSystemTimeDto, TimeUnit } from '../../modules/systemTime/dto/advance-system-time.dto';
+import {
+  AdvanceSystemTimeDto,
+  TimeUnit,
+} from '../../modules/systemTime/dto/advance-system-time.dto';
 
 describe('AdvanceSystemTimeDto (Validation unit tests)', () => {
   describe('TimeUnit enum', () => {
@@ -122,7 +125,7 @@ describe('AdvanceSystemTimeDto (Validation unit tests)', () => {
     it('accepts large amounts', async () => {
       const dto = plainToClass(AdvanceSystemTimeDto, {
         unit: 'hours',
-        amount: 8760, 
+        amount: 8760,
       });
 
       const errors = await validate(dto);
@@ -167,7 +170,7 @@ describe('AdvanceSystemTimeDto (Validation unit tests)', () => {
       });
 
       const errors = await validate(dto);
-      
+
       expect(errors).toHaveLength(0);
     });
 
@@ -236,7 +239,7 @@ describe('AdvanceSystemTimeDto (Validation unit tests)', () => {
     it('handles scientific notation numbers', async () => {
       const dto = plainToClass(AdvanceSystemTimeDto, {
         unit: 'hours',
-        amount: 1e3, 
+        amount: 1e3,
       });
 
       const errors = await validate(dto);
