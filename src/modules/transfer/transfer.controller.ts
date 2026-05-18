@@ -13,7 +13,6 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -42,10 +41,7 @@ import { CreateTransferDto, UpdateTransferDto } from './dto';
 @Controller('transfers')
 @ApiTags('Transfer')
 export class TransferController {
-  constructor(
-    private readonly service: TransferService,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly service: TransferService) {}
 
   private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
     const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
@@ -72,45 +68,6 @@ export class TransferController {
     return rol === 'SYSTEM_ADMIN';
   }
 
-  private async assertRequestCampAccess(requestId: number, currentCampId: number): Promise<void> {
-    const request = await this.dataSource.query(
-      `SELECT id, origin_camp_id, destination_camp_id FROM public.intercamp_request WHERE id = $1 LIMIT 1`,
-      [requestId],
-    );
-
-    const record = request[0] as
-      | { id: number; origin_camp_id: number; destination_camp_id: number }
-      | undefined;
-
-    if (!record) {
-      throw new NotFoundException('Intercamp request not found');
-    }
-
-    if (record.origin_camp_id !== currentCampId && record.destination_camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access transfers involving your camp');
-    }
-  }
-
-  private async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer t
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE t.id = $1
-       LIMIT 1`,
-      [transferId],
-    );
-
-    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!scope) {
-      throw new NotFoundException('Transfer not found');
-    }
-
-    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access transfers involving your camp');
-    }
-  }
-
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Transfer' })
@@ -123,7 +80,7 @@ export class TransferController {
     try {
       const currentUser = this.getCurrentUser(req);
       if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+        await this.service.assertRequestCampAccess(body.requestId, currentUser.campId);
       }
 
       const transfer = await this.service.createTransfer(body);
@@ -139,7 +96,7 @@ export class TransferController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Transfer by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
   @ApiOkResponseData(TransferEntity, { description: 'Transfer found' })
@@ -155,7 +112,7 @@ export class TransferController {
 
     const currentUser = this.getCurrentUser(req);
     if (!this.isSystemAdmin(currentUser.rol)) {
-      await this.assertTransferCampAccess(parsedId, currentUser.campId);
+      await this.service.assertTransferCampAccess(parsedId, currentUser.campId);
     }
 
     const transfer = await this.service.getTransferById(parsedId);
@@ -164,7 +121,7 @@ export class TransferController {
     return { success: true, data: transfer };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Transfer' })
   @ApiOkResponseList(TransferEntity, { description: 'Transfer list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -208,7 +165,7 @@ export class TransferController {
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
 
         if (!isAdmin) {
-          await this.assertRequestCampAccess(parsedRequestId, currentUser.campId);
+          await this.service.assertRequestCampAccess(parsedRequestId, currentUser.campId);
         }
 
         filters.requestId = parsedRequestId;
@@ -273,9 +230,9 @@ export class TransferController {
     try {
       const currentUser = this.getCurrentUser(req);
       if (!this.isSystemAdmin(currentUser.rol)) {
-        await this.assertTransferCampAccess(parsedId, currentUser.campId);
+        await this.service.assertTransferCampAccess(parsedId, currentUser.campId);
         if (body.requestId !== undefined) {
-          await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+          await this.service.assertRequestCampAccess(body.requestId, currentUser.campId);
         }
       }
 

@@ -78,7 +78,7 @@ export class DailyCollectionRecordController {
     return rol === 'SYSTEM_ADMIN';
   }
   @Post()
-  @Roles('WORKER', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Create Daily Collection Record' })
   @ApiBody({ type: CreateDailyCollectionRecordDto })
   @ApiCreatedResponseData(DailyCollectionRecordEntity, {
@@ -116,7 +116,7 @@ export class DailyCollectionRecordController {
   }
 
   @Post(':id/adjustment')
-  @Roles('WORKER', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Adjust Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiBody({ type: AdjustDailyCollectionRecordDto })
@@ -169,7 +169,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
+  @Roles('RESOURCE_MANAGEMENT', 'WORKER')
   @ApiOperation({ summary: 'Get Daily Collection Record by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiOkResponseData(DailyCollectionRecordEntity, { description: 'Daily Collection Record found' })
@@ -194,7 +194,7 @@ export class DailyCollectionRecordController {
     return { success: true, data: record };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'WORKER')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Daily Collection Record' })
   @ApiOkResponseList(DailyCollectionRecordEntity, { description: 'Daily Collection Record list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -306,7 +306,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Put(':id')
-  @Roles('WORKER', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Update Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiBody({ type: UpdateDailyCollectionRecordDto })
@@ -365,7 +365,7 @@ export class DailyCollectionRecordController {
     }
   }
   @Delete(':id')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Delete Daily Collection Record' })
   @ApiParam({ name: 'id', type: Number, description: 'Daily Collection Record id' })
   @ApiOkResponseMessage({ description: 'Daily Collection Record deleted' })

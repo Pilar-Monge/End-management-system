@@ -36,25 +36,33 @@ describe('AccessLogService', () => {
 
     it('should throw BadRequestException if campId mismatch', async () => {
       repository.findUserById.mockResolvedValue({ id: 1, campId: 20 });
-      await expect(service.createLog({ userId: 1, campId: 10 } as any)).rejects.toThrow(BadRequestException);
+      await expect(service.createLog({ userId: 1, campId: 10 } as any)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException if session not found', async () => {
       repository.findUserById.mockResolvedValue({ id: 1, campId: 10 });
       repository.findSessionById.mockResolvedValue(null);
-      await expect(service.createLog({ userId: 1, campId: 10, sessionId: 100 } as any)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.createLog({ userId: 1, campId: 10, sessionId: 100 } as any),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if session userId mismatch', async () => {
       repository.findUserById.mockResolvedValue({ id: 1, campId: 10 });
       repository.findSessionById.mockResolvedValue({ id: 100, userId: 2, campId: 10 });
-      await expect(service.createLog({ userId: 1, campId: 10, sessionId: 100 } as any)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createLog({ userId: 1, campId: 10, sessionId: 100 } as any),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException if session campId mismatch', async () => {
       repository.findUserById.mockResolvedValue({ id: 1, campId: 10 });
       repository.findSessionById.mockResolvedValue({ id: 100, userId: 1, campId: 20 });
-      await expect(service.createLog({ userId: 1, campId: 10, sessionId: 100 } as any)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createLog({ userId: 1, campId: 10, sessionId: 100 } as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -75,13 +83,20 @@ describe('AccessLogService', () => {
 
     it('should apply filters', async () => {
       repository.findAllAndCount.mockResolvedValue({ data: [], total: 0 });
-      await service.getAllLogs({ userId: 1, campId: 10, sessionId: 100, eventType: 'LOGIN' as any });
-      expect(repository.findAllAndCount).toHaveBeenCalledWith(expect.objectContaining({
+      await service.getAllLogs({
         userId: 1,
         campId: 10,
         sessionId: 100,
-        eventType: 'LOGIN',
-      }));
+        eventType: 'LOGIN' as any,
+      });
+      expect(repository.findAllAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 1,
+          campId: 10,
+          sessionId: 100,
+          eventType: 'LOGIN',
+        }),
+      );
     });
   });
 

@@ -23,10 +23,7 @@ export class AdvanceSystemTimeDto {
     example: 2,
     minimum: 0.01,
   })
-  @IsNumber(
-    { allowNaN: false, allowInfinity: false },
-    { message: 'Amount must be a valid number' },
-  )
+  @IsNumber({ allowNaN: false, allowInfinity: false }, { message: 'Amount must be a valid number' })
   @Min(0.01, { message: 'Amount must be greater than 0' })
   amount!: number;
 }

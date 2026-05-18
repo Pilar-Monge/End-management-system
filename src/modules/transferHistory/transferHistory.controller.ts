@@ -13,7 +13,6 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { DataSource } from 'typeorm';
 
 import {
   ApiBadRequestResponse,
@@ -44,10 +43,7 @@ import { CreateTransferHistoryDto } from './dto';
 @Controller('transfer-history')
 @ApiTags('Transfer History')
 export class TransferHistoryController {
-  constructor(
-    private readonly service: TransferHistoryService,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly service: TransferHistoryService) {}
 
   private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
     const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
@@ -74,47 +70,6 @@ export class TransferHistoryController {
     return rol === 'SYSTEM_ADMIN';
   }
 
-  private async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer t
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE t.id = $1
-       LIMIT 1`,
-      [transferId],
-    );
-
-    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!scope) {
-      throw new NotFoundException('Transfer not found');
-    }
-
-    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access transfer history involving your camp');
-    }
-  }
-
-  private async assertHistoryCampAccess(id: number, currentCampId: number): Promise<void> {
-    const rows = await this.dataSource.query(
-      `SELECT r.origin_camp_id, r.destination_camp_id
-       FROM public.transfer_history h
-       JOIN public.transfer t ON t.id = h.transfer_id
-       JOIN public.intercamp_request r ON r.id = t.request_id
-       WHERE h.id = $1
-       LIMIT 1`,
-      [id],
-    );
-
-    const scope = rows[0] as { origin_camp_id: number; destination_camp_id: number } | undefined;
-    if (!scope) {
-      throw new NotFoundException('Transfer history entry not found');
-    }
-
-    if (scope.origin_camp_id !== currentCampId && scope.destination_camp_id !== currentCampId) {
-      throw new BadRequestException('You can only access transfer history involving your camp');
-    }
-  }
-
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Transfer History' })
@@ -131,7 +86,7 @@ export class TransferHistoryController {
           throw new BadRequestException('userId must match the authenticated user');
         }
 
-        await this.assertTransferCampAccess(body.transferId, currentUser.campId);
+        await this.service.assertTransferCampAccess(body.transferId, currentUser.campId);
       }
 
       const entry = await this.service.createEntry(body);
@@ -147,7 +102,7 @@ export class TransferHistoryController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Transfer History by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Transfer History id' })
   @ApiOkResponseData(TransferHistoryEntity, { description: 'Transfer History found' })
@@ -163,7 +118,7 @@ export class TransferHistoryController {
 
     const currentUser = this.getCurrentUser(req);
     if (!this.isSystemAdmin(currentUser.rol)) {
-      await this.assertHistoryCampAccess(parsedId, currentUser.campId);
+      await this.service.assertHistoryCampAccess(parsedId, currentUser.campId);
     }
 
     const entry = await this.service.getEntryById(parsedId);
@@ -178,7 +133,7 @@ export class TransferHistoryController {
     return { success: true, data: entry };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Transfer History' })
   @ApiOkResponseList(TransferHistoryEntity, { description: 'Transfer History list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -226,7 +181,7 @@ export class TransferHistoryController {
         if (Number.isNaN(parsedTransferId)) throw new BadRequestException('Invalid transferId');
 
         if (!isAdmin) {
-          await this.assertTransferCampAccess(parsedTransferId, currentUser.campId);
+          await this.service.assertTransferCampAccess(parsedTransferId, currentUser.campId);
         }
 
         filters.transferId = parsedTransferId;

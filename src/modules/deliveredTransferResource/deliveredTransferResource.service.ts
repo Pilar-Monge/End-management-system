@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
@@ -32,6 +32,28 @@ export class DeliveredTransferResourceService {
     }
 
     return scope;
+  }
+
+  async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new NotFoundException('Transfer not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access delivered resources involving your camp');
+    }
+  }
+
+  async assertDeliveredCampAccess(deliveredId: number, currentCampId: number): Promise<void> {
+    const scope = await this.repository.resolveDeliveredScope(deliveredId);
+    if (!scope) {
+      throw new NotFoundException('Delivered transfer resource not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access delivered resources involving your camp');
+    }
   }
 
   private async notifyDeliveredResourceChange(

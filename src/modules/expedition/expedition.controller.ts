@@ -102,7 +102,7 @@ export class ExpeditionController {
   }
 
   @Get('active')
-  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List active expeditions' })
   @ApiOkResponseList(ExpeditionEntity, { description: 'Active expeditions' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
@@ -136,7 +136,7 @@ export class ExpeditionController {
     return { success: true, data };
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Get Expedition by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition found' })
@@ -161,7 +161,7 @@ export class ExpeditionController {
     return { success: true, data: expedition };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'List Expedition' })
   @ApiOkResponseList(ExpeditionEntity, { description: 'Expedition list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -298,7 +298,7 @@ export class ExpeditionController {
   }
 
   @Post(':id/complete')
-  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Complete expedition' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition completed' })
@@ -350,7 +350,7 @@ export class ExpeditionController {
   }
 
   @Post(':id/force-update-state')
-  @Roles('SYSTEM_ADMIN', 'TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER')
   @ApiOperation({
     summary: 'Force update expedition state based on current time',
     description:

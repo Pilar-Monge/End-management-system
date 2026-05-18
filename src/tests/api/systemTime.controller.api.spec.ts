@@ -10,7 +10,6 @@ describe('SystemTimeController (API controller unit tests)', () => {
   let mockPasswordTokenRepo: any;
 
   beforeEach(() => {
-    
     jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => {});
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
@@ -97,7 +96,9 @@ describe('SystemTimeController (API controller unit tests)', () => {
     it('data contains currentSystemTime ISO string', () => {
       const result = controller.getOffset();
       expect(result.data).toHaveProperty('currentSystemTime');
-      expect(result.data.currentSystemTime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(result.data.currentSystemTime).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      );
     });
 
     it('calls service methods', () => {
@@ -110,23 +111,17 @@ describe('SystemTimeController (API controller unit tests)', () => {
   describe('advanceSystemTime() - Input validation', () => {
     it('throws BadRequestException for invalid unit', async () => {
       const dto = { unit: 'invalid', amount: 1 };
-      await expect(controller.advanceSystemTime(dto as any)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(controller.advanceSystemTime(dto as any)).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException for zero amount', async () => {
       const dto = { unit: 'hours', amount: 0 };
-      await expect(controller.advanceSystemTime(dto as any)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(controller.advanceSystemTime(dto as any)).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException for negative amount', async () => {
       const dto = { unit: 'hours', amount: -1 };
-      await expect(controller.advanceSystemTime(dto as any)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(controller.advanceSystemTime(dto as any)).rejects.toThrow(BadRequestException);
     });
   });
 

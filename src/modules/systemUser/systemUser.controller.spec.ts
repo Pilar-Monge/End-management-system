@@ -65,7 +65,9 @@ describe('UserController', () => {
     });
 
     it('should throw BadRequestException if id is missing', async () => {
-      await expect(controller.findById(undefined as any, mockRequest)).rejects.toThrow('ID not provided');
+      await expect(controller.findById(undefined as any, mockRequest)).rejects.toThrow(
+        'ID not provided',
+      );
     });
 
     it('should throw BadRequestException if id is invalid', async () => {
@@ -128,8 +130,9 @@ describe('UserController', () => {
   describe('getCurrentUser', () => {
     it('should throw BadRequestException if context is invalid', async () => {
       const invalidReq = { user: {} } as any;
-      await expect(controller.findAll(invalidReq)).rejects.toThrow('Authenticated user context is invalid');
+      await expect(controller.findAll(invalidReq)).rejects.toThrow(
+        'Authenticated user context is invalid',
+      );
     });
   });
 });
-

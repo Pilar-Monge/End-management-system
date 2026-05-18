@@ -55,7 +55,9 @@ describe('AiAdmissionReportService (API service unit tests)', () => {
     const dto = { requestId: 999, aiDecision: 'APPROVED' };
     repository.admissionRequestExists.mockResolvedValue(false);
 
-    await expect(service.createReport(dto as any)).rejects.toThrow('Solicitud de admision no encontrada');
+    await expect(service.createReport(dto as any)).rejects.toThrow(
+      'Solicitud de admision no encontrada',
+    );
   });
 
   it('createReport throws when report already exists for request', async () => {
@@ -178,7 +180,9 @@ describe('AiAdmissionReportService (API service unit tests)', () => {
     repository.findById.mockResolvedValue(existing);
     repository.admissionRequestExists.mockResolvedValue(false);
 
-    await expect(service.updateReport(1, { requestId: 999 } as any)).rejects.toThrow('Solicitud de admision no encontrada');
+    await expect(service.updateReport(1, { requestId: 999 } as any)).rejects.toThrow(
+      'Solicitud de admision no encontrada',
+    );
   });
 
   it('updateReport throws when new requestId already has a report', async () => {
@@ -188,7 +192,9 @@ describe('AiAdmissionReportService (API service unit tests)', () => {
     repository.admissionRequestExists.mockResolvedValue(true);
     repository.findByRequestId.mockResolvedValue(otherReport);
 
-    await expect(service.updateReport(1, { requestId: 2 } as any)).rejects.toThrow('Ya existe un reporte de IA');
+    await expect(service.updateReport(1, { requestId: 2 } as any)).rejects.toThrow(
+      'Ya existe un reporte de IA',
+    );
   });
 
   it('updateReport with new suggestedOccupationId that does not exist throws', async () => {

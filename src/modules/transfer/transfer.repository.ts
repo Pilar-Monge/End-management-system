@@ -122,6 +122,28 @@ export class TransferRepository {
     }));
   }
 
+  async resolveTransferScope(transferId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  } | null> {
+    const rows = (await this.repo.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer t
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE t.id = $1
+       LIMIT 1`,
+      [transferId],
+    )) as Array<{ origin_camp_id: number; destination_camp_id: number }>;
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      originCampId: row.origin_camp_id,
+      destinationCampId: row.destination_camp_id,
+    };
+  }
+
   async createTransferHistoryEntry(data: {
     transferId: number;
     previousStatus: TransferStatus;

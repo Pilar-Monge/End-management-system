@@ -9,6 +9,6 @@ const describeRoles = (roles: string[]): string =>
 export const Roles = (...roles: string[]) =>
   applyDecorators(
     SetMetadata('roles', roles),
-    ApiBearerAuth(),
+    ApiBearerAuth('bearer'),
     ApiForbiddenResponse({ description: describeRoles(roles) }),
   );

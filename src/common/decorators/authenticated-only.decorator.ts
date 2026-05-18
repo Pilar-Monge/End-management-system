@@ -4,6 +4,6 @@ import { ApiBearerAuth, ApiForbiddenResponse } from '@nestjs/swagger';
 export const AuthenticatedOnly = () =>
   applyDecorators(
     SetMetadata('authenticatedOnly', true),
-    ApiBearerAuth(),
+    ApiBearerAuth('bearer'),
     ApiForbiddenResponse({ description: 'Requires an authenticated user.' }),
   );

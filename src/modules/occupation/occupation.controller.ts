@@ -63,7 +63,7 @@ export class OccupationController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'WORKER')
   @ApiOperation({ summary: 'Get Occupation by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Occupation id' })
   @ApiOkResponseData(OccupationEntity, { description: 'Occupation found' })
@@ -83,7 +83,7 @@ export class OccupationController {
     return { success: true, data: occupation };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'WORKER')
   @ApiOperation({ summary: 'List Occupation' })
   @ApiOkResponseList(OccupationEntity, { description: 'Occupation list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })

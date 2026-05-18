@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
@@ -360,5 +360,27 @@ export class TransferService {
     );
 
     return true;
+  }
+
+  async assertRequestCampAccess(requestId: number, currentCampId: number): Promise<void> {
+    const scope = await this.repository.resolveRequestScope(requestId);
+    if (!scope) {
+      throw new Error('Solicitud intercampamento no encontrada');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access transfers involving your camp');
+    }
+  }
+
+  async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new NotFoundException('Transfer not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access transfers involving your camp');
+    }
   }
 }

@@ -34,17 +34,23 @@ describe('AccessLogController', () => {
 
     it('should throw BadRequestException if campId mismatch', async () => {
       const body = { campId: 20 } as any;
-      await expect(controller.create(body, mockRequest)).rejects.toThrow('You cannot create logs for another camp');
+      await expect(controller.create(body, mockRequest)).rejects.toThrow(
+        'You cannot create logs for another camp',
+      );
     });
 
     it('should throw BadRequestException if user context is invalid', async () => {
       const invalidReq = { user: {} } as any;
-      await expect(controller.create({ campId: 10 } as any, invalidReq)).rejects.toThrow('Authenticated user context is invalid');
+      await expect(controller.create({ campId: 10 } as any, invalidReq)).rejects.toThrow(
+        'Authenticated user context is invalid',
+      );
     });
 
     it('should throw BadRequestException on service error', async () => {
       service.createLog.mockRejectedValue(new Error('Test error'));
-      await expect(controller.create({ campId: 10 } as any, mockRequest)).rejects.toThrow(BadRequestException);
+      await expect(controller.create({ campId: 10 } as any, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -73,7 +79,15 @@ describe('AccessLogController', () => {
   describe('getAll', () => {
     it('should return paginated results', async () => {
       service.getAllLogs.mockResolvedValue({ data: [], total: 0 });
-      const result = await controller.getAll('1', '10', '100', 'LOGIN' as any, '1', '10', mockRequest);
+      const result = await controller.getAll(
+        '1',
+        '10',
+        '100',
+        'LOGIN' as any,
+        '1',
+        '10',
+        mockRequest,
+      );
       expect(result.success).toBe(true);
       expect(service.getAllLogs).toHaveBeenCalledWith(expect.objectContaining({ campId: 10 }));
     });
@@ -83,11 +97,45 @@ describe('AccessLogController', () => {
     });
 
     it('should throw BadRequestException if query params are invalid', async () => {
-      await expect(controller.getAll('abc', undefined, undefined, undefined, undefined, undefined, mockRequest)).rejects.toThrow('Invalid userId');
-      await expect(controller.getAll(undefined, 'abc', undefined, undefined, undefined, undefined, mockRequest)).rejects.toThrow('Invalid campId');
-      await expect(controller.getAll(undefined, undefined, 'abc', undefined, undefined, undefined, mockRequest)).rejects.toThrow('Invalid sessionId');
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, '0', undefined, mockRequest)).rejects.toThrow('Invalid page');
-      await expect(controller.getAll(undefined, undefined, undefined, undefined, '1', '0', mockRequest)).rejects.toThrow('Invalid limit');
+      await expect(
+        controller.getAll(
+          'abc',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          mockRequest,
+        ),
+      ).rejects.toThrow('Invalid userId');
+      await expect(
+        controller.getAll(
+          undefined,
+          'abc',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          mockRequest,
+        ),
+      ).rejects.toThrow('Invalid campId');
+      await expect(
+        controller.getAll(
+          undefined,
+          undefined,
+          'abc',
+          undefined,
+          undefined,
+          undefined,
+          mockRequest,
+        ),
+      ).rejects.toThrow('Invalid sessionId');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, '0', undefined, mockRequest),
+      ).rejects.toThrow('Invalid page');
+      await expect(
+        controller.getAll(undefined, undefined, undefined, undefined, '1', '0', mockRequest),
+      ).rejects.toThrow('Invalid limit');
     });
   });
 

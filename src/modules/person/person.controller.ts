@@ -49,7 +49,7 @@ const imageUploadOptions = {
   },
 };
 
-@Controller('persons')
+@Controller('person')
 @ApiTags('Person')
 export class PersonController {
   constructor(private readonly service: PersonService) {}
@@ -97,7 +97,7 @@ export class PersonController {
     }
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Person by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiOkResponseData(PersonEntity, { description: 'Person found' })
@@ -122,7 +122,7 @@ export class PersonController {
     return { success: true, data: person };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Person' })
   @ApiOkResponseList(PersonEntity, { description: 'Person list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -261,7 +261,7 @@ export class PersonController {
   }
 
   @Post(':id/photo')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Upload person photo' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiConsumes('multipart/form-data')
@@ -323,7 +323,7 @@ export class PersonController {
   }
 
   @Put(':id/photo')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update person photo' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiConsumes('multipart/form-data')

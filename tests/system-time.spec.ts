@@ -61,9 +61,7 @@ test.describe.serial('System Time API E2E', () => {
     console.log('Admin token obtained');
   });
 
-  test('GET /api/system/time/offset returns offset (Admin only)', async ({
-    request,
-  }) => {
+  test('GET /api/system/time/offset returns offset (Admin only)', async ({ request }) => {
     const response = await request.get('/api/system/time/offset', {
       headers: {
         Authorization: `Bearer ${adminToken}`,
@@ -137,16 +135,10 @@ test.describe.serial('System Time API E2E', () => {
     const body = (await response.json()) as AdvanceTimeResponse;
     expect(body.success).toBe(true);
     expect(body.data?.offsetMilliseconds).toBeGreaterThan(3600000); // More than 1 hour from first advance
-    console.log(
-      'Advanced 30 minutes. Total offset:',
-      body.data?.offsetMilliseconds,
-      'ms',
-    );
+    console.log('Advanced 30 minutes. Total offset:', body.data?.offsetMilliseconds, 'ms');
   });
 
-  test('POST /api/system/time/advance with invalid unit returns 400', async ({
-    request,
-  }) => {
+  test('POST /api/system/time/advance with invalid unit returns 400', async ({ request }) => {
     const loginResponse = await request.post('/api/auth/login', {
       data: {
         username: 'admin_camp1',
@@ -170,9 +162,7 @@ test.describe.serial('System Time API E2E', () => {
     console.log('Invalid unit correctly rejected');
   });
 
-  test('POST /api/system/time/advance with negative amount returns 400', async ({
-    request,
-  }) => {
+  test('POST /api/system/time/advance with negative amount returns 400', async ({ request }) => {
     const loginResponse = await request.post('/api/auth/login', {
       data: {
         username: 'admin_camp1',
@@ -207,9 +197,7 @@ test.describe.serial('System Time API E2E', () => {
     expect(response.status()).toBe(401);
   });
 
-  test('Verify time has advanced by checking GET /api/system/time', async ({
-    request,
-  }) => {
+  test('Verify time has advanced by checking GET /api/system/time', async ({ request }) => {
     const response = await request.get('/api/system/time');
     expect(response.status()).toBe(200);
 
@@ -219,16 +207,10 @@ test.describe.serial('System Time API E2E', () => {
     const timeDifference = newTime.getTime() - initialTime.getTime();
     // Should be approximately 90 minutes (3600000 + 1800000)
     expect(timeDifference).toBeGreaterThan(5000000); // At least 1.5 hours
-    console.log(
-      'Time difference from initial:',
-      Math.round(timeDifference / 60000),
-      'minutes',
-    );
+    console.log('Time difference from initial:', Math.round(timeDifference / 60000), 'minutes');
   });
 
-  test('POST /api/system/time/advance by 1 day triggers daily automations', async ({
-    request,
-  }) => {
+  test('POST /api/system/time/advance by 1 day triggers daily automations', async ({ request }) => {
     const loginResponse = await request.post('/api/auth/login', {
       data: {
         username: 'admin_camp1',

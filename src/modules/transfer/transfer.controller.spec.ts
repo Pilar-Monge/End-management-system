@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TransferController } from './transfer.controller';
 import type { TransferService } from './transfer.service';
@@ -6,8 +7,7 @@ import type { DataSource } from 'typeorm';
 
 describe('TransferController', () => {
   let controller: TransferController;
-  let service: jest.Mocked<TransferService>;
-  let dataSource: jest.Mocked<DataSource>;
+  let service: any;
 
   const mockRequest = {
     user: {
@@ -31,17 +31,15 @@ describe('TransferController', () => {
       getTransferById: jest.fn(),
       getAllTransfers: jest.fn(),
       updateTransfer: jest.fn(),
+      assertRequestCampAccess: jest.fn(() => Promise.resolve()),
+      assertTransferCampAccess: jest.fn(() => Promise.resolve()),
     } as any;
-    dataSource = {
-      query: jest.fn(),
-    } as any;
-    controller = new TransferController(service, dataSource);
+    controller = new TransferController(service);
   });
 
   describe('create', () => {
     it('should create a transfer for authorized camp', async () => {
       const dto = { requestId: 1 } as any;
-      dataSource.query.mockResolvedValue([{ id: 1, origin_camp_id: 1, destination_camp_id: 2 }]);
       service.createTransfer.mockResolvedValue({ id: 10, ...dto } as any);
 
       const result = await controller.create(dto, mockRequest);
@@ -52,7 +50,9 @@ describe('TransferController', () => {
 
     it('should throw if request camp mismatch', async () => {
       const dto = { requestId: 1 } as any;
-      dataSource.query.mockResolvedValue([{ id: 1, origin_camp_id: 3, destination_camp_id: 4 }]);
+      service.assertRequestCampAccess.mockRejectedValue(
+        new Error('You can only access transfers involving your camp'),
+      );
       await expect(controller.create(dto, mockRequest)).rejects.toThrow(
         'You can only access transfers involving your camp',
       );
@@ -61,7 +61,7 @@ describe('TransferController', () => {
 
   describe('getById', () => {
     it('should return a transfer if authorized', async () => {
-      dataSource.query.mockResolvedValue([{ origin_camp_id: 1, destination_camp_id: 2 }]);
+      service.assertTransferCampAccess.mockResolvedValue(undefined);
       service.getTransferById.mockResolvedValue({ id: 10 } as any);
 
       const result = await controller.getById('10', mockRequest);
@@ -71,7 +71,7 @@ describe('TransferController', () => {
 
   describe('getAll', () => {
     it('should return paginated results', async () => {
-      dataSource.query.mockResolvedValue([{ origin_camp_id: 1, destination_camp_id: 2 }]);
+      service.assertRequestCampAccess.mockResolvedValue(undefined);
       service.getAllTransfers.mockResolvedValue({ data: [], total: 0 });
 
       const result = await controller.getAll('1', undefined, '1', '10', mockRequest);
@@ -87,7 +87,8 @@ describe('TransferController', () => {
 
   describe('update', () => {
     it('should update a transfer', async () => {
-      dataSource.query.mockResolvedValue([{ origin_camp_id: 1, destination_camp_id: 2 }]);
+      service.assertTransferCampAccess.mockResolvedValue(undefined);
+      service.assertRequestCampAccess.mockResolvedValue(undefined);
       service.updateTransfer.mockResolvedValue({ id: 10 } as any);
 
       const result = await controller.update('10', { requestId: 1 } as any, mockRequest);

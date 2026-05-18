@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
@@ -150,5 +150,27 @@ export class TransferHistoryService {
 
     await this.notifyTransferHistoryChange(existing);
     return true;
+  }
+
+  async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new NotFoundException('Transfer not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access transfer history involving your camp');
+    }
+  }
+
+  async assertHistoryCampAccess(historyId: number, currentCampId: number): Promise<void> {
+    const scope = await this.repository.resolveHistoryScope(historyId);
+    if (!scope) {
+      throw new NotFoundException('Transfer history entry not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access transfer history involving your camp');
+    }
   }
 }

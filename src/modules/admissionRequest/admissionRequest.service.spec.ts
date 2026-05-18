@@ -357,7 +357,14 @@ describe('AdmissionRequestService', () => {
       repository.findById.mockResolvedValue({ ...BASE_REQUEST, status: 'PENDING_ADMIN' });
       repository.update.mockResolvedValue({ ...BASE_REQUEST, status: 'REJECTED' });
 
-      const result = await service.reviewByAdmin(1, 5, false, undefined, undefined, 'Not qualified');
+      const result = await service.reviewByAdmin(
+        1,
+        5,
+        false,
+        undefined,
+        undefined,
+        'Not qualified',
+      );
 
       expect(result.status).toBe('REJECTED');
       expect(repository.update).toHaveBeenCalledWith(

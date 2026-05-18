@@ -6,8 +6,8 @@ describe('AccessLogRepository', () => {
 
   beforeEach(() => {
     repo = {
-      create: jest.fn().mockImplementation(d => d),
-      save: jest.fn().mockImplementation(d => Promise.resolve({ id: 1, ...d })),
+      create: jest.fn().mockImplementation((d) => d),
+      save: jest.fn().mockImplementation((d) => Promise.resolve({ id: 1, ...d })),
       findOne: jest.fn(),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
       manager: {

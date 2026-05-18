@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { assertEntityExists } from '../../common/validation/assert-exists';
@@ -313,5 +313,30 @@ export class TransferPersonService {
     await this.transferService.syncTransferRations(existing.transferId);
 
     return true;
+  }
+
+  async assertTransferCampAccess(transferId: number, currentCampId: number): Promise<void> {
+    const scope = await this.repository.resolveTransferScope(transferId);
+    if (!scope) {
+      throw new Error('No se encontro el alcance del traslado');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access transfer persons involving your camp');
+    }
+  }
+
+  async assertTransferPersonCampAccess(
+    transferPersonId: number,
+    currentCampId: number,
+  ): Promise<void> {
+    const scope = await this.repository.resolveTransferPersonScope(transferPersonId);
+    if (!scope) {
+      throw new NotFoundException('Transfer person not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException('You can only access transfer persons involving your camp');
+    }
   }
 }

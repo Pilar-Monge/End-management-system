@@ -7,9 +7,7 @@ import { SessionEntity } from '../session/session.entity';
 import { PasswordResetTokenEntity } from '../../auth/passwordResetToken.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ExpeditionEntity, SessionEntity, PasswordResetTokenEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([ExpeditionEntity, SessionEntity, PasswordResetTokenEntity])],
   controllers: [SystemTimeController],
   providers: [SystemTimeService],
   exports: [SystemTimeService],
