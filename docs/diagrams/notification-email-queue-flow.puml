@@ -1,0 +1,15 @@
+@startuml
+' Notification -> Email outbox flow (internal)
+
+title Notification email queue - flow overview
+
+start
+partition "Queue email" {
+  :Validate recipient email;
+  :Enrich payload (camp names);
+  :Resolve template key;
+  :Enqueue email outbox entry;
+}
+
+end
+@enduml

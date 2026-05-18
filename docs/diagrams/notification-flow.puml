@@ -1,0 +1,43 @@
+@startuml
+' Notification module flow (high level)
+
+title Notification module - flow overview
+
+start
+partition "POST /notifications" {
+  :Validate payload;
+  :Create notification;
+  :Return notification;
+}
+
+partition "GET /notifications/:id" {
+  :Validate id + user/camp ownership;
+  :Return notification;
+}
+
+partition "GET /notifications" {
+  :Force userId + campId from auth;
+  :Apply filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /notifications/:id" {
+  :Validate id + ownership;
+  :Update notification (mark read, etc.);
+  :Return notification;
+}
+
+partition "DELETE /notifications/:id" {
+  :Blocked by policy;
+  :Return 403 (audit reasons);
+}
+
+partition "Queue email (internal)" {
+  :Validate recipient email;
+  :Enrich payload (camp names);
+  :Resolve template key;
+  :Enqueue outbox entry;
+}
+
+end
+@enduml

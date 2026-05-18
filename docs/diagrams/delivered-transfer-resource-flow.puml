@@ -1,0 +1,53 @@
+@startuml
+' Delivered Transfer Resource module flow (high level)
+
+title Delivered Transfer Resource module - flow overview
+
+start
+partition "POST /delivered-transfer-resources" {
+  :Validate current user;
+  if (System admin?) then (yes)
+    :Skip camp access check;
+  else (no)
+    :recordedBy must match user;
+    :Validate transfer involves current camp;
+  endif
+  :Validate transfer/resource/movement exist;
+  :Ensure unique transfer+resource;
+  :Create delivered record;
+  :Notify origin + destination camps;
+  :Return record;
+}
+
+partition "GET /delivered-transfer-resources/:id" {
+  :Validate id + current user;
+  :Validate camp access;
+  :Load record;
+  :Non-admin can only view own recordedBy;
+  :Return record;
+}
+
+partition "GET /delivered-transfer-resources" {
+  :Validate filters + pagination;
+  if (System admin?) then (yes)
+    :Use filters;
+  else (no)
+    :Require transferId;
+    :Validate camp access;
+    :Filter results by recordedBy;
+  endif
+  :Return list + pagination;
+}
+
+partition "PUT /delivered-transfer-resources/:id" {
+  :Blocked by policy;
+  :Return 403 (immutable);
+}
+
+partition "DELETE /delivered-transfer-resources/:id" {
+  :Blocked by policy;
+  :Return 403 (audit reasons);
+}
+
+end
+@enduml

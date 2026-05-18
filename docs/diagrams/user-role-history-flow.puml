@@ -1,0 +1,31 @@
+@startuml
+' User Role History module flow (high level)
+
+title User Role History module - flow overview
+
+start
+partition "POST /user-role-history" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+partition "GET /user-role-history/:id" {
+  :Validate id + camp access;
+  :Return entry;
+}
+
+partition "GET /user-role-history" {
+  :Validate filters + pagination;
+  :Filter entries by camp;
+  :Return list + pagination;
+}
+
+partition "PUT /user-role-history/:id" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+partition "DELETE /user-role-history/:id" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+end
+@enduml

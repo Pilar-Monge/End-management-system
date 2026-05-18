@@ -1,0 +1,37 @@
+@startuml
+' Temporary Occupation Assignment module flow (high level)
+
+title Temporary Occupation Assignment module - flow overview
+
+start
+partition "POST /temporary-occupation-assignments" {
+  :Validate person + occupation + assignedBy;
+  :Check person status + coverage constraints;
+  :Create assignment;
+  :Notify camp roles + linked user;
+}
+
+partition "GET /temporary-occupation-assignments/:id" {
+  :Validate id;
+  :Return assignment;
+}
+
+partition "GET /temporary-occupation-assignments" {
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /temporary-occupation-assignments/:id" {
+  :Validate id + references;
+  :Update assignment;
+  :Notify camp roles + linked user;
+}
+
+partition "DELETE /temporary-occupation-assignments/:id" {
+  :Validate id;
+  :Delete assignment;
+  :Notify camp roles + linked user;
+}
+
+end
+@enduml

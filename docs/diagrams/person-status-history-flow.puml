@@ -1,0 +1,30 @@
+@startuml
+' Person Status History module flow (high level)
+
+title Person Status History module - flow overview
+
+start
+partition "POST /person-status-history" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+partition "GET /person-status-history/:id" {
+  :Validate id;
+  :Return entry;
+}
+
+partition "GET /person-status-history" {
+  :Validate filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /person-status-history/:id" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+partition "DELETE /person-status-history/:id" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+end
+@enduml

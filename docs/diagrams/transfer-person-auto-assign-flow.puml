@@ -1,0 +1,19 @@
+@startuml
+' Transfer Person auto-assign flow (internal)
+
+title Transfer Person auto-assign - flow overview
+
+start
+partition "Auto-assign group" {
+  :Validate requirements payload;
+  :Open transaction;
+  :For each requirement:
+  :Lock eligible people (FOR UPDATE SKIP LOCKED);
+  :Ensure enough candidates;
+  :Insert transfer_person rows;
+  :Commit;
+  :Sync transfer rations;
+}
+
+end
+@enduml

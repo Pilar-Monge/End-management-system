@@ -1,0 +1,42 @@
+@startuml
+' Occupation Coverage module flow (high level)
+
+title Occupation Coverage module - flow overview
+
+start
+partition "GET /occupation-coverage/:campId/coverage" {
+  :Return coverage list;
+}
+
+partition "GET /occupation-coverage/:campId/coverage/:occupationId" {
+  :Return single coverage;
+}
+
+partition "GET /occupation-coverage/:campId/critical" {
+  :Return critical/at-risk coverages;
+}
+
+partition "GET /occupation-coverage/:campId/at-risk" {
+  :Return at-risk list + suggestions;
+}
+
+partition "GET /occupation-coverage/:campId/suggestions/:occupationId" {
+  :Compute suggested replacements;
+  :Return suggestions;
+}
+
+partition "POST /occupation-coverage/:campId/auto-assign/:occupationId" {
+  :Validate temp assignment service;
+  :Pick top suggestion;
+  :Create temporary assignment;
+  :Return auto-assignment result;
+}
+
+partition "Scheduler (every 30 minutes)" {
+  :Load active camps;
+  :Check critical occupations;
+  :Auto-assign top suggestion or notify;
+}
+
+end
+@enduml

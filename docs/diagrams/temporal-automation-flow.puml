@@ -1,0 +1,25 @@
+@startuml
+' Temporal Automation module flow (high level)
+
+title Temporal Automation module - flow overview
+
+start
+partition "Daily Cron (midnight)" {
+  :Load camps + FOOD/WATER types;
+  :Create daily collection records;
+  :Apply daily consumption (inventory + movement);
+  :Apply production (inventory + movement);
+  :Generate inventory alerts;
+  :Notify overpopulation + unstaffed occupations;
+}
+
+partition "Hourly Cron" {
+  :Load expeditions for auto-update;
+  :Compute new status + extra days;
+  :Apply provisioning on departure;
+  :Sync participant person statuses;
+  :Notify expedition status change;
+}
+
+end
+@enduml
