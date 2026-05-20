@@ -313,7 +313,7 @@ Connection: close
 
 
  |
-| 10 | GET `/api/dashboard/inventory` - Visitor | 403 Forbidden |HTTP/1.1 403 Forbidden
+| 10 | GET `/api/dashboard/inventory` - Worker | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjNhY2VmNmFiLWU4OGMtNGE4Ny1iODUxLWM5M2ZkMzgxMDI4YSIsImlhdCI6MTc3NTYzNDU5OSwiZXhwIjoxNzc1NjM1Nzk5fQ.xiZTEjoSzKBdMN9kao88yZ90QyLVpF_Y4q--k5WIqlU
 Content-Type: application/json; charset=utf-8

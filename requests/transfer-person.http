@@ -3,7 +3,7 @@
 @travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJlMmJmYjA4Yi0xNzMzLTQ1MjktOTdhYy01NzVjZTc2ZmVkZTkiLCJpYXQiOjE3NzU0MjQ2NDgsImV4cCI6MTc3NTQyNTg0OH0.ADl9FZYBIUkJsl8rGEtqXkzuDP1nDUs9EGJiHGphZZM
 @resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImY5ZTBjODhmLTI0OGEtNDNkYi1iZGExLWQyZGZmZDQyYTg2YSIsImlhdCI6MTc3NTQyNDQzMiwiZXhwIjoxNzc1NDI1NjMyfQ.md3twOPsxZ6F4WtzFbjJvVBncyLRml8RuphPDLfDdw0
 @workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNzY5Y2E5YTItMDIzMy00M2YwLWI3ZGYtMDI3ZTk4ODI4ZTljIiwiaWF0IjoxNzc1NDI0NDUwLCJleHAiOjE3NzU0MjU2NTB9.hJy3zVKJOkZva9hc-qM5E2Ufmn-_ohs3prj_Jf1H93o
-@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjBiY2U0OGUzLTlkNTUtNDZkZi04YTRmLWEwMTcwMjhhNjVjOSIsImlhdCI6MTc3NTQyNDQ2NywiZXhwIjoxNzc1NDI1NjY3fQ.bGuHe1xVD8alRXB7uS5bLnCkEs_tbCkNwML92or5fiw
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjBiY2U0OGUzLTlkNTUtNDZkZi04YTRmLWEwMTcwMjhhNjVjOSIsImlhdCI6MTc3NTQyNDQ2NywiZXhwIjoxNzc1NDI1NjY3fQ.bGuHe1xVD8alRXB7uS5bLnCkEs_tbCkNwML92or5fiw
 
 ### 5.1 [LOGIN] SYSTEM_ADMIN
 POST {{baseUrl}}/api/auth/login
@@ -53,12 +53,12 @@ Content-Type: application/json
 
 ###
 
-### 5.5 [LOGIN] VISITOR
+### 5.5 [LOGIN] WORKER
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_camp1",
+  "username": "worker_camp1",
   "password": "Seed1234!",
   "campId": 1
 }
@@ -89,9 +89,9 @@ Authorization: Bearer {{workerToken}}
 
 ###
 
-### 5.10 GET Transfer Persons - VISITOR (Expect 403)
+### 5.10 GET Transfer Persons - WORKER (Expect 403)
 GET {{baseUrl}}/api/transfer-persons/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -155,9 +155,9 @@ Content-Type: application/json
 
 ###
 
-### 5.15 POST Transfer Person - VISITOR (Expect 403)
+### 5.15 POST Transfer Person - WORKER (Expect 403)
 POST {{baseUrl}}/api/transfer-persons
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
@@ -214,9 +214,9 @@ Content-Type: application/json
 
 ###
 
-### 5.20 PUT Transfer Person - VISITOR (Expect 403)
+### 5.20 PUT Transfer Person - WORKER (Expect 403)
 PUT {{baseUrl}}/api/transfer-persons/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
@@ -249,6 +249,6 @@ Authorization: Bearer {{workerToken}}
 
 ###
 
-### 5.25 DELETE Transfer Person - VISITOR (Expect 403)
+### 5.25 DELETE Transfer Person - WORKER (Expect 403)
 DELETE {{baseUrl}}/api/transfer-persons/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}

@@ -14,7 +14,6 @@ export class UserRepository {
   async create(userData: CreateUserDBDTO): Promise<User> {
     const entity = this.repo.create({
       ...userData,
-      role: userData.role ?? 'VISITOR',
       status: userData.status ?? 'ACTIVE',
     });
 
