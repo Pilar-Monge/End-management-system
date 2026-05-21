@@ -315,7 +315,7 @@ Connection: close
  |
 | 10 | GET `/api/dashboard/inventory` - Worker | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjNhY2VmNmFiLWU4OGMtNGE4Ny1iODUxLWM5M2ZkMzgxMDI4YSIsImlhdCI6MTc3NTYzNDU5OSwiZXhwIjoxNzc1NjM1Nzk5fQ.xiZTEjoSzKBdMN9kao88yZ90QyLVpF_Y4q--k5WIqlU
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"

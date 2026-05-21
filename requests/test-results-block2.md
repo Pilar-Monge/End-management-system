@@ -653,7 +653,7 @@ Connection: close
 }|
 | 3.9 | GET | /api/inventory-movements | WORKER | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImFhZTJkMDU1LTI1NDktNGY1OC04NGIwLWQ1ZDJlNWY5ZDZkNyIsImlhdCI6MTc3NTM0NTQ1MCwiZXhwIjoxNzc1MzQ2NjUwfQ.PIZGNPUOUljpWOUWH-uYIEVjCtCHdWViefPiIFAEWbU
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
@@ -990,7 +990,7 @@ Connection: close
 }|
 | 5.9 | GET | /api/daily-collection-records | WORKER | 403 Forbidden | HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjdlNTIwYzQ0LTk3MDItNDI2Yy04MTNiLTRlMTcyZDBlZTAwMiIsImlhdCI6MTc3NTM0NTcwMiwiZXhwIjoxNzc1MzQ2OTAyfQ.NUAd4v951HaU6z87EtxemqgIPjHrwWaH7fGybtOtn8I
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"

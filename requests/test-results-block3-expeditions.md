@@ -186,7 +186,7 @@ Connection: close
 |
 | 1.16 | GET | /api/expeditions | WORKER | 403 Forbidden | HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjA3NjYwY2RlLTIxZjUtNDUzNi1hNjliLTAxZDc1MzcyNjExZiIsImlhdCI6MTc3NTQwOTg1MywiZXhwIjoxNzc1NDExMDUzfQ.OPcbeQvRKVtXPuWS1D0kqOrxOvmhH_zn2sMBCaj0n_w
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
