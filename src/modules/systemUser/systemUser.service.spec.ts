@@ -96,19 +96,17 @@ describe('UserService', () => {
       expect(EncryptionService.hashPassword).toHaveBeenCalledWith('securepass123');
     });
 
-    it('uses VISITOR role when none is provided', async () => {
-      userRepo.create.mockResolvedValue({ ...ACTIVE_USER, role: 'VISITOR' });
-
-      await service.createUser({
-        personId: 10,
-        requestId: 5,
-        username: 'jperez',
-        password: 'securepass123',
-        email: 'j@test.com',
-        campId: 1,
-      } as never);
-
-      expect(userRepo.create).toHaveBeenCalledWith(expect.objectContaining({ role: 'VISITOR' }));
+    it('throws when role is missing', async () => {
+      await expect(
+        service.createUser({
+          personId: 10,
+          requestId: 5,
+          username: 'jperez',
+          password: 'securepass123',
+          email: 'j@test.com',
+          campId: 1,
+        } as never),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

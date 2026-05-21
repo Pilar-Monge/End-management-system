@@ -2,7 +2,7 @@
 @adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiMmVhZTc1NDUtN2MxZS00N2EyLTliODYtZDI0NDkyNjdhYzA4IiwiaWF0IjoxNzc1MzQ1MDc0LCJleHAiOjE3NzUzNDYyNzR9.EMJaQdVI97ZhyYegeOmnXeARbVKy1op4s7QVoho-UUs
 @resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjFlMjEyNWM1LThlOTMtNDE2Ni1iNzEwLWFjYTU4MmFkYmUxMSIsImlhdCI6MTc3NTM0NTA4NCwiZXhwIjoxNzc1MzQ2Mjg0fQ.dvGmtHR0VjJTa16Q_W7uIBebqmnqD9ilbnZTVd_GE7k
 @workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNjQ0NmI0MmMtZTAyMi00YzFmLWJkZTctMzI2MjliZGI5ZGFkIiwiaWF0IjoxNzc1MzQ1MDkxLCJleHAiOjE3NzUzNDYyOTF9.Gq80GdGKzEH2RahBPprSTjIuiCYcxTDcRUqgF1z6iyA
-@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImE0NzMxNDIxLWQ4YTktNDcwNy04ZGZkLTZiYTAzMGYyMzY3MiIsImlhdCI6MTc3NTM0NTEwMiwiZXhwIjoxNzc1MzQ2MzAyfQ.zeuq5uxYqVoXYyKZ0Sh4FIGH9mvtWa-MTS68ckjy8I8
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImE0NzMxNDIxLWQ4YTktNDcwNy04ZGZkLTZiYTAzMGYyMzY3MiIsImlhdCI6MTc3NTM0NTEwMiwiZXhwIjoxNzc1MzQ2MzAyfQ.zeuq5uxYqVoXYyKZ0Sh4FIGH9mvtWa-MTS68ckjy8I8
 @travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIxMzYyZWY4NC0zYWU4LTRiZDEtOTE0OS1iZDFlZTFkMmU3ZjEiLCJpYXQiOjE3NzUzNDUxMTEsImV4cCI6MTc3NTM0NjMxMX0.7qiCjQeIx8mw_T8qAjIpV6hkQ272gdrY3mWT0KVKeEk
 
 ### 5.1 [LOGIN] SYSTEM_ADMIN
@@ -41,12 +41,12 @@ Content-Type: application/json
 
 ###
 
-### 5.4 [LOGIN] VISITOR
+### 5.4 [LOGIN] WORKER
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_camp1",
+  "username": "worker_camp1",
   "password": "Seed1234!",
   "campId": 1
 }
@@ -83,9 +83,9 @@ Authorization: Bearer {{workerToken}}
 
 ###
 
-### 5.9 GET Daily Collection Records - Visitor (Expect 403)
+### 5.9 GET Daily Collection Records - Worker (Expect 403)
 GET {{baseUrl}}/api/daily-collection-records
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 

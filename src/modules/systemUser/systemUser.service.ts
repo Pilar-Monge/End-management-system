@@ -75,6 +75,9 @@ export class UserService {
   }
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
+    if (!data.role) {
+      throw new BadRequestException('Se requiere un rol final para crear el usuario');
+    }
     await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
     await assertEntityExists(
       this.dataSource,
@@ -90,7 +93,7 @@ export class UserService {
       username: data.username,
       passwordHash: passwordHash,
       email: data.email,
-      role: data.role || 'VISITOR',
+      role: data.role,
       campId: data.campId,
     });
     return this.stripPasswordHash(user);

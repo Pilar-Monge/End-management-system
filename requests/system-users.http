@@ -53,12 +53,12 @@ Content-Type: application/json
 
 ###
 
-### 5. [LOGIN] VISITOR (Seeder)
+### 5. [LOGIN] WORKER (Seeder)
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_camp1",
+  "username": "worker_camp1",
   "password": "Seed1234!",
   "campId": 1
 }
@@ -94,9 +94,9 @@ Authorization: Bearer {{travelToken}}
 
 ###
 
-### 11. [SHOULD 403] GET /api/users - VISITOR
+### 11. [SHOULD 403] GET /api/users - WORKER
 GET {{baseUrl}}/api/users
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -129,9 +129,9 @@ Authorization: Bearer {{travelToken}}
 
 ###
 
-### 17. [SHOULD 403] GET /api/users/1 - VISITOR
+### 17. [SHOULD 403] GET /api/users/1 - WORKER
 GET {{baseUrl}}/api/users/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -143,7 +143,7 @@ Content-Type: application/json
   "username": "test_block1_user",
   "password": "Test1234!",
   "email": "testblock1@test.com",
-  "role": "VISITOR",
+  "role": "WORKER",
   "campId": 1,
   "personId": 1,
   "requestId": 1
@@ -160,7 +160,7 @@ Content-Type: application/json
   "username": "test_block1_user",
   "password": "Test1234!",
   "email": "testblock1@test.com",
-  "role": "VISITOR",
+  "role": "WORKER",
   "campId": 1,
   "personId": 1,
   "requestId": 1
@@ -177,7 +177,7 @@ Content-Type: application/json
   "username": "test_block1_user",
   "password": "Test1234!",
   "email": "testblock1@test.com",
-  "role": "VISITOR",
+  "role": "WORKER",
   "campId": 1,
   "personId": 1,
   "requestId": 1
@@ -190,7 +190,7 @@ PUT {{baseUrl}}/api/users/1
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -202,7 +202,7 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -214,7 +214,7 @@ Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -226,7 +226,7 @@ Authorization: Bearer {{resourceToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -238,19 +238,19 @@ Authorization: Bearer {{travelToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
 ###
 
-### 26. [SHOULD 403] PUT /api/users/1 - VISITOR
+### 26. [SHOULD 403] PUT /api/users/1 - WORKER
 PUT {{baseUrl}}/api/users/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 

@@ -3,7 +3,6 @@ import { Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 
 export const ADMISSION_REVIEW_ROLE_VALUES = [
-  'VISITOR',
   'WORKER',
   'RESOURCE_MANAGEMENT',
   'TRAVEL_MANAGER',

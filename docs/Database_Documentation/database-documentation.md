@@ -141,7 +141,6 @@ Este documento describe la estructura de la base de datos y sus relaciones princ
 
 ### public.system_role_enum
 
-- VISITOR
 - WORKER
 - RESOURCE_MANAGEMENT
 - TRAVEL_MANAGER
@@ -172,7 +171,7 @@ Columnas:
 - password_hash text NOT NULL
 - email text NOT NULL
 - status public.user_status_enum DEFAULT 'ACTIVE'::public.user_status_enum NOT NULL
-- role public.system_role_enum DEFAULT 'VISITOR'::public.system_role_enum NOT NULL
+- role public.system_role_enum NOT NULL
 - camp_id integer NOT NULL
 - created_at timestamp with time zone DEFAULT now() NOT NULL
 - updated_at timestamp with time zone DEFAULT now() NOT NULL

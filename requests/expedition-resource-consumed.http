@@ -3,7 +3,7 @@
 @travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI2MDMyZWM5OC1lMmQ4LTQwNGUtOWIwNy1jNGJhYWM3OWRjZGYiLCJpYXQiOjE3NzUzNzUxMjEsImV4cCI6MTc3NTM3NjMyMX0.W92ZldPqBO8zDe5z175lNhwr-C585aqeEGvceFGLTRA
 @resourceToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImRmZjNjYjBjLTNlM2MtNDRmMi1hMDAxLWJlZDVkZmZlZGMzOCIsImlhdCI6MTc3NTM3NTE2NywiZXhwIjoxNzc1Mzc2MzY3fQ.2H-G9c5Gs2C3XOussD2Q5PIf9Ex4DfximkQAYX_0Tz0
 @workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiY2VjNTcyM2ItMzBiYy00MThhLWI4MzMtNDZkNjk4MTAyZjE1IiwiaWF0IjoxNzc1Mzc1MTkyLCJleHAiOjE3NzUzNzYzOTJ9.IeWPzRvrdCLBJElItCHJPy9EZdQoSM1phnmloPrPZDs
-@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImQwZjM1OTllLWE4N2UtNDllMC1iOWUxLTA0NTUzMjE5MzA2YyIsImlhdCI6MTc3NTM3NTI0NCwiZXhwIjoxNzc1Mzc2NDQ0fQ.pqbB7viH_bxytttXJjO-UMcyQsjWQC7qvB6ikILUSCU
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImQwZjM1OTllLWE4N2UtNDllMC1iOWUxLTA0NTUzMjE5MzA2YyIsImlhdCI6MTc3NTM3NTI0NCwiZXhwIjoxNzc1Mzc2NDQ0fQ.pqbB7viH_bxytttXJjO-UMcyQsjWQC7qvB6ikILUSCU
 
 ### 3.1 [LOGIN] SYSTEM_ADMIN
 POST {{baseUrl}}/api/auth/login
@@ -57,12 +57,12 @@ Content-Type: application/json
 
 ###
 
-### 3.5 [LOGIN] VISITOR
+### 3.5 [LOGIN] WORKER
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_camp1",
+  "username": "worker_camp1",
   "password": "Seed1234!",
   "campId": 1
 }
@@ -202,9 +202,9 @@ Content-Type: application/json
 
 ###
 
-### 3.18 GET Consumed Resources - Visitor (Expect 403)
+### 3.18 GET Consumed Resources - Worker (Expect 403)
 GET {{baseUrl}}/api/expedition-resources-consumed
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 

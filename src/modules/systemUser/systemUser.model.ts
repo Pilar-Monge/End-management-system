@@ -1,5 +1,4 @@
 export const SYSTEM_ROLE_VALUES = [
-  'VISITOR',
   'WORKER',
   'RESOURCE_MANAGEMENT',
   'TRAVEL_MANAGER',
@@ -7,7 +6,6 @@ export const SYSTEM_ROLE_VALUES = [
 ] as const;
 
 export const SystemRole = {
-  VISITOR: 'VISITOR',
   WORKER: 'WORKER',
   RESOURCE_MANAGEMENT: 'RESOURCE_MANAGEMENT',
   TRAVEL_MANAGER: 'TRAVEL_MANAGER',
@@ -40,7 +38,7 @@ export type CreateUserDTO = {
   username: string;
   password: string;
   email: string;
-  role?: SystemRole;
+  role: SystemRole;
   campId: number;
 };
 
@@ -50,7 +48,7 @@ export type CreateUserDBDTO = {
   username: string;
   passwordHash: string;
   email: string;
-  role?: SystemRole;
+  role: SystemRole;
   status?: UserStatus;
   campId: number;
 };

@@ -25,7 +25,6 @@ import { SupabaseStorageService } from '../../services/supabase-storage.service'
 
 const ADMISSION_MODEL_NAME = 'admission-acceptance-v1';
 const ADMISSION_REVIEW_ROLE_VALUES: readonly SystemRole[] = [
-  'VISITOR',
   'WORKER',
   'RESOURCE_MANAGEMENT',
   'TRAVEL_MANAGER',
