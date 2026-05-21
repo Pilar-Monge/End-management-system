@@ -178,7 +178,7 @@ Connection: close
 |
 | 1.10 | GET | /api/intercamp-requests | WORKER | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjQ1MTcyNjgxLTBlNTUtNGU3Mi1iNWRmLTAyN2M2ODg5M2YwMyIsImlhdCI6MTc3NTQyNDUzNywiZXhwIjoxNzc1NDI1NzM3fQ.YR2EN15bFuTnn6nQbT6DyXfD6oxmglmMangNwzDeCGU
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
@@ -575,7 +575,7 @@ Connection: close
 |
 | 2.10 | GET | /api/transfers | WORKER | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjBhODliMzI2LWVhMmItNDExYS1hYjQyLTA0MTFmMzYzNGI3NSIsImlhdCI6MTc3NTQyNDgwMiwiZXhwIjoxNzc1NDI2MDAyfQ.hzDZJPzG6mhY1umtPd17d3aJna1xdTGy3rn49ZbxAfY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
