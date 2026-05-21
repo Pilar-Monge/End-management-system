@@ -370,7 +370,7 @@ Referencias:
 - fk_inventario_tipo_recurso (resource_type_id) -> public.resource_type (id)
 - fk_inventory_camp (camp_id) -> public.camp (id)
 
-### public.consumos_diarios
+### public.daily_consumption
 
 Columnas:
 
@@ -383,11 +383,11 @@ Columnas:
 
 Defaults:
 
-- id DEFAULT nextval('public.consumos_diarios_id_seq'::regclass)
+- id DEFAULT nextval('public.daily_consumption_id_seq'::regclass)
 
 Constraints:
 
-- "PK_consumos_diarios_id" PRIMARY KEY (id)
+- "PK_daily_consumption_id" PRIMARY KEY (id)
 
 ### public.daily_collection_record
 
@@ -1105,10 +1105,10 @@ Referencias:
 
 - idx_camp_status [btree] (status)
 
-### Indices - public.consumos_diarios
+### Indices - public.daily_consumption
 
-- idx_consumos_diarios_campamento [btree] (campamento_id)
-- idx_consumos_diarios_fecha [btree] (fecha)
+- idx_daily_consumption_campamento [btree] (campamento_id)
+- idx_daily_consumption_fecha [btree] (fecha)
 
 ### Indices - public.daily_collection_record
 

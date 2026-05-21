@@ -3,9 +3,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { DAILY_CONSUMPTION_TYPE_VALUES, type DailyConsumptionType } from './dailyConsumption.model';
 
-@Entity({ name: 'consumos_diarios' })
-@Index('idx_consumos_diarios_fecha', ['fecha'])
-@Index('idx_consumos_diarios_campamento', ['campamentoId'])
+@Entity({ name: 'daily_consumption' })
+@Index('idx_daily_consumption_fecha', ['fecha'])
+@Index('idx_daily_consumption_campamento', ['campamentoId'])
 export class DailyConsumptionEntity {
   @PrimaryGeneratedColumn()
   @ApiProperty()
