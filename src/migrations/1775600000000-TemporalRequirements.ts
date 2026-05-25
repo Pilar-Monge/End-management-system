@@ -19,29 +19,29 @@ export class TemporalRequirements1775600000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE TABLE IF NOT EXISTS "consumos_diarios" (
+      `CREATE TABLE IF NOT EXISTS "daily_consumption" (
         "id" SERIAL NOT NULL,
         "fecha" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         "campamento_id" integer NOT NULL,
         "recurso_id" integer NOT NULL,
         "cantidad" numeric(12,2) NOT NULL,
         "tipo" "public"."daily_consumption_type_enum" NOT NULL,
-        CONSTRAINT "PK_consumos_diarios_id" PRIMARY KEY ("id")
+        CONSTRAINT "PK_daily_consumption_id" PRIMARY KEY ("id")
       )`,
     );
 
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "idx_consumos_diarios_fecha" ON "consumos_diarios" ("fecha")`,
+      `CREATE INDEX IF NOT EXISTS "idx_daily_consumption_fecha" ON "daily_consumption" ("fecha")`,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "idx_consumos_diarios_campamento" ON "consumos_diarios" ("campamento_id")`,
+      `CREATE INDEX IF NOT EXISTS "idx_daily_consumption_campamento" ON "daily_consumption" ("campamento_id")`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_consumos_diarios_campamento"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_consumos_diarios_fecha"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "consumos_diarios"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_daily_consumption_campamento"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_daily_consumption_fecha"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "daily_consumption"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "public"."daily_consumption_type_enum"`);
   }
 }
