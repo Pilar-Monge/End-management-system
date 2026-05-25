@@ -402,7 +402,7 @@ export class ExpeditionRepository {
       const recorderRows = (await queryRunner.query(
         `
         SELECT id
-        FROM system_user
+        FROM public.system_user
         WHERE camp_id = $1
           AND status = 'ACTIVE'
           AND role IN ('RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN')
