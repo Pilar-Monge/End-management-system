@@ -59,7 +59,7 @@ export class OccupationCoverageScheduler {
             const systemAdmin = await this.dataSource.query(
               `
                 SELECT u.id
-                FROM system_user u
+                FROM public.system_user u
                 WHERE u.role = 'SYSTEM_ADMIN'
                 AND u.status = 'ACTIVE'
                 AND u.camp_id = $1
