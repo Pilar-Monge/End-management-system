@@ -6,7 +6,7 @@ describe('InventoryMovementController (API controller unit tests)', () => {
   let controller: InventoryMovementController;
 
   const makeReq = (userId = 1, campId = 10, rol = 'WORKER') =>
-    ({ user: { userId, campId, rol } } as any);
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {
@@ -48,13 +48,29 @@ describe('InventoryMovementController (API controller unit tests)', () => {
 
   it('getAll rejects missing request context', async () => {
     await expect(
-      controller.getAll(undefined, undefined, undefined, undefined, undefined, undefined, undefined as any),
+      controller.getAll(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined as any,
+      ),
     ).rejects.toThrow(BadRequestException);
   });
 
   it('getAll rejects recordedBy mismatch for non-admin', async () => {
     await expect(
-      controller.getAll(undefined, undefined, undefined, '2', undefined, undefined, makeReq(1, 10, 'WORKER')),
+      controller.getAll(
+        undefined,
+        undefined,
+        undefined,
+        '2',
+        undefined,
+        undefined,
+        makeReq(1, 10, 'WORKER'),
+      ),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -75,7 +91,11 @@ describe('InventoryMovementController (API controller unit tests)', () => {
   it('update returns success payload', async () => {
     service.getMovementById.mockResolvedValue({ id: 1, campId: 10 });
     service.updateMovement.mockResolvedValue({ id: 1, campId: 10 });
-    const res = await controller.update('1', { recordedBy: 1 } as any, makeReq(1, 10, 'RESOURCE_MANAGEMENT'));
+    const res = await controller.update(
+      '1',
+      { recordedBy: 1 } as any,
+      makeReq(1, 10, 'RESOURCE_MANAGEMENT'),
+    );
     expect(res).toEqual({
       success: true,
       data: { id: 1, campId: 10 },

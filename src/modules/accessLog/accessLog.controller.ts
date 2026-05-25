@@ -280,6 +280,10 @@ export class AccessLogController {
 
       return { success: true, message: 'Access log deleted successfully' };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error deleting access log',
       );

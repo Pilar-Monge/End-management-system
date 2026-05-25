@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/c
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { SessionActivityMiddleware } from './common/middleware/session-activity.middleware';
@@ -43,6 +44,11 @@ import { DecisionTreeModule } from './modules/decisionTree/decisionTree.module';
 import { SystemTimeModule } from './modules/systemTime/systemTime.module';
 import { TemporalAutomationModule } from './modules/temporalAutomation/temporalAutomation.module';
 
+function parsePositiveInteger(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -50,6 +56,15 @@ import { TemporalAutomationModule } from './modules/temporalAutomation/temporalA
       envFilePath: '.env',
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: parsePositiveInteger(configService.get<string>('RATE_LIMIT_TTL_MS'), 60000),
+          limit: parsePositiveInteger(configService.get<string>('RATE_LIMIT_MAX_REQUESTS'), 120),
+        },
+      ],
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
@@ -118,6 +133,10 @@ import { TemporalAutomationModule } from './modules/temporalAutomation/temporalA
   ],
   controllers: [AppController],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

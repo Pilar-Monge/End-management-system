@@ -6,7 +6,7 @@ describe('UserRoleHistoryController (API controller unit tests)', () => {
   let controller: UserRoleHistoryController;
 
   const makeReq = (userId = 1, campId = 10) =>
-    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } } as any);
+    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } }) as any;
 
   beforeEach(() => {
     service = {
@@ -56,9 +56,9 @@ describe('UserRoleHistoryController (API controller unit tests)', () => {
   });
 
   it('getAll rejects invalid userId', async () => {
-    await expect(controller.getAll('x', undefined, undefined, undefined, makeReq())).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.getAll('x', undefined, undefined, undefined, makeReq()),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('getAll returns camp-filtered data', async () => {

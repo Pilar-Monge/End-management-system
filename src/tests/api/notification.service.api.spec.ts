@@ -26,7 +26,12 @@ describe('NotificationService (API-focused unit tests)', () => {
     emailOutboxService = { enqueue: jest.fn() };
     systemTimeService = { now: jest.fn().mockReturnValue(new Date()) };
 
-    service = new NotificationService(repository, dataSource as any, emailOutboxService, systemTimeService);
+    service = new NotificationService(
+      repository,
+      dataSource as any,
+      emailOutboxService,
+      systemTimeService,
+    );
   });
 
   it('queueEmail returns early for empty email', async () => {
@@ -40,20 +45,40 @@ describe('NotificationService (API-focused unit tests)', () => {
   });
 
   it('createNotification throws when neither user nor role provided', async () => {
-    await expect(service.createNotification({ campId: 1, type: 'TRANSFER_PENDING', title: 't', message: 'm' } as any)).rejects.toThrow();
+    await expect(
+      service.createNotification({
+        campId: 1,
+        type: 'TRANSFER_PENDING',
+        title: 't',
+        message: 'm',
+      } as any),
+    ).rejects.toThrow();
   });
 
   it('createNotification validates camp and user via repository', async () => {
     repository.findUserById.mockResolvedValue({ id: 1, campId: 1, email: 'u@x.com' });
     repository.create.mockResolvedValue({ id: 10 });
-    await expect(service.createNotification({ campId: 1, userId: 1, type: 'TRANSFER_PENDING', title: 't', message: 'm' } as any)).resolves.toEqual({ id: 10 });
+    await expect(
+      service.createNotification({
+        campId: 1,
+        userId: 1,
+        type: 'TRANSFER_PENDING',
+        title: 't',
+        message: 'm',
+      } as any),
+    ).resolves.toEqual({ id: 10 });
     expect(repository.create).toHaveBeenCalled();
   });
 
   it('notifyUser throws when user not found', async () => {
     repository.findUserById.mockResolvedValue(null);
     await expect(
-      service.notifyUser(99, { campId: 1, type: 'TRANSFER_PENDING', title: 't', message: 'm' } as any),
+      service.notifyUser(99, {
+        campId: 1,
+        type: 'TRANSFER_PENDING',
+        title: 't',
+        message: 'm',
+      } as any),
     ).rejects.toThrow('Usuario destino de la notificacion no encontrado');
   });
 
@@ -85,14 +110,15 @@ describe('NotificationService (API-focused unit tests)', () => {
     repository.findUserById.mockResolvedValue({ id: 1, campId: 1, email: 'u@x.com' });
     repository.update.mockResolvedValue({ id: 1, read: false });
     await service.updateNotification(1, { read: false } as any);
-    expect(repository.update).toHaveBeenCalledWith(
-      1,
-      expect.objectContaining({ readDate: null }),
-    );
+    expect(repository.update).toHaveBeenCalledWith(1, expect.objectContaining({ readDate: null }));
   });
 
   it('notifyCampRoles returns early on empty roles', async () => {
-    await service.notifyCampRoles(1, [], { type: 'TRANSFER_PENDING', title: 't', message: 'm' } as any);
+    await service.notifyCampRoles(1, [], {
+      type: 'TRANSFER_PENDING',
+      title: 't',
+      message: 'm',
+    } as any);
     // no exception, nothing called
   });
 });

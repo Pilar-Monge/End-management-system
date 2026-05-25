@@ -1,0 +1,40 @@
+@startuml
+' System User module flow (high level)
+
+title System User module - flow overview
+
+start
+partition "POST /users" {
+  :Blocked by policy (NO_ACCESS);
+}
+
+partition "GET /users" {
+  :List users;
+  :Filter by current user camp;
+  :Return list;
+}
+
+partition "GET /users/:id" {
+  :Validate id + camp access;
+  :Return user (no password hash);
+}
+
+partition "GET /users/username/:username" {
+  :Validate username + camp access;
+  :Return user;
+}
+
+partition "PUT /users/:id" {
+  :Validate id + camp access;
+  :Update role/status;
+  :Record role history + notifications;
+  :Close sessions if needed;
+  :Return user;
+}
+
+partition "DELETE /users/:id" {
+  :Blocked by policy (NO_ACCESS);
+}
+
+end
+@enduml

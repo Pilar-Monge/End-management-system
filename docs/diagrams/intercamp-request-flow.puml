@@ -1,0 +1,54 @@
+@startuml
+' Intercamp Request module flow (high level)
+
+title Intercamp Request module - flow overview
+
+start
+partition "POST /intercamp-requests" {
+  :Validate origin/destination/creator;
+  if (Non-admin) then (yes)
+    :originCampId = user camp;
+    :createdBy = user;
+  endif
+  :Create request (PENDING);
+  :Notify creator + destination camp roles;
+  :Return request;
+}
+
+partition "GET /intercamp-requests/:id" {
+  :Validate id;
+  :Ensure user belongs to origin or destination;
+  :Return request;
+}
+
+partition "GET /intercamp-requests" {
+  :Validate filters + pagination;
+  if (Non-admin) then (yes)
+    :Force involvedCampId = user camp;
+    :createdBy filter must be user;
+  endif
+  :Return list + pagination;
+}
+
+partition "PUT /intercamp-requests/:id" {
+  :Validate id + camp involvement;
+  if (Non-admin) then (yes)
+    :originCampId = user camp;
+    :createdBy = user;
+  endif
+  :Update request;
+  if (Status -> APPROVED?) then (yes)
+    :Ensure transfer + assign persons;
+    :Sync transfer rations;
+  endif
+  :Notify origin + destination camps;
+  :Return request;
+}
+
+partition "DELETE /intercamp-requests/:id" {
+  :Blocked by policy;
+  :Return 403 (audit reasons);
+}
+
+end
+@enduml

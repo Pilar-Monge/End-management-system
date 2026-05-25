@@ -1,0 +1,37 @@
+@startuml
+' Dashboard module flow (high level)
+
+title Dashboard module - flow overview
+
+start
+partition "GET /dashboard/general" {
+  :Validate campId;
+  :Load unread notifications;
+  :Load total persons;
+  :Load pending admission requests;
+  :Return general stats;
+}
+
+partition "GET /dashboard/inventory" {
+  :Validate campId;
+  :Load camp inventory rows;
+  :Resolve resource type names;
+  :Compute critical stock count;
+  :Load 7-day consumption trend;
+  :Return inventory data;
+}
+
+partition "GET /dashboard/expeditions" {
+  :Validate campId;
+  :Group expeditions by status;
+  :Return status map;
+}
+
+partition "GET /dashboard/personal" {
+  :Validate campId + userId;
+  :Load general + inventory + expeditions + trend;
+  :Return personal panel;
+}
+
+end
+@enduml

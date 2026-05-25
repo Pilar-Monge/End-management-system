@@ -6,7 +6,6 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
   Min,
   ValidateIf,

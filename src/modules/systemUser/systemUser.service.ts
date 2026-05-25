@@ -24,6 +24,12 @@ export class UserService {
     private readonly systemTimeService: SystemTimeService,
   ) {}
 
+  private stripPasswordHash(user: User): UserResponse {
+    const { passwordHash, ...userResponse } = user;
+    void passwordHash;
+    return userResponse;
+  }
+
   private async handleRoleChange(
     existing: User,
     newRole: User['role'],
@@ -69,6 +75,9 @@ export class UserService {
   }
 
   async createUser(data: CreateUserDTO): Promise<UserResponse> {
+    if (!data.role) {
+      throw new BadRequestException('Se requiere un rol final para crear el usuario');
+    }
     await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
     await assertEntityExists(
       this.dataSource,
@@ -84,23 +93,21 @@ export class UserService {
       username: data.username,
       passwordHash: passwordHash,
       email: data.email,
-      role: data.role || 'VISITOR',
+      role: data.role,
       campId: data.campId,
     });
-    const { passwordHash: _, ...userResponse } = user;
-    return userResponse;
+    return this.stripPasswordHash(user);
   }
 
   async findAllUsers(): Promise<UserResponse[]> {
     const users = await this.userRepo.findAll();
-    return users.map(({ passwordHash: _, ...user }) => user);
+    return users.map((user) => this.stripPasswordHash(user));
   }
 
   async findUserById(id: number): Promise<UserResponse | null> {
     const user = await this.userRepo.findById(id);
     if (!user) return null;
-    const { passwordHash: _, ...userResponse } = user;
-    return userResponse;
+    return this.stripPasswordHash(user);
   }
 
   async findUserByUsername(username: string, campId: number): Promise<User | null> {
@@ -112,8 +119,7 @@ export class UserService {
     if (!user) return null;
     const valid = await EncryptionService.comparePassword(data.password, user.passwordHash);
     if (!valid) return null;
-    const { passwordHash: _, ...userResponse } = user;
-    return userResponse;
+    return this.stripPasswordHash(user);
   }
 
   async updateUser(
@@ -132,8 +138,7 @@ export class UserService {
     const hasStatusChange = data.status !== undefined && data.status !== existing.status;
 
     if (!hasRoleChange && !hasStatusChange) {
-      const { passwordHash: _, ...userResponse } = existing;
-      return userResponse;
+      return this.stripPasswordHash(existing);
     }
 
     const user = await this.userRepo.update(id, data);
@@ -161,8 +166,7 @@ export class UserService {
       });
     }
     if (!user) return null;
-    const { passwordHash: _, ...userResponse } = user;
-    return userResponse;
+    return this.stripPasswordHash(user);
   }
 
   async deleteUser(id: number): Promise<boolean> {
@@ -206,8 +210,7 @@ export class UserService {
 
     await this.handleRoleChange(existing, newRole);
 
-    const { passwordHash: _, ...userResponse } = user;
-    return userResponse;
+    return this.stripPasswordHash(user);
   }
 
   async toggleUserStatus(id: number, newStatus: User['status']): Promise<UserResponse | null> {
@@ -238,7 +241,6 @@ export class UserService {
       });
     }
 
-    const { passwordHash: _, ...userResponse } = user;
-    return userResponse;
+    return this.stripPasswordHash(user);
   }
 }

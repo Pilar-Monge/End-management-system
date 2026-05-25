@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:3000
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 @adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNjM1ZGFjYzYtYTUyYy00ZjAxLWI4MzQtOTMxMDNhN2Y0ZTI1IiwiaWF0IjoxNzc1OTYyMzAwLCJleHAiOjE3NzU5NjM1MDB9.V_0eYGrGA4BEBsGEzTf3S3_JNkZNCaN-43xuSMFWJGw
-@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDU1MzViNWItOTY3MC00MmY4LWJhZTgtMGUyOGM2NWJjOTk3IiwiaWF0IjoxNzc1OTYyMjYxLCJleHAiOjE3NzU5NjM0NjF9.UWlmbnIOiNM2lp4N2cKAWSebgxRFJK0Qahz1tuI-rWM
 @resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjliZGU0ZDI5LWQ0ZTMtNDQwZi04NTBmLWQxMzk1MGE5MWNkMCIsImlhdCI6MTc3NTk2MDUxMSwiZXhwIjoxNzc1OTYxNzExfQ.NH5l4fFYS5tHdGxUo4PJTOilXcCEYh6EPc9yYG2Nr7k
 @travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJmYjBkMTQ4YS01NmRiLTQ5OTgtYmM1NS00NTAzYTg3MTgyMmYiLCJpYXQiOjE3NzU5NjA1MjcsImV4cCI6MTc3NTk2MTcyN30.F0v5HH394OUfMWuHurYXwplNQQXbRi1XadakfZWe6nk
 @visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjUyY2FhMmJmLTEyMzYtNDk2My04ZWFhLTYzYThiYjlmYmM3YSIsImlhdCI6MTc3NTk2MDU0MCwiZXhwIjoxNzc1OTYxNzQwfQ.QR3s9ehysVpSaNZc7lcjKEGqjdBqnH2vNb1rcUMTqhg
@@ -53,12 +53,12 @@ Content-Type: application/json
 
 ###
 
-### 5. [LOGIN] VISITOR (Seeder)
+### 5. [LOGIN] WORKER (Seeder)
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_camp1",
+  "username": "worker_camp1",
   "password": "Seed1234!",
   "campId": 1
 }
@@ -94,9 +94,9 @@ Authorization: Bearer {{travelToken}}
 
 ###
 
-### 11. [SHOULD 403] GET /api/users - VISITOR
+### 11. [SHOULD 403] GET /api/users - WORKER
 GET {{baseUrl}}/api/users
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -129,9 +129,9 @@ Authorization: Bearer {{travelToken}}
 
 ###
 
-### 17. [SHOULD 403] GET /api/users/1 - VISITOR
+### 17. [SHOULD 403] GET /api/users/1 - WORKER
 GET {{baseUrl}}/api/users/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -143,7 +143,7 @@ Content-Type: application/json
   "username": "test_block1_user",
   "password": "Test1234!",
   "email": "testblock1@test.com",
-  "role": "VISITOR",
+  "role": "WORKER",
   "campId": 1,
   "personId": 1,
   "requestId": 1
@@ -160,7 +160,7 @@ Content-Type: application/json
   "username": "test_block1_user",
   "password": "Test1234!",
   "email": "testblock1@test.com",
-  "role": "VISITOR",
+  "role": "WORKER",
   "campId": 1,
   "personId": 1,
   "requestId": 1
@@ -177,7 +177,7 @@ Content-Type: application/json
   "username": "test_block1_user",
   "password": "Test1234!",
   "email": "testblock1@test.com",
-  "role": "VISITOR",
+  "role": "WORKER",
   "campId": 1,
   "personId": 1,
   "requestId": 1
@@ -190,7 +190,7 @@ PUT {{baseUrl}}/api/users/1
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -202,7 +202,7 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -214,7 +214,7 @@ Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -226,7 +226,7 @@ Authorization: Bearer {{resourceToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
@@ -238,19 +238,19 @@ Authorization: Bearer {{travelToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 
 ###
 
-### 26. [SHOULD 403] PUT /api/users/1 - VISITOR
+### 26. [SHOULD 403] PUT /api/users/1 - WORKER
 PUT {{baseUrl}}/api/users/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
-  "role": "VISITOR",
+  "role": "WORKER",
   "status": "ACTIVE"
 }
 

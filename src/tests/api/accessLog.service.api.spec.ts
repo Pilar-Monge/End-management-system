@@ -35,25 +35,25 @@ describe('AccessLogService (API service unit tests)', () => {
   it('createLog throws when session not found', async () => {
     repository.findUserById.mockResolvedValue({ id: 1, campId: 1 });
     repository.findSessionById.mockResolvedValue(null);
-    await expect(
-      service.createLog({ userId: 1, campId: 1, sessionId: 10 } as any),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.createLog({ userId: 1, campId: 1, sessionId: 10 } as any)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('createLog throws when session user mismatch', async () => {
     repository.findUserById.mockResolvedValue({ id: 1, campId: 1 });
     repository.findSessionById.mockResolvedValue({ id: 10, userId: 2, campId: 1 });
-    await expect(
-      service.createLog({ userId: 1, campId: 1, sessionId: 10 } as any),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.createLog({ userId: 1, campId: 1, sessionId: 10 } as any)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('createLog throws when session camp mismatch', async () => {
     repository.findUserById.mockResolvedValue({ id: 1, campId: 1 });
     repository.findSessionById.mockResolvedValue({ id: 10, userId: 1, campId: 2 });
-    await expect(
-      service.createLog({ userId: 1, campId: 1, sessionId: 10 } as any),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.createLog({ userId: 1, campId: 1, sessionId: 10 } as any)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('createLog returns created log when valid', async () => {

@@ -6,7 +6,7 @@ describe('AccessLogController (API controller unit tests)', () => {
   let controller: AccessLogController;
 
   const makeReq = (userId = 1, campId = 10) =>
-    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } } as any);
+    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } }) as any;
 
   beforeEach(() => {
     service = {

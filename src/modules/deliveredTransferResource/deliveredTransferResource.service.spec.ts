@@ -12,6 +12,7 @@ describe('DeliveredTransferResourceService', () => {
 
   const repository = {
     resolveTransferScope: jest.fn(),
+    resolveDeliveredScope: jest.fn(),
     findByTransferAndResourceType: jest.fn(),
     create: jest.fn(),
     findById: jest.fn(),
@@ -115,6 +116,29 @@ describe('DeliveredTransferResourceService', () => {
       await expect(service.deleteDeliveredResource(1)).resolves.toBe(true);
       expect(repository.delete).toHaveBeenCalledWith(1);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('scope assertions', () => {
+    it('assertTransferCampAccess throws if transfer not in scope', async () => {
+      repository.resolveTransferScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      await expect(service.assertTransferCampAccess(10, 3)).rejects.toThrow(
+        'You can only access delivered resources involving your camp',
+      );
+    });
+
+    it('assertDeliveredCampAccess throws NotFound if no scope', async () => {
+      repository.resolveDeliveredScope.mockResolvedValue(null);
+      await expect(service.assertDeliveredCampAccess(99, 1)).rejects.toThrow(
+        'Delivered transfer resource not found',
+      );
+    });
+
+    it('assertDeliveredCampAccess throws if camp not in scope', async () => {
+      repository.resolveDeliveredScope.mockResolvedValue({ originCampId: 7, destinationCampId: 8 });
+      await expect(service.assertDeliveredCampAccess(5, 3)).rejects.toThrow(
+        'You can only access delivered resources involving your camp',
+      );
     });
   });
 });

@@ -5,7 +5,7 @@ type BaseCampUser = {
   username: string;
   email: string;
   identificationNumber: string;
-  role: 'SYSTEM_ADMIN' | 'WORKER' | 'RESOURCE_MANAGEMENT' | 'TRAVEL_MANAGER' | 'VISITOR';
+  role: 'SYSTEM_ADMIN' | 'WORKER' | 'RESOURCE_MANAGEMENT' | 'TRAVEL_MANAGER';
 };
 
 export async function runSeeder(dataSource: DataSource): Promise<void> {
@@ -81,12 +81,6 @@ export async function runSeeder(dataSource: DataSource): Promise<void> {
             email: 'travel@camp1.com',
             identificationNumber: '200000003',
             role: 'TRAVEL_MANAGER',
-          },
-          {
-            username: 'visitor_camp1',
-            email: 'visitor@camp1.com',
-            identificationNumber: '200000004',
-            role: 'VISITOR',
           },
         );
       }

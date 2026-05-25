@@ -1,0 +1,10 @@
+@startuml
+' Daily Consumption module (data model only)
+
+title Daily Consumption module - data model only
+
+start
+:No public controllers or services;
+:Used as data model for reports/aggregations;
+stop
+@enduml

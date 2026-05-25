@@ -1,0 +1,45 @@
+@startuml
+' Camp Achievement module flow (high level)
+
+title Camp Achievement module - flow overview
+
+start
+partition "POST /camp-achievements" {
+  :Validate current user + campId;
+  :Validate camp, achievement, user exist;
+  :Ensure unique (campId + achievementId);
+  :Create camp achievement;
+  :Notify admins + unlocking user;
+  :Return record;
+}
+
+partition "GET /camp-achievements/:campId/:achievementId" {
+  :Validate ids + current user camp;
+  :Load record by key;
+  :Return record;
+}
+
+partition "GET /camp-achievements" {
+  :Validate filters + pagination;
+  :Force campId = current user camp;
+  :Fetch list + count;
+  :Return list + pagination;
+}
+
+partition "PUT /camp-achievements/:campId/:achievementId" {
+  :Validate ids + current user camp;
+  :Validate unlockedBy (optional);
+  :Update record;
+  :Notify admins + unlocking user;
+  :Return record;
+}
+
+partition "DELETE /camp-achievements/:campId/:achievementId" {
+  :Validate ids + current user camp;
+  :Delete record;
+  :Notify admins + unlocking user;
+  :Return success;
+}
+
+end
+@enduml

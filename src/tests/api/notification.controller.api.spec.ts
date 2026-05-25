@@ -5,8 +5,7 @@ describe('NotificationController (API controller unit tests)', () => {
   let service: any;
   let controller: NotificationController;
 
-  const makeReq = (userId = 1, campId = 10) =>
-    ({ user: { userId, campId } } as any);
+  const makeReq = (userId = 1, campId = 10) => ({ user: { userId, campId } }) as any;
 
   beforeEach(() => {
     service = {
@@ -62,7 +61,15 @@ describe('NotificationController (API controller unit tests)', () => {
 
   it('getAll rejects when request context missing', async () => {
     await expect(
-      controller.getAll(undefined, undefined, undefined, undefined, undefined, undefined, undefined as any),
+      controller.getAll(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined as any,
+      ),
     ).rejects.toThrow(BadRequestException);
   });
 

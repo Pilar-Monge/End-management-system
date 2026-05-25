@@ -4,7 +4,6 @@ import { IsEnum, IsOptional } from 'class-validator';
 import type { SystemRole, UserStatus } from '../systemUser.model';
 
 const SystemRoleEnum = {
-  VISITOR: 'VISITOR',
   WORKER: 'WORKER',
   RESOURCE_MANAGEMENT: 'RESOURCE_MANAGEMENT',
   TRAVEL_MANAGER: 'TRAVEL_MANAGER',

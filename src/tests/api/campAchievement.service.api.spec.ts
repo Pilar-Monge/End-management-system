@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { CampAchievementService } from '../../modules/campAchievement/campAchievement.service';
 import { CampEntity } from '../../modules/camp/camp.entity';
 import { AchievementEntity } from '../../modules/achievement/achievement.entity';
@@ -25,13 +24,16 @@ describe('CampAchievementService (API service unit tests)', () => {
     campRepo = { exist: jest.fn().mockResolvedValue(true) };
     achievementRepo = { exist: jest.fn().mockResolvedValue(true) };
     userRepo = { exist: jest.fn().mockResolvedValue(true) };
-    notificationService = { notifyCampRoles: jest.fn(), notifyUser: jest.fn() };
+    notificationService = {
+      notifyCampRoles: jest.fn().mockResolvedValue(undefined),
+      notifyUser: jest.fn().mockResolvedValue(undefined),
+    };
     dataSource = {
       getRepository: jest.fn((entity) => {
         if (entity === CampEntity) return campRepo;
         if (entity === AchievementEntity) return achievementRepo;
         if (entity === UserEntity) return userRepo;
-        return { exist: jest.fn() };
+        return { exist: jest.fn().mockResolvedValue(true) };
       }),
     };
 
@@ -40,13 +42,36 @@ describe('CampAchievementService (API service unit tests)', () => {
 
   it('createCampAchievement creates when valid', async () => {
     const dto = { campId: 1, achievementId: 1, unlockedBy: 1 };
+    const created = { id: 1, ...dto };
     repository.findByKey.mockResolvedValue(null);
-    repository.create.mockResolvedValue(dto);
+    repository.create.mockResolvedValue(created);
     repository.findAchievementById.mockResolvedValue({ id: 1, name: 'Test Achievement' });
 
     const res = await service.createCampAchievement(dto as any);
-    expect(res).toEqual(dto);
+    expect(res).toEqual(created);
     expect(notificationService.notifyCampRoles).toHaveBeenCalled();
+    expect(notificationService.notifyUser).toHaveBeenCalled();
+  });
+
+  it('createCampAchievement throws when camp not found', async () => {
+    const dto = { campId: 999, achievementId: 1, unlockedBy: 1 };
+    campRepo.exist.mockResolvedValue(false);
+
+    await expect(service.createCampAchievement(dto as any)).rejects.toThrow();
+  });
+
+  it('createCampAchievement throws when achievement not found', async () => {
+    const dto = { campId: 1, achievementId: 999, unlockedBy: 1 };
+    achievementRepo.exist.mockResolvedValue(false);
+
+    await expect(service.createCampAchievement(dto as any)).rejects.toThrow();
+  });
+
+  it('createCampAchievement throws when duplicate', async () => {
+    const dto = { campId: 1, achievementId: 1, unlockedBy: 1 };
+    repository.findByKey.mockResolvedValue({ id: 1, ...dto });
+
+    await expect(service.createCampAchievement(dto as any)).rejects.toThrow();
   });
 
   it('getCampAchievementByKey returns achievement', async () => {
@@ -54,6 +79,13 @@ describe('CampAchievementService (API service unit tests)', () => {
 
     const res = await service.getCampAchievementByKey(1, 1);
     expect(res).toEqual({ campId: 1, achievementId: 1 });
+  });
+
+  it('getCampAchievementByKey returns null when not found', async () => {
+    repository.findByKey.mockResolvedValue(null);
+
+    const res = await service.getCampAchievementByKey(1, 1);
+    expect(res).toBeNull();
   });
 
   it('getAllCampAchievements returns list', async () => {

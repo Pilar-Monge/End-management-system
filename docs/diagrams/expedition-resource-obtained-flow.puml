@@ -1,0 +1,45 @@
+@startuml
+' Expedition Resource Obtained module flow (high level)
+
+title Expedition Resource Obtained module - flow overview
+
+start
+partition "POST /expedition-resources-obtained" {
+  :Validate recordedBy user + role;
+  :Validate expedition status IN_PROGRESS/DELAYED/COMPLETED;
+  :Validate resource + movement (optional);
+  :Create record;
+  :Notify roles;
+  :Return record;
+}
+
+partition "GET /expedition-resources-obtained/:id" {
+  :Validate id;
+  :Return record (non-admin only own);
+}
+
+partition "GET /expedition-resources-obtained" {
+  :Validate filters + pagination;
+  if (System admin?) then (yes)
+    :Use filters;
+  else (no)
+    :Force recordedBy = current user;
+  endif
+  :Return list + pagination;
+}
+
+partition "PUT /expedition-resources-obtained/:id" {
+  :Validate id + ownership;
+  :Validate expedition status;
+  :Update record;
+  :Notify roles;
+  :Return record;
+}
+
+partition "DELETE /expedition-resources-obtained/:id" {
+  :Blocked by policy;
+  :Return 403 (audit reasons);
+}
+
+end
+@enduml

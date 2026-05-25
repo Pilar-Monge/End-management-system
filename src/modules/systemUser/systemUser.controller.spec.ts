@@ -64,6 +64,21 @@ describe('UserController', () => {
       expect(result.data.id).toBe(10);
     });
 
+    it('should throw BadRequestException if id is missing', async () => {
+      await expect(controller.findById(undefined as any, mockRequest)).rejects.toThrow(
+        'ID not provided',
+      );
+    });
+
+    it('should throw BadRequestException if id is invalid', async () => {
+      await expect(controller.findById('abc', mockRequest)).rejects.toThrow('invalid ID');
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      service.findUserById.mockResolvedValue(null);
+      await expect(controller.findById('10', mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
     it('should throw NotFoundException if user in different camp', async () => {
       service.findUserById.mockResolvedValue({ id: 10, campId: 2 } as any);
       await expect(controller.findById('10', mockRequest)).rejects.toThrow(NotFoundException);
@@ -78,6 +93,21 @@ describe('UserController', () => {
       const result = await controller.update('10', {}, mockRequest);
       expect(result.success).toBe(true);
     });
+
+    it('should throw BadRequestException if id is invalid', async () => {
+      await expect(controller.update('abc', {}, mockRequest)).rejects.toThrow('invalid ID');
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      service.findUserById.mockResolvedValue(null);
+      await expect(controller.update('10', {}, mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException on update error', async () => {
+      service.findUserById.mockResolvedValue({ id: 10, campId: 1 } as any);
+      service.updateUser.mockRejectedValue(new Error('Update failed'));
+      await expect(controller.update('10', {}, mockRequest)).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('delete', () => {
@@ -85,6 +115,24 @@ describe('UserController', () => {
       service.deleteUser.mockResolvedValue(true);
       const result = await controller.delete('10');
       expect(result.success).toBe(true);
+    });
+
+    it('should throw BadRequestException if id is invalid', async () => {
+      await expect(controller.delete('abc')).rejects.toThrow('invalid ID');
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      service.deleteUser.mockResolvedValue(false);
+      await expect(controller.delete('10')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getCurrentUser', () => {
+    it('should throw BadRequestException if context is invalid', async () => {
+      const invalidReq = { user: {} } as any;
+      await expect(controller.findAll(invalidReq)).rejects.toThrow(
+        'Authenticated user context is invalid',
+      );
     });
   });
 });

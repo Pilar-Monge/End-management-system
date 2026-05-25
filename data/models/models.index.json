@@ -1,6 +1,7 @@
 [
   {
     "id": 1,
+    "campId": 1,
     "modelName": "admission-acceptance-v1",
     "featureNames": [
       "age_years",
@@ -10,14 +11,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1775439507336.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1778530177632.json",
     "trainingMetrics": {
-      "sampleCount": 20,
+      "sampleCount": 39,
       "featureCount": 5,
-      "trainAccuracy": 0.95,
+      "trainAccuracy": 0.974359,
       "labelDistribution": {
-        "ACCEPT": 10,
-        "REJECT": 10
+        "ACCEPT": 20,
+        "REJECT": 19
       },
       "labelClasses": [
         "ACCEPT",
@@ -25,11 +26,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-06T01:38:27.338Z",
-    "updatedAt": "2026-04-06T01:38:27.338Z"
+    "createdAt": "2026-05-11T20:09:37.634Z",
+    "updatedAt": "2026-05-11T20:09:37.634Z"
   },
   {
     "id": 2,
+    "campId": 1,
     "modelName": "admission-role-assignment-v1",
     "featureNames": [
       "age_years",
@@ -39,7 +41,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1775712375025.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177643.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -62,12 +64,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-09T05:26:15.027Z",
-    "updatedAt": "2026-04-09T05:26:15.027Z"
+    "createdAt": "2026-05-11T20:09:37.644Z",
+    "updatedAt": "2026-05-11T20:09:37.644Z"
   },
   {
     "id": 3,
-    "campId": 1,
+    "campId": 2,
     "modelName": "admission-acceptance-v1",
     "featureNames": [
       "age_years",
@@ -77,14 +79,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1776557571047.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1778530177648.json",
     "trainingMetrics": {
-      "sampleCount": 20,
+      "sampleCount": 39,
       "featureCount": 5,
-      "trainAccuracy": 0.95,
+      "trainAccuracy": 0.974359,
       "labelDistribution": {
-        "ACCEPT": 10,
-        "REJECT": 10
+        "ACCEPT": 20,
+        "REJECT": 19
       },
       "labelClasses": [
         "ACCEPT",
@@ -92,12 +94,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.053Z",
-    "updatedAt": "2026-04-19T00:12:51.053Z"
+    "createdAt": "2026-05-11T20:09:37.649Z",
+    "updatedAt": "2026-05-11T20:09:37.649Z"
   },
   {
     "id": 4,
-    "campId": 1,
+    "campId": 2,
     "modelName": "admission-role-assignment-v1",
     "featureNames": [
       "age_years",
@@ -107,7 +109,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571090.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177654.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -130,12 +132,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.101Z",
-    "updatedAt": "2026-04-19T00:12:51.101Z"
+    "createdAt": "2026-05-11T20:09:37.656Z",
+    "updatedAt": "2026-05-11T20:09:37.656Z"
   },
   {
     "id": 5,
-    "campId": 2,
+    "campId": 3,
     "modelName": "admission-acceptance-v1",
     "featureNames": [
       "age_years",
@@ -145,14 +147,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1776557571118.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1778530177659.json",
     "trainingMetrics": {
-      "sampleCount": 20,
+      "sampleCount": 39,
       "featureCount": 5,
-      "trainAccuracy": 0.95,
+      "trainAccuracy": 0.974359,
       "labelDistribution": {
-        "ACCEPT": 10,
-        "REJECT": 10
+        "ACCEPT": 20,
+        "REJECT": 19
       },
       "labelClasses": [
         "ACCEPT",
@@ -160,12 +162,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.126Z",
-    "updatedAt": "2026-04-19T00:12:51.126Z"
+    "createdAt": "2026-05-11T20:09:37.660Z",
+    "updatedAt": "2026-05-11T20:09:37.660Z"
   },
   {
     "id": 6,
-    "campId": 2,
+    "campId": 3,
     "modelName": "admission-role-assignment-v1",
     "featureNames": [
       "age_years",
@@ -175,7 +177,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571167.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177665.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -198,12 +200,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.204Z",
-    "updatedAt": "2026-04-19T00:12:51.204Z"
+    "createdAt": "2026-05-11T20:09:37.666Z",
+    "updatedAt": "2026-05-11T20:09:37.666Z"
   },
   {
     "id": 7,
-    "campId": 3,
+    "campId": 4,
     "modelName": "admission-acceptance-v1",
     "featureNames": [
       "age_years",
@@ -213,14 +215,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1776557571250.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1778530177670.json",
     "trainingMetrics": {
-      "sampleCount": 20,
+      "sampleCount": 39,
       "featureCount": 5,
-      "trainAccuracy": 0.95,
+      "trainAccuracy": 0.974359,
       "labelDistribution": {
-        "ACCEPT": 10,
-        "REJECT": 10
+        "ACCEPT": 20,
+        "REJECT": 19
       },
       "labelClasses": [
         "ACCEPT",
@@ -228,12 +230,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.259Z",
-    "updatedAt": "2026-04-19T00:12:51.259Z"
+    "createdAt": "2026-05-11T20:09:37.671Z",
+    "updatedAt": "2026-05-11T20:09:37.671Z"
   },
   {
     "id": 8,
-    "campId": 3,
+    "campId": 4,
     "modelName": "admission-role-assignment-v1",
     "featureNames": [
       "age_years",
@@ -243,7 +245,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571290.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177676.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -266,12 +268,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.299Z",
-    "updatedAt": "2026-04-19T00:12:51.299Z"
+    "createdAt": "2026-05-11T20:09:37.677Z",
+    "updatedAt": "2026-05-11T20:09:37.677Z"
   },
   {
     "id": 9,
-    "campId": 4,
+    "campId": 5,
     "modelName": "admission-acceptance-v1",
     "featureNames": [
       "age_years",
@@ -281,14 +283,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1776557571325.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1778530177680.json",
     "trainingMetrics": {
-      "sampleCount": 20,
+      "sampleCount": 39,
       "featureCount": 5,
-      "trainAccuracy": 0.95,
+      "trainAccuracy": 0.974359,
       "labelDistribution": {
-        "ACCEPT": 10,
-        "REJECT": 10
+        "ACCEPT": 20,
+        "REJECT": 19
       },
       "labelClasses": [
         "ACCEPT",
@@ -296,12 +298,12 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.336Z",
-    "updatedAt": "2026-04-19T00:12:51.336Z"
+    "createdAt": "2026-05-11T20:09:37.681Z",
+    "updatedAt": "2026-05-11T20:09:37.681Z"
   },
   {
     "id": 10,
-    "campId": 4,
+    "campId": 5,
     "modelName": "admission-role-assignment-v1",
     "featureNames": [
       "age_years",
@@ -311,7 +313,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571375.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177685.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -334,75 +336,7 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.387Z",
-    "updatedAt": "2026-04-19T00:12:51.387Z"
-  },
-  {
-    "id": 11,
-    "campId": 5,
-    "modelName": "admission-acceptance-v1",
-    "featureNames": [
-      "age_years",
-      "health_level_score",
-      "physical_condition_score",
-      "experience_years",
-      "skills_score"
-    ],
-    "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1776557571427.json",
-    "trainingMetrics": {
-      "sampleCount": 20,
-      "featureCount": 5,
-      "trainAccuracy": 0.95,
-      "labelDistribution": {
-        "ACCEPT": 10,
-        "REJECT": 10
-      },
-      "labelClasses": [
-        "ACCEPT",
-        "REJECT"
-      ]
-    },
-    "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.439Z",
-    "updatedAt": "2026-04-19T00:12:51.439Z"
-  },
-  {
-    "id": 12,
-    "campId": 5,
-    "modelName": "admission-role-assignment-v1",
-    "featureNames": [
-      "age_years",
-      "health_level_score",
-      "physical_condition_score",
-      "experience_years",
-      "skills_score"
-    ],
-    "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1776557571481.json",
-    "trainingMetrics": {
-      "sampleCount": 36,
-      "featureCount": 5,
-      "trainAccuracy": 0.944444,
-      "labelDistribution": {
-        "Recolector de agua": 6,
-        "Recolector de comida": 6,
-        "Explorador": 6,
-        "Guardia": 6,
-        "Medico": 6,
-        "Ingeniero": 6
-      },
-      "labelClasses": [
-        "Recolector de agua",
-        "Recolector de comida",
-        "Explorador",
-        "Guardia",
-        "Medico",
-        "Ingeniero"
-      ]
-    },
-    "isActive": true,
-    "createdAt": "2026-04-19T00:12:51.492Z",
-    "updatedAt": "2026-04-19T00:12:51.492Z"
+    "createdAt": "2026-05-11T20:09:37.686Z",
+    "updatedAt": "2026-05-11T20:09:37.686Z"
   }
 ]

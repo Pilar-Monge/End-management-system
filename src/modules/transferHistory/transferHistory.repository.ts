@@ -58,6 +58,29 @@ export class TransferHistoryRepository {
     };
   }
 
+  async resolveHistoryScope(historyId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+  } | null> {
+    const rows = (await this.repo.query(
+      `SELECT r.origin_camp_id, r.destination_camp_id
+       FROM public.transfer_history h
+       JOIN public.transfer t ON t.id = h.transfer_id
+       JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE h.id = $1
+       LIMIT 1`,
+      [historyId],
+    )) as Array<{ origin_camp_id: number; destination_camp_id: number }>;
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      originCampId: row.origin_camp_id,
+      destinationCampId: row.destination_camp_id,
+    };
+  }
+
   async findAllAndCount(filters?: {
     transferId?: number;
     userId?: number;

@@ -1,9 +1,8 @@
 @baseUrl = http://localhost:3000
+@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 @adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiNjRjYWFlOGQtZGI1Ni00MjJiLWI4OGEtYzhkNDNjYjJhMzQ0IiwiaWF0IjoxNzc1NDI0MzkzLCJleHAiOjE3NzU0MjU1OTN9.9LeTyE9kB6y0SgkbganaotfL6t9TPoaMSimCWqUjc_0
 @travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiJlMmJmYjA4Yi0xNzMzLTQ1MjktOTdhYy01NzVjZTc2ZmVkZTkiLCJpYXQiOjE3NzU0MjQ2NDgsImV4cCI6MTc3NTQyNTg0OH0.ADl9FZYBIUkJsl8rGEtqXkzuDP1nDUs9EGJiHGphZZM
 @resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6ImY5ZTBjODhmLTI0OGEtNDNkYi1iZGExLWQyZGZmZDQyYTg2YSIsImlhdCI6MTc3NTQyNDQzMiwiZXhwIjoxNzc1NDI1NjMyfQ.md3twOPsxZ6F4WtzFbjJvVBncyLRml8RuphPDLfDdw0
-@workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiNzY5Y2E5YTItMDIzMy00M2YwLWI3ZGYtMDI3ZTk4ODI4ZTljIiwiaWF0IjoxNzc1NDI0NDUwLCJleHAiOjE3NzU0MjU2NTB9.hJy3zVKJOkZva9hc-qM5E2Ufmn-_ohs3prj_Jf1H93o
-@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjBiY2U0OGUzLTlkNTUtNDZkZi04YTRmLWEwMTcwMjhhNjVjOSIsImlhdCI6MTc3NTQyNDQ2NywiZXhwIjoxNzc1NDI1NjY3fQ.bGuHe1xVD8alRXB7uS5bLnCkEs_tbCkNwML92or5fiw
 
 ### 3.1 [LOGIN] SYSTEM_ADMIN
 POST {{baseUrl}}/api/auth/login
@@ -53,12 +52,12 @@ Content-Type: application/json
 
 ###
 
-### 3.5 [LOGIN] VISITOR
+### 3.5 [LOGIN] WORKER
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_camp1",
+  "username": "worker_camp1",
   "password": "Seed1234!",
   "campId": 1
 }
@@ -89,9 +88,9 @@ Authorization: Bearer {{workerToken}}
 
 ###
 
-### 3.10 GET Delivered Transfer Resources - VISITOR (Expect 403)
+### 3.10 GET Delivered Transfer Resources - WORKER (Expect 403)
 GET {{baseUrl}}/api/delivered-transfer-resources/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -163,9 +162,9 @@ Content-Type: application/json
 
 ###
 
-### 3.15 POST Delivered Transfer Resource - VISITOR (Expect 403)
+### 3.15 POST Delivered Transfer Resource - WORKER (Expect 403)
 POST {{baseUrl}}/api/delivered-transfer-resources
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
@@ -224,9 +223,9 @@ Content-Type: application/json
 
 ###
 
-### 3.20 PUT Delivered Transfer Resource - VISITOR (Expect 403)
+### 3.20 PUT Delivered Transfer Resource - WORKER (Expect 403)
 PUT {{baseUrl}}/api/delivered-transfer-resources/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 Content-Type: application/json
 
 {
@@ -259,6 +258,6 @@ Authorization: Bearer {{workerToken}}
 
 ###
 
-### 3.25 DELETE Delivered Transfer Resource - VISITOR (Expect 403)
+### 3.25 DELETE Delivered Transfer Resource - WORKER (Expect 403)
 DELETE {{baseUrl}}/api/delivered-transfer-resources/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}

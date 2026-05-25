@@ -7,16 +7,18 @@ describe('TransferHistoryController (API controller unit tests)', () => {
   let controller: TransferHistoryController;
 
   const makeReq = (userId = 1, campId = 10, rol = 'RESOURCE_MANAGEMENT') =>
-    ({ user: { userId, campId, rol } } as any);
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {
       createEntry: jest.fn(),
       getEntryById: jest.fn(),
       getAllEntries: jest.fn(),
+      assertTransferCampAccess: jest.fn(() => Promise.resolve()),
+      assertHistoryCampAccess: jest.fn(() => Promise.resolve()),
     };
     dataSource = { query: jest.fn() };
-    controller = new TransferHistoryController(service, dataSource as any);
+    controller = new TransferHistoryController(service);
   });
 
   it('create rejects userId mismatch for non-admin', async () => {

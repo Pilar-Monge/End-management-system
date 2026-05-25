@@ -50,6 +50,12 @@ npm ci
 
 ## Database (PostgreSQL)
 
+## Database Documentation
+
+- Markdown: [docs/Database_Documentation/database-documentation.md](docs/Database_Documentation/database-documentation.md)
+- PDF: [docs/Database_Documentation/Database_Documentation.pdf](docs/Database_Documentation/Database_Documentation.pdf)
+- Diagram: [docs/Database_Documentation/Data Base- End Management.png](docs/Database_Documentation/Data%20Base-%20End%20Management.png)
+
 ### Option A: Docker Compose (recommended)
 
 This project includes a `docker-compose.yml` for PostgreSQL. The container values (`user/password/db/port`) are taken from the `.env` file.

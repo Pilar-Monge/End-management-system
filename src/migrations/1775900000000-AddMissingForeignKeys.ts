@@ -32,7 +32,7 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_collection_camp') THEN ALTER TABLE ONLY public.daily_collection_record ADD CONSTRAINT fk_collection_camp FOREIGN KEY (camp_id) REFERENCES public.camp(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_collection_person') THEN ALTER TABLE ONLY public.daily_collection_record ADD CONSTRAINT fk_collection_person FOREIGN KEY (person_id) REFERENCES public.person(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_collection_person') THEN ALTER TABLE ONLY public.daily_collection_record ADD CONSTRAINT fk_collection_person FOREIGN KEY (person_id) REFERENCES public.person(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_exp_cons_movimiento') THEN ALTER TABLE ONLY public.expedition_resource_consumed ADD CONSTRAINT fk_exp_cons_movimiento FOREIGN KEY (movement_id) REFERENCES public.inventory_movement(id) ON UPDATE CASCADE ON DELETE SET NULL; END IF; END $$;`,
@@ -89,7 +89,7 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_inventory_camp') THEN ALTER TABLE ONLY public.camp_inventory ADD CONSTRAINT fk_inventory_camp FOREIGN KEY (camp_id) REFERENCES public.camp(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_log_sesion') THEN ALTER TABLE ONLY public.access_log ADD CONSTRAINT fk_log_sesion FOREIGN KEY (session_id) REFERENCES public.session(id) ON UPDATE CASCADE ON DELETE SET NULL; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_log_sesion') THEN ALTER TABLE ONLY public.access_log ADD CONSTRAINT fk_log_sesion FOREIGN KEY (session_id) REFERENCES public.session(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_movimiento_camp') THEN ALTER TABLE ONLY public.inventory_movement ADD CONSTRAINT fk_movimiento_camp FOREIGN KEY (camp_id) REFERENCES public.camp(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
@@ -99,22 +99,29 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       DECLARE
         fallback_user_id integer;
       BEGIN
-        SELECT id INTO fallback_user_id
-        FROM public.system_user
-        ORDER BY id
-        LIMIT 1;
-
-        IF fallback_user_id IS NULL THEN
-          RAISE EXCEPTION 'Cannot enforce fk_movimiento_registrado_por: no rows found in public.system_user';
+        IF EXISTS (
+          SELECT 1 FROM public.inventory_movement mov
+          WHERE NOT EXISTS (
+            SELECT 1 FROM public.system_user su WHERE su.id = mov.recorded_by
+          )
+        ) THEN
+          SELECT id INTO fallback_user_id
+          FROM public.system_user
+          ORDER BY id
+          LIMIT 1;
+  
+          IF fallback_user_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot enforce fk_movimiento_registrado_por: no rows found in public.system_user';
+          END IF;
+  
+          UPDATE public.inventory_movement mov
+          SET recorded_by = fallback_user_id
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM public.system_user su
+            WHERE su.id = mov.recorded_by
+          );
         END IF;
-
-        UPDATE public.inventory_movement mov
-        SET recorded_by = fallback_user_id
-        WHERE NOT EXISTS (
-          SELECT 1
-          FROM public.system_user su
-          WHERE su.id = mov.recorded_by
-        );
       END $$;
     `);
     await queryRunner.query(
@@ -124,7 +131,7 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_movimiento_tipo_recurso') THEN ALTER TABLE ONLY public.inventory_movement ADD CONSTRAINT fk_movimiento_tipo_recurso FOREIGN KEY (resource_type_id) REFERENCES public.resource_type(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_notificacion_usuario') THEN ALTER TABLE ONLY public.notification ADD CONSTRAINT fk_notificacion_usuario FOREIGN KEY (user_id) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE SET NULL; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_notificacion_usuario') THEN ALTER TABLE ONLY public.notification ADD CONSTRAINT fk_notificacion_usuario FOREIGN KEY (user_id) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_notification_camp') THEN ALTER TABLE ONLY public.notification ADD CONSTRAINT fk_notification_camp FOREIGN KEY (camp_id) REFERENCES public.camp(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
@@ -145,13 +152,13 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reporte_solicitud') THEN ALTER TABLE ONLY public.ai_admission_report ADD CONSTRAINT fk_reporte_solicitud FOREIGN KEY (request_id) REFERENCES public.admission_request(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_request_person_occupation') THEN ALTER TABLE ONLY public.request_person_detail ADD CONSTRAINT fk_request_person_occupation FOREIGN KEY (occupation_id) REFERENCES public.occupation(id) ON UPDATE CASCADE ON DELETE SET NULL; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_request_person_occupation') THEN ALTER TABLE ONLY public.request_person_detail ADD CONSTRAINT fk_request_person_occupation FOREIGN KEY (occupation_id) REFERENCES public.occupation(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_request_person_person') THEN ALTER TABLE ONLY public.request_person_detail ADD CONSTRAINT fk_request_person_person FOREIGN KEY (person_id) REFERENCES public.person(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_request_person_request') THEN ALTER TABLE ONLY public.request_person_detail ADD CONSTRAINT fk_request_person_request FOREIGN KEY (request_id) REFERENCES public.intercamp_request(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_request_person_request') THEN ALTER TABLE ONLY public.request_person_detail ADD CONSTRAINT fk_request_person_request FOREIGN KEY (request_id) REFERENCES public.admission_request(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sesion_usuario') THEN ALTER TABLE ONLY public.session ADD CONSTRAINT fk_sesion_usuario FOREIGN KEY (user_id) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
@@ -163,10 +170,10 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sic_creado_por') THEN ALTER TABLE ONLY public.intercamp_request ADD CONSTRAINT fk_sic_creado_por FOREIGN KEY (created_by) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sic_respondido_por') THEN ALTER TABLE ONLY public.intercamp_request ADD CONSTRAINT fk_sic_respondido_por FOREIGN KEY (responded_by) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE SET NULL; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sic_respondido_por') THEN ALTER TABLE ONLY public.intercamp_request ADD CONSTRAINT fk_sic_respondido_por FOREIGN KEY (responded_by) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sol_rec_solicitud') THEN ALTER TABLE ONLY public.request_resource_detail ADD CONSTRAINT fk_sol_rec_solicitud FOREIGN KEY (request_id) REFERENCES public.intercamp_request(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sol_rec_solicitud') THEN ALTER TABLE ONLY public.request_resource_detail ADD CONSTRAINT fk_sol_rec_solicitud FOREIGN KEY (request_id) REFERENCES public.admission_request(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_sol_rec_tipo_recurso') THEN ALTER TABLE ONLY public.request_resource_detail ADD CONSTRAINT fk_sol_rec_tipo_recurso FOREIGN KEY (resource_type_id) REFERENCES public.resource_type(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
@@ -175,7 +182,7 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_history_transfer') THEN ALTER TABLE ONLY public.transfer_history ADD CONSTRAINT fk_transfer_history_transfer FOREIGN KEY (transfer_id) REFERENCES public.transfer(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_history_user') THEN ALTER TABLE ONLY public.transfer_history ADD CONSTRAINT fk_transfer_history_user FOREIGN KEY (user_id) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE SET NULL; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_history_user') THEN ALTER TABLE ONLY public.transfer_history ADD CONSTRAINT fk_transfer_history_user FOREIGN KEY (changed_by) REFERENCES public."system_user"(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_person_person') THEN ALTER TABLE ONLY public.transfer_person ADD CONSTRAINT fk_transfer_person_person FOREIGN KEY (person_id) REFERENCES public.person(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
@@ -184,7 +191,7 @@ export class AddMissingForeignKeys1775900000000 implements MigrationInterface {
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_person_transfer') THEN ALTER TABLE ONLY public.transfer_person ADD CONSTRAINT fk_transfer_person_transfer FOREIGN KEY (transfer_id) REFERENCES public.transfer(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
-      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_request') THEN ALTER TABLE ONLY public.transfer ADD CONSTRAINT fk_transfer_request FOREIGN KEY (request_id) REFERENCES public.intercamp_request(id) ON UPDATE CASCADE ON DELETE RESTRICT; END IF; END $$;`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_request') THEN ALTER TABLE ONLY public.transfer ADD CONSTRAINT fk_transfer_request FOREIGN KEY (request_id) REFERENCES public.intercamp_request(id) ON UPDATE CASCADE ON DELETE CASCADE; END IF; END $$;`,
     );
     await queryRunner.query(
       `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transfer_resource_movement') THEN ALTER TABLE ONLY public.delivered_transfer_resource ADD CONSTRAINT fk_transfer_resource_movement FOREIGN KEY (movement_id) REFERENCES public.inventory_movement(id) ON UPDATE CASCADE ON DELETE SET NULL; END IF; END $$;`,

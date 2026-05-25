@@ -110,13 +110,57 @@ export class AdmissionRequestController {
   @Post()
   @Public()
   @ApiOperation({ summary: 'Create an admission request' })
-  @ApiBody({ type: CreateAdmissionRequestDto })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        lastName1: { type: 'string' },
+        lastName2: { type: 'string', nullable: true },
+        email: { type: 'string' },
+        desiredUsername: { type: 'string' },
+        birthDate: { type: 'string', format: 'date' },
+        gender: { type: 'string' },
+        declaredHealthLevel: { type: 'string', nullable: true },
+        previousExperience: { type: 'string', nullable: true },
+        physicalCondition: { type: 'string', nullable: true },
+        declaredSkills: { type: 'string', nullable: true },
+        campId: { type: 'integer' },
+        photo: { type: 'string', format: 'binary' },
+      },
+      required: ['name', 'lastName1', 'email', 'desiredUsername', 'birthDate', 'gender', 'campId'],
+    },
+  })
   @ApiCreatedResponseData(AdmissionRequestEntity, { description: 'Admission request created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
-  async createRequest(@Body() body: CreateAdmissionRequestDto) {
+  @UseInterceptors(FileInterceptor('photo', imageUploadOptions))
+  async createRequest(
+    @Body() body: CreateAdmissionRequestDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     try {
+      if (file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.mimetype)) {
+          throw new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed');
+        }
+
+        if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+          throw new BadRequestException('File too large. Maximum size is 5MB');
+        }
+      }
+
       const request = await this.service.createRequest(body);
-      return { success: true, data: request, message: 'Request created successfully' };
+      const resolvedRequest = file
+        ? await this.service.uploadAdmissionRequestPhoto(request.id, file)
+        : request;
+
+      return {
+        success: true,
+        data: resolvedRequest,
+        message: 'Request created successfully',
+      };
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error creating request',
@@ -390,7 +434,11 @@ export class AdmissionRequestController {
 
   @Post(':id/process-ai')
   @Roles('SYSTEM_ADMIN')
-  @ApiOperation({ summary: 'Process an admission request with AI' })
+  @ApiOperation({
+    summary: 'Apply AI recommendation to an admission request',
+    description:
+      'Records the AI recommendation and moves the request to administrative review. The final approval or rejection is always made by an admin.',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'Admission request id' })
   @ApiBody({ type: ProcessAiAdmissionRequestDto })
   @ApiOkResponseData(AdmissionRequestEntity, { description: 'Admission request processed by AI' })
@@ -414,7 +462,11 @@ export class AdmissionRequestController {
       }
 
       const request = await this.service.processWithAI(parsedId, oficioSugeridoId, decision);
-      return { success: true, data: request, message: `Request processed by AI: ${decision}` };
+      return {
+        success: true,
+        data: request,
+        message: `AI recommendation recorded: ${decision}. Request pending admin review.`,
+      };
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error processing with AI',
@@ -439,7 +491,7 @@ export class AdmissionRequestController {
     if (!id) throw new BadRequestException('Invalid ID');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
-    const { adminUserId, approved, rejectionReason } = body;
+    const { adminUserId, approved, finalOccupationId, finalRole, rejectionReason } = body;
     try {
       const currentUser = this.getCurrentUser(req);
       if (currentUser.userId !== adminUserId) {
@@ -455,6 +507,8 @@ export class AdmissionRequestController {
         parsedId,
         adminUserId,
         approved,
+        finalOccupationId,
+        finalRole,
         rejectionReason,
       );
       return {

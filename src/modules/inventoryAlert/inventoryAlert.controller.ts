@@ -71,7 +71,7 @@ export class InventoryAlertController {
   }
 
   @Post()
-  @Roles('SYSTEM_ADMIN')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Inventory Alert' })
   @ApiBody({ type: CreateInventoryAlertDto })
   @ApiCreatedResponseData(InventoryAlertEntity, { description: 'Inventory Alert created' })
@@ -84,7 +84,7 @@ export class InventoryAlertController {
     );
   }
   @Get(':id')
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'Get Inventory Alert by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
   @ApiOkResponseData(InventoryAlertEntity, { description: 'Inventory Alert found' })
@@ -109,7 +109,7 @@ export class InventoryAlertController {
     return { success: true, data: alert };
   }
   @Get()
-  @Roles('SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT')
+  @Roles('RESOURCE_MANAGEMENT')
   @ApiOperation({ summary: 'List Inventory Alert' })
   @ApiOkResponseList(InventoryAlertEntity, { description: 'Inventory Alert list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -262,7 +262,7 @@ export class InventoryAlertController {
     }
   }
   @Delete(':id')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Delete Inventory Alert' })
   @ApiParam({ name: 'id', type: Number, description: 'Inventory Alert id' })
   @ApiOkResponseMessage({ description: 'Inventory Alert deleted' })

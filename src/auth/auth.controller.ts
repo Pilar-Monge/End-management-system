@@ -1,24 +1,51 @@
 import { BadRequestException, Body, Controller, Get, Post, Req } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
 import { AuthenticatedOnly, Public, RefreshSession } from '../common/decorators';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto';
+import { ApiOkResponseData, ApiOkResponseMessage } from '../common/swagger/api-response.decorator';
+import { ForgotPasswordDto, LoginDto, LoginResponseDataDto, ResetPasswordDto } from './dto';
 import { AuthService } from './auth.service';
-import type { LoginDTO } from './auth.model';
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly service: AuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
-  async login(@Body() body: LoginDTO, @Req() req: Request) {
+  @ApiOperation({
+    summary: 'Login and create a session',
+    description:
+      'Public endpoint. Returns a JWT that must be sent as Authorization: Bearer <token> for protected operations.',
+  })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponseData(LoginResponseDataDto, { description: 'Login successful' })
+  @ApiBadRequestResponse({ description: 'Incomplete credentials' })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  async login(@Body() body: LoginDto, @Req() req: Request) {
     const data = await this.service.login(body, req.ip ?? 'unknown');
     return { success: true, data };
   }
 
   @Post('logout')
   @AuthenticatedOnly()
+  @ApiOperation({
+    summary: 'Logout and close the current session',
+    description: 'Requires any authenticated user. Closes the active session for the provided JWT.',
+  })
+  @ApiOkResponseMessage({ description: 'Logged out successfully' })
+  @ApiBadRequestResponse({ description: 'Missing or invalid Authorization header' })
+  @ApiUnauthorizedResponse({ description: 'Invalid session' })
   async logout(@Req() req: Request & { refreshedToken?: string }) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -37,6 +64,23 @@ export class AuthController {
   @Get('check-session')
   @AuthenticatedOnly()
   @RefreshSession()
+  @ApiOperation({
+    summary: 'Check current session',
+    description:
+      'Requires any authenticated user. If valid, returns active=true and refreshes the JWT in the Authorization response header.',
+  })
+  @ApiOkResponse({
+    description: 'Session is active',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          active: true,
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing, invalid, or expired token' })
   async checkSession() {
     return {
       success: true,
@@ -47,7 +91,16 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Request password reset',
+    description:
+      'Public endpoint. Always returns a generic message to avoid leaking whether an email is registered.',
+  })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiOkResponseMessage({ description: 'Password reset request accepted' })
+  @ApiBadRequestResponse({ description: 'Invalid payload' })
   async forgotPassword(@Body() body: ForgotPasswordDto, @Req() req: Request) {
     await this.service.forgotPassword(body.email, body.campId, req.ip ?? 'unknown');
     return {
@@ -58,7 +111,15 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
+  @ApiOperation({
+    summary: 'Reset password',
+    description: 'Public endpoint. Uses a valid password reset token sent to the user.',
+  })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiOkResponseMessage({ description: 'Password updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired token, or invalid password' })
   async resetPassword(@Body() body: ResetPasswordDto, @Req() req: Request) {
     await this.service.resetPassword(body.token, body.newPassword, req.ip ?? 'unknown');
     return {

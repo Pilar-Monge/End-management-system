@@ -56,7 +56,6 @@ export class UserEntity {
     type: 'enum',
     enum: SYSTEM_ROLE_VALUES,
     enumName: 'system_role_enum',
-    default: 'VISITOR',
   })
   role!: SystemRole;
 

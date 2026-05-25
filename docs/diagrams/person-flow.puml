@@ -1,0 +1,47 @@
+@startuml
+' Person module flow (high level)
+
+title Person module - flow overview
+
+start
+partition "POST /person" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+partition "GET /person/:id" {
+  :Validate id + camp access;
+  :Attach signed image URL;
+  :Return person;
+}
+
+partition "GET /person" {
+  :Force campId = current user camp;
+  :Apply filters + pagination;
+  :Attach signed image URLs;
+  :Return list + pagination;
+}
+
+partition "PUT /person/:id" {
+  :Validate id + camp access;
+  :Validate camp/occupation/admission request;
+  :Update person;
+  if (Status changed?) then (yes)
+    :Create status history entry;
+    :Notify roles + linked user;
+  endif
+  :Return person;
+}
+
+partition "POST|PUT /person/:id/photo" {
+  :Validate file + camp access;
+  :Upload to storage (Supabase);
+  :Update imageUrl;
+  :Return person;
+}
+
+partition "DELETE /person/:id" {
+  :Blocked by policy (NO_ACCESS role);
+}
+
+end
+@enduml

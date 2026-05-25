@@ -1,0 +1,47 @@
+@startuml
+' Camp Inventory module flow (high level)
+
+title Camp Inventory module - flow overview
+
+start
+partition "POST /camp-inventory" {
+  :Blocked by policy;
+  :Return 403 (system-managed);
+}
+
+partition "GET /camp-inventory/:campId/:resourceTypeId" {
+  :Validate ids + current user;
+  if (System admin?) then (yes)
+    :Load item;
+  else (no)
+    :Only allow own camp;
+    :Load item;
+  endif
+  :Return item;
+}
+
+partition "GET /camp-inventory" {
+  :Validate filters + pagination;
+  if (System admin?) then (yes)
+    :Use requested campId;
+  else (no)
+    :Force campId = current user camp;
+  endif
+  :Fetch list + count;
+  :Return list + pagination;
+}
+
+partition "PUT /camp-inventory/:campId/:resourceTypeId" {
+  :Validate ids + current user;
+  :Update item;
+  :Notify roles (inventory alert);
+  :Return item;
+}
+
+partition "DELETE /camp-inventory/:campId/:resourceTypeId" {
+  :Blocked by policy;
+  :Return 403 (system-managed);
+}
+
+end
+@enduml

@@ -6,7 +6,7 @@ describe('CampAchievementController (API controller unit tests)', () => {
   let controller: CampAchievementController;
 
   const makeReq = (userId = 1, campId = 10) =>
-    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } } as any);
+    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } }) as any;
 
   beforeEach(() => {
     service = {
@@ -63,9 +63,9 @@ describe('CampAchievementController (API controller unit tests)', () => {
   });
 
   it('getAll rejects invalid campId', async () => {
-    await expect(controller.getAll('x', undefined, undefined, undefined, undefined, makeReq())).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.getAll('x', undefined, undefined, undefined, undefined, makeReq()),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('getAll returns pagination data', async () => {

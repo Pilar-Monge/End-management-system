@@ -43,7 +43,7 @@ import { RequestResourceDetailEntity } from './requestResourceDetail.entity';
 import { CreateRequestResourceDetailDto, UpdateRequestResourceDetailDto } from './dto';
 @Controller('request-resource-details')
 @ApiTags('Request Resource Detail')
-@Roles('SYSTEM_ADMIN')
+@Roles('RESOURCE_MANAGEMENT')
 export class RequestResourceDetailController {
   constructor(private readonly service: RequestResourceDetailService) {}
 

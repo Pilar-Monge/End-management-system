@@ -6,7 +6,7 @@ describe('SessionController (API controller unit tests)', () => {
   let controller: SessionController;
 
   const makeReq = (userId = 1, campId = 10) =>
-    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } } as any);
+    ({ user: { userId, campId, rol: 'SYSTEM_ADMIN' } }) as any;
 
   beforeEach(() => {
     service = {
@@ -52,14 +52,7 @@ describe('SessionController (API controller unit tests)', () => {
 
   it('getAll returns pagination data', async () => {
     service.getAllSessions.mockResolvedValue({ data: [], total: 0 });
-    const res = await controller.getAll(
-      undefined,
-      undefined,
-      undefined,
-      '1',
-      '5',
-      makeReq(),
-    );
+    const res = await controller.getAll(undefined, undefined, undefined, '1', '5', makeReq());
     expect(res.pagination).toEqual({ page: 1, limit: 5, total: 0, pages: 0 });
   });
 

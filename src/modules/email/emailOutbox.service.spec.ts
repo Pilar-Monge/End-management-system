@@ -30,10 +30,7 @@ describe('EmailOutboxService', () => {
 
   it('enqueueMany calls enqueue for each entry', async () => {
     const spy = jest.spyOn(service as any, 'enqueue');
-    const entries = [
-      { to: 'a' } as any,
-      { to: 'b' } as any,
-    ];
+    const entries = [{ to: 'a' } as any, { to: 'b' } as any];
     await service.enqueueMany(entries);
     expect(spy).toHaveBeenCalledTimes(2);
   });

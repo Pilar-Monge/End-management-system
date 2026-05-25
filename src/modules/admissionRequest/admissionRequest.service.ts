@@ -24,6 +24,12 @@ import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admission
 import { SupabaseStorageService } from '../../services/supabase-storage.service';
 
 const ADMISSION_MODEL_NAME = 'admission-acceptance-v1';
+const ADMISSION_REVIEW_ROLE_VALUES: readonly SystemRole[] = [
+  'WORKER',
+  'RESOURCE_MANAGEMENT',
+  'TRAVEL_MANAGER',
+  'SYSTEM_ADMIN',
+];
 
 interface AiReviewContext {
   aiDecision?: string;
@@ -70,6 +76,7 @@ export class AdmissionRequestService {
 
     const normalizedData = this.normalizeAiFieldsForCreate(data);
     const createdRequest = await this.repository.create(normalizedData);
+    let requestToReturn = createdRequest;
     await this.notifyInitialAdmissionRequest(createdRequest);
 
     try {
@@ -118,7 +125,18 @@ export class AdmissionRequestService {
         suggestedOccupationId: assignedOccupation?.id ?? null,
       });
 
-      await this.notifyAiReviewResult(createdRequest, {
+      const updatedRequest = await this.repository.update(createdRequest.id, {
+        suggestedOccupationId: assignedOccupation?.id ?? null,
+        status: 'PENDING_ADMIN',
+      });
+
+      if (!updatedRequest) {
+        throw new Error('Error al actualizar la solicitud despues del reporte de IA');
+      }
+
+      requestToReturn = updatedRequest;
+
+      await this.notifyAiReviewResult(updatedRequest, {
         aiDecision: aiExplain.prediction,
         suggestedRole: aiExplain.roleAssignment.suggestedRole,
         suggestedOccupationName: aiExplain.roleAssignment.mappedOccupationName,
@@ -135,7 +153,7 @@ export class AdmissionRequestService {
       );
     }
 
-    return createdRequest;
+    return requestToReturn;
   }
 
   async getRequestById(id: number): Promise<AdmissionRequest> {
@@ -265,7 +283,7 @@ export class AdmissionRequestService {
   async processWithAI(
     id: number,
     suggestedOccupationId: number,
-    decision: 'ACCEPT' | 'REJECT',
+    _decision: 'ACCEPT' | 'REJECT',
   ): Promise<AdmissionRequest> {
     const request = await this.repository.findById(id);
 
@@ -286,7 +304,7 @@ export class AdmissionRequestService {
 
     const updateData: UpdateAdmissionRequestDTO = {
       suggestedOccupationId,
-      status: decision === 'ACCEPT' ? 'PENDING_ADMIN' : 'REJECTED',
+      status: 'PENDING_ADMIN',
     };
 
     const updatedRequest = await this.repository.update(id, updateData);
@@ -304,6 +322,8 @@ export class AdmissionRequestService {
     id: number,
     adminUserId: number,
     approved: boolean,
+    finalOccupationId?: number,
+    finalRole?: SystemRole,
     rejectionReason?: string,
   ): Promise<AdmissionRequest> {
     const request = await this.repository.findById(id);
@@ -331,22 +351,40 @@ export class AdmissionRequestService {
       }
     }
 
-    const assignedOccupationIdOnApproval = approved
-      ? (request.finalOccupationId ?? request.suggestedOccupationId ?? null)
-      : null;
+    const assignedOccupationIdOnApproval = approved ? (finalOccupationId ?? null) : null;
 
     if (approved && !assignedOccupationIdOnApproval) {
       throw new Error(
-        'No se puede aprobar la solicitud sin un oficio asignado (final o sugerido por IA)',
+        'No se puede aprobar la solicitud sin un oficio final seleccionado por el administrador',
+      );
+    }
+
+    if (approved && !finalRole) {
+      throw new Error(
+        'No se puede aprobar la solicitud sin un rol final seleccionado por el administrador',
+      );
+    }
+
+    if (approved && finalRole && !ADMISSION_REVIEW_ROLE_VALUES.includes(finalRole)) {
+      throw new Error('Rol final invalido para una solicitud de admision');
+    }
+
+    if (approved && assignedOccupationIdOnApproval) {
+      await assertEntityExists(
+        this.dataSource,
+        OccupationEntity,
+        assignedOccupationIdOnApproval,
+        'Occupation',
       );
     }
 
     let createdAccess: CreatedAccessContext | null = null;
 
-    if (approved && assignedOccupationIdOnApproval) {
+    if (approved && assignedOccupationIdOnApproval && finalRole) {
       createdAccess = await this.createPersonAndUserForApprovedRequest(
         request,
         assignedOccupationIdOnApproval,
+        finalRole,
       );
     }
 
@@ -355,6 +393,10 @@ export class AdmissionRequestService {
       reviewDate: this.systemTimeService.now(),
       status: approved ? 'APPROVED' : 'REJECTED',
       finalOccupationId: assignedOccupationIdOnApproval,
+      occupationModified:
+        approved && assignedOccupationIdOnApproval !== null
+          ? assignedOccupationIdOnApproval !== request.suggestedOccupationId
+          : request.occupationModified,
       rejectionReason: approved ? null : rejectionReason || 'Solicitud rechazada',
     };
 
@@ -364,10 +406,11 @@ export class AdmissionRequestService {
       throw new Error('Error al revisar la solicitud');
     }
 
-    if (approved && assignedOccupationIdOnApproval && createdAccess === null) {
+    if (approved && assignedOccupationIdOnApproval && finalRole && createdAccess === null) {
       createdAccess = await this.createPersonAndUserForApprovedRequest(
         updatedRequest,
         assignedOccupationIdOnApproval,
+        finalRole,
       );
     }
 
@@ -642,18 +685,6 @@ export class AdmissionRequestService {
       .join(' ');
   }
 
-  private resolveSystemRoleForOccupation(occupation: OccupationEntity): SystemRole {
-    if (occupation.participatesInExpeditions) {
-      return 'TRAVEL_MANAGER';
-    }
-
-    if (occupation.collectsResources) {
-      return 'RESOURCE_MANAGEMENT';
-    }
-
-    return 'WORKER';
-  }
-
   private generateTemporaryPassword(): string {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%';
     const bytes = randomBytes(14);
@@ -718,6 +749,7 @@ export class AdmissionRequestService {
   private async createPersonAndUserForApprovedRequest(
     request: AdmissionRequest,
     assignedOccupationId: number,
+    assignedRole: SystemRole,
   ): Promise<CreatedAccessContext> {
     const occupationRepo = this.dataSource.getRepository(OccupationEntity);
     const personRepo = this.dataSource.getRepository(PersonEntity);
@@ -755,7 +787,7 @@ export class AdmissionRequestService {
         }),
       ));
 
-    const role = this.resolveSystemRoleForOccupation(occupation);
+    const role = assignedRole;
 
     const existingUser = await userRepo.findOne({
       where: {
@@ -840,7 +872,13 @@ export class AdmissionRequestService {
     if (existing.photoUrl) {
       try {
         await this.storageService.deleteImage(existing.photoUrl);
-      } catch (error) {}
+      } catch (error) {
+        this.logger.warn(
+          `Failed to delete previous image for admission request ${id}: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
+      }
     }
 
     const filePath = await this.storageService.uploadImage(file, 'admission-photos');
@@ -857,7 +895,11 @@ export class AdmissionRequestService {
       try {
         result.photoSignedUrl = await this.storageService.getSignedUrl(request.photoUrl);
       } catch (error) {
-        // If signed URL generation fails, just return without it
+        this.logger.debug(
+          `Failed to generate signed URL for admission request ${request.id}: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
       }
     }
     return result;

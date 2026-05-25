@@ -6,7 +6,7 @@ describe('ExpeditionResourceObtainedController (API controller unit tests)', () 
   let controller: ExpeditionResourceObtainedController;
 
   const makeReq = (userId = 1, campId = 10, rol = 'RESOURCE_MANAGEMENT') =>
-    ({ user: { userId, campId, rol } } as any);
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {
@@ -56,7 +56,14 @@ describe('ExpeditionResourceObtainedController (API controller unit tests)', () 
 
   it('getAll rejects recordedBy mismatch for non-admin', async () => {
     await expect(
-      controller.getAll(undefined, undefined, '2', undefined, undefined, makeReq(1, 10, 'RESOURCE_MANAGEMENT')),
+      controller.getAll(
+        undefined,
+        undefined,
+        '2',
+        undefined,
+        undefined,
+        makeReq(1, 10, 'RESOURCE_MANAGEMENT'),
+      ),
     ).rejects.toThrow(BadRequestException);
   });
 

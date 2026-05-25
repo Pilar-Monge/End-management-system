@@ -6,7 +6,7 @@
 | 1.1 | POST | /api/auth/login | SYSTEM_ADMIN | 200 OK | |
 | 1.2 | POST | /api/auth/login | RESOURCE_MANAGEMENT | 200 OK | |
 | 1.3 | POST | /api/auth/login | WORKER | 200 OK | |
-| 1.4 | POST | /api/auth/login | VISITOR | 200 OK | |
+| 1.4 | POST | /api/auth/login | WORKER | 200 OK | |
 | 1.5 | POST | /api/auth/login | TRAVEL_MANAGER | 200 OK | |
 | 1.6 | GET | /api/resource-types | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
@@ -275,7 +275,7 @@ Connection: close
 | 2.1 | POST | /api/auth/login | SYSTEM_ADMIN | 200 OK | |
 | 2.2 | POST | /api/auth/login | RESOURCE_MANAGEMENT | 200 OK | |
 | 2.3 | POST | /api/auth/login | WORKER | 200 OK | |
-| 2.4 | POST | /api/auth/login | VISITOR | 200 OK | |
+| 2.4 | POST | /api/auth/login | WORKER | 200 OK | |
 | 2.5 | POST | /api/auth/login | TRAVEL_MANAGER | 200 OK | |
 | 2.6 | GET | /api/camp-inventory | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
@@ -592,7 +592,7 @@ Connection: close
 | 3.1 | POST | /api/auth/login | SYSTEM_ADMIN | 200 OK | |
 | 3.2 | POST | /api/auth/login | RESOURCE_MANAGEMENT | 200 OK | |
 | 3.3 | POST | /api/auth/login | WORKER | 200 OK | |
-| 3.4 | POST | /api/auth/login | VISITOR | 200 OK | |
+| 3.4 | POST | /api/auth/login | WORKER | 200 OK | |
 | 3.5 | POST | /api/auth/login | TRAVEL_MANAGER | 200 OK | |
 | 3.6 | GET | /api/inventory-movements | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
@@ -651,9 +651,9 @@ Connection: close
     "pages": 0
   }
 }|
-| 3.9 | GET | /api/inventory-movements | VISITOR | 403 Forbidden |HTTP/1.1 403 Forbidden
+| 3.9 | GET | /api/inventory-movements | WORKER | 403 Forbidden |HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6ImFhZTJkMDU1LTI1NDktNGY1OC04NGIwLWQ1ZDJlNWY5ZDZkNyIsImlhdCI6MTc3NTM0NTQ1MCwiZXhwIjoxNzc1MzQ2NjUwfQ.PIZGNPUOUljpWOUWH-uYIEVjCtCHdWViefPiIFAEWbU
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"
@@ -784,7 +784,7 @@ Connection: close
 | 4.1 | POST | /api/auth/login | SYSTEM_ADMIN | 200 OK | |
 | 4.2 | POST | /api/auth/login | RESOURCE_MANAGEMENT | 200 OK | |
 | 4.3 | POST | /api/auth/login | WORKER | 200 OK | |
-| 4.4 | POST | /api/auth/login | VISITOR | 200 OK | |
+| 4.4 | POST | /api/auth/login | WORKER | 200 OK | |
 | 4.5 | POST | /api/auth/login | TRAVEL_MANAGER | 200 OK | |
 | 4.6 | GET | /api/inventory-alerts | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
@@ -929,7 +929,7 @@ Connection: close
 | 5.1 | POST | /api/auth/login | SYSTEM_ADMIN | 200 OK | |
 | 5.2 | POST | /api/auth/login | RESOURCE_MANAGEMENT | 200 OK | |
 | 5.3 | POST | /api/auth/login | WORKER | 200 OK | |
-| 5.4 | POST | /api/auth/login | VISITOR | 200 OK | |
+| 5.4 | POST | /api/auth/login | WORKER | 200 OK | |
 | 5.5 | POST | /api/auth/login | TRAVEL_MANAGER | 200 OK | |
 | 5.6 | GET | /api/daily-collection-records | SYSTEM_ADMIN | 200 OK |HTTP/1.1 200 OK
 X-Powered-By: Express
@@ -988,9 +988,9 @@ Connection: close
     "pages": 0
   }
 }|
-| 5.9 | GET | /api/daily-collection-records | VISITOR | 403 Forbidden | HTTP/1.1 403 Forbidden
+| 5.9 | GET | /api/daily-collection-records | WORKER | 403 Forbidden | HTTP/1.1 403 Forbidden
 X-Powered-By: Express
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImNhbXBJZCI6MSwicm9sIjoiVklTSVRPUiIsImp0aSI6IjdlNTIwYzQ0LTk3MDItNDI2Yy04MTNiLTRlMTcyZDBlZTAwMiIsImlhdCI6MTc3NTM0NTcwMiwiZXhwIjoxNzc1MzQ2OTAyfQ.NUAd4v951HaU6z87EtxemqgIPjHrwWaH7fGybtOtn8I
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
 Content-Type: application/json; charset=utf-8
 Content-Length: 66
 ETag: W/"42-wK7V5D6iOEHIy1gWu+lx9ptqUbQ"

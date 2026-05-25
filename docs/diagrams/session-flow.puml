@@ -1,0 +1,39 @@
+@startuml
+' Session module flow (high level)
+
+title Session module - flow overview
+
+start
+partition "POST /sessions" {
+  :Validate campId + user;
+  :Ensure token unique;
+  :Create session;
+  :Return session;
+}
+
+partition "GET /sessions/:id" {
+  :Validate id + camp access;
+  :Return session;
+}
+
+partition "GET /sessions" {
+  :Force campId = current user camp;
+  :Apply filters + pagination;
+  :Return list + pagination;
+}
+
+partition "PUT /sessions/:id" {
+  :Validate id + camp access;
+  :Validate user/camp (optional);
+  :Update session;
+  :Return session;
+}
+
+partition "DELETE /sessions/:id" {
+  :Validate id + camp access;
+  :Delete session;
+  :Return success;
+}
+
+end
+@enduml

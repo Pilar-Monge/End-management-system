@@ -1,0 +1,47 @@
+@startuml
+' AI Admission Report module flow (high level)
+
+title AI Admission Report module - flow overview
+
+start
+partition "POST /ai-admission-reports" {
+  :Validate current user + request camp;
+  :Check admission request exists;
+  :Ensure report not duplicated;
+  :Validate suggested occupation (optional);
+  :Create report;
+  :Notify camp admins;
+  :Return report;
+}
+
+partition "GET /ai-admission-reports/:id" {
+  :Validate id + current user camp;
+  :Load report;
+  :Return report;
+}
+
+partition "GET /ai-admission-reports" {
+  :Validate filters + pagination;
+  :Force campId = current user camp;
+  :Fetch list + count;
+  :Return list + pagination;
+}
+
+partition "PUT /ai-admission-reports/:id" {
+  :Validate id + current user camp;
+  :Validate requestId (if changed);
+  :Validate suggested occupation (optional);
+  :Update report;
+  :Notify camp admins;
+  :Return report;
+}
+
+partition "DELETE /ai-admission-reports/:id" {
+  :Validate id + current user camp;
+  :Delete report;
+  :Notify camp admins;
+  :Return success;
+}
+
+end
+@enduml

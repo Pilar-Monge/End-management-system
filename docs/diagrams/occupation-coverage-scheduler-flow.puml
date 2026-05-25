@@ -1,0 +1,25 @@
+@startuml
+' Occupation Coverage scheduler flow (internal)
+
+title Occupation Coverage scheduler - flow overview
+
+start
+partition "Every 30 minutes" {
+  :Load active camps;
+  :For each camp -> get critical occupations;
+  if (Critical occupation?) then (yes)
+    :Get suggested replacements;
+    if (Has suggestions?) then (yes)
+      :Select top suggestion;
+      :Create temporary occupation assignment;
+      :Notify SYSTEM_ADMIN;
+    else (no)
+      :Notify occupation without staff;
+    endif
+  else (no)
+    :Skip;
+  endif
+}
+
+end
+@enduml

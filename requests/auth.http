@@ -1,9 +1,8 @@
 @baseUrl = http://localhost:3000
-@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZGZhOTE1OGEtMmEyNy00ZmFkLThjOGQtNTY0NWM1M2E4ZmY2IiwiaWF0IjoxNzc1MjcxMjY0LCJleHAiOjE3NzUyNzI0NjR9.rJBvfGNhIEIJkA3gfZR3WALloANUc4W46AAXr5kYzME
 @workerToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImNhbXBJZCI6MSwicm9sIjoiV09SS0VSIiwianRpIjoiZDBlN2UxNjQtZDYyZS00ZTkyLTk4NDUtMTZiZjgxMWUyNmM5IiwiaWF0IjoxNzc1MjcxMjg3LCJleHAiOjE3NzUyNzI0ODd9.MVQT-BZZAl08-qXYLTWkpQYYhDlmNe4JNr_xAl1IdIk
+@adminToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImNhbXBJZCI6MSwicm9sIjoiU1lTVEVNX0FETUlOIiwianRpIjoiZGZhOTE1OGEtMmEyNy00ZmFkLThjOGQtNTY0NWM1M2E4ZmY2IiwiaWF0IjoxNzc1MjcxMjY0LCJleHAiOjE3NzUyNzI0NjR9.rJBvfGNhIEIJkA3gfZR3WALloANUc4W46AAXr5kYzME
 @resourceToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImNhbXBJZCI6MSwicm9sIjoiUkVTT1VSQ0VfTUFOQUdFTUVOVCIsImp0aSI6IjQ4ZGNhNWMwLWQwOWUtNDQwZC1iZTQ1LTQ0Y2U0NjFhMTA5NyIsImlhdCI6MTc3NTI3MTMwOCwiZXhwIjoxNzc1MjcyNTA4fQ.LhYyQUfPOwUEiJAL5LzROBI7nAgouL6PuDRW7HsZvmw
 @travelToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiI1OWQxZmY0YS04ZDJkLTQ0NDMtYTAxZS1hMTgzYzFhM2VlNGEiLCJpYXQiOjE3NzUyNzEzMzcsImV4cCI6MTc3NTI3MjUzN30.6oHfdhBct2CWbjikees-LE88k8GIvf54J4X4t6PVX9A
-@visitorToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImNhbXBJZCI6MSwicm9sIjoiVFJBVkVMX01BTkFHRVIiLCJqdGkiOiIwYTVkYWFhNy04MTMzLTRiNjUtOWFlMC04M2JiODQxODQ1ZjIiLCJpYXQiOjE3NzUyNzEzNTksImV4cCI6MTc3NTI3MjU1OX0.53I8Yr8nNnhGn77jnDawWyuLxfd0h00LqVlmnTv3yaI
 @logoutToken =
 
 ### Login SYSTEM_ADMIN
@@ -46,12 +45,12 @@ Content-Type: application/json
   "campId": 1
 }
 
-### Login VISITOR
+### Login WORKER
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "visitor_camp1",
+  "username": "worker_camp1",
   "password": "Seed1234!",
   "campId": 1
 }
@@ -63,9 +62,9 @@ GET {{baseUrl}}/api/users
 GET {{baseUrl}}/api/users
 Authorization: Bearer {{adminToken}}
 
-### VISITOR forbidden 403
+### WORKER forbidden 403
 GET {{baseUrl}}/api/users
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ### WORKER accesses occupations
 GET {{baseUrl}}/api/occupations
@@ -130,9 +129,9 @@ Authorization: Bearer {{travelToken}}
 
 ###
 
-### [SHOULD 403] admission requests list - visitor
+### [SHOULD 403] admission requests list - worker
 GET {{baseUrl}}/api/admission-requests
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -162,9 +161,9 @@ Authorization: Bearer {{travelToken}}
 
 ###
 
-### [SHOULD 200] persons list - visitor
+### [SHOULD 200] persons list - worker
 GET {{baseUrl}}/api/persons
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -180,9 +179,9 @@ Authorization: Bearer {{workerToken}}
 
 ###
 
-### [SHOULD 403] person detail - visitor
+### [SHOULD 403] person detail - worker
 GET {{baseUrl}}/api/persons/1
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###
 
@@ -217,8 +216,8 @@ Authorization: Bearer {{travelToken}}
 
 ###
 
-### [SHOULD 403] users list - visitor
+### [SHOULD 403] users list - worker
 GET {{baseUrl}}/api/users
-Authorization: Bearer {{visitorToken}}
+Authorization: Bearer {{workerToken}}
 
 ###

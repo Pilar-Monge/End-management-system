@@ -100,13 +100,13 @@ describe('EmailTemplateService', () => {
 
     it('renders changed fields from top level', () => {
       const result = service.render('role_updated', {
-        changedFields: [{ field: 'Rol', previous: 'VISITOR', current: 'WORKER' }],
+        changedFields: [{ field: 'Rol', previous: 'WORKER', current: 'RESOURCE_MANAGEMENT' }],
       });
       expect(result.html).toContain('Datos modificados');
       expect(result.html).toContain('Rol');
-      expect(result.html).toContain('VISITOR');
       expect(result.html).toContain('WORKER');
-      expect(result.text).toContain('- Rol: VISITOR -> WORKER');
+      expect(result.html).toContain('RESOURCE_MANAGEMENT');
+      expect(result.text).toContain('- Rol: WORKER -> RESOURCE_MANAGEMENT');
     });
 
     it('renders changed fields from details level', () => {

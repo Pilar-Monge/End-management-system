@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export type JsonObject = Record<string, any>;
+export type JsonObject = Record<string, unknown>;
 
 export class PaginationDto {
   @ApiProperty()

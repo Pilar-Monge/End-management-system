@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class SupabaseStorageService {
   private readonly logger = new Logger(SupabaseStorageService.name);
-  private readonly supabase: SupabaseClient;
+  private readonly supabase: SupabaseClient | null;
   private readonly bucketName: string;
 
   constructor(private readonly configService: ConfigService) {
@@ -15,7 +15,9 @@ export class SupabaseStorageService {
     this.bucketName = this.configService.get<string>('SUPABASE_BUCKET_NAME', 'user-images');
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase credentials are missing in environment variables');
+      this.logger.warn('Supabase credentials are missing; image storage features are disabled');
+      this.supabase = null;
+      return;
     }
 
     this.supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -26,13 +28,21 @@ export class SupabaseStorageService {
     });
   }
 
+  private getSupabaseClient(): SupabaseClient {
+    if (!this.supabase) {
+      throw new Error('Supabase image storage is not configured');
+    }
+
+    return this.supabase;
+  }
+
   async uploadImage(file: Express.Multer.File, folder: string = 'general'): Promise<string> {
     const fileExt = file.originalname.split('.').pop();
     const fileName = `${uuidv4()}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
-    const { error } = await this.supabase.storage
-      .from(this.bucketName)
+    const { error } = await this.getSupabaseClient()
+      .storage.from(this.bucketName)
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
         upsert: false,
@@ -47,8 +57,8 @@ export class SupabaseStorageService {
   }
 
   async getSignedUrl(filePath: string, expiresIn: number = 3600): Promise<string> {
-    const { data, error } = await this.supabase.storage
-      .from(this.bucketName)
+    const { data, error } = await this.getSupabaseClient()
+      .storage.from(this.bucketName)
       .createSignedUrl(filePath, expiresIn);
 
     if (error) {
@@ -60,7 +70,9 @@ export class SupabaseStorageService {
   }
 
   async deleteImage(filePath: string): Promise<void> {
-    const { error } = await this.supabase.storage.from(this.bucketName).remove([filePath]);
+    const { error } = await this.getSupabaseClient()
+      .storage.from(this.bucketName)
+      .remove([filePath]);
 
     if (error) {
       this.logger.error(`Error deleting image from Supabase: ${error.message}`);

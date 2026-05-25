@@ -25,7 +25,9 @@ test.describe.serial('Transfer Notifications Without Email E2E', () => {
     await db.end();
   });
 
-  test('updating transfer status keeps transfer email templates out of outbox', async ({ request }) => {
+  test('updating transfer status keeps transfer email templates out of outbox', async ({
+    request,
+  }) => {
     const transferScope = await db.query<{ id: number }>(
       `SELECT t.id
        FROM transfer t

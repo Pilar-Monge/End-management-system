@@ -9,10 +9,11 @@ import type {
   OccupationCoverage,
   ReplacementSuggestion,
 } from './occupationCoverage.model';
+import type { AutoAssignmentResult } from './occupationCoverage.service';
 
 @ApiTags('occupationCoverage')
 @ApiBearerAuth()
-@Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'VISITOR')
+@Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
 @Controller('occupation-coverage')
 export class OccupationCoverageController {
   constructor(private readonly coverageService: OccupationCoverageService) {}
@@ -68,7 +69,7 @@ export class OccupationCoverageController {
     @Param('campId') campId: string,
     @Param('occupationId') occupationId: string,
     @Req() req: Request,
-  ): Promise<{ success: boolean; message: string; assignedPerson?: any }> {
+  ): Promise<AutoAssignmentResult> {
     try {
       const currentUser = this.getCurrentUser(req);
 
