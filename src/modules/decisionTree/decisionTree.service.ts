@@ -112,7 +112,7 @@ const ROLE_PROFILES: Record<AssignmentRoleName, RoleProfile> = {
 export class DecisionTreeService {
   private readonly decisionTreeClassifier = DecisionTreeClassifier;
 
-  constructor(private readonly repository: DecisionTreeRepository) {}
+  constructor(private readonly repository: DecisionTreeRepository) { }
 
   async trainModel(data: TrainDecisionTreeDTO, campId: number): Promise<DecisionTreeModel> {
     this.validateTrainInput(data);
@@ -149,8 +149,8 @@ export class DecisionTreeService {
 
     classifier.train(rows, encodedLabels);
 
-    const predictions = classifier.predict(rows);
-    const hits = predictions.reduce((count, prediction, index) => {
+    const predictions: any[] = classifier.predict(rows);
+    const hits = predictions.reduce((count: number, prediction: any, index: number) => {
       if (prediction === encodedLabels[index]) return count + 1;
       return count;
     }, 0);
@@ -207,6 +207,8 @@ export class DecisionTreeService {
     model: Omit<DecisionTreeModel, 'modelPayload'>;
     prediction: string;
     roleAssignment: RoleAssignment;
+    score: number;
+    decisionAction: 'AUTO_APPROVE' | 'AUTO_REJECT' | 'SUGGEST';
     explanation: {
       admissionSummary: string;
       roleSummary: string;
@@ -221,6 +223,8 @@ export class DecisionTreeService {
       model: explained.model,
       prediction: explained.prediction,
       roleAssignment: explained.roleAssignment,
+      score: explained.score,
+      decisionAction: explained.decisionAction,
       explanation: explained.explanation,
     };
   }
@@ -230,6 +234,8 @@ export class DecisionTreeService {
     prediction: string;
     rules: string[];
     roleAssignment: RoleAssignment;
+    score: number;
+    decisionAction: 'AUTO_APPROVE' | 'AUTO_REJECT' | 'SUGGEST';
     explanation: {
       admissionSummary: string;
       roleSummary: string;
@@ -250,6 +256,8 @@ export class DecisionTreeService {
     prediction: string;
     rules: string[];
     roleAssignment: RoleAssignment;
+    score: number;
+    decisionAction: 'AUTO_APPROVE' | 'AUTO_REJECT' | 'SUGGEST';
     explanation: {
       admissionSummary: string;
       roleSummary: string;
@@ -414,6 +422,8 @@ export class DecisionTreeService {
     prediction: string;
     rules: string[];
     roleAssignment: RoleAssignment;
+    score: number;
+    decisionAction: 'AUTO_APPROVE' | 'AUTO_REJECT' | 'SUGGEST';
     explanation: {
       admissionSummary: string;
       roleSummary: string;
@@ -429,6 +439,26 @@ export class DecisionTreeService {
     const rules = this.extractRulePath(model.featureNames, features, payload, loaded.root);
     const roleAssignment = await this.predictRoleAssignment(features, model.campId ?? undefined);
 
+    const leafDistribution = this.getLeafDistribution(model.featureNames, features, payload, loaded.root);
+    let score = 0;
+    if (leafDistribution && Array.isArray(leafDistribution) && typeof rawPrediction === 'number') {
+      const dist = leafDistribution;
+      const idx = Number(rawPrediction);
+      if (idx >= 0 && idx < dist.length) {
+        const val = dist[idx];
+        const total = dist.reduce((s, v) => s + v, 0);
+        const prob = total === 0 ? 0 : (val ?? 0) / total;
+        score = Math.round(prob * 100);
+      }
+    }
+
+    let decisionAction: 'AUTO_APPROVE' | 'AUTO_REJECT' | 'SUGGEST' = 'SUGGEST';
+    if (score > 70) {
+      decisionAction = prediction === 'ACCEPT' ? 'AUTO_APPROVE' : 'AUTO_REJECT';
+    } else if (score < 30) {
+      decisionAction = 'AUTO_REJECT';
+    }
+
     const explanation = {
       admissionSummary: this.buildTreeSummary('Admisión', prediction, rules),
       roleSummary: this.buildRoleSummary(roleAssignment),
@@ -441,8 +471,59 @@ export class DecisionTreeService {
       prediction,
       rules,
       roleAssignment,
+      score,
+      decisionAction,
       explanation,
     };
+  }
+
+  private getLeafDistribution(
+    featureNames: string[],
+    features: Record<string, number>,
+    payload: unknown,
+    modelRoot?: unknown,
+  ): number[] | null {
+    const payloadRecord = this.asRecord(payload);
+    const possibleRoot = modelRoot ?? payloadRecord?.root;
+    const root = this.isTreeNode(possibleRoot) ? (possibleRoot as any) : null;
+
+    if (!root) return null;
+
+    let current: any = root;
+    let guard = 0;
+
+    while (current && guard < 200) {
+      guard += 1;
+      const isLeaf = current.distribution !== undefined || (!current.left && !current.right);
+      if (isLeaf) {
+        const distributionRaw = current.distribution;
+        if (!distributionRaw) return null;
+        let arr: number[] = [];
+        if (Array.isArray(distributionRaw)) {
+          if (distributionRaw.length > 0 && Array.isArray(distributionRaw[0])) {
+            arr = distributionRaw[0] as number[];
+          } else if (typeof distributionRaw[0] === 'number') {
+            arr = distributionRaw as number[];
+          }
+        }
+        return arr;
+      }
+
+      const column: number | undefined = current.splitColumn;
+      const threshold: number | undefined = current.splitValue;
+      if (typeof column !== 'number' || typeof threshold !== 'number') return null;
+
+      const featureName: string | undefined = featureNames[column];
+      if (!featureName) return null;
+
+      const rawInputValue: number | undefined = features[featureName];
+      if (typeof rawInputValue !== 'number' || Number.isNaN(rawInputValue)) return null;
+
+      const goesLeft: boolean = rawInputValue <= threshold;
+      current = goesLeft ? current.left : current.right;
+    }
+
+    return null;
   }
 
   private async predictRoleAssignment(
