@@ -69,6 +69,7 @@ export class NotificationRepository {
   async findAllAndCount(filters?: {
     campId?: number;
     userId?: number;
+    currentRole?: SystemRole;
     targetRole?: SystemRole;
     type?: NotificationType;
     read?: boolean;
@@ -81,8 +82,17 @@ export class NotificationRepository {
       qb.andWhere('n.campId = :campId', { campId: filters.campId });
     }
 
-    if (filters?.userId !== undefined) {
+    if (filters?.userId !== undefined && filters?.currentRole !== undefined) {
+      qb.andWhere(
+        '(n.userId = :userId OR (n.userId IS NULL AND n.targetRole = :currentRole))',
+        { userId: filters.userId, currentRole: filters.currentRole },
+      );
+    } else if (filters?.userId !== undefined) {
       qb.andWhere('n.userId = :userId', { userId: filters.userId });
+    } else if (filters?.currentRole !== undefined) {
+      qb.andWhere('n.userId IS NULL AND n.targetRole = :currentRole', {
+        currentRole: filters.currentRole,
+      });
     }
 
     if (filters?.targetRole !== undefined) {

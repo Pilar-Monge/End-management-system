@@ -44,6 +44,7 @@ import { CreateNotificationDto, UpdateNotificationDto } from './dto';
 type NotificationFilters = {
   campId?: number;
   userId?: number;
+  currentRole?: SystemRoleType;
   targetRole?: SystemRoleType;
   type?: NotificationType;
   read?: boolean;
@@ -56,13 +57,17 @@ type NotificationFilters = {
 export class NotificationController {
   constructor(private readonly service: NotificationService) {}
 
-  private getCurrentUser(req: Request): { userId: number; campId: number } {
-    const currentUser = req.user as { userId?: number; campId?: number } | undefined;
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: SystemRoleType } {
+    const typedRequest = req as Request & {
+      user?: { userId?: number; campId?: number; rol?: string };
+    };
+    const currentUser = typedRequest.user;
     if (
       typeof currentUser?.userId !== 'number' ||
       currentUser.userId <= 0 ||
       typeof currentUser.campId !== 'number' ||
-      currentUser.campId <= 0
+      currentUser.campId <= 0 ||
+      !this.isSystemRole(currentUser.rol)
     ) {
       throw new BadRequestException('Authenticated user context is invalid');
     }
@@ -70,7 +75,12 @@ export class NotificationController {
     return {
       userId: currentUser.userId,
       campId: currentUser.campId,
+      rol: currentUser.rol,
     };
+  }
+
+  private isSystemRole(value: unknown): value is SystemRoleType {
+    return typeof value === 'string' && Object.values(SystemRole).includes(value as SystemRoleType);
   }
 
   @Post()
@@ -81,9 +91,20 @@ export class NotificationController {
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async create(@Body() body: CreateNotificationDTO) {
+  async create(@Body() body: CreateNotificationDTO, @Req() req: Request) {
     try {
-      const notification = await this.service.createNotification(body);
+      const currentUser = this.getCurrentUser(req);
+      const payload: CreateNotificationDTO = {
+        ...body,
+        campId:
+          currentUser.rol === SystemRole.SYSTEM_ADMIN ? body.campId : currentUser.campId,
+      };
+
+      if (currentUser.rol !== SystemRole.SYSTEM_ADMIN && body.campId !== currentUser.campId) {
+        throw new BadRequestException('You cannot create notifications for another camp');
+      }
+
+      const notification = await this.service.createNotification(payload, currentUser.userId);
       return { success: true, data: notification, message: 'Notification created successfully' };
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -117,6 +138,10 @@ export class NotificationController {
 
     const currentUser = this.getCurrentUser(req);
     if (notification.userId && notification.userId !== currentUser.userId) {
+      throw new BadRequestException('You do not have permission to view this notification');
+    }
+
+    if (!notification.userId && notification.targetRole && notification.targetRole !== currentUser.rol) {
       throw new BadRequestException('You do not have permission to view this notification');
     }
 
@@ -158,6 +183,7 @@ export class NotificationController {
       const currentUser = this.getCurrentUser(req);
 
       filters.userId = currentUser.userId;
+      filters.currentRole = currentUser.rol;
       filters.campId = currentUser.campId;
 
       if (campId) {
