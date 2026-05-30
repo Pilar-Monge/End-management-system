@@ -440,17 +440,31 @@ export class DecisionTreeService {
     const roleAssignment = await this.predictRoleAssignment(features, model.campId ?? undefined);
 
     const leafDistribution = this.getLeafDistribution(model.featureNames, features, payload, loaded.root);
-    let score = 0;
-    if (leafDistribution && Array.isArray(leafDistribution) && typeof rawPrediction === 'number') {
+    let rawScore = 0;
+    if (leafDistribution && Array.isArray(leafDistribution)) {
       const dist = leafDistribution;
-      const idx = Number(rawPrediction);
-      if (idx >= 0 && idx < dist.length) {
-        const val = dist[idx];
-        const total = dist.reduce((s, v) => s + v, 0);
-        const prob = total === 0 ? 0 : (val ?? 0) / total;
-        score = Math.round(prob * 100);
+      const classes = model.trainingMetrics?.labelClasses;
+      const acceptIdx = Array.isArray(classes) ? classes.indexOf('ACCEPT') : -1;
+
+      if (acceptIdx !== -1) {
+        if (acceptIdx >= 0 && acceptIdx < dist.length) {
+          const val = dist[acceptIdx];
+          const total = dist.reduce((s, v) => s + v, 0);
+          const prob = total === 0 ? 0 : (val ?? 0) / total;
+          rawScore = Math.round(prob * 100);
+        }
+      } else if (typeof rawPrediction === 'number') {
+        const idx = Number(rawPrediction);
+        if (idx >= 0 && idx < dist.length) {
+          const val = dist[idx];
+          const total = dist.reduce((s, v) => s + v, 0);
+          const prob = total === 0 ? 0 : (val ?? 0) / total;
+          rawScore = Math.round(prob * 100);
+        }
       }
     }
+
+    const score = this.calculateFuzzyScore(model.featureNames, features, payload, loaded.root, rawScore);
 
     let decisionAction: 'AUTO_APPROVE' | 'AUTO_REJECT' | 'SUGGEST' = 'SUGGEST';
     if (score > 70) {
@@ -496,14 +510,26 @@ export class DecisionTreeService {
       guard += 1;
       const isLeaf = current.distribution !== undefined || (!current.left && !current.right);
       if (isLeaf) {
-        const distributionRaw = current.distribution;
+        let distributionRaw = current.distribution;
         if (!distributionRaw) return null;
+
+        if (distributionRaw && typeof (distributionRaw as any).to2DArray === 'function') {
+          distributionRaw = (distributionRaw as any).to2DArray();
+        } else if (distributionRaw && !Array.isArray(distributionRaw) && Array.isArray((distributionRaw as any).data)) {
+          distributionRaw = (distributionRaw as any).data;
+        }
+
         let arr: number[] = [];
         if (Array.isArray(distributionRaw)) {
-          if (distributionRaw.length > 0 && Array.isArray(distributionRaw[0])) {
-            arr = distributionRaw[0] as number[];
+          if (
+            distributionRaw.length > 0 &&
+            (Array.isArray(distributionRaw[0]) ||
+              distributionRaw[0] instanceof Float64Array ||
+              distributionRaw[0] instanceof Float32Array)
+          ) {
+            arr = Array.from(distributionRaw[0] as any);
           } else if (typeof distributionRaw[0] === 'number') {
-            arr = distributionRaw as number[];
+            arr = Array.from(distributionRaw as any);
           }
         }
         return arr;
@@ -524,6 +550,65 @@ export class DecisionTreeService {
     }
 
     return null;
+  }
+
+  private calculateFuzzyScore(
+    featureNames: string[],
+    features: Record<string, number>,
+    payload: unknown,
+    modelRoot: unknown | undefined,
+    rawScore: number,
+  ): number {
+    const payloadRecord = this.asRecord(payload);
+    const possibleRoot = modelRoot ?? payloadRecord?.root;
+    const root = this.isTreeNode(possibleRoot) ? (possibleRoot as any) : null;
+
+    if (!root) return rawScore;
+
+    let current: any = root;
+    let guard = 0;
+    let pathConf = 1.0;
+
+    while (current && guard < 200) {
+      guard += 1;
+      const isLeaf = current.distribution !== undefined || (!current.left && !current.right);
+      if (isLeaf) {
+        break;
+      }
+
+      const column: number | undefined = current.splitColumn;
+      const threshold: number | undefined = current.splitValue;
+      if (typeof column !== 'number' || typeof threshold !== 'number') break;
+
+      const featureName: string | undefined = featureNames[column];
+      if (!featureName) break;
+
+      const rawInputValue: number | undefined = features[featureName];
+      if (typeof rawInputValue !== 'number' || Number.isNaN(rawInputValue)) break;
+
+      const margin = Math.abs(rawInputValue - threshold);
+      const normalizedMargin =
+        featureName === 'age_years' || featureName === 'experience_years'
+          ? Math.min(margin / 10, 1)
+          : Math.min(margin / 3, 1);
+
+      const splitConf = 0.5 + 0.5 * normalizedMargin;
+      pathConf *= splitConf;
+
+      const goesLeft: boolean = rawInputValue <= threshold;
+      current = goesLeft ? current.left : current.right;
+    }
+
+    let finalScore = rawScore;
+    if (rawScore > 50) {
+      finalScore = 50 + (rawScore - 50) * pathConf;
+    } else if (rawScore < 50) {
+      finalScore = 50 - (50 - rawScore) * pathConf;
+    } else {
+      finalScore = 50;
+    }
+
+    return Math.round(finalScore);
   }
 
   private async predictRoleAssignment(
