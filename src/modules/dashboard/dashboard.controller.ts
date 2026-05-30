@@ -83,7 +83,6 @@ export class DashboardController {
   @Get('personal')
   @Roles(
     SystemRole.SYSTEM_ADMIN,
-    SystemRole.WORKER,
     SystemRole.RESOURCE_MANAGEMENT,
     SystemRole.TRAVEL_MANAGER,
   )
