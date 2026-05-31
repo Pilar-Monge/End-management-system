@@ -96,7 +96,22 @@ export class RequestResourceDetailController {
 
   @Post()
   @ApiOperation({ summary: 'Create Request Resource Detail' })
-  @ApiBody({ type: CreateRequestResourceDetailDto })
+  @ApiBody({
+    type: CreateRequestResourceDetailDto,
+    description:
+      'Use the request id returned by POST /intercamp-requests. For food, resourceTypeId 2 maps to Canned Food in the seeded data.',
+    examples: {
+      cannedFood100: {
+        summary: '100 units of canned food',
+        value: {
+          requestId: 1,
+          resourceTypeId: 2,
+          requestedAmount: '100.00',
+          approvedAmount: null,
+        },
+      },
+    },
+  })
   @ApiCreatedResponseData(RequestResourceDetailEntity, {
     description: 'Request Resource Detail created',
   })

@@ -117,7 +117,10 @@ describe('NotificationService', () => {
     });
 
     it('creates notification with targetRole when no userId', async () => {
-      repository.create.mockResolvedValue({ id: 200, campId: 1, targetRole: 'SYSTEM_ADMIN' });
+      repository.findActiveUsersByCampAndRoles.mockResolvedValue([{ id: 11 }, { id: 12 }]);
+      repository.create
+        .mockResolvedValueOnce({ id: 200, campId: 1, userId: 11, targetRole: 'SYSTEM_ADMIN' })
+        .mockResolvedValueOnce({ id: 201, campId: 1, userId: 12, targetRole: 'SYSTEM_ADMIN' });
 
       const result = await service.createNotification({
         campId: 1,
@@ -127,7 +130,9 @@ describe('NotificationService', () => {
         message: 'There is a new request',
       });
 
-      expect(result).toMatchObject({ id: 200 });
+      expect(result).toMatchObject({ id: 200, userId: 11 });
+      expect(repository.findActiveUsersByCampAndRoles).toHaveBeenCalledWith(1, ['SYSTEM_ADMIN']);
+      expect(repository.create).toHaveBeenCalledTimes(2);
     });
   });
 

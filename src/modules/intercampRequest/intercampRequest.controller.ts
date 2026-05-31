@@ -76,13 +76,60 @@ export class IntercampRequestController {
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Intercamp Request' })
-  @ApiBody({ type: CreateIntercampRequestDto })
+  @ApiBody({
+    type: CreateIntercampRequestDto,
+    examples: {
+      camp1ToCamp2FoodRequest: {
+        summary: 'Camp 1 requests food from Camp 2',
+        value: {
+          originCampId: 1,
+          destinationCampId: 2,
+          status: 'PENDING',
+          description: 'Request 100 units of canned food from camp 1 to camp 2',
+          plannedDepartureDate: '2026-06-01T09:00:00Z',
+          plannedArrivalDate: '2026-06-01T11:00:00Z',
+          createdDate: '2026-04-05T12:00:00Z',
+          responseDate: null,
+          createdBy: 3,
+          respondedBy: null,
+        },
+      },
+    },
+  })
   @ApiCreatedResponseData(IntercampRequestEntity, { description: 'Intercamp Request created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateIntercampRequestDTO, @Req() req: Request) {
     try {
+      const missing: string[] = [];
+      if (body.originCampId === undefined || body.originCampId === null)
+        missing.push('originCampId');
+      if (body.destinationCampId === undefined || body.destinationCampId === null)
+        missing.push('destinationCampId');
+      if (!body.plannedDepartureDate) missing.push('plannedDepartureDate');
+      if (!body.plannedArrivalDate) missing.push('plannedArrivalDate');
+      if (body.createdBy === undefined || body.createdBy === null) missing.push('createdBy');
+
+      if (missing.length > 0) {
+        throw new BadRequestException(`Missing required field(s): ${missing.join(', ')}`);
+      }
+
+      try {
+        const dep = new Date(String(body.plannedDepartureDate));
+        const arr = new Date(String(body.plannedArrivalDate));
+        if (!(arr.getTime() > dep.getTime() + 60_000)) {
+          throw new BadRequestException(
+            'plannedArrivalDate must be at least 1 minute after plannedDepartureDate',
+          );
+        }
+      } catch (err) {
+        if (err instanceof BadRequestException) throw err;
+        throw new BadRequestException(
+          'Invalid date format for plannedDepartureDate or plannedArrivalDate',
+        );
+      }
+
       const currentUser = this.getCurrentUser(req);
       if (!this.isSystemAdmin(currentUser.rol)) {
         if (body.originCampId !== currentUser.campId) {
@@ -95,6 +142,12 @@ export class IntercampRequestController {
       }
 
       const request = await this.service.createRequest(body);
+      if (!request) {
+        throw new BadRequestException(
+          'Could not create intercamp request — please verify required fields and try again',
+        );
+      }
+
       return {
         success: true,
         data: request,
@@ -103,6 +156,20 @@ export class IntercampRequestController {
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
+      }
+
+      const msg = typeof error === 'string' ? error : error instanceof Error ? error.message : null;
+      if (msg) {
+        if (msg.includes('null value in column')) {
+          const col = msg.split('column "')[1]?.split('"')[0];
+          if (col) throw new BadRequestException(`Missing required column: ${col}`);
+        }
+
+        if (msg.includes('violates foreign key constraint')) {
+          throw new BadRequestException(
+            'Foreign key constraint violation: check referenced camp or user ids',
+          );
+        }
       }
 
       throw new BadRequestException(
@@ -307,7 +374,57 @@ export class IntercampRequestController {
         }
       }
 
-      const request = await this.service.updateRequest(parsedId, body);
+      const newStatus: IntercampRequestStatus =
+        (body.status as IntercampRequestStatus) ?? existingRequest.status;
+
+      if (newStatus !== 'PENDING') {
+        const hasRespondedBy =
+          body.respondedBy !== undefined && body.respondedBy !== null
+            ? true
+            : existingRequest.respondedBy !== undefined && existingRequest.respondedBy !== null;
+
+        const hasResponseDate =
+          body.responseDate !== undefined && body.responseDate !== null
+            ? true
+            : existingRequest.responseDate !== undefined && existingRequest.responseDate !== null;
+
+        const missing: string[] = [];
+        if (!hasRespondedBy) missing.push('respondedBy');
+        if (!hasResponseDate) missing.push('responseDate');
+
+        if (missing.length > 0) {
+          throw new BadRequestException(
+            `Missing required field(s) for status '${newStatus}': ${missing.join(', ')}`,
+          );
+        }
+      }
+
+      if (newStatus === 'APPROVED') {
+        const plannedDeparture = body.plannedDepartureDate ?? existingRequest.plannedDepartureDate;
+        const plannedArrival = body.plannedArrivalDate ?? existingRequest.plannedArrivalDate;
+
+        const missingDates: string[] = [];
+        if (!plannedDeparture) missingDates.push('plannedDepartureDate');
+        if (!plannedArrival) missingDates.push('plannedArrivalDate');
+
+        if (missingDates.length > 0) {
+          throw new BadRequestException(
+            `Missing required field(s) for status 'APPROVED': ${missingDates.join(', ')}`,
+          );
+        }
+
+        const dep =
+          plannedDeparture instanceof Date ? plannedDeparture : new Date(String(plannedDeparture));
+        const arr =
+          plannedArrival instanceof Date ? plannedArrival : new Date(String(plannedArrival));
+        if (!(arr.getTime() > dep.getTime() + 60_000)) {
+          throw new BadRequestException(
+            'plannedArrivalDate must be later than plannedDepartureDate by at least 1 minute',
+          );
+        }
+      }
+
+      const request = await this.service.updateRequest(parsedId, body, currentUser);
       if (!request) throw new NotFoundException('Intercamp request not found');
 
       return {

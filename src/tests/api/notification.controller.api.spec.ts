@@ -5,7 +5,8 @@ describe('NotificationController (API controller unit tests)', () => {
   let service: any;
   let controller: NotificationController;
 
-  const makeReq = (userId = 1, campId = 10) => ({ user: { userId, campId } }) as any;
+  const makeReq = (userId = 1, campId = 10, rol = 'WORKER') =>
+    ({ user: { userId, campId, rol } }) as any;
 
   beforeEach(() => {
     service = {
@@ -19,7 +20,7 @@ describe('NotificationController (API controller unit tests)', () => {
 
   it('create returns success payload', async () => {
     service.createNotification.mockResolvedValue({ id: 1 });
-    const res = await controller.create({} as any);
+    const res = await controller.create({} as any, makeReq());
     expect(res).toEqual({
       success: true,
       data: { id: 1 },
@@ -29,7 +30,7 @@ describe('NotificationController (API controller unit tests)', () => {
 
   it('create wraps non-http errors', async () => {
     service.createNotification.mockRejectedValue(new Error('boom'));
-    await expect(controller.create({} as any)).rejects.toThrow(BadRequestException);
+    await expect(controller.create({} as any, makeReq())).rejects.toThrow(BadRequestException);
   });
 
   it('getById rejects invalid id', async () => {

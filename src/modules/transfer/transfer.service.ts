@@ -42,8 +42,9 @@ export class TransferService {
     }
 
     const scope = await this.resolveRequestScope(transfer.requestId);
+    const supplierCampId = scope.destinationCampId;
     const camp = await this.dataSource.getRepository(CampEntity).findOne({
-      where: { id: scope.originCampId },
+      where: { id: supplierCampId },
       select: { id: true, minimumDailyRationPerPerson: true },
     });
 
@@ -90,11 +91,13 @@ export class TransferService {
     }
 
     const scope = await this.resolveRequestScope(requestId);
+    const supplierCampId = scope.destinationCampId;
+    const recipientCampId = scope.originCampId;
     const deliveredRows = await this.repository.findDeliveredResourcesByTransferId(transferId);
 
     for (const delivered of deliveredRows) {
       await this.inventoryMovementService.createMovement({
-        campId: scope.originCampId,
+        campId: supplierCampId,
         resourceTypeId: delivered.resourceTypeId,
         amount: delivered.sentAmount,
         movementType: 'TRANSFER_SENT',
@@ -105,7 +108,7 @@ export class TransferService {
       });
 
       await this.inventoryMovementService.createMovement({
-        campId: scope.destinationCampId,
+        campId: recipientCampId,
         resourceTypeId: delivered.resourceTypeId,
         amount: delivered.receivedAmount,
         movementType: 'TRANSFER_RECEIVED',
@@ -228,30 +231,48 @@ export class TransferService {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 
-    if (data.status === 'COMPLETED') {
-      const resolvedDepartureApprovedBy = data.departureApprovedBy ?? existing.departureApprovedBy;
-      const resolvedArrivalApprovedBy = data.arrivalApprovedBy ?? existing.arrivalApprovedBy;
+    if (existing.status === 'COMPLETED' || existing.status === 'CANCELED') {
+      throw new BadRequestException('No se puede modificar un traslado finalizado');
+    }
+
+    const updateData: UpdateTransferDTO = { ...data };
+
+    if (updateData.status === 'COMPLETED') {
+      const scope = await this.resolveRequestScope(existing.requestId);
+      const resolvedDepartureApprovedBy =
+        updateData.departureApprovedBy ??
+        existing.departureApprovedBy ??
+        scope.respondedBy ??
+        scope.createdBy;
+      const resolvedArrivalApprovedBy =
+        updateData.arrivalApprovedBy ??
+        existing.arrivalApprovedBy ??
+        scope.respondedBy ??
+        scope.createdBy;
 
       if (resolvedDepartureApprovedBy === null || resolvedArrivalApprovedBy === null) {
         throw new Error('Para completar el traslado se requieren aprobaciones de salida y llegada');
       }
+
+      updateData.departureApprovedBy = resolvedDepartureApprovedBy;
+      updateData.arrivalApprovedBy = resolvedArrivalApprovedBy;
     }
 
-    if (data.requestId !== undefined && data.requestId !== existing.requestId) {
+    if (updateData.requestId !== undefined && updateData.requestId !== existing.requestId) {
       await assertEntityExists(
         this.dataSource,
         IntercampRequestEntity,
-        data.requestId,
+        updateData.requestId,
         'Intercamp request',
       );
 
-      const byRequest = await this.repository.findByRequestId(data.requestId);
+      const byRequest = await this.repository.findByRequestId(updateData.requestId);
       if (byRequest && byRequest.id !== id) {
         throw new Error('Ya existe un traslado para esta solicitud');
       }
     }
 
-    const updated = await this.repository.update(id, data);
+    const updated = await this.repository.update(id, updateData);
     if (!updated) {
       return null;
     }

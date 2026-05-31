@@ -71,6 +71,66 @@ export class IntercampRequestRepository {
     return rows[0]?.total ?? 0;
   }
 
+  async findCampInventoryAmount(campId: number, resourceTypeId: number): Promise<string> {
+    const rows = (await this.repo.query(
+      `SELECT COALESCE(current_amount, 0)::text AS total
+       FROM public.camp_inventory
+       WHERE camp_id = $1
+         AND resource_type_id = $2
+       LIMIT 1`,
+      [campId, resourceTypeId],
+    )) as Array<{ total: string }>;
+
+    return rows[0]?.total ?? '0';
+  }
+
+  async findCampInventoryWithMinimum(
+    campId: number,
+    resourceTypeId: number,
+  ): Promise<{ current: string; minimum: string }> {
+    const rows = (await this.repo.query(
+      `SELECT COALESCE(current_amount, 0)::text AS current,
+              COALESCE(minimum_alert_amount, 0)::text AS minimum
+       FROM public.camp_inventory
+       WHERE camp_id = $1
+         AND resource_type_id = $2
+       LIMIT 1`,
+      [campId, resourceTypeId],
+    )) as Array<{ current: string; minimum: string }>;
+
+    return {
+      current: rows[0]?.current ?? '0',
+      minimum: rows[0]?.minimum ?? '0',
+    };
+  }
+
+  async findCommittedTransferAmountByCampAndResourceType(
+    campId: number,
+    resourceTypeId: number,
+    excludedRequestId?: number,
+  ): Promise<string> {
+    const params: Array<number> = [campId, resourceTypeId];
+    const excludedClause = excludedRequestId === undefined ? '' : ' AND r.id <> $3';
+
+    if (excludedRequestId !== undefined) {
+      params.push(excludedRequestId);
+    }
+
+    const rows = (await this.repo.query(
+      `SELECT COALESCE(SUM(COALESCE(rrd.approved_amount, rrd.requested_amount)), 0)::text AS total
+       FROM public.transfer t
+       INNER JOIN public.intercamp_request r ON r.id = t.request_id
+       INNER JOIN public.request_resource_detail rrd ON rrd.request_id = r.id
+       WHERE r.destination_camp_id = $1
+         AND rrd.resource_type_id = $2
+         AND r.status = 'APPROVED'
+         AND t.status = 'PENDING_DEPARTURE'${excludedClause}`,
+      params,
+    )) as Array<{ total: string }>;
+
+    return rows[0]?.total ?? '0';
+  }
+
   async findRequestResourceAmountsByRequestId(
     requestId: number,
   ): Promise<Array<{ resourceTypeId: number; amount: string }>> {
