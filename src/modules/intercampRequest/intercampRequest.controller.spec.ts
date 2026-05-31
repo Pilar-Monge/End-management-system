@@ -1,9 +1,5 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-  HttpException,
-} from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { IntercampRequestController } from './intercampRequest.controller';
 import type { IntercampRequestService } from './intercampRequest.service';
 import type { Request } from 'express';
@@ -147,7 +143,11 @@ describe('IntercampRequestController', () => {
 
   describe('update', () => {
     it('should update a request', async () => {
-      service.getRequestById.mockResolvedValue({ id: 1, originCampId: 1, status: 'PENDING' } as any);
+      service.getRequestById.mockResolvedValue({
+        id: 1,
+        originCampId: 1,
+        status: 'PENDING',
+      } as any);
       service.updateRequest.mockResolvedValue({ id: 1 } as any);
 
       const result = await controller.update(

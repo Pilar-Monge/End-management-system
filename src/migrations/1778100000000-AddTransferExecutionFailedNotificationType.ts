@@ -43,9 +43,7 @@ function buildNotificationTypeCheck(types: readonly string[]): string {
   return types.map((type) => `'${type}'`).join(', ');
 }
 
-export class AddTransferExecutionFailedNotificationType1778100000000
-  implements MigrationInterface
-{
+export class AddTransferExecutionFailedNotificationType1778100000000 implements MigrationInterface {
   name = 'AddTransferExecutionFailedNotificationType1778100000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
