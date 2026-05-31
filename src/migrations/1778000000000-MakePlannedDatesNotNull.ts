@@ -2,7 +2,6 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class MakePlannedDatesNotNull1778000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Backfill historical rows conservatively so the NOT NULL change can be applied safely.
     await queryRunner.query(`
       UPDATE public.intercamp_request
       SET responded_by = created_by

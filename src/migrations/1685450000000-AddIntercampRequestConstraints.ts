@@ -2,9 +2,6 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddIntercampRequestConstraints1685450000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Pre-checks: prevent applying constraints when there are still invalid rows.
-    // This forces manual intervention using docs/fix-intercamp-existing-rows.sql.md
-    // so teams don't get unexpected automatic data changes.
     const respCheck: Array<{ cnt: string | number }> = await queryRunner.query(`
       SELECT COUNT(*)::int AS cnt
       FROM public.intercamp_request
@@ -35,7 +32,6 @@ export class AddIntercampRequestConstraints1685450000000 implements MigrationInt
       );
     }
 
-    // Require response fields when status is not PENDING
     await queryRunner.query(`
       ALTER TABLE public.intercamp_request
       ADD CONSTRAINT chk_intercamp_response_fields_populated
@@ -44,7 +40,6 @@ export class AddIntercampRequestConstraints1685450000000 implements MigrationInt
       );
     `);
 
-    // Require planned dates when status is APPROVED
     await queryRunner.query(`
       ALTER TABLE public.intercamp_request
       ADD CONSTRAINT chk_intercamp_planned_dates_required_when_approved
@@ -53,7 +48,6 @@ export class AddIntercampRequestConstraints1685450000000 implements MigrationInt
       );
     `);
 
-    // Ensure arrival is strictly after departure by at least 1 minute (if both present)
     await queryRunner.query(`
       ALTER TABLE public.intercamp_request
       ADD CONSTRAINT chk_intercamp_arrival_after_departure_by_minute
