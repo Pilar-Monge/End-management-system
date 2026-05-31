@@ -176,6 +176,20 @@ export class TemporalAutomationService {
         continue;
       }
 
+      const movement = await this.inventoryMovementRepo.save(
+        this.inventoryMovementRepo.create({
+          campId,
+          resourceTypeId: row.resourceTypeId,
+          amount: row.expectedAmount,
+          movementType: 'DAILY_COLLECTION',
+          sourceId: null,
+          sourceType: 'temporal_automation',
+          recordedBy: recorderUserId,
+          date: now,
+          description: 'Automatic daily collection',
+        }),
+      );
+
       await this.dailyCollectionRecordRepo.save(
         this.dailyCollectionRecordRepo.create({
           campId,
@@ -186,7 +200,7 @@ export class TemporalAutomationService {
           actualAmount: row.expectedAmount,
           differenceReason: null,
           recordedBy: recorderUserId,
-          movementId: null,
+          movementId: movement.id,
         }),
       );
     }

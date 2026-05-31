@@ -59,6 +59,7 @@ describe('TemporalAutomationService', () => {
     inventoryMovementRepo.create.mockImplementation((x) => x);
 
     inventoryAlertRepo.save.mockImplementation((x) => Promise.resolve({ id: 123, ...x }));
+    inventoryMovementRepo.save.mockImplementation((x) => Promise.resolve({ id: 123, ...x }));
     temporalAutomationRepository.findActiveUserIdsByCampAndPersonIds.mockResolvedValue([]);
 
     service = new TemporalAutomationService(
@@ -133,12 +134,27 @@ describe('TemporalAutomationService', () => {
 
       // 1 collection record
       expect(dailyCollectionRecordRepo.save).toHaveBeenCalledTimes(1);
+      expect(inventoryMovementRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          campId: 1,
+          resourceTypeId: 101,
+          amount: '10.00',
+          movementType: 'DAILY_COLLECTION',
+          sourceType: 'temporal_automation',
+        }),
+      );
 
       // Inventory updates: 2 from consumption + 1 from production = 3
       expect(campInventoryRepo.save).toHaveBeenCalledTimes(3);
 
-      // Movements: 2 from consumption + 1 from production = 3
-      expect(inventoryMovementRepo.save).toHaveBeenCalledTimes(3);
+      // Movements: 1 daily collection + 2 consumptions + 1 production = 4
+      expect(inventoryMovementRepo.save).toHaveBeenCalledTimes(4);
+
+      expect(dailyCollectionRecordRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          movementId: 123,
+        }),
+      );
     });
 
     it('handles camp overpopulation and missing staff alerts', async () => {
