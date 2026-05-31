@@ -13,7 +13,7 @@ import type { AutoAssignmentResult } from './occupationCoverage.service';
 
 @ApiTags('occupationCoverage')
 @ApiBearerAuth()
-@Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+@Roles('SYSTEM_ADMIN')
 @Controller('occupation-coverage')
 export class OccupationCoverageController {
   constructor(private readonly coverageService: OccupationCoverageService) {}
