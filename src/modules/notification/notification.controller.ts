@@ -100,7 +100,7 @@ export class NotificationController {
           currentUser.rol === SystemRole.SYSTEM_ADMIN ? body.campId : currentUser.campId,
       };
 
-      if (currentUser.rol !== SystemRole.SYSTEM_ADMIN && body.campId !== currentUser.campId) {
+      if (currentUser.rol !== SystemRole.SYSTEM_ADMIN && payload.campId !== currentUser.campId) {
         throw new BadRequestException('You cannot create notifications for another camp');
       }
 

@@ -5,7 +5,8 @@ describe('NotificationController (API controller unit tests)', () => {
   let service: any;
   let controller: NotificationController;
 
-  const makeReq = (userId = 1, campId = 10) => ({ user: { userId, campId } }) as any;
+  const makeReq = (userId = 1, campId = 10, rol = 'WORKER') =>
+    ({ user: { userId, campId, rol } } as any);
 
   beforeEach(() => {
     service = {
