@@ -175,7 +175,7 @@ describe('IntercampRequestService', () => {
 
       // Needs transfer
       repository.findRequestResourceAmountsByRequestId.mockResolvedValue([]);
-        repository.findCampInventoryWithMinimum.mockResolvedValue({ current: '100', minimum: '0' });
+      repository.findCampInventoryWithMinimum.mockResolvedValue({ current: '100', minimum: '0' });
       repository.findCommittedTransferAmountByCampAndResourceType.mockResolvedValue('0');
       // Doesn't exist
       transferService.getTransferByRequestId.mockResolvedValue(null);
@@ -238,7 +238,7 @@ describe('IntercampRequestService', () => {
       repository.findRequestResourceAmountsByRequestId.mockResolvedValue([
         { resourceTypeId: 7, amount: '10' },
       ]);
-        repository.findCampInventoryWithMinimum.mockResolvedValue({ current: '5', minimum: '0' });
+      repository.findCampInventoryWithMinimum.mockResolvedValue({ current: '5', minimum: '0' });
       repository.findCommittedTransferAmountByCampAndResourceType.mockResolvedValue('0');
 
       await expect(
@@ -264,7 +264,10 @@ describe('IntercampRequestService', () => {
       };
       repository.findById.mockResolvedValue(req);
       repository.update.mockResolvedValue({ ...req, status: 'REJECTED' });
-      transferService.getTransferByRequestId.mockResolvedValue({ id: 100, status: 'PENDING_DEPARTURE' });
+      transferService.getTransferByRequestId.mockResolvedValue({
+        id: 100,
+        status: 'PENDING_DEPARTURE',
+      });
       transferService.updateTransfer.mockResolvedValue({ id: 100, status: 'CANCELED' });
 
       await service.updateRequest(

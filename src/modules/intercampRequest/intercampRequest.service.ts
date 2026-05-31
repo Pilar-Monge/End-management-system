@@ -123,7 +123,9 @@ export class IntercampRequestService {
       }
 
       if (actor.campId !== existing.destinationCampId) {
-        throw new BadRequestException('Solo el campamento destino puede rechazar una solicitud aprobada');
+        throw new BadRequestException(
+          'Solo el campamento destino puede rechazar una solicitud aprobada',
+        );
       }
 
       return;
@@ -131,7 +133,9 @@ export class IntercampRequestService {
 
     if (requestedStatus === 'APPROVED' || requestedStatus === 'REJECTED') {
       if (actor.campId !== existing.destinationCampId) {
-        throw new BadRequestException('Solo el campamento destino puede aprobar o rechazar la solicitud');
+        throw new BadRequestException(
+          'Solo el campamento destino puede aprobar o rechazar la solicitud',
+        );
       }
 
       return;
@@ -146,7 +150,9 @@ export class IntercampRequestService {
     }
 
     if (actor.campId !== existing.originCampId) {
-      throw new BadRequestException('Solo el campamento origen puede editar una solicitud pendiente');
+      throw new BadRequestException(
+        'Solo el campamento origen puede editar una solicitud pendiente',
+      );
     }
   }
 
@@ -339,8 +345,10 @@ export class IntercampRequestService {
     const createdBy = data.createdBy ?? existing.createdBy;
     const persistedData: UpdateIntercampRequestDTO = {
       ...data,
-      respondedBy: data.status !== undefined ? actor.userId : data.respondedBy ?? existing.respondedBy,
-      responseDate: data.status !== undefined ? new Date() : data.responseDate ?? existing.responseDate,
+      respondedBy:
+        data.status !== undefined ? actor.userId : (data.respondedBy ?? existing.respondedBy),
+      responseDate:
+        data.status !== undefined ? new Date() : (data.responseDate ?? existing.responseDate),
     };
     const respondedBy =
       persistedData.respondedBy !== undefined ? persistedData.respondedBy : existing.respondedBy;

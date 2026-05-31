@@ -96,8 +96,7 @@ export class NotificationController {
       const currentUser = this.getCurrentUser(req);
       const payload: CreateNotificationDTO = {
         ...body,
-        campId:
-          currentUser.rol === SystemRole.SYSTEM_ADMIN ? body.campId : currentUser.campId,
+        campId: currentUser.rol === SystemRole.SYSTEM_ADMIN ? body.campId : currentUser.campId,
       };
 
       if (currentUser.rol !== SystemRole.SYSTEM_ADMIN && payload.campId !== currentUser.campId) {
@@ -141,7 +140,11 @@ export class NotificationController {
       throw new BadRequestException('You do not have permission to view this notification');
     }
 
-    if (!notification.userId && notification.targetRole && notification.targetRole !== currentUser.rol) {
+    if (
+      !notification.userId &&
+      notification.targetRole &&
+      notification.targetRole !== currentUser.rol
+    ) {
       throw new BadRequestException('You do not have permission to view this notification');
     }
 

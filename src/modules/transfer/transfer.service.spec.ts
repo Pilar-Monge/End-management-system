@@ -154,22 +154,22 @@ describe('TransferService', () => {
     });
 
     it('throws if completing without approvals', async () => {
-        repository.findById.mockResolvedValue({
-          id: 1,
-          departureApprovedBy: null,
-          arrivalApprovedBy: null,
-          requestId: 10,
-        });
-        repository.resolveRequestScope.mockResolvedValue({
-          originCampId: 1,
-          destinationCampId: 2,
-          createdBy: null,
-          respondedBy: null,
-        });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        departureApprovedBy: null,
+        arrivalApprovedBy: null,
+        requestId: 10,
+      });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: null,
+        respondedBy: null,
+      });
 
-        await expect(service.updateTransfer(1, { status: 'COMPLETED' })).rejects.toThrow(
-          /aprobaciones/i,
-        );
+      await expect(service.updateTransfer(1, { status: 'COMPLETED' })).rejects.toThrow(
+        /aprobaciones/i,
+      );
     });
 
     it('throws if changing request and new request already has a transfer', async () => {

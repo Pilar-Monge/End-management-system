@@ -319,19 +319,19 @@ export class TemporalAutomationService {
           };
 
           if (originCampId !== null) {
-            await this.notificationService.notifyCampRoles(originCampId, [
-              'SYSTEM_ADMIN',
-              'RESOURCE_MANAGEMENT',
-              'TRAVEL_MANAGER',
-            ], notif);
+            await this.notificationService.notifyCampRoles(
+              originCampId,
+              ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+              notif,
+            );
           }
 
           if (destinationCampId !== null) {
-            await this.notificationService.notifyCampRoles(destinationCampId, [
-              'SYSTEM_ADMIN',
-              'RESOURCE_MANAGEMENT',
-              'TRAVEL_MANAGER',
-            ], notif);
+            await this.notificationService.notifyCampRoles(
+              destinationCampId,
+              ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+              notif,
+            );
           }
         } catch (notifyErr) {
           this.logger.warn(

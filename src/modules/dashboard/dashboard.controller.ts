@@ -81,11 +81,7 @@ export class DashboardController {
   }
 
   @Get('personal')
-  @Roles(
-    SystemRole.SYSTEM_ADMIN,
-    SystemRole.RESOURCE_MANAGEMENT,
-    SystemRole.TRAVEL_MANAGER,
-  )
+  @Roles(SystemRole.SYSTEM_ADMIN, SystemRole.RESOURCE_MANAGEMENT, SystemRole.TRAVEL_MANAGER)
   @ApiOperation({ summary: 'View personal panel for assigned resources' })
   @ApiBadRequestResponse({ description: 'Invalid request or missing context' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })

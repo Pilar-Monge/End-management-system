@@ -240,9 +240,15 @@ export class TransferService {
     if (updateData.status === 'COMPLETED') {
       const scope = await this.resolveRequestScope(existing.requestId);
       const resolvedDepartureApprovedBy =
-        updateData.departureApprovedBy ?? existing.departureApprovedBy ?? scope.respondedBy ?? scope.createdBy;
+        updateData.departureApprovedBy ??
+        existing.departureApprovedBy ??
+        scope.respondedBy ??
+        scope.createdBy;
       const resolvedArrivalApprovedBy =
-        updateData.arrivalApprovedBy ?? existing.arrivalApprovedBy ?? scope.respondedBy ?? scope.createdBy;
+        updateData.arrivalApprovedBy ??
+        existing.arrivalApprovedBy ??
+        scope.respondedBy ??
+        scope.createdBy;
 
       if (resolvedDepartureApprovedBy === null || resolvedArrivalApprovedBy === null) {
         throw new Error('Para completar el traslado se requieren aprobaciones de salida y llegada');

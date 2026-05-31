@@ -102,10 +102,11 @@ export class IntercampRequestController {
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateIntercampRequestDTO, @Req() req: Request) {
     try {
-      // Basic friendly validations to provide clearer error messages before hitting DB
       const missing: string[] = [];
-      if (body.originCampId === undefined || body.originCampId === null) missing.push('originCampId');
-      if (body.destinationCampId === undefined || body.destinationCampId === null) missing.push('destinationCampId');
+      if (body.originCampId === undefined || body.originCampId === null)
+        missing.push('originCampId');
+      if (body.destinationCampId === undefined || body.destinationCampId === null)
+        missing.push('destinationCampId');
       if (!body.plannedDepartureDate) missing.push('plannedDepartureDate');
       if (!body.plannedArrivalDate) missing.push('plannedArrivalDate');
       if (body.createdBy === undefined || body.createdBy === null) missing.push('createdBy');
@@ -114,16 +115,19 @@ export class IntercampRequestController {
         throw new BadRequestException(`Missing required field(s): ${missing.join(', ')}`);
       }
 
-      // Validate date ordering
       try {
         const dep = new Date(String(body.plannedDepartureDate));
         const arr = new Date(String(body.plannedArrivalDate));
         if (!(arr.getTime() > dep.getTime() + 60_000)) {
-          throw new BadRequestException('plannedArrivalDate must be at least 1 minute after plannedDepartureDate');
+          throw new BadRequestException(
+            'plannedArrivalDate must be at least 1 minute after plannedDepartureDate',
+          );
         }
       } catch (err) {
         if (err instanceof BadRequestException) throw err;
-        throw new BadRequestException('Invalid date format for plannedDepartureDate or plannedArrivalDate');
+        throw new BadRequestException(
+          'Invalid date format for plannedDepartureDate or plannedArrivalDate',
+        );
       }
 
       const currentUser = this.getCurrentUser(req);
@@ -139,8 +143,9 @@ export class IntercampRequestController {
 
       const request = await this.service.createRequest(body);
       if (!request) {
-        // Defensive: avoid returning null in `data` and provide a friendly message
-        throw new BadRequestException('Could not create intercamp request — please verify required fields and try again');
+        throw new BadRequestException(
+          'Could not create intercamp request — please verify required fields and try again',
+        );
       }
 
       return {
@@ -153,22 +158,23 @@ export class IntercampRequestController {
         throw error;
       }
 
-      // Map common DB/Query errors to friendly messages
       const msg = typeof error === 'string' ? error : error instanceof Error ? error.message : null;
       if (msg) {
         if (msg.includes('null value in column')) {
-          // Example: null value in column "responded_by" violates not-null constraint
           const col = msg.split('column "')[1]?.split('"')[0];
           if (col) throw new BadRequestException(`Missing required column: ${col}`);
         }
 
         if (msg.includes('violates foreign key constraint')) {
-          // Provide a friendly hint about invalid foreign key references
-          throw new BadRequestException('Foreign key constraint violation: check referenced camp or user ids');
+          throw new BadRequestException(
+            'Foreign key constraint violation: check referenced camp or user ids',
+          );
         }
       }
 
-      throw new BadRequestException(error instanceof Error ? error.message : 'Error creating intercamp request');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error creating intercamp request',
+      );
     }
   }
   @Get(':id')
@@ -368,29 +374,31 @@ export class IntercampRequestController {
         }
       }
 
-      // Validate required fields early to provide clear error messages for missing values
-      const newStatus: IntercampRequestStatus = (body.status as IntercampRequestStatus) ?? existingRequest.status;
+      const newStatus: IntercampRequestStatus =
+        (body.status as IntercampRequestStatus) ?? existingRequest.status;
 
-      // If status is not PENDING, ensure respondedBy and responseDate are present (either in body or existing)
       if (newStatus !== 'PENDING') {
-        const hasRespondedBy = body.respondedBy !== undefined && body.respondedBy !== null
-          ? true
-          : existingRequest.respondedBy !== undefined && existingRequest.respondedBy !== null;
+        const hasRespondedBy =
+          body.respondedBy !== undefined && body.respondedBy !== null
+            ? true
+            : existingRequest.respondedBy !== undefined && existingRequest.respondedBy !== null;
 
-        const hasResponseDate = body.responseDate !== undefined && body.responseDate !== null
-          ? true
-          : existingRequest.responseDate !== undefined && existingRequest.responseDate !== null;
+        const hasResponseDate =
+          body.responseDate !== undefined && body.responseDate !== null
+            ? true
+            : existingRequest.responseDate !== undefined && existingRequest.responseDate !== null;
 
         const missing: string[] = [];
         if (!hasRespondedBy) missing.push('respondedBy');
         if (!hasResponseDate) missing.push('responseDate');
 
         if (missing.length > 0) {
-          throw new BadRequestException(`Missing required field(s) for status '${newStatus}': ${missing.join(', ')}`);
+          throw new BadRequestException(
+            `Missing required field(s) for status '${newStatus}': ${missing.join(', ')}`,
+          );
         }
       }
 
-      // If status is APPROVED, ensure planned departure/arrival are present and valid
       if (newStatus === 'APPROVED') {
         const plannedDeparture = body.plannedDepartureDate ?? existingRequest.plannedDepartureDate;
         const plannedArrival = body.plannedArrivalDate ?? existingRequest.plannedArrivalDate;
@@ -400,14 +408,19 @@ export class IntercampRequestController {
         if (!plannedArrival) missingDates.push('plannedArrivalDate');
 
         if (missingDates.length > 0) {
-          throw new BadRequestException(`Missing required field(s) for status 'APPROVED': ${missingDates.join(', ')}`);
+          throw new BadRequestException(
+            `Missing required field(s) for status 'APPROVED': ${missingDates.join(', ')}`,
+          );
         }
 
-        // Validate arrival > departure + 1 minute
-        const dep = plannedDeparture instanceof Date ? plannedDeparture : new Date(String(plannedDeparture));
-        const arr = plannedArrival instanceof Date ? plannedArrival : new Date(String(plannedArrival));
+        const dep =
+          plannedDeparture instanceof Date ? plannedDeparture : new Date(String(plannedDeparture));
+        const arr =
+          plannedArrival instanceof Date ? plannedArrival : new Date(String(plannedArrival));
         if (!(arr.getTime() > dep.getTime() + 60_000)) {
-          throw new BadRequestException('plannedArrivalDate must be later than plannedDepartureDate by at least 1 minute');
+          throw new BadRequestException(
+            'plannedArrivalDate must be later than plannedDepartureDate by at least 1 minute',
+          );
         }
       }
 

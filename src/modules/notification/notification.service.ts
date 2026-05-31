@@ -329,7 +329,10 @@ export class NotificationService {
     });
   }
 
-  async createNotification(data: CreateNotificationDTO, preferredUserId?: number): Promise<Notification> {
+  async createNotification(
+    data: CreateNotificationDTO,
+    preferredUserId?: number,
+  ): Promise<Notification> {
     const hasUser = data.userId !== undefined && data.userId !== null;
     const hasRole = data.targetRole !== undefined && data.targetRole !== null;
     if (!hasUser && !hasRole) {
@@ -348,18 +351,23 @@ export class NotificationService {
       throw new Error('La notificacion debe dirigirse a un userId o a un targetRole');
     }
 
-    const recipients = await this.repository.findActiveUsersByCampAndRoles(data.campId, [targetRole]);
+    const recipients = await this.repository.findActiveUsersByCampAndRoles(data.campId, [
+      targetRole,
+    ]);
     if (recipients.length === 0) {
-      throw new BadRequestException('No hay usuarios activos para el rol indicado en ese campamento');
+      throw new BadRequestException(
+        'No hay usuarios activos para el rol indicado en ese campamento',
+      );
     }
 
     const createdNotifications = await Promise.all(
-      recipients.map(async (recipient) =>
-        await this.repository.create({
-          ...data,
-          userId: recipient.id,
-          targetRole,
-        }),
+      recipients.map(
+        async (recipient) =>
+          await this.repository.create({
+            ...data,
+            userId: recipient.id,
+            targetRole,
+          }),
       ),
     );
 
