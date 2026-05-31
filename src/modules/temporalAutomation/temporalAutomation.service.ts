@@ -17,6 +17,9 @@ import { NotificationService } from '../notification/notification.service';
 import { PersonEntity } from '../person/person.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
 import { TemporalAutomationRepository } from './temporalAutomation.repository';
+import { LessThanOrEqual, Repository } from 'typeorm';
+import { TransferEntity } from '../transfer/transfer.entity';
+import { TransferService } from '../transfer/transfer.service';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -44,6 +47,9 @@ export class TemporalAutomationService {
     private readonly temporalAutomationRepository: TemporalAutomationRepository,
     private readonly notificationService: NotificationService,
     private readonly systemTimeService: SystemTimeService,
+    @InjectRepository(TransferEntity)
+    private readonly transferRepo?: Repository<TransferEntity>,
+    private readonly transferService?: TransferService,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -242,6 +248,97 @@ export class TemporalAutomationService {
 
         if (previousStatus !== expedition.status) {
           await this.notifyExpeditionStatusChange(expedition, previousStatus);
+        }
+      }
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async runDueTransferExecutions(): Promise<void> {
+    const now = this.systemTimeService.now();
+    if (!this.transferService || !this.transferRepo) return;
+
+    const dueTransfers = await this.transferRepo.find({
+      where: {
+        status: 'PENDING_DEPARTURE',
+        plannedDepartureDate: LessThanOrEqual(now),
+      },
+      order: {
+        plannedDepartureDate: 'ASC',
+        id: 'ASC',
+      },
+    });
+
+    if (dueTransfers.length === 0) {
+      return;
+    }
+
+    for (const transfer of dueTransfers) {
+      try {
+        await this.transferService.updateTransfer(transfer.id, {
+          status: 'COMPLETED',
+          actualDepartureDate: now,
+          actualArrivalDate: now,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'unknown error';
+        this.logger.warn(
+          `No se pudo ejecutar automaticamente el traslado ${transfer.id}: ${message}`,
+        );
+
+        // Attempt to cancel the transfer to avoid leaving it pending without stock
+        try {
+          await this.transferService.updateTransfer(transfer.id, { status: 'CANCELED' });
+        } catch (cancelErr) {
+          this.logger.warn(
+            `Falló al cancelar automáticamente el traslado ${transfer.id}: ${
+              cancelErr instanceof Error ? cancelErr.message : 'unknown error'
+            }`,
+          );
+        }
+
+        // Resolve origin/destination camps to notify actors
+        try {
+          const rows = (await this.transferRepo.query(
+            `SELECT r.origin_camp_id AS origin, r.destination_camp_id AS destination
+             FROM public.transfer t
+             JOIN public.intercamp_request r ON r.id = t.request_id
+             WHERE t.id = $1 LIMIT 1`,
+            [transfer.id],
+          )) as Array<{ origin: number; destination: number }>;
+
+          const originCampId = rows[0]?.origin ?? null;
+          const destinationCampId = rows[0]?.destination ?? null;
+
+          const notif = {
+            type: 'TRANSFER_EXECUTION_FAILED',
+            title: 'Ejecución de traslado fallida',
+            message: `El traslado #${transfer.id} no pudo ejecutarse automaticamente: ${message}`,
+            sourceType: 'transfer',
+            sourceId: transfer.id,
+          };
+
+          if (originCampId !== null) {
+            await this.notificationService.notifyCampRoles(originCampId, [
+              'SYSTEM_ADMIN',
+              'RESOURCE_MANAGEMENT',
+              'TRAVEL_MANAGER',
+            ], notif);
+          }
+
+          if (destinationCampId !== null) {
+            await this.notificationService.notifyCampRoles(destinationCampId, [
+              'SYSTEM_ADMIN',
+              'RESOURCE_MANAGEMENT',
+              'TRAVEL_MANAGER',
+            ], notif);
+          }
+        } catch (notifyErr) {
+          this.logger.warn(
+            `Error al notificar fracaso de ejecucion para traslado ${transfer.id}: ${
+              notifyErr instanceof Error ? notifyErr.message : 'unknown error'
+            }`,
+          );
         }
       }
     }
