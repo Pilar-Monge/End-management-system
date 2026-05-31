@@ -39,8 +39,16 @@ describe('IntercampRequestController', () => {
   });
 
   describe('create', () => {
+    const validCreateDto = {
+      originCampId: 1,
+      destinationCampId: 2,
+      plannedDepartureDate: '2026-06-01T09:00:00Z',
+      plannedArrivalDate: '2026-06-01T11:00:00Z',
+      createdBy: 1,
+    };
+
     it('should create a request for own camp', async () => {
-      const dto = { originCampId: 1, createdBy: 1 } as any;
+      const dto = { ...validCreateDto } as any;
       service.createRequest.mockResolvedValue({ id: 1, ...dto } as any);
 
       const result = await controller.create(dto, mockRequest);
@@ -50,21 +58,21 @@ describe('IntercampRequestController', () => {
     });
 
     it('should throw if originCampId mismatch', async () => {
-      const dto = { originCampId: 2, createdBy: 1 } as any;
+      const dto = { ...validCreateDto, originCampId: 2 } as any;
       await expect(controller.create(dto, mockRequest)).rejects.toThrow(
         'originCampId must match your authenticated camp',
       );
     });
 
     it('should throw if createdBy mismatch', async () => {
-      const dto = { originCampId: 1, createdBy: 2 } as any;
+      const dto = { ...validCreateDto, createdBy: 2 } as any;
       await expect(controller.create(dto, mockRequest)).rejects.toThrow(
         'createdBy must match the authenticated user',
       );
     });
 
     it('should allow admin to create with any originCampId', async () => {
-      const dto = { originCampId: 1, createdBy: 1 } as any;
+      const dto = { ...validCreateDto } as any;
       service.createRequest.mockResolvedValue({ id: 1, ...dto } as any);
 
       const result = await controller.create(dto, mockAdminRequest);
@@ -139,7 +147,7 @@ describe('IntercampRequestController', () => {
 
   describe('update', () => {
     it('should update a request', async () => {
-      service.getRequestById.mockResolvedValue({ id: 1, originCampId: 1 } as any);
+      service.getRequestById.mockResolvedValue({ id: 1, originCampId: 1, status: 'PENDING' } as any);
       service.updateRequest.mockResolvedValue({ id: 1 } as any);
 
       const result = await controller.update(
