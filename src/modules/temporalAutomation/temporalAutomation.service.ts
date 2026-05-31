@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 
 import { CampEntity } from '../camp/camp.entity';
 import { CampInventoryEntity } from '../campInventory/campInventory.entity';
@@ -14,10 +14,10 @@ import { ExpeditionParticipantRepository } from '../expeditionParticipant/expedi
 import { InventoryAlertEntity } from '../inventoryAlert/inventoryAlert.entity';
 import { InventoryMovementEntity } from '../inventoryMovement/inventoryMovement.entity';
 import { NotificationService } from '../notification/notification.service';
+import type { NotificationType } from '../notification/notification.model';
 import { PersonEntity } from '../person/person.entity';
 import { SystemTimeService } from '../systemTime/systemTime.service';
 import { TemporalAutomationRepository } from './temporalAutomation.repository';
-import { LessThanOrEqual, Repository } from 'typeorm';
 import { TransferEntity } from '../transfer/transfer.entity';
 import { TransferService } from '../transfer/transfer.service';
 
@@ -310,7 +310,13 @@ export class TemporalAutomationService {
           const originCampId = rows[0]?.origin ?? null;
           const destinationCampId = rows[0]?.destination ?? null;
 
-          const notif = {
+          const notif: {
+            type: NotificationType;
+            title: string;
+            message: string;
+            sourceType: string;
+            sourceId: number;
+          } = {
             type: 'TRANSFER_EXECUTION_FAILED',
             title: 'Ejecución de traslado fallida',
             message: `El traslado #${transfer.id} no pudo ejecutarse automaticamente: ${message}`,
