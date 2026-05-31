@@ -11,14 +11,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1778530177632.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1780175413981.json",
     "trainingMetrics": {
-      "sampleCount": 39,
+      "sampleCount": 94,
       "featureCount": 5,
-      "trainAccuracy": 0.974359,
+      "trainAccuracy": 1,
       "labelDistribution": {
-        "ACCEPT": 20,
-        "REJECT": 19
+        "ACCEPT": 48,
+        "REJECT": 46
       },
       "labelClasses": [
         "ACCEPT",
@@ -26,8 +26,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.634Z",
-    "updatedAt": "2026-05-11T20:09:37.634Z"
+    "createdAt": "2026-05-30T21:10:13.984Z",
+    "updatedAt": "2026-05-30T21:10:13.984Z"
   },
   {
     "id": 2,
@@ -41,7 +41,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177643.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1780175413992.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -64,8 +64,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.644Z",
-    "updatedAt": "2026-05-11T20:09:37.644Z"
+    "createdAt": "2026-05-30T21:10:13.995Z",
+    "updatedAt": "2026-05-30T21:10:13.995Z"
   },
   {
     "id": 3,
@@ -79,14 +79,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1778530177648.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1780175414001.json",
     "trainingMetrics": {
-      "sampleCount": 39,
+      "sampleCount": 94,
       "featureCount": 5,
-      "trainAccuracy": 0.974359,
+      "trainAccuracy": 1,
       "labelDistribution": {
-        "ACCEPT": 20,
-        "REJECT": 19
+        "ACCEPT": 48,
+        "REJECT": 46
       },
       "labelClasses": [
         "ACCEPT",
@@ -94,8 +94,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.649Z",
-    "updatedAt": "2026-05-11T20:09:37.649Z"
+    "createdAt": "2026-05-30T21:10:14.002Z",
+    "updatedAt": "2026-05-30T21:10:14.002Z"
   },
   {
     "id": 4,
@@ -109,7 +109,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177654.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1780175414008.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -132,8 +132,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.656Z",
-    "updatedAt": "2026-05-11T20:09:37.656Z"
+    "createdAt": "2026-05-30T21:10:14.010Z",
+    "updatedAt": "2026-05-30T21:10:14.010Z"
   },
   {
     "id": 5,
@@ -147,14 +147,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1778530177659.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1780175414016.json",
     "trainingMetrics": {
-      "sampleCount": 39,
+      "sampleCount": 94,
       "featureCount": 5,
-      "trainAccuracy": 0.974359,
+      "trainAccuracy": 1,
       "labelDistribution": {
-        "ACCEPT": 20,
-        "REJECT": 19
+        "ACCEPT": 48,
+        "REJECT": 46
       },
       "labelClasses": [
         "ACCEPT",
@@ -162,8 +162,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.660Z",
-    "updatedAt": "2026-05-11T20:09:37.660Z"
+    "createdAt": "2026-05-30T21:10:14.018Z",
+    "updatedAt": "2026-05-30T21:10:14.018Z"
   },
   {
     "id": 6,
@@ -177,7 +177,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177665.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1780175414024.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -200,8 +200,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.666Z",
-    "updatedAt": "2026-05-11T20:09:37.666Z"
+    "createdAt": "2026-05-30T21:10:14.026Z",
+    "updatedAt": "2026-05-30T21:10:14.026Z"
   },
   {
     "id": 7,
@@ -215,14 +215,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1778530177670.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1780175414032.json",
     "trainingMetrics": {
-      "sampleCount": 39,
+      "sampleCount": 94,
       "featureCount": 5,
-      "trainAccuracy": 0.974359,
+      "trainAccuracy": 1,
       "labelDistribution": {
-        "ACCEPT": 20,
-        "REJECT": 19
+        "ACCEPT": 48,
+        "REJECT": 46
       },
       "labelClasses": [
         "ACCEPT",
@@ -230,8 +230,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.671Z",
-    "updatedAt": "2026-05-11T20:09:37.671Z"
+    "createdAt": "2026-05-30T21:10:14.033Z",
+    "updatedAt": "2026-05-30T21:10:14.033Z"
   },
   {
     "id": 8,
@@ -245,7 +245,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177676.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1780175414039.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -268,8 +268,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.677Z",
-    "updatedAt": "2026-05-11T20:09:37.677Z"
+    "createdAt": "2026-05-30T21:10:14.041Z",
+    "updatedAt": "2026-05-30T21:10:14.041Z"
   },
   {
     "id": 9,
@@ -283,14 +283,14 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-acceptance-v1-1778530177680.json",
+    "modelFilePath": "data/models/admission-acceptance-v1-1780175414047.json",
     "trainingMetrics": {
-      "sampleCount": 39,
+      "sampleCount": 94,
       "featureCount": 5,
-      "trainAccuracy": 0.974359,
+      "trainAccuracy": 1,
       "labelDistribution": {
-        "ACCEPT": 20,
-        "REJECT": 19
+        "ACCEPT": 48,
+        "REJECT": 46
       },
       "labelClasses": [
         "ACCEPT",
@@ -298,8 +298,8 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.681Z",
-    "updatedAt": "2026-05-11T20:09:37.681Z"
+    "createdAt": "2026-05-30T21:10:14.048Z",
+    "updatedAt": "2026-05-30T21:10:14.048Z"
   },
   {
     "id": 10,
@@ -313,7 +313,7 @@
       "skills_score"
     ],
     "modelPayload": null,
-    "modelFilePath": "data/models/admission-role-assignment-v1-1778530177685.json",
+    "modelFilePath": "data/models/admission-role-assignment-v1-1780175414054.json",
     "trainingMetrics": {
       "sampleCount": 36,
       "featureCount": 5,
@@ -336,7 +336,7 @@
       ]
     },
     "isActive": true,
-    "createdAt": "2026-05-11T20:09:37.686Z",
-    "updatedAt": "2026-05-11T20:09:37.686Z"
+    "createdAt": "2026-05-30T21:10:14.056Z",
+    "updatedAt": "2026-05-30T21:10:14.056Z"
   }
 ]
