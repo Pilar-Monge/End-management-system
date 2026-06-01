@@ -13,18 +13,30 @@ export class CampAchievementEntity {
   achievementId!: number;
 
   @Column({
-    name: 'obtained_date',
+    name: 'unlocked_at',
     type: 'timestamptz',
     default: () => 'NOW()',
   })
   @ApiProperty()
-  obtainedDate!: Date;
+  unlockedAt!: Date;
 
-  @Column({ name: 'unlocked_by', type: 'int' })
-  @ApiProperty()
-  unlockedBy!: number;
+  @Column({ name: 'unlocked_by', type: 'int', nullable: true })
+  @ApiProperty({ nullable: true })
+  unlockedBy!: number | null;
+
+  @Column({ name: 'progress_snapshot', type: 'float', nullable: true })
+  @ApiProperty({ nullable: true })
+  progressSnapshot!: number | null;
+
+  @Column({ name: 'source_run_id', type: 'text', nullable: true })
+  @ApiProperty({ nullable: true })
+  sourceRunId!: string | null;
 
   @Column({ name: 'unlock_context', type: 'text', nullable: true })
   @ApiProperty({ nullable: true })
   unlockContext!: string | null;
+
+  @Column({ name: 'is_seen', type: 'boolean', default: false })
+  @ApiProperty()
+  isSeen!: boolean;
 }

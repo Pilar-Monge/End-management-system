@@ -21,9 +21,12 @@ export class CampAchievementRepository {
     const entity = this.repo.create({
       campId: data.campId,
       achievementId: data.achievementId,
-      ...(data.obtainedDate !== undefined ? { obtainedDate: data.obtainedDate } : {}),
-      unlockedBy: data.unlockedBy,
+      unlockedAt: data.unlockedAt ?? new Date(),
+      unlockedBy: data.unlockedBy ?? null,
+      progressSnapshot: data.progressSnapshot ?? null,
+      sourceRunId: data.sourceRunId ?? null,
       unlockContext: data.unlockContext ?? null,
+      isSeen: data.isSeen ?? false,
     });
 
     return await this.repo.save(entity);
@@ -62,7 +65,7 @@ export class CampAchievementRepository {
       });
     }
 
-    qb.orderBy('ca.obtainedDate', 'DESC');
+    qb.orderBy('ca.unlockedAt', 'DESC');
 
     if (filters?.limit !== undefined) {
       qb.take(filters.limit);
@@ -94,6 +97,40 @@ export class CampAchievementRepository {
 
   async delete(campId: number, achievementId: number): Promise<boolean> {
     const result = await this.repo.delete({ campId, achievementId });
+    return (result.affected ?? 0) > 0;
+  }
+
+  async findLatestUnlocks(campId: number, limit = 5): Promise<CampAchievement[]> {
+    return await this.repo.find({
+      where: { campId, isSeen: false },
+      order: { unlockedAt: 'DESC' },
+      take: limit,
+    });
+  }
+
+  async findProgress(campId: number): Promise<any[]> {
+    return await this.repo.manager.query(
+      `
+      SELECT 
+        a.id as "achievementId",
+        a.name,
+        a.description,
+        a.metric_key as "metricKey",
+        a.target_value as "targetValue",
+        ca.unlocked_at as "unlockedAt",
+        ca.progress_snapshot as "progressSnapshot",
+        (ca.unlocked_at IS NOT NULL) as "isUnlocked"
+      FROM achievement a
+      LEFT JOIN camp_achievement ca ON ca.logro_id = a.id AND ca.camp_id = $1
+      WHERE a.is_active = true
+      ORDER BY a.id ASC
+    `,
+      [campId],
+    );
+  }
+
+  async markAsSeen(campId: number, achievementId: number): Promise<boolean> {
+    const result = await this.repo.update({ campId, achievementId }, { isSeen: true });
     return (result.affected ?? 0) > 0;
   }
 }

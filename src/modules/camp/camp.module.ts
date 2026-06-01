@@ -11,5 +11,6 @@ import { CampService } from './camp.service';
   imports: [TypeOrmModule.forFeature([CampEntity]), NotificationModule],
   controllers: [CampController],
   providers: [CampRepository, CampService],
+  exports: [CampRepository, CampService],
 })
 export class CampModule {}

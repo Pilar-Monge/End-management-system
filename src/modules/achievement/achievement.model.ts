@@ -4,6 +4,12 @@ export interface Achievement {
   description: string | null;
   unlockCondition: string;
   iconUrl: string | null;
+  metricKey: string;
+  operator: string;
+  targetValue: number;
+  windowDays: number | null;
+  scope: string;
+  isActive: boolean;
 }
 
 export interface CreateAchievementDTO {
@@ -11,6 +17,12 @@ export interface CreateAchievementDTO {
   description?: string | null;
   unlockCondition: string;
   iconUrl?: string | null;
+  metricKey: string;
+  operator: string;
+  targetValue: number;
+  windowDays?: number | null;
+  scope?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateAchievementDTO {
@@ -18,4 +30,10 @@ export interface UpdateAchievementDTO {
   description?: string | null;
   unlockCondition?: string;
   iconUrl?: string | null;
+  metricKey?: string;
+  operator?: string;
+  targetValue?: number;
+  windowDays?: number | null;
+  scope?: string;
+  isActive?: boolean;
 }
