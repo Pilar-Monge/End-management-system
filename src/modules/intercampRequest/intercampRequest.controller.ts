@@ -178,7 +178,7 @@ export class IntercampRequestController {
     }
   }
   @Get(':id')
-  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Intercamp Request by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
   @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request found' })
@@ -207,7 +207,7 @@ export class IntercampRequestController {
     return { success: true, data: request };
   }
   @Get()
-  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Intercamp Request' })
   @ApiOkResponseList(IntercampRequestEntity, { description: 'Intercamp Request list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
