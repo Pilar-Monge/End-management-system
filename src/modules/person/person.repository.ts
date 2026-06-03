@@ -66,6 +66,15 @@ export class PersonRepository {
     });
   }
 
+  async findLinkedUserByPersonId(personId: number): Promise<Pick<UserEntity, 'id'> | null> {
+    return await this.repo.manager.getRepository(UserEntity).findOne({
+      where: { personId },
+      select: {
+        id: true,
+      },
+    });
+  }
+
   async findAllAndCount(filters?: {
     campId?: number;
     currentStatus?: PersonStatus;
