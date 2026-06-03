@@ -264,6 +264,10 @@ export class PersonService {
     return await this.addSignedUrlToPerson(person);
   }
 
+  async findUserByPersonId(personId: number): Promise<Pick<UserEntity, 'id'> | null> {
+    return await this.repository.findLinkedUserByPersonId(personId);
+  }
+
   async getAllPersonsWithSignedUrls(filters?: {
     campId?: number;
     currentStatus?: PersonStatus;

@@ -37,7 +37,7 @@ import { CampAchievementEntity } from './campAchievement.entity';
 import { CreateCampAchievementDto, UpdateCampAchievementDto } from './dto';
 @Controller('camp-achievements')
 @ApiTags('Camp Achievement')
-@Roles('SYSTEM_ADMIN')
+@Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
 export class CampAchievementController {
   constructor(private readonly service: CampAchievementService) {}
 
@@ -301,5 +301,38 @@ export class CampAchievementController {
         error instanceof Error ? error.message : 'Error deleting camp achievement',
       );
     }
+  }
+
+  @Get('latest-unlocks')
+  @ApiOperation({ summary: 'Get latest unlocked achievements for the current camp' })
+  async getLatestUnlocks(@Req() req: Request, @Query('limit') limit?: string) {
+    const currentUser = this.getCurrentUser(req);
+    const parsedLimit = limit ? Number.parseInt(limit, 10) : 5;
+    const data = await this.service.getLatestUnlocks(currentUser.campId, parsedLimit);
+    return { success: true, data };
+  }
+
+  @Get('progress')
+  @ApiOperation({ summary: 'Get achievement progress for the current camp' })
+  async getProgress(@Req() req: Request) {
+    const currentUser = this.getCurrentUser(req);
+    const data = await this.service.getAchievementProgress(currentUser.campId);
+    return { success: true, data };
+  }
+
+  @Post(':achievementId/seen')
+  @ApiOperation({ summary: 'Mark an achievement as seen to avoid repeated animations' })
+  async markAsSeen(@Param('achievementId') achievementId: string, @Req() req: Request) {
+    const currentUser = this.getCurrentUser(req);
+    const parsedAchievementId = Number.parseInt(achievementId, 10);
+    if (Number.isNaN(parsedAchievementId)) throw new BadRequestException('Invalid achievementId');
+
+    const result = await this.service.markAchievementAsSeen(
+      currentUser.campId,
+      parsedAchievementId,
+    );
+    if (!result) throw new NotFoundException('Camp achievement not found');
+
+    return { success: true, message: 'Achievement marked as seen' };
   }
 }
