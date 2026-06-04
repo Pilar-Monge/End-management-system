@@ -6,6 +6,7 @@ import * as jwt from 'jsonwebtoken';
 import { EncryptionService } from '../services/encryption.service';
 import { EmailOutboxService } from '../modules/email/emailOutbox.service';
 import { NotificationService } from '../modules/notification/notification.service';
+import { PersonService } from '../modules/person/person.service';
 import { UserRepository } from '../modules/systemUser/systemUser.repository';
 import { SystemTimeService } from '../modules/systemTime/systemTime.service';
 import { AuthRepository } from './auth.repository';
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly systemTimeService: SystemTimeService,
     private readonly emailOutboxService: EmailOutboxService,
     private readonly notificationService: NotificationService,
+    private readonly personService: PersonService,
   ) {}
 
   async login(dto: LoginDTO, ip: string): Promise<LoginResponse> {
@@ -385,5 +387,22 @@ export class AuthService {
       const separator = baseUrl.includes('?') ? '&' : '?';
       return `${baseUrl}${separator}token=${encodeURIComponent(rawToken)}`;
     }
+  }
+
+  async updateMyPhoto(userId: number, file: Express.Multer.File): Promise<any> {
+    const user = await this.systemUserRepository.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.personId) {
+      throw new BadRequestException(
+        'El usuario no tiene un perfil de persona vinculado. Por favor, contacta al soporte técnico para vincular tu cuenta.',
+      );
+    }
+
+    // El mecanismo transparente: El servicio de Auth usa internamente al de Personas
+    // No hace falta que el frontend conozca el person_id, nosotros lo sabemos por la entidad User
+    return await this.personService.uploadPersonPhoto(user.personId, file);
   }
 }

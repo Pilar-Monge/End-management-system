@@ -1,7 +1,19 @@
-import { BadRequestException, Body, Controller, Get, Post, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Req,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConsumes,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -125,6 +137,40 @@ export class AuthController {
     return {
       success: true,
       message: 'Contrasena actualizada correctamente',
+    };
+  }
+
+  @Put('me/photo')
+  @AuthenticatedOnly()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Update current user profile photo',
+    description: 'Updates the photo of the Person linked to the current authenticated User.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({ description: 'Photo updated successfully' })
+  async updateMyPhoto(
+    @Req() req: Request & { user: JwtPayload },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const result = await this.service.updateMyPhoto(req.user.userId, file);
+    return {
+      success: true,
+      data: result,
     };
   }
 }
