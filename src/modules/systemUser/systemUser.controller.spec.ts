@@ -85,6 +85,43 @@ describe('UserController', () => {
     });
   });
 
+  describe('findMe', () => {
+    it('should return basic authenticated user profile', async () => {
+      service.findUserById.mockResolvedValue({
+        id: 1,
+        username: 'demo',
+        email: 'demo@example.com',
+        role: 'SYSTEM_ADMIN',
+        status: 'ACTIVE',
+        campId: 1,
+      } as any);
+
+      const result = await controller.findMe(mockRequest);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        id: 1,
+        username: 'demo',
+        email: 'demo@example.com',
+        role: 'SYSTEM_ADMIN',
+        status: 'ACTIVE',
+        campId: 1,
+      });
+    });
+
+    it('should throw NotFoundException if authenticated user is missing', async () => {
+      service.findUserById.mockResolvedValue(null);
+
+      await expect(controller.findMe(mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if authenticated user belongs to another camp', async () => {
+      service.findUserById.mockResolvedValue({ id: 1, campId: 99 } as any);
+
+      await expect(controller.findMe(mockRequest)).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('update', () => {
     it('should update user if in same camp', async () => {
       service.findUserById.mockResolvedValue({ id: 10, campId: 1 } as any);

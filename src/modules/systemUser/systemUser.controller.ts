@@ -32,9 +32,14 @@ import {
   ApiOkResponseList,
   ApiOkResponseMessage,
 } from '../../common/swagger/api-response.decorator';
-import { Roles } from '../../common/decorators';
+import { AuthenticatedOnly, Roles } from '../../common/decorators';
 import { UserService } from './systemUser.service';
-import { CreateSystemUserDto, SystemUserResponseDto, UpdateSystemUserDto } from './dto';
+import {
+  CreateSystemUserDto,
+  CurrentUserProfileDto,
+  SystemUserResponseDto,
+  UpdateSystemUserDto,
+} from './dto';
 
 @Controller()
 @ApiTags('System User')
@@ -95,6 +100,33 @@ export class UserController {
         error instanceof Error ? error.message : 'Error getting users',
       );
     }
+  }
+
+  @Get('users/me')
+  @AuthenticatedOnly()
+  @ApiOperation({ summary: 'Get authenticated user basic profile' })
+  @ApiOkResponseData(CurrentUserProfileDto)
+  @ApiBadRequestResponse()
+  @ApiNotFoundResponse()
+  @ApiUnauthorizedResponse()
+  async findMe(@Req() req: Request) {
+    const currentUser = this.getCurrentUser(req);
+    const user = await this.service.findUserById(currentUser.userId);
+    if (!user || user.campId !== currentUser.campId) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        campId: user.campId,
+      },
+    };
   }
 
   @Get('users/:id')
