@@ -50,14 +50,16 @@ export class AchievementEvaluatorService {
           try {
             await this.evaluateAchievement(camp.id, achievement);
           } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
             this.logger.error(
-              `Error evaluating achievement ${achievement.name} for camp ${camp.id}: ${error.message}`,
+              `Error evaluating achievement ${achievement.name} for camp ${camp.id}: ${message}`,
             );
           }
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to process achievements: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to process achievements: ${message}`);
     }
     this.logger.log('Achievement evaluation process completed.');
   }
@@ -219,7 +221,6 @@ export class AchievementEvaluatorService {
     const count = await this.inventoryAlertRepo.count({
       where: {
         campId,
-        severity: 'CRITICAL',
         alertDate: MoreThanOrEqual(startDate),
       },
     });
@@ -255,7 +256,7 @@ export class AchievementEvaluatorService {
 
   private async getMetricContinuousOperationalDays(campId: number): Promise<number> {
     const lastCritical = await this.inventoryAlertRepo.findOne({
-      where: { campId, severity: 'CRITICAL' },
+      where: { campId },
       order: { alertDate: 'DESC' },
     });
 

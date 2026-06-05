@@ -289,7 +289,7 @@ export class ExpeditionParticipantController {
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete() {
     throw new ForbiddenException('Expedition records cannot be deleted for audit reasons.');
   }
 }

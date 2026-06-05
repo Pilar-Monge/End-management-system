@@ -451,7 +451,7 @@ export class IntercampRequestController {
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete() {
     throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }
 }

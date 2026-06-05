@@ -25,6 +25,7 @@ import type { Request } from 'express';
 import { AuthenticatedOnly, Public, RefreshSession } from '../common/decorators';
 import { ApiOkResponseData, ApiOkResponseMessage } from '../common/swagger/api-response.decorator';
 import { ForgotPasswordDto, LoginDto, LoginResponseDataDto, ResetPasswordDto } from './dto';
+import type { JwtPayload } from './auth.model';
 import { AuthService } from './auth.service';
 
 @Controller('auth')

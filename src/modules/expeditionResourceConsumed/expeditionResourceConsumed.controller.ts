@@ -315,7 +315,7 @@ export class ExpeditionResourceConsumedController {
   @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete() {
     throw new ForbiddenException('Resource records cannot be deleted for audit reasons.');
   }
 }
