@@ -1,4 +1,5 @@
 export const INTERCAMP_REQUEST_STATUS_VALUES = [
+  'DRAFT',
   'PENDING',
   'APPROVED',
   'REJECTED',
@@ -34,7 +35,6 @@ export interface CreateIntercampRequestDTO {
   description?: string | null;
   plannedDepartureDate?: Date | null;
   plannedArrivalDate?: Date | null;
-  personRequirements?: IntercampPersonRequirement[];
   createdDate?: Date;
   responseDate?: Date | null;
   createdBy: number;
@@ -48,7 +48,6 @@ export interface UpdateIntercampRequestDTO {
   description?: string | null;
   plannedDepartureDate?: Date | null;
   plannedArrivalDate?: Date | null;
-  personRequirements?: IntercampPersonRequirement[];
   createdDate?: Date;
   responseDate?: Date | null;
   createdBy?: number;
