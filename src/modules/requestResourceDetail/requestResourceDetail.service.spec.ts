@@ -39,6 +39,11 @@ describe('RequestResourceDetailService', () => {
     };
 
     it('throws if already exists', async () => {
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
       repository.findByRequestAndResourceType.mockResolvedValue({ id: 1 } as never);
       await expect(service.createDetail(validDto)).rejects.toThrow(
         'Este detalle de recurso de solicitud ya existe',
@@ -47,7 +52,11 @@ describe('RequestResourceDetailService', () => {
 
     it('creates and notifies', async () => {
       repository.findByRequestAndResourceType.mockResolvedValue(null);
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
       repository.create.mockResolvedValue({ id: 1, ...validDto } as never);
 
       const result = await service.createDetail(validDto);
@@ -58,10 +67,15 @@ describe('RequestResourceDetailService', () => {
 
   describe('getDetailScope and getRequestScope', () => {
     it('getRequestScope returns scope', async () => {
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
       await expect(service.getRequestScope(1)).resolves.toEqual({
         originCampId: 1,
         destinationCampId: 2,
+        status: 'DRAFT',
       });
     });
 
@@ -72,10 +86,15 @@ describe('RequestResourceDetailService', () => {
 
     it('getDetailScope returns scope', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1 } as never);
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
       await expect(service.getDetailScope(1)).resolves.toEqual({
         originCampId: 1,
         destinationCampId: 2,
+        status: 'DRAFT',
       });
     });
   });
@@ -101,6 +120,11 @@ describe('RequestResourceDetailService', () => {
 
     it('throws if changing request/resourceType and pair already exists', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1, resourceTypeId: 1 } as never);
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'PENDING',
+      });
       repository.findByRequestAndResourceType.mockResolvedValue({ id: 2 } as never);
 
       await expect(service.updateDetail(1, { resourceTypeId: 2 })).rejects.toThrow(
@@ -111,7 +135,11 @@ describe('RequestResourceDetailService', () => {
     it('updates and notifies', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1, resourceTypeId: 1 } as never);
       repository.update.mockResolvedValue({ id: 1, requestId: 1, resourceTypeId: 1 } as never);
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'PENDING',
+      });
 
       const result = await service.updateDetail(1, { quantity: 20 });
       expect(result?.id).toBe(1);
@@ -127,6 +155,11 @@ describe('RequestResourceDetailService', () => {
 
     it('returns false if delete fails', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1, resourceTypeId: 1 } as never);
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
       repository.delete.mockResolvedValue(false);
       await expect(service.deleteDetail(1)).resolves.toBe(false);
     });
@@ -134,7 +167,11 @@ describe('RequestResourceDetailService', () => {
     it('deletes and notifies', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1, resourceTypeId: 1 } as never);
       repository.delete.mockResolvedValue(true);
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
 
       await expect(service.deleteDetail(1)).resolves.toBe(true);
       expect(repository.delete).toHaveBeenCalledWith(1);
