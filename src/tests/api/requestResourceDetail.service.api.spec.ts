@@ -49,6 +49,7 @@ describe('RequestResourceDetailService (API service unit tests)', () => {
     repository.resolveRequestScope.mockResolvedValue({
       originCampId: 1,
       destinationCampId: 2,
+      status: 'DRAFT',
     });
 
     const res = await service.createDetail(dto as any);
@@ -142,6 +143,7 @@ describe('RequestResourceDetailService (API service unit tests)', () => {
     repository.resolveRequestScope.mockResolvedValue({
       originCampId: 1,
       destinationCampId: 2,
+      status: 'PENDING',
     });
 
     const res = await service.updateDetail(1, { quantity: '200.00' } as any);
@@ -162,6 +164,7 @@ describe('RequestResourceDetailService (API service unit tests)', () => {
     repository.resolveRequestScope.mockResolvedValue({
       originCampId: 1,
       destinationCampId: 2,
+      status: 'DRAFT',
     });
 
     const res = await service.deleteDetail(1);
