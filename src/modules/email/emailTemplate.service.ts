@@ -272,6 +272,8 @@ export class EmailTemplateService {
       asignadoPor: 'Asignado por',
       revocadoPor: 'Revocado por',
       personaAsignada: 'Persona asignada',
+      fechaInicio: 'Fecha de inicio',
+      fechaFin: 'Fecha de finalizacion',
     };
 
     if (labelMap[key]) {

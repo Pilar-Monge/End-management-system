@@ -41,6 +41,8 @@ export class TemporaryOccupationAssignmentService {
     const adminPerson = assignment ? await this.repository.findAdminPersonByUserId(assignment.assignedBy) : null;
     const adminName = adminPerson ? `${adminPerson.name} ${adminPerson.lastName1}`.trim() : 'Administrador';
     const reason = assignment?.reason || 'No especificado';
+    const startDate = assignment?.startDate ? new Date(assignment.startDate).toLocaleDateString() : 'Inmediata';
+    const endDate = assignment?.endDate ? new Date(assignment.endDate).toLocaleDateString() : 'Indefinida';
 
     const fullName = `${person.name} ${person.lastName1}`.trim();
     const message = `${messagePrefix}: ${fullName} -> ${occupation.name}.`;
@@ -56,6 +58,8 @@ export class TemporaryOccupationAssignmentService {
           motivo: reason,
           asignadoPor: adminName,
           personaAsignada: fullName,
+          fechaInicio: startDate,
+          fechaFin: endDate,
         },
       },
     });
@@ -80,6 +84,8 @@ export class TemporaryOccupationAssignmentService {
         payload: {
           motivo: reason,
           asignadoPor: adminName,
+          fechaInicio: startDate,
+          fechaFin: endDate,
         },
       },
     });
