@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator';
+import { IsDateString, IsInt, IsNotEmpty, IsOptional } from 'class-validator';
 import type { IntercampRequestStatus } from '../intercampRequest.model';
 
 export class CreateIntercampRequestDto {
@@ -27,15 +27,6 @@ export class CreateIntercampRequestDto {
   @IsNotEmpty()
   @IsDateString()
   plannedArrivalDate!: string;
-
-  @ApiPropertyOptional({
-    type: 'array',
-    isArray: true,
-    nullable: false,
-    description: 'Lista de requisitos de personas por oficio/rol',
-  })
-  @IsOptional()
-  personRequirements?: Array<{ occupationId: number; quantity: number }>;
 
   @ApiPropertyOptional()
   @IsOptional()

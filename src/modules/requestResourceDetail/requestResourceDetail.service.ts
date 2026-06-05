@@ -24,6 +24,7 @@ export class RequestResourceDetailService {
   private async resolveRequestScope(requestId: number): Promise<{
     originCampId: number;
     destinationCampId: number;
+    status: string;
   }> {
     const scope = await this.repository.resolveRequestScope(requestId);
     if (!scope) {
@@ -74,6 +75,10 @@ export class RequestResourceDetailService {
       data.requestId,
       'Intercamp request',
     );
+    const scope = await this.resolveRequestScope(data.requestId);
+    if (!['DRAFT', 'PENDING'].includes(scope.status)) {
+      throw new Error('No se pueden agregar detalles a una solicitud finalizada');
+    }
     await assertEntityExists(
       this.dataSource,
       ResourceTypeEntity,
@@ -169,6 +174,10 @@ export class RequestResourceDetailService {
         'Intercamp request',
       );
     }
+    const scope = await this.resolveRequestScope(resolvedRequestId);
+    if (!['DRAFT', 'PENDING'].includes(scope.status)) {
+      throw new Error('No se pueden modificar detalles de una solicitud finalizada');
+    }
     if (data.resourceTypeId !== undefined) {
       await assertEntityExists(
         this.dataSource,
@@ -208,6 +217,11 @@ export class RequestResourceDetailService {
     const existing = await this.repository.findById(id);
     if (!existing) {
       return false;
+    }
+
+    const scope = await this.resolveRequestScope(existing.requestId);
+    if (scope.status !== 'DRAFT') {
+      throw new Error('No se pueden eliminar detalles despues de enviar la solicitud');
     }
 
     const deleted = await this.repository.delete(id);

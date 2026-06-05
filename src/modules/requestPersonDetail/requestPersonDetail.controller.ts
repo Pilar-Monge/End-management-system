@@ -9,7 +9,9 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 
 import {
   ApiBadRequestResponse,
@@ -43,10 +45,58 @@ import { RequestPersonDetailEntity } from './requestPersonDetail.entity';
 import { CreateRequestPersonDetailDto, UpdateRequestPersonDetailDto } from './dto';
 @Controller('request-person-details')
 @ApiTags('Request Person Detail')
-@Roles('SYSTEM_ADMIN')
 export class RequestPersonDetailController {
   constructor(private readonly service: RequestPersonDetailService) {}
+
+  private getCurrentUser(req: Request): { userId: number; campId: number; rol: string } {
+    const currentUser = req.user as { userId?: number; campId?: number; rol?: string } | undefined;
+
+    if (
+      typeof currentUser?.userId !== 'number' ||
+      currentUser.userId <= 0 ||
+      typeof currentUser.campId !== 'number' ||
+      currentUser.campId <= 0 ||
+      typeof currentUser.rol !== 'string' ||
+      !currentUser.rol
+    ) {
+      throw new BadRequestException('Authenticated user context is invalid');
+    }
+
+    return {
+      userId: currentUser.userId,
+      campId: currentUser.campId,
+      rol: currentUser.rol,
+    };
+  }
+
+  private async assertRequestCampAccess(requestId: number, currentCampId: number): Promise<void> {
+    const scope = await this.service.getRequestScope(requestId);
+    if (!scope) {
+      throw new NotFoundException('Intercamp request not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException(
+        'You can only access request person details involving your camp',
+      );
+    }
+  }
+
+  private async assertDetailCampAccess(detailId: number, currentCampId: number): Promise<void> {
+    const scope = await this.service.getDetailScope(detailId);
+    if (!scope) {
+      throw new NotFoundException('Request person detail not found');
+    }
+
+    if (scope.originCampId !== currentCampId && scope.destinationCampId !== currentCampId) {
+      throw new BadRequestException(
+        'You can only access request person details involving your camp',
+      );
+    }
+  }
+
   @Post()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Request Person Detail' })
   @ApiBody({ type: CreateRequestPersonDetailDto })
   @ApiCreatedResponseData(RequestPersonDetailEntity, {
@@ -55,8 +105,11 @@ export class RequestPersonDetailController {
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async create(@Body() body: CreateRequestPersonDetailDTO) {
+  async create(@Body() body: CreateRequestPersonDetailDTO, @Req() req: Request) {
     try {
+      const currentUser = this.getCurrentUser(req);
+      await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+
       const detail = await this.service.createDetail(body);
       return {
         success: true,
@@ -70,6 +123,7 @@ export class RequestPersonDetailController {
     }
   }
   @Get(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Request Person Detail by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
   @ApiOkResponseData(RequestPersonDetailEntity, { description: 'Request Person Detail found' })
@@ -77,11 +131,14 @@ export class RequestPersonDetailController {
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    await this.assertDetailCampAccess(parsedId, currentUser.campId);
 
     const detail = await this.service.getDetailById(parsedId);
     if (!detail) throw new NotFoundException('Request person detail not found');
@@ -89,6 +146,7 @@ export class RequestPersonDetailController {
     return { success: true, data: detail };
   }
   @Get()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Request Person Detail' })
   @ApiOkResponseList(RequestPersonDetailEntity, { description: 'Request Person Detail list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -109,21 +167,32 @@ export class RequestPersonDetailController {
     @Query('occupationId') occupationId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Req() req?: Request,
   ) {
     try {
+      if (!req) {
+        throw new BadRequestException('Request context is required');
+      }
+
+      const currentUser = this.getCurrentUser(req);
+
       const filters: {
         requestId?: number;
         detailType?: PersonDetailType;
         status?: PersonDetailStatus;
         personId?: number;
         occupationId?: number;
+        involvedCampId?: number;
         page?: number;
         limit?: number;
       } = {};
 
+      filters.involvedCampId = currentUser.campId;
+
       if (requestId) {
         const parsedRequestId = Number.parseInt(requestId, 10);
         if (Number.isNaN(parsedRequestId)) throw new BadRequestException('Invalid requestId');
+        await this.assertRequestCampAccess(parsedRequestId, currentUser.campId);
         filters.requestId = parsedRequestId;
       }
 
@@ -186,6 +255,7 @@ export class RequestPersonDetailController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Request Person Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
   @ApiBody({ type: UpdateRequestPersonDetailDto })
@@ -194,13 +264,23 @@ export class RequestPersonDetailController {
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async update(@Param('id') id: string, @Body() body: UpdateRequestPersonDetailDTO) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateRequestPersonDetailDTO,
+    @Req() req: Request,
+  ) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      await this.assertDetailCampAccess(parsedId, currentUser.campId);
+      if (body.requestId !== undefined) {
+        await this.assertRequestCampAccess(body.requestId, currentUser.campId);
+      }
+
       const detail = await this.service.updateDetail(parsedId, body);
       if (!detail) throw new NotFoundException('Request person detail not found');
 
@@ -216,6 +296,7 @@ export class RequestPersonDetailController {
     }
   }
   @Delete(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Delete Request Person Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Person Detail id' })
   @ApiOkResponseMessage({ description: 'Request Person Detail deleted' })
@@ -223,13 +304,16 @@ export class RequestPersonDetailController {
   @ApiNotFoundResponse({ description: 'Request Person Detail not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      await this.assertDetailCampAccess(parsedId, currentUser.campId);
+
       const deleted = await this.service.deleteDetail(parsedId);
       if (!deleted) throw new NotFoundException('Request person detail not found');
 

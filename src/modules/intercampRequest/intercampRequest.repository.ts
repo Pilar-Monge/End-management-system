@@ -23,11 +23,11 @@ export class IntercampRequestRepository {
     const entity = this.repo.create({
       originCampId: data.originCampId,
       destinationCampId: data.destinationCampId,
-      status: data.status ?? 'PENDING',
+      status: data.status ?? 'DRAFT',
       description: data.description ?? null,
       plannedDepartureDate: data.plannedDepartureDate ?? null,
       plannedArrivalDate: data.plannedArrivalDate ?? null,
-      personRequirements: data.personRequirements ?? [],
+      personRequirements: [],
       ...(data.createdDate !== undefined ? { createdDate: data.createdDate } : {}),
       responseDate: data.responseDate ?? null,
       createdBy: data.createdBy,
@@ -149,6 +149,57 @@ export class IntercampRequestRepository {
     }));
   }
 
+  async countRequestDetailsByRequestId(requestId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT
+          (
+            SELECT COUNT(*)::int
+            FROM public.request_resource_detail
+            WHERE request_id = $1
+          ) +
+          (
+            SELECT COUNT(*)::int
+            FROM public.request_person_detail
+            WHERE request_id = $1
+          ) AS total`,
+      [requestId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async findPersonDetailRequirementsByRequestId(
+    requestId: number,
+  ): Promise<Array<{ occupationId: number; quantity: number }>> {
+    const rows = (await this.repo.query(
+      `SELECT occupation_id, SUM(quantity)::int AS quantity
+       FROM (
+         SELECT occupation_id, amount AS quantity
+         FROM public.request_person_detail
+         WHERE request_id = $1
+           AND detail_type = 'BY_OCCUPATION'
+           AND status <> 'REJECTED'
+           AND occupation_id IS NOT NULL
+           AND amount > 0
+         UNION ALL
+         SELECT p.occupation_id, 1 AS quantity
+         FROM public.request_person_detail rpd
+         INNER JOIN public.person p ON p.id = rpd.person_id
+         WHERE rpd.request_id = $1
+           AND rpd.detail_type = 'SPECIFIC'
+           AND rpd.status <> 'REJECTED'
+           AND p.occupation_id IS NOT NULL
+       ) requirements
+       GROUP BY occupation_id`,
+      [requestId],
+    )) as Array<{ occupation_id: number; quantity: number }>;
+
+    return rows.map((row) => ({
+      occupationId: row.occupation_id,
+      quantity: row.quantity,
+    }));
+  }
+
   async findAllAndCount(filters?: {
     originCampId?: number;
     destinationCampId?: number;
@@ -215,9 +266,7 @@ export class IntercampRequestRepository {
       Object.entries(data).filter(([, value]) => value !== undefined),
     ) as Partial<IntercampRequestEntity>;
 
-    if (cleaned.personRequirements === undefined) {
-      delete cleaned.personRequirements;
-    }
+    delete cleaned.personRequirements;
 
     Object.assign(existing, cleaned);
     return await this.repo.save(existing);

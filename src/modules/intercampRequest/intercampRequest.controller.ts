@@ -70,9 +70,6 @@ export class IntercampRequestController {
     };
   }
 
-  private isSystemAdmin(rol: string): boolean {
-    return rol === 'SYSTEM_ADMIN';
-  }
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Intercamp Request' })
@@ -131,14 +128,12 @@ export class IntercampRequestController {
       }
 
       const currentUser = this.getCurrentUser(req);
-      if (!this.isSystemAdmin(currentUser.rol)) {
-        if (body.originCampId !== currentUser.campId) {
-          throw new BadRequestException('originCampId must match your authenticated camp');
-        }
+      if (body.originCampId !== currentUser.campId) {
+        throw new BadRequestException('originCampId must match your authenticated camp');
+      }
 
-        if (body.createdBy !== currentUser.userId) {
-          throw new BadRequestException('createdBy must match the authenticated user');
-        }
+      if (body.createdBy !== currentUser.userId) {
+        throw new BadRequestException('createdBy must match the authenticated user');
       }
 
       const request = await this.service.createRequest(body);
@@ -151,7 +146,7 @@ export class IntercampRequestController {
       return {
         success: true,
         data: request,
-        message: 'Intercamp request created successfully',
+        message: 'Intercamp request draft created successfully',
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -177,6 +172,31 @@ export class IntercampRequestController {
       );
     }
   }
+  @Post(':id/submit')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @ApiOperation({ summary: 'Submit Intercamp Request draft' })
+  @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
+  @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request submitted' })
+  @ApiBadRequestResponse({ description: 'Invalid id or request cannot be submitted' })
+  @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async submit(@Param('id') id: string, @Req() req: Request) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    const request = await this.service.submitRequest(parsedId, currentUser);
+    if (!request) throw new NotFoundException('Intercamp request not found');
+
+    return {
+      success: true,
+      data: request,
+      message: 'Intercamp request submitted successfully',
+    };
+  }
   @Get(':id')
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Intercamp Request by id' })
@@ -197,7 +217,6 @@ export class IntercampRequestController {
 
     const currentUser = this.getCurrentUser(req);
     if (
-      !this.isSystemAdmin(currentUser.rol) &&
       request.originCampId !== currentUser.campId &&
       request.destinationCampId !== currentUser.campId
     ) {
@@ -247,8 +266,6 @@ export class IntercampRequestController {
       }
 
       const currentUser = this.getCurrentUser(req);
-      const isAdmin = this.isSystemAdmin(currentUser.rol);
-
       if (originCampId) {
         const parsedOriginCampId = Number.parseInt(originCampId, 10);
         if (Number.isNaN(parsedOriginCampId)) {
@@ -277,12 +294,14 @@ export class IntercampRequestController {
         filters.createdBy = parsedCreatedBy;
       }
 
-      if (!isAdmin) {
-        filters.involvedCampId = currentUser.campId;
+      filters.involvedCampId = currentUser.campId;
 
-        if (filters.createdBy !== undefined && filters.createdBy !== currentUser.userId) {
-          throw new BadRequestException('createdBy filter must match the authenticated user');
-        }
+      if (
+        currentUser.rol !== 'SYSTEM_ADMIN' &&
+        filters.createdBy !== undefined &&
+        filters.createdBy !== currentUser.userId
+      ) {
+        throw new BadRequestException('createdBy filter must match the authenticated user');
       }
 
       if (respondedBy) {
@@ -357,27 +376,24 @@ export class IntercampRequestController {
       }
 
       if (
-        !this.isSystemAdmin(currentUser.rol) &&
         existingRequest.originCampId !== currentUser.campId &&
         existingRequest.destinationCampId !== currentUser.campId
       ) {
         throw new BadRequestException('You can only update requests involving your camp');
       }
 
-      if (!this.isSystemAdmin(currentUser.rol)) {
-        if (body.originCampId !== undefined && body.originCampId !== currentUser.campId) {
-          throw new BadRequestException('originCampId must match your authenticated camp');
-        }
+      if (body.originCampId !== undefined && body.originCampId !== currentUser.campId) {
+        throw new BadRequestException('originCampId must match your authenticated camp');
+      }
 
-        if (body.createdBy !== undefined && body.createdBy !== currentUser.userId) {
-          throw new BadRequestException('createdBy must match the authenticated user');
-        }
+      if (body.createdBy !== undefined && body.createdBy !== currentUser.userId) {
+        throw new BadRequestException('createdBy must match the authenticated user');
       }
 
       const newStatus: IntercampRequestStatus =
         (body.status as IntercampRequestStatus) ?? existingRequest.status;
 
-      if (newStatus !== 'PENDING') {
+      if (newStatus !== 'DRAFT' && newStatus !== 'PENDING') {
         const hasRespondedBy =
           body.respondedBy !== undefined && body.respondedBy !== null
             ? true
