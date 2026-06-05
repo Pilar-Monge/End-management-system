@@ -56,6 +56,8 @@ export class EmailTemplateService {
         return this.renderDomainNotification(payload, 'Estado de persona actualizado');
       case 'temporary_occupation_assigned':
         return this.renderDomainNotification(payload, 'Asignacion temporal de ocupacion');
+      case 'temporary_occupation_revoked':
+        return this.renderDomainNotification(payload, 'Revocacion de ocupacion temporal');
       case 'camp_achievement_unlocked':
         return this.renderDomainNotification(payload, 'Logro desbloqueado');
       case 'generic_notification':
@@ -115,12 +117,14 @@ export class EmailTemplateService {
     const sourceId = this.toString(payload.sourceId, '');
 
     const detailsRows: string[] = [];
+    /*
     if (sourceType) {
       detailsRows.push(`<li><strong>Origen:</strong> ${this.escapeHtml(sourceType)}</li>`);
     }
     if (sourceId) {
       detailsRows.push(`<li><strong>Referencia:</strong> ${this.escapeHtml(sourceId)}</li>`);
     }
+    */
 
     const detailsBlock =
       detailsRows.length > 0
@@ -166,12 +170,15 @@ export class EmailTemplateService {
       '</div>',
     ].join('');
 
+    const detailsText = '';
+    /*
     const detailsText = [
       sourceType ? `Origen: ${sourceType}` : '',
       sourceId ? `Referencia: ${sourceId}` : '',
     ]
       .filter(Boolean)
       .join('\n');
+    */
 
     const changedFieldsText =
       changedFields.length > 0
@@ -261,6 +268,10 @@ export class EmailTemplateService {
       campId: 'Campamento',
       originCampId: 'Campamento origen',
       destinationCampId: 'Campamento destino',
+      motivo: 'Motivo de asignacion',
+      asignadoPor: 'Asignado por',
+      revocadoPor: 'Revocado por',
+      personaAsignada: 'Persona asignada',
     };
 
     if (labelMap[key]) {

@@ -215,26 +215,33 @@ export class TemporaryOccupationAssignmentController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Temporary Occupation Assignment' })
   @ApiParam({ name: 'id', type: Number, description: 'Temporary Occupation Assignment id' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        reason: { type: 'string', description: 'Revocation reason' },
+      },
+    },
+    required: false,
+  })
   @ApiOkResponseMessage({ description: 'Temporary Occupation Assignment deleted' })
   @ApiBadRequestResponse({ description: 'Invalid id' })
   @ApiNotFoundResponse({ description: 'Temporary Occupation Assignment not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Body('reason') reason?: string) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
-      const deleted = await this.service.deleteAssignment(parsedId);
-      if (!deleted) {
-        throw new NotFoundException('Temporary occupation assignment not found');
-      }
+      const result = await this.service.deleteAssignment(parsedId, reason);
+      if (!result) throw new NotFoundException('Temporary occupation assignment not found');
 
       return {
         success: true,
-        message: 'Temporary occupation assignment deleted successfully',
+        message: 'Temporary occupation assignment revoked and deleted successfully',
       };
     } catch (error) {
       throw new BadRequestException(

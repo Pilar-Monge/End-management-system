@@ -32,3 +32,5 @@ prisma/migrations/
 
 dump-neon-2026-05-08.err
 dump-neon-2026-05-08.sql
+
+docs/

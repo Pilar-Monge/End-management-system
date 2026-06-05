@@ -36,15 +36,28 @@ export class TemporaryOccupationAssignmentService {
       return;
     }
 
+    // Obtener datos del administrador y de la asignación para el correo
+    const assignment = await this.repository.findById(sourceId);
+    const adminPerson = assignment ? await this.repository.findAdminPersonByUserId(assignment.assignedBy) : null;
+    const adminName = adminPerson ? `${adminPerson.name} ${adminPerson.lastName1}`.trim() : 'Administrador';
+    const reason = assignment?.reason || 'No especificado';
+
     const fullName = `${person.name} ${person.lastName1}`.trim();
     const message = `${messagePrefix}: ${fullName} -> ${occupation.name}.`;
 
     await this.notificationService.notifyCampRoles(person.campId, ['SYSTEM_ADMIN'], {
       type: 'TEMPORARY_OCCUPATION_ASSIGNED',
-      title: 'Asignacion temporal de ocupacion',
-      message,
+      title: 'Asignación temporal de ocupación',
+      message: `Se registró una asignación temporal: ${fullName} -> ${occupation.name}.`,
       sourceType: 'temporary_occupation_assignment',
       sourceId,
+      email: {
+        payload: {
+          motivo: reason,
+          asignadoPor: adminName,
+          personaAsignada: fullName,
+        },
+      },
     });
 
     const linkedUser = await this.repository.findActiveLinkedUserByPersonAndCamp(
@@ -59,10 +72,16 @@ export class TemporaryOccupationAssignmentService {
     await this.notificationService.notifyUser(linkedUser.id, {
       campId: person.campId,
       type: 'TEMPORARY_OCCUPATION_ASSIGNED',
-      title: 'Nueva ocupacion temporal',
-      message: `Se te asigno temporalmente la ocupacion ${occupation.name}.`,
+      title: 'Nueva ocupación temporal',
+      message: `Se te asignó temporalmente la ocupación ${occupation.name}.`,
       sourceType: 'temporary_occupation_assignment',
       sourceId,
+      email: {
+        payload: {
+          motivo: reason,
+          asignadoPor: adminName,
+        },
+      },
     });
   }
 
@@ -186,7 +205,7 @@ export class TemporaryOccupationAssignmentService {
     return updated;
   }
 
-  async deleteAssignment(id: number): Promise<boolean> {
+  async deleteAssignment(id: number, revocationReason?: string): Promise<boolean> {
     const existing = await this.repository.findById(id);
     if (!existing) {
       return false;
@@ -197,12 +216,52 @@ export class TemporaryOccupationAssignmentService {
       return false;
     }
 
-    await this.notifyAssignmentChange(
-      existing.personId,
-      existing.temporaryOccupationId,
-      existing.id,
-      'Se elimino una asignacion temporal',
-    );
+    const person = await this.repository.findPersonById(existing.personId);
+    const occupation = await this.repository.findOccupationById(existing.temporaryOccupationId);
+    const adminPerson = await this.repository.findAdminPersonByUserId(existing.assignedBy);
+    const adminName = adminPerson
+      ? `${adminPerson.name} ${adminPerson.lastName1}`.trim()
+      : 'Administrador';
+
+    const finalReason = revocationReason || existing.reason;
+
+    if (person && occupation) {
+      const linkedUser = await this.repository.findActiveLinkedUserByPersonAndCamp(
+        person.id,
+        person.campId,
+      );
+
+      if (linkedUser) {
+        await this.notificationService.notifyUser(linkedUser.id, {
+          campId: person.campId,
+          type: 'TEMPORARY_OCCUPATION_REVOKED',
+          title: 'Ocupación temporal revocada',
+          message: `Se ha revocado tu asignación temporal como ${occupation.name}.`,
+          sourceType: 'temporary_occupation_assignment',
+          sourceId: existing.id,
+          email: {
+            payload: {
+              motivo: finalReason,
+              revocadoPor: adminName,
+            },
+          },
+        });
+      }
+
+      await this.notificationService.notifyCampRoles(person.campId, ['SYSTEM_ADMIN'], {
+        type: 'TEMPORARY_OCCUPATION_REVOKED',
+        title: 'Asignación temporal revocada',
+        message: `Se eliminó la asignación de ${person.name} como ${occupation.name}.`,
+        sourceType: 'temporary_occupation_assignment',
+        sourceId: existing.id,
+        email: {
+          payload: {
+            motivo: finalReason,
+            revocadoPor: adminName,
+          },
+        },
+      });
+    }
 
     return true;
   }
