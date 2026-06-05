@@ -22,10 +22,5 @@ export class AddDraftIntercampRequestStatus1780200000000 implements MigrationInt
       ALTER TABLE public.intercamp_request
       ALTER COLUMN status SET DEFAULT 'PENDING'
     `);
-
-    await queryRunner.query(`
-      ALTER TABLE public.intercamp_request
-      ALTER COLUMN status SET DEFAULT 'PENDING'
-    `);
   }
 }
