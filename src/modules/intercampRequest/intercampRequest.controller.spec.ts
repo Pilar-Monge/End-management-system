@@ -67,12 +67,13 @@ describe('IntercampRequestController', () => {
       );
     });
 
-    it('should allow admin to create with any originCampId', async () => {
+    it('should reject admin create outside own camp', async () => {
       const dto = { ...validCreateDto } as any;
       service.createRequest.mockResolvedValue({ id: 1, ...dto } as any);
 
-      const result = await controller.create(dto, mockAdminRequest);
-      expect(result.success).toBe(true);
+      await expect(controller.create(dto, mockAdminRequest)).rejects.toThrow(
+        'originCampId must match your authenticated camp',
+      );
     });
   });
 

@@ -21,14 +21,6 @@ export class UpdateIntercampRequestDto {
   @ApiPropertyOptional({ nullable: true })
   plannedArrivalDate?: Date | null;
 
-  @ApiPropertyOptional({
-    type: 'array',
-    isArray: true,
-    nullable: false,
-    description: 'Lista de requisitos de personas por oficio/rol',
-  })
-  personRequirements?: Array<{ occupationId: number; quantity: number }>;
-
   @ApiPropertyOptional()
   createdDate?: Date;
 
