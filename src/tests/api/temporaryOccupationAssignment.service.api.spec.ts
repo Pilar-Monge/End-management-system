@@ -24,6 +24,7 @@ describe('TemporaryOccupationAssignmentService (API service unit tests)', () => 
       update: jest.fn(),
       delete: jest.fn(),
       findAllAndCount: jest.fn(),
+      findAdminPersonByUserId: jest.fn(),
     };
     notificationService = { notifyCampRoles: jest.fn(), notifyUser: jest.fn() };
     coverageService = { getCoverageById: jest.fn() };
@@ -176,6 +177,7 @@ describe('TemporaryOccupationAssignmentService (API service unit tests)', () => 
       lastName1: 'Lopez',
     });
     repository.findOccupationById.mockResolvedValue({ id: 2, name: 'Cook' });
+    repository.findAdminPersonByUserId.mockResolvedValue(null);
     repository.findActiveLinkedUserByPersonAndCamp.mockResolvedValue({ id: 9 });
 
     await expect(service.deleteAssignment(1)).resolves.toBe(true);

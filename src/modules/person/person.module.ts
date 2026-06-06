@@ -22,5 +22,6 @@ import { SupabaseStorageService } from '../../services/supabase-storage.service'
     PersonService,
     SupabaseStorageService,
   ],
+  exports: [PersonService],
 })
 export class PersonModule {}

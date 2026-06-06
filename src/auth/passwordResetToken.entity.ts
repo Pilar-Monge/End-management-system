@@ -26,11 +26,20 @@ export class PasswordResetTokenEntity {
   @Column({ name: 'token_hash', type: 'text' })
   tokenHash!: string;
 
+  @Column({ name: 'code_hash', type: 'text', default: '' })
+  codeHash!: string;
+
   @Column({ name: 'status', type: 'text', default: 'ACTIVE' })
   status!: PasswordResetTokenStatus;
 
   @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt!: Date;
+
+  @Column({ name: 'attempts', type: 'int', default: 0 })
+  attempts!: number;
+
+  @Column({ name: 'max_attempts', type: 'int', default: 5 })
+  maxAttempts!: number;
 
   @Column({ name: 'used_at', type: 'timestamptz', nullable: true })
   usedAt!: Date | null;

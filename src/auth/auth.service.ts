@@ -1,17 +1,20 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { createHash, randomBytes, randomUUID } from 'crypto';
+import { createHash, createHmac, randomBytes, randomInt, randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
 import { EncryptionService } from '../services/encryption.service';
 import { EmailOutboxService } from '../modules/email/emailOutbox.service';
 import { NotificationService } from '../modules/notification/notification.service';
+import { PersonService } from '../modules/person/person.service';
 import { UserRepository } from '../modules/systemUser/systemUser.repository';
 import { SystemTimeService } from '../modules/systemTime/systemTime.service';
 import { AuthRepository } from './auth.repository';
 import type { JwtPayload, LoginDTO, LoginResponse, SessionValidationOptions } from './auth.model';
 
 const SESSION_INACTIVITY_MINUTES = 20;
+const PASSWORD_RESET_CODE_DIGITS = 8;
+const PASSWORD_RESET_MAX_ATTEMPTS = 5;
 
 @Injectable()
 export class AuthService {
@@ -21,6 +24,7 @@ export class AuthService {
     private readonly systemTimeService: SystemTimeService,
     private readonly emailOutboxService: EmailOutboxService,
     private readonly notificationService: NotificationService,
+    private readonly personService: PersonService,
   ) {}
 
   async login(dto: LoginDTO, ip: string): Promise<LoginResponse> {
@@ -256,16 +260,20 @@ export class AuthService {
 
     const now = this.systemTimeService.now();
     const ttlMinutes = this.resolvePasswordResetTtlMinutes();
-    const rawToken = randomBytes(32).toString('hex');
+    const rawToken = randomBytes(64).toString('hex');
+    const resetCode = this.generatePasswordResetCode();
     const tokenHash = this.hashResetToken(rawToken);
+    const codeHash = await this.hashPasswordResetCode(resetCode, user.id, user.campId);
     const expiresAt = new Date(now.getTime() + ttlMinutes * 60 * 1000);
 
     await this.authRepository.invalidateActivePasswordResetTokens(user.id);
     await this.authRepository.createPasswordResetToken({
       userId: user.id,
       tokenHash,
+      codeHash,
       expiresAt,
       requestIp: ip,
+      maxAttempts: PASSWORD_RESET_MAX_ATTEMPTS,
     });
 
     await this.authRepository.createAccessLog({
@@ -288,36 +296,63 @@ export class AuthService {
       sendEmail: false,
     });
 
-    const resetUrl = this.buildPasswordResetUrl(rawToken);
     await this.emailOutboxService.enqueue({
       toEmail: user.email,
       subject: 'Recuperacion de contrasena',
       templateKey: 'password_reset_request',
       payload: {
-        resetUrl,
+        resetCode,
         expirationMinutes: String(ttlMinutes),
       },
     });
   }
 
-  async resetPassword(token: string, newPassword: string, ip: string): Promise<void> {
-    const normalizedToken = typeof token === 'string' ? token.trim() : '';
+  async resetPassword(
+    email: string,
+    campId: number,
+    code: string,
+    newPassword: string,
+    ip: string,
+  ): Promise<void> {
+    const normalizedEmail = typeof email === 'string' ? email.trim() : '';
+    const normalizedCode = typeof code === 'string' ? code.trim() : '';
     const normalizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
 
-    if (!normalizedToken || normalizedPassword.length < 8) {
-      throw new BadRequestException('Token o contrasena invalida');
+    if (
+      !normalizedEmail ||
+      !Number.isInteger(campId) ||
+      campId <= 0 ||
+      !/^\d{8}$/.test(normalizedCode) ||
+      normalizedPassword.length < 8
+    ) {
+      throw new BadRequestException('Codigo o contrasena invalida');
     }
 
     const now = this.systemTimeService.now();
-    const tokenHash = this.hashResetToken(normalizedToken);
-    const resetToken = await this.authRepository.findActivePasswordResetTokenByHash(tokenHash, now);
-    if (!resetToken) {
-      throw new BadRequestException('Token invalido o expirado');
+    const user = await this.systemUserRepository.findByEmail(normalizedEmail, campId);
+    if (!user || user.status !== 'ACTIVE') {
+      throw new BadRequestException('Codigo invalido o expirado');
     }
 
-    const user = await this.systemUserRepository.findById(resetToken.userId);
-    if (!user) {
-      throw new BadRequestException('Usuario no encontrado');
+    const resetToken = await this.authRepository.findActivePasswordResetTokenByUserId(user.id, now);
+    if (!resetToken) {
+      throw new BadRequestException('Codigo invalido o expirado');
+    }
+
+    if (resetToken.attempts >= resetToken.maxAttempts) {
+      await this.authRepository.expirePasswordResetToken(resetToken.id);
+      throw new BadRequestException('Codigo invalido o expirado');
+    }
+
+    const codeDigest = this.createPasswordResetCodeDigest(normalizedCode, user.id, user.campId);
+    const isCodeValid = await bcrypt.compare(codeDigest, resetToken.codeHash);
+    if (!isCodeValid) {
+      await this.authRepository.incrementPasswordResetTokenAttempts(resetToken.id);
+      if (resetToken.attempts + 1 >= resetToken.maxAttempts) {
+        await this.authRepository.expirePasswordResetToken(resetToken.id);
+      }
+
+      throw new BadRequestException('Codigo invalido o expirado');
     }
 
     const passwordHash = await EncryptionService.hashPassword(normalizedPassword);
@@ -371,19 +406,54 @@ export class AuthService {
     return createHash('sha256').update(rawToken).digest('hex');
   }
 
-  private buildPasswordResetUrl(rawToken: string): string {
-    const configuredBaseUrl = process.env.FRONTEND_RESET_PASSWORD_URL?.trim();
-    const fallback = 'http://localhost:5173/reset-password';
-    const baseUrl =
-      configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : fallback;
+  private generatePasswordResetCode(): string {
+    return randomInt(0, 10 ** PASSWORD_RESET_CODE_DIGITS)
+      .toString()
+      .padStart(PASSWORD_RESET_CODE_DIGITS, '0');
+  }
 
-    try {
-      const url = new URL(baseUrl);
-      url.searchParams.set('token', rawToken);
-      return url.toString();
-    } catch {
-      const separator = baseUrl.includes('?') ? '&' : '?';
-      return `${baseUrl}${separator}token=${encodeURIComponent(rawToken)}`;
+  private async hashPasswordResetCode(
+    code: string,
+    userId: number,
+    campId: number,
+  ): Promise<string> {
+    const digest = this.createPasswordResetCodeDigest(code, userId, campId);
+    return await bcrypt.hash(digest, 10);
+  }
+
+  private createPasswordResetCodeDigest(code: string, userId: number, campId: number): string {
+    const secret = this.resolvePasswordResetCodeSecret();
+    return createHmac('sha256', secret).update(`${userId}:${campId}:${code}`).digest('hex');
+  }
+
+  private resolvePasswordResetCodeSecret(): string {
+    const configuredSecret = process.env.PASSWORD_RESET_CODE_SECRET?.trim();
+    if (configuredSecret) {
+      return configuredSecret;
     }
+
+    const jwtSecret = process.env.JWT_SECRET?.trim();
+    if (!jwtSecret) {
+      throw new Error('PASSWORD_RESET_CODE_SECRET or JWT_SECRET is not configured');
+    }
+
+    return jwtSecret;
+  }
+
+  async updateMyPhoto(userId: number, file: Express.Multer.File): Promise<any> {
+    const user = await this.systemUserRepository.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.personId) {
+      throw new BadRequestException(
+        'El usuario no tiene un perfil de persona vinculado. Por favor, contacta al soporte técnico para vincular tu cuenta.',
+      );
+    }
+
+    // El mecanismo transparente: El servicio de Auth usa internamente al de Personas
+    // No hace falta que el frontend conozca el person_id, nosotros lo sabemos por la entidad User
+    return await this.personService.uploadPersonPhoto(user.personId, file);
   }
 }

@@ -27,6 +27,7 @@ describe('AuthRepository', () => {
       create: jest.fn().mockImplementation((d) => d),
       save: jest.fn().mockImplementation((d) => Promise.resolve({ id: 1, ...d })),
       findOne: jest.fn(),
+      increment: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     repository = new AuthRepository(sessionRepo, accessLogRepo, passwordResetTokenRepo);
   });
@@ -90,25 +91,40 @@ describe('AuthRepository', () => {
   });
 
   it('createPasswordResetToken should call save', async () => {
-    await repository.createPasswordResetToken({ userId: 1, tokenHash: 'h', expiresAt: new Date() });
+    await repository.createPasswordResetToken({
+      userId: 1,
+      tokenHash: 'h',
+      codeHash: 'c',
+      expiresAt: new Date(),
+    });
     expect(passwordResetTokenRepo.save).toHaveBeenCalled();
   });
 
-  it('findActivePasswordResetTokenByHash should handle found token', async () => {
+  it('findActivePasswordResetTokenByUserId should handle found token', async () => {
     const token = { expiresAt: new Date(Date.now() + 10000) };
     passwordResetTokenRepo.findOne.mockResolvedValue(token);
-    const result = await repository.findActivePasswordResetTokenByHash('h', new Date());
+    const result = await repository.findActivePasswordResetTokenByUserId(1, new Date());
     expect(result).toBe(token);
   });
 
-  it('findActivePasswordResetTokenByHash should handle expired token', async () => {
+  it('findActivePasswordResetTokenByUserId should handle expired token', async () => {
     const token = { expiresAt: new Date(Date.now() - 10000), status: 'ACTIVE' };
     passwordResetTokenRepo.findOne.mockResolvedValue(token);
-    const result = await repository.findActivePasswordResetTokenByHash('h', new Date());
+    const result = await repository.findActivePasswordResetTokenByUserId(1, new Date());
     expect(result).toBeNull();
     expect(passwordResetTokenRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'EXPIRED' }),
     );
+  });
+
+  it('incrementPasswordResetTokenAttempts should call increment', async () => {
+    await repository.incrementPasswordResetTokenAttempts(1);
+    expect(passwordResetTokenRepo.increment).toHaveBeenCalledWith({ id: 1 }, 'attempts', 1);
+  });
+
+  it('expirePasswordResetToken should call update', async () => {
+    await repository.expirePasswordResetToken(1);
+    expect(passwordResetTokenRepo.update).toHaveBeenCalledWith({ id: 1 }, { status: 'EXPIRED' });
   });
 
   it('markPasswordResetTokenUsed should call update', async () => {

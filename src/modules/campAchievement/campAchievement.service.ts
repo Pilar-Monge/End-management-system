@@ -122,7 +122,7 @@ export class CampAchievementService {
     achievementId: number,
     data: UpdateCampAchievementDTO,
   ): Promise<CampAchievement | null> {
-    if (data.unlockedBy !== undefined) {
+    if (data.unlockedBy !== undefined && data.unlockedBy !== null) {
       await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
     }
 

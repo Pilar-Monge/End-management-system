@@ -42,6 +42,8 @@ export class NotificationService {
     'INTERCAMP_REQUEST_APPROVED',
     'INTERCAMP_REQUEST_REJECTED',
     'INTERCAMP_REQUEST_CANCELED',
+    'TEMPORARY_OCCUPATION_ASSIGNED',
+    'TEMPORARY_OCCUPATION_REVOKED',
   ]);
 
   constructor(
@@ -89,6 +91,7 @@ export class NotificationService {
       PERSON_STATUS_CHANGED: 'person_status_changed',
       OCCUPATION_WITHOUT_STAFF: 'occupation_without_staff',
       TEMPORARY_OCCUPATION_ASSIGNED: 'temporary_occupation_assigned',
+      TEMPORARY_OCCUPATION_REVOKED: 'temporary_occupation_revoked',
       CAMP_ACHIEVEMENT_UNLOCKED: 'camp_achievement_unlocked',
     };
 
@@ -489,7 +492,7 @@ export class NotificationService {
         payload: {
           sourceType: options.sourceType ?? undefined,
           sourceId: options.sourceId ?? undefined,
-          ...(options.email?.payload ?? {}),
+          details: options.email?.payload ?? undefined,
         },
       };
 

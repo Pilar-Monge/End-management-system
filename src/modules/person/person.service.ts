@@ -8,6 +8,7 @@ import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
 import { PersonStatusHistoryRepository } from '../personStatusHistory/personStatusHistory.repository';
 import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import type { UserEntity } from '../systemUser/systemUser.entity';
 
 @Injectable()
 export class PersonService {

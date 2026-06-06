@@ -62,6 +62,15 @@ export class TemporaryOccupationAssignmentRepository {
     });
   }
 
+  async findAdminPersonByUserId(userId: number): Promise<PersonEntity | null> {
+    const user = await this.repo.manager.getRepository(UserEntity).findOne({
+      where: { id: userId },
+      select: { personId: true },
+    });
+    if (!user || !user.personId) return null;
+    return await this.findPersonById(user.personId);
+  }
+
   async findAllAndCount(filters?: {
     personId?: number;
     temporaryOccupationId?: number;

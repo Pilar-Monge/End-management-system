@@ -241,8 +241,14 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
-      if (existingPerson.campId !== currentUser.campId) {
-        throw new BadRequestException('You do not have permission to update this person');
+      // Restricción estricta: Nadie (ni el admin) puede actualizar la foto de otra persona.
+      const user = await this.service.findUserByPersonId(parsedId);
+      const isOwner = user && user.id === currentUser.userId;
+
+      if (!isOwner) {
+        throw new BadRequestException(
+          `You can only update your own profile photo. Your User ID: ${currentUser.userId}, Person ID in URL: ${parsedId}, Found Linked User: ${user?.id ?? 'none'}`,
+        );
       }
 
       const person = await this.service.updatePerson(parsedId, body);
@@ -261,7 +267,7 @@ export class PersonController {
   }
 
   @Post(':id/photo')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Upload person photo' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiConsumes('multipart/form-data')
@@ -305,9 +311,14 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
+      // Restricción estricta: Nadie (ni el admin) puede actualizar la foto de otra persona.
       const user = await this.service.findUserByPersonId(parsedId);
-      if (!user || user.id !== currentUser.userId) {
-        throw new BadRequestException('You can only update your own photo');
+      const isOwner = user && user.id === currentUser.userId;
+
+      if (!isOwner) {
+        throw new BadRequestException(
+          `You can only update your own profile photo. Your User ID: ${currentUser.userId}, Person ID in URL: ${parsedId}, Found Linked User: ${user?.id ?? 'none'}`,
+        );
       }
 
       const person = await this.service.uploadPersonPhoto(parsedId, file);
@@ -368,8 +379,14 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
-      if (existingPerson.campId !== currentUser.campId) {
-        throw new BadRequestException('You do not have permission to update this person');
+      // Restricción estricta: Nadie (ni el admin) puede actualizar la foto de otra persona.
+      const user = await this.service.findUserByPersonId(parsedId);
+      const isOwner = user && user.id === currentUser.userId;
+
+      if (!isOwner) {
+        throw new BadRequestException(
+          `You can only update your own profile photo. Your User ID: ${currentUser.userId}, Person ID in URL: ${parsedId}, Found Linked User: ${user?.id ?? 'none'}`,
+        );
       }
 
       const person = await this.service.uploadPersonPhoto(parsedId, file);
