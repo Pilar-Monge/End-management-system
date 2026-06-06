@@ -128,13 +128,19 @@ export class AuthController {
   @Post('reset-password')
   @ApiOperation({
     summary: 'Reset password',
-    description: 'Public endpoint. Uses a valid password reset token sent to the user.',
+    description: 'Public endpoint. Uses a valid password reset code sent to the user.',
   })
   @ApiBody({ type: ResetPasswordDto })
   @ApiOkResponseMessage({ description: 'Password updated successfully' })
-  @ApiBadRequestResponse({ description: 'Invalid or expired token, or invalid password' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired code, or invalid password' })
   async resetPassword(@Body() body: ResetPasswordDto, @Req() req: Request) {
-    await this.service.resetPassword(body.token, body.newPassword, req.ip ?? 'unknown');
+    await this.service.resetPassword(
+      body.email,
+      body.campId,
+      body.code,
+      body.newPassword,
+      req.ip ?? 'unknown',
+    );
     return {
       success: true,
       message: 'Contrasena actualizada correctamente',

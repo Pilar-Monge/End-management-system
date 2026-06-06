@@ -10,11 +10,11 @@ describe('EmailTemplateService', () => {
   describe('render (general routing)', () => {
     it('routes to password reset request', () => {
       const result = service.render('password_reset_request', {
-        resetUrl: 'http://test.com',
+        resetCode: '12345678',
         expirationMinutes: 15,
       });
       expect(result.subject).toBe('Recuperacion de contrasena');
-      expect(result.html).toContain('http://test.com');
+      expect(result.html).toContain('12345678');
       expect(result.text).toContain('15 minutos');
     });
 

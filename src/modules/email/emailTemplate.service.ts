@@ -94,7 +94,7 @@ export class EmailTemplateService {
   }
 
   private renderPasswordResetRequest(payload: Record<string, unknown>): RenderedEmail {
-    const resetUrl = this.toString(payload.resetUrl, '');
+    const resetCode = this.toString(payload.resetCode, '');
     const expirationMinutes = this.toString(payload.expirationMinutes, '30');
 
     return {
@@ -106,6 +106,10 @@ export class EmailTemplateService {
         tone: 'warn',
         sections: [
           {
+            title: 'Codigo de verificacion',
+            html: this.renderStatusCard('Codigo temporal', this.escapeHtml(resetCode), 'warn'),
+          },
+          {
             title: 'Ventana de autorizacion',
             html: this.renderStatusCard(
               'Enlace temporal',
@@ -114,10 +118,8 @@ export class EmailTemplateService {
             ),
           },
         ],
-        actionLabel: 'Restablecer contrasena',
-        actionUrl: resetUrl,
       }),
-      text: `Recuperacion de contrasena\n\nRecibimos una solicitud para restablecer tu contrasena.\nEste enlace expira en ${expirationMinutes} minutos.\nRestablecer contrasena: ${resetUrl}`,
+      text: `Recuperacion de contrasena\n\nRecibimos una solicitud para restablecer tu contrasena.\nCodigo temporal: ${resetCode}\nEste codigo expira en ${expirationMinutes} minutos.`,
     };
   }
 
