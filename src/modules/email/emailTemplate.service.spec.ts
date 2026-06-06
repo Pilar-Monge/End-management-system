@@ -69,8 +69,11 @@ describe('EmailTemplateService', () => {
         sourceId: '123',
       });
       expect(result.subject).toBe('Rol actualizado');
-      expect(result.html).toContain('Origen:</strong> user');
-      expect(result.html).toContain('Referencia:</strong> 123');
+      expect(result.html).toContain('Referencia operacional');
+      expect(result.html).toContain('Origen');
+      expect(result.html).toContain('user');
+      expect(result.html).toContain('Referencia');
+      expect(result.html).toContain('123');
       expect(result.text).toContain('Origen: user');
     });
 
