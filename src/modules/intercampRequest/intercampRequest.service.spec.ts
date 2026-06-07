@@ -1,7 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { IntercampRequestService } from './intercampRequest.service';
 
-// ─── Mocks ───────────────────────────────────────────────────────────────────
 
 const repository = {
   findCampById: jest.fn(),
@@ -15,6 +14,8 @@ const repository = {
   findCampInventoryAmount: jest.fn(),
   findCampInventoryWithMinimum: jest.fn(),
   findCommittedTransferAmountByCampAndResourceType: jest.fn(),
+  findRationInventoryCandidate: jest.fn(),
+  findCommittedTransferRationsByCamp: jest.fn(),
   countRequestDetailsByRequestId: jest.fn(),
   findPersonDetailRequirementsByRequestId: jest.fn(),
 };
@@ -38,7 +39,6 @@ const transferPersonService = {
   canFulfillRequirements: jest.fn(),
 };
 
-// ─── Suite ───────────────────────────────────────────────────────────────────
 
 describe('IntercampRequestService', () => {
   let service: IntercampRequestService;
@@ -47,6 +47,13 @@ describe('IntercampRequestService', () => {
     jest.clearAllMocks();
     repository.countRequestDetailsByRequestId.mockResolvedValue(1);
     repository.findPersonDetailRequirementsByRequestId.mockResolvedValue([]);
+    repository.findRationInventoryCandidate.mockResolvedValue({
+      resourceTypeId: 99,
+      currentAmount: '1000',
+      minimumAlertAmount: '0',
+    });
+    repository.findCommittedTransferRationsByCamp.mockResolvedValue('0');
+    transferService.syncTransferRations.mockResolvedValue({ id: 1, rationsForTrip: '10.00' });
     service = new IntercampRequestService(
       repository as never,
       notificationService as never,
@@ -55,9 +62,7 @@ describe('IntercampRequestService', () => {
     );
   });
 
-  // ─── validateRoutingAndOwnership ───────────────────────────────────────
 
-  // This is a private method but we test its side effects through public ones
   const setupValidRouting = () => {
     repository.findCampById.mockImplementation(async (id) => ({ id }));
     repository.findUserById.mockImplementation(async (id) => {
@@ -152,7 +157,6 @@ describe('IntercampRequestService', () => {
     });
   });
 
-  // ─── updateRequest ─────────────────────────────────────────────────────
 
   describe('updateRequest', () => {
     it('returns null if request not found', async () => {
@@ -222,11 +226,9 @@ describe('IntercampRequestService', () => {
         { occupationId: 2, quantity: 2 },
       ]);
 
-      // Needs transfer
       repository.findRequestResourceAmountsByRequestId.mockResolvedValue([]);
       repository.findCampInventoryWithMinimum.mockResolvedValue({ current: '100', minimum: '0' });
       repository.findCommittedTransferAmountByCampAndResourceType.mockResolvedValue('0');
-      // Doesn't exist
       transferService.getTransferByRequestId.mockResolvedValue(null);
       transferService.createTransfer.mockResolvedValue({ id: 100 });
       transferPersonService.canFulfillRequirements.mockResolvedValue(true);
@@ -250,6 +252,41 @@ describe('IntercampRequestService', () => {
       );
       expect(transferService.syncTransferRations).toHaveBeenCalledWith(100);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2); // Origin and Dest
+    });
+
+    it('throws if reserved rations would leave food below minimum when approving', async () => {
+      setupValidRouting();
+      const req = {
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 10,
+        status: 'PENDING',
+        personRequirements: [],
+        plannedDepartureDate: new Date(Date.now() + 86400000),
+        plannedArrivalDate: new Date(Date.now() + 2 * 86400000),
+      };
+      repository.findById.mockResolvedValue(req);
+      repository.update.mockResolvedValue({ ...req, status: 'APPROVED' });
+      repository.findRequestResourceAmountsByRequestId.mockResolvedValue([]);
+      repository.findRationInventoryCandidate.mockResolvedValue({
+        resourceTypeId: 99,
+        currentAmount: '20',
+        minimumAlertAmount: '10',
+      });
+      repository.findCommittedTransferRationsByCamp.mockResolvedValue('5');
+      transferService.getTransferByRequestId.mockResolvedValue({ id: 100 });
+      transferService.syncTransferRations.mockResolvedValue({ id: 100, rationsForTrip: '8' });
+
+      await expect(
+        service.updateRequest(
+          1,
+          { status: 'APPROVED', transportPersonIds: [31, 32] },
+          { userId: 20, campId: 2, rol: 'TRAVEL_MANAGER' },
+        ),
+      ).rejects.toThrow(
+        'No se puede aprobar el traslado: las raciones quedarian por debajo del minimo requerido (10)',
+      );
     });
 
     it('throws if planned departure is in the past when approving', async () => {
@@ -368,7 +405,6 @@ describe('IntercampRequestService', () => {
     });
   });
 
-  // ─── deleteRequest ─────────────────────────────────────────────────────
 
   describe('deleteRequest', () => {
     it('returns false if not found', async () => {

@@ -1,7 +1,6 @@
 import { TransferPersonService } from '../../modules/transferPerson/transferPerson.service';
 import { PersonEntity } from '../../modules/person/person.entity';
 import { TransferEntity } from '../../modules/transfer/transfer.entity';
-import { TransferService } from '../../modules/transfer/transfer.service';
 
 describe('TransferPersonService (API service unit tests)', () => {
   let repository: any;
@@ -21,6 +20,9 @@ describe('TransferPersonService (API service unit tests)', () => {
       delete: jest.fn(),
       findEligiblePersonIdsByCampAndOccupation: jest.fn(),
       findByTransferAndPerson: jest.fn(),
+      findPeopleByIds: jest.fn(),
+      findActiveTransferAssignmentsByPersonIds: jest.fn(),
+      countPeopleWithCurrentOccupationName: jest.fn(),
       resolveTransferScope: jest.fn().mockResolvedValue({
         originCampId: 1,
         destinationCampId: 2,
@@ -103,6 +105,15 @@ describe('TransferPersonService (API service unit tests)', () => {
     repository.findByTransferAndPerson.mockResolvedValue({ id: 99 });
 
     await expect(service.createTransferPerson(dto as any)).rejects.toThrow();
+  });
+
+  it('assignTransportStaffForTransfer requires at least one Scout', async () => {
+    repository.findPeopleByIds.mockResolvedValue([{ id: 31, campId: 2, currentStatus: 'ACTIVE' }]);
+    repository.countPeopleWithCurrentOccupationName.mockResolvedValue(0);
+
+    await expect(service.assignTransportStaffForTransfer(100, 2, [31])).rejects.toThrow(
+      'Debe asignar al menos una persona operativa con oficio Scout',
+    );
   });
 
   it('canFulfillRequirements succeeds with valid requirements', async () => {

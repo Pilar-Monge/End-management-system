@@ -69,7 +69,10 @@ export class IntercampRequestService {
         continue;
       }
 
-      const [inventoryRow, committedAmountRaw] = await Promise.all([
+      const rationInventory = await this.repository.findRationInventoryCandidate(
+        request.destinationCampId,
+      );
+      const [inventoryRow, committedAmountRaw, committedRationsRaw] = await Promise.all([
         this.repository.findCampInventoryWithMinimum(
           request.destinationCampId,
           detail.resourceTypeId,
@@ -79,11 +82,17 @@ export class IntercampRequestService {
           detail.resourceTypeId,
           request.id,
         ),
+        rationInventory?.resourceTypeId === detail.resourceTypeId
+          ? this.repository.findCommittedTransferRationsByCamp(
+              request.destinationCampId,
+              request.id,
+            )
+          : Promise.resolve('0'),
       ]);
 
       const currentAmount = this.toNumber(inventoryRow.current);
       const minimumAmount = this.toNumber(inventoryRow.minimum);
-      const committedAmount = this.toNumber(committedAmountRaw);
+      const committedAmount = this.toNumber(committedAmountRaw) + this.toNumber(committedRationsRaw);
       const availableAmount = currentAmount - committedAmount;
 
       if (availableAmount < requestedAmount) {
@@ -101,6 +110,46 @@ export class IntercampRequestService {
     }
   }
 
+  private async assertRationAvailability(
+    request: IntercampRequest,
+    transferId: number,
+  ): Promise<void> {
+    const transfer = await this.transferService.syncTransferRations(transferId);
+    const rationsForTrip = this.toNumber(transfer?.rationsForTrip);
+
+    if (rationsForTrip <= 0) {
+      throw new BadRequestException('El traslado debe tener raciones calculadas mayores a 0');
+    }
+
+    const rationInventory = await this.repository.findRationInventoryCandidate(
+      request.destinationCampId,
+    );
+    if (!rationInventory) {
+      throw new BadRequestException(
+        'No se encontro un recurso de comida para reservar raciones del traslado',
+      );
+    }
+
+    const committedRationsRaw = await this.repository.findCommittedTransferRationsByCamp(
+      request.destinationCampId,
+      request.id,
+    );
+    const currentAmount = this.toNumber(rationInventory.currentAmount);
+    const minimumAmount = this.toNumber(rationInventory.minimumAlertAmount);
+    const committedRations = this.toNumber(committedRationsRaw);
+    const availableAmount = currentAmount - committedRations;
+
+    if (availableAmount < rationsForTrip) {
+      throw new BadRequestException('No hay raciones suficientes para aprobar el traslado');
+    }
+
+    const remainingAfter = currentAmount - committedRations - rationsForTrip;
+    if (remainingAfter < minimumAmount) {
+      throw new BadRequestException(
+        `No se puede aprobar el traslado: las raciones quedarian por debajo del minimo requerido (${minimumAmount})`,
+      );
+    }
+  }
   private assertRequestUpdatePolicy(
     existing: IntercampRequest,
     data: UpdateIntercampRequestDTO,
@@ -238,7 +287,7 @@ export class IntercampRequestService {
       request.destinationCampId,
     );
 
-    await this.transferService.syncTransferRations(transfer.id);
+    await this.assertRationAvailability(request, transfer.id);
   }
 
   private async validateRoutingAndOwnership(
@@ -616,3 +665,4 @@ export class IntercampRequestService {
     return true;
   }
 }
+

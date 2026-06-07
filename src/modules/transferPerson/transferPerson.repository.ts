@@ -137,6 +137,25 @@ export class TransferPersonRepository {
     });
   }
 
+  async countPeopleWithCurrentOccupationName(
+    personIds: number[],
+    occupationName: string,
+  ): Promise<number> {
+    if (personIds.length === 0) {
+      return 0;
+    }
+
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.person p
+       INNER JOIN public.occupation o ON o.id = p.occupation_id
+       WHERE p.id = ANY($1::int[])
+         AND LOWER(o.name) = LOWER($2)`,
+      [personIds, occupationName],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
   async findActiveTransferAssignmentsByPersonIds(
     personIds: number[],
     excludedTransferId: number,
@@ -281,3 +300,4 @@ export class TransferPersonRepository {
     return (result.affected ?? 0) > 0;
   }
 }
+

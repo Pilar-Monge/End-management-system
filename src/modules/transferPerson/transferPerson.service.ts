@@ -156,6 +156,14 @@ export class TransferPersonService {
       throw new Error('Las personas operativas deben estar activas en el campamento proveedor');
     }
 
+    const scoutCount = await this.repository.countPeopleWithCurrentOccupationName(
+      uniquePersonIds,
+      'Scout',
+    );
+    if (scoutCount <= 0) {
+      throw new Error('Debe asignar al menos una persona operativa con oficio Scout');
+    }
+
     const busyPersonIds = await this.repository.findActiveTransferAssignmentsByPersonIds(
       uniquePersonIds,
       transferId,
@@ -391,3 +399,4 @@ export class TransferPersonService {
     }
   }
 }
+
