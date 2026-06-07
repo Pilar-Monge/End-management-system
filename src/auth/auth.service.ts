@@ -111,8 +111,10 @@ export class AuthService {
         id: user.id,
         username: user.username,
         rol: user.role,
+        role: user.role,
         campId: user.campId,
         personId: user.personId,
+        status: user.status,
       },
     };
   }
@@ -490,7 +492,9 @@ export class AuthService {
       id: user.id,
       username: user.username,
       role: user.role,
+      rol: user.role,
       campId: user.campId,
+      status: user.status,
       personId: user.personId,
       person: personData,
     };

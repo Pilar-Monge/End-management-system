@@ -152,8 +152,10 @@ describe('AuthService', () => {
           id: ACTIVE_USER.id,
           username: ACTIVE_USER.username,
           rol: ACTIVE_USER.role,
+          role: ACTIVE_USER.role,
           campId: ACTIVE_USER.campId,
           personId: ACTIVE_USER.personId,
+          status: ACTIVE_USER.status,
         },
       });
 
@@ -526,6 +528,7 @@ describe('AuthService', () => {
         role: 'SYSTEM_ADMIN',
         campId: 5,
         personId: null,
+        status: 'ACTIVE',
       });
 
       const result = await service.getMe(2);
@@ -534,8 +537,10 @@ describe('AuthService', () => {
         id: 2,
         username: 'no-person',
         role: 'SYSTEM_ADMIN',
+        rol: 'SYSTEM_ADMIN',
         campId: 5,
         personId: null,
+        status: 'ACTIVE',
         person: null,
       });
       expect(personService.getPersonWithSignedUrl).not.toHaveBeenCalled();
@@ -548,6 +553,7 @@ describe('AuthService', () => {
         role: 'WORKER',
         campId: 5,
         personId: 99,
+        status: 'ACTIVE',
       });
       personService.getPersonWithSignedUrl.mockResolvedValue({
         id: 99,
@@ -562,8 +568,10 @@ describe('AuthService', () => {
         id: 1,
         username: 'testuser',
         role: 'WORKER',
+        rol: 'WORKER',
         campId: 5,
         personId: 99,
+        status: 'ACTIVE',
         person: {
           id: 99,
           name: 'Jane',
