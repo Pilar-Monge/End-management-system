@@ -43,7 +43,6 @@ import { RequestResourceDetailEntity } from './requestResourceDetail.entity';
 import { CreateRequestResourceDetailDto, UpdateRequestResourceDetailDto } from './dto';
 @Controller('request-resource-details')
 @ApiTags('Request Resource Detail')
-@Roles('RESOURCE_MANAGEMENT')
 export class RequestResourceDetailController {
   constructor(private readonly service: RequestResourceDetailService) {}
 
@@ -95,6 +94,7 @@ export class RequestResourceDetailController {
   }
 
   @Post()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Request Resource Detail' })
   @ApiBody({
     type: CreateRequestResourceDetailDto,
@@ -136,6 +136,7 @@ export class RequestResourceDetailController {
     }
   }
   @Get(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Request Resource Detail by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
   @ApiOkResponseData(RequestResourceDetailEntity, { description: 'Request Resource Detail found' })
@@ -158,6 +159,7 @@ export class RequestResourceDetailController {
     return { success: true, data: detail };
   }
   @Get()
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Request Resource Detail' })
   @ApiOkResponseList(RequestResourceDetailEntity, { description: 'Request Resource Detail list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -246,6 +248,7 @@ export class RequestResourceDetailController {
     }
   }
   @Put(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
   @ApiBody({ type: UpdateRequestResourceDetailDto })
@@ -288,6 +291,7 @@ export class RequestResourceDetailController {
     }
   }
   @Delete(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Delete Request Resource Detail' })
   @ApiParam({ name: 'id', type: Number, description: 'Request Resource Detail id' })
   @ApiOkResponseMessage({ description: 'Request Resource Detail deleted' })

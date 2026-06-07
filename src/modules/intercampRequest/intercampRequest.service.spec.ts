@@ -15,6 +15,8 @@ const repository = {
   findCampInventoryAmount: jest.fn(),
   findCampInventoryWithMinimum: jest.fn(),
   findCommittedTransferAmountByCampAndResourceType: jest.fn(),
+  countRequestDetailsByRequestId: jest.fn(),
+  findPersonDetailRequirementsByRequestId: jest.fn(),
 };
 
 const notificationService = {
@@ -41,6 +43,8 @@ describe('IntercampRequestService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    repository.countRequestDetailsByRequestId.mockResolvedValue(1);
+    repository.findPersonDetailRequirementsByRequestId.mockResolvedValue([]);
     service = new IntercampRequestService(
       repository as never,
       notificationService as never,
@@ -83,13 +87,14 @@ describe('IntercampRequestService', () => {
       ).rejects.toThrow('El usuario creador no pertenece al campamento de origen');
     });
 
-    it('creates request and notifies on success', async () => {
+    it('creates request draft on success', async () => {
       setupValidRouting();
       repository.create.mockResolvedValue({
         id: 1,
         originCampId: 1,
         destinationCampId: 2,
         createdBy: 10,
+        status: 'DRAFT',
       });
 
       const result = await service.createRequest({
@@ -100,13 +105,48 @@ describe('IntercampRequestService', () => {
       } as never);
 
       expect(repository.create).toHaveBeenCalled();
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'DRAFT',
+          responseDate: null,
+          respondedBy: null,
+        }),
+      );
+      expect(notificationService.notifyUser).not.toHaveBeenCalled();
+      expect(notificationService.notifyCampRoles).not.toHaveBeenCalled();
+      expect(result.id).toBe(1);
+    });
+  });
+
+  describe('submitRequest', () => {
+    it('submits draft and notifies destination', async () => {
+      setupValidRouting();
+      const req = {
+        id: 1,
+        originCampId: 1,
+        destinationCampId: 2,
+        createdBy: 10,
+        status: 'DRAFT',
+        plannedDepartureDate: new Date(Date.now() + 86400000),
+        plannedArrivalDate: new Date(Date.now() + 2 * 86400000),
+      };
+      repository.findById.mockResolvedValue(req);
+      repository.countRequestDetailsByRequestId.mockResolvedValue(1);
+      repository.update.mockResolvedValue({ ...req, status: 'PENDING' });
+
+      const result = await service.submitRequest(1, {
+        userId: 10,
+        campId: 1,
+        rol: 'RESOURCE_MANAGEMENT',
+      });
+
+      expect(result?.status).toBe('PENDING');
       expect(notificationService.notifyUser).toHaveBeenCalledWith(10, expect.any(Object));
       expect(notificationService.notifyCampRoles).toHaveBeenCalledWith(
         2,
         expect.any(Array),
         expect.any(Object),
       );
-      expect(result.id).toBe(1);
     });
   });
 
@@ -129,8 +169,11 @@ describe('IntercampRequestService', () => {
         createdBy: 10,
         plannedDepartureDate: new Date(Date.now() + 86400000),
         plannedArrivalDate: new Date(Date.now() + 2 * 86400000),
-        personRequirements: [{ count: 5 }],
+        personRequirements: [],
       });
+      repository.findPersonDetailRequirementsByRequestId.mockResolvedValue([
+        { occupationId: 5, quantity: 5 },
+      ]);
       repository.update.mockResolvedValue({
         id: 1,
         originCampId: 1,
@@ -166,12 +209,15 @@ describe('IntercampRequestService', () => {
         destinationCampId: 2,
         createdBy: 10,
         status: 'PENDING',
-        personRequirements: [{ count: 2 }],
+        personRequirements: [],
         plannedDepartureDate,
         plannedArrivalDate,
       };
       repository.findById.mockResolvedValue(req);
       repository.update.mockResolvedValue({ ...req, status: 'APPROVED' });
+      repository.findPersonDetailRequirementsByRequestId.mockResolvedValue([
+        { occupationId: 2, quantity: 2 },
+      ]);
 
       // Needs transfer
       repository.findRequestResourceAmountsByRequestId.mockResolvedValue([]);
@@ -289,12 +335,15 @@ describe('IntercampRequestService', () => {
         destinationCampId: 2,
         createdBy: 10,
         status: 'PENDING',
-        personRequirements: [{ count: 2 }],
+        personRequirements: [],
         plannedDepartureDate: departure,
         plannedArrivalDate: older, // Invalid dates
       };
       repository.findById.mockResolvedValue(req);
       repository.update.mockResolvedValue({ ...req, status: 'APPROVED' });
+      repository.findPersonDetailRequirementsByRequestId.mockResolvedValue([
+        { occupationId: 2, quantity: 2 },
+      ]);
       repository.findRequestResourceAmountsByRequestId.mockResolvedValue([]);
       transferService.getTransferByRequestId.mockResolvedValue(null);
       transferPersonService.canFulfillRequirements.mockResolvedValue(true);
