@@ -247,13 +247,23 @@ export class AuthService {
     return nextToken;
   }
 
-  async forgotPassword(email: string, campId: number, ip: string): Promise<void> {
+  async forgotPassword(
+    username: string,
+    email: string,
+    campId: number,
+    ip: string,
+  ): Promise<void> {
+    const normalizedUsername = typeof username === 'string' ? username.trim() : '';
     const normalizedEmail = typeof email === 'string' ? email.trim() : '';
-    if (!normalizedEmail || !Number.isInteger(campId) || campId <= 0) {
+    if (!normalizedUsername || !normalizedEmail || !Number.isInteger(campId) || campId <= 0) {
       return;
     }
 
-    const user = await this.systemUserRepository.findByEmail(normalizedEmail, campId);
+    const user = await this.systemUserRepository.findByUsernameEmailAndCamp(
+      normalizedUsername,
+      normalizedEmail,
+      campId,
+    );
     if (!user || user.status !== 'ACTIVE') {
       return;
     }
@@ -308,17 +318,20 @@ export class AuthService {
   }
 
   async resetPassword(
+    username: string,
     email: string,
     campId: number,
     code: string,
     newPassword: string,
     ip: string,
   ): Promise<void> {
+    const normalizedUsername = typeof username === 'string' ? username.trim() : '';
     const normalizedEmail = typeof email === 'string' ? email.trim() : '';
     const normalizedCode = typeof code === 'string' ? code.trim() : '';
     const normalizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
 
     if (
+      !normalizedUsername ||
       !normalizedEmail ||
       !Number.isInteger(campId) ||
       campId <= 0 ||
@@ -329,7 +342,11 @@ export class AuthService {
     }
 
     const now = this.systemTimeService.now();
-    const user = await this.systemUserRepository.findByEmail(normalizedEmail, campId);
+    const user = await this.systemUserRepository.findByUsernameEmailAndCamp(
+      normalizedUsername,
+      normalizedEmail,
+      campId,
+    );
     if (!user || user.status !== 'ACTIVE') {
       throw new BadRequestException('Codigo invalido o expirado');
     }

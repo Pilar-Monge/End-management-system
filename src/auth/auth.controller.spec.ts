@@ -73,7 +73,7 @@ describe('AuthController', () => {
   it('forgotPassword always returns generic success message', async () => {
     await expect(
       controller.forgotPassword(
-        { email: 'a@a.com', campId: 4 } as never,
+        { username: 'user1', email: 'a@a.com', campId: 4 } as never,
         { ip: '3.3.3.3' } as never,
       ),
     ).resolves.toEqual({
@@ -82,13 +82,14 @@ describe('AuthController', () => {
         'Si el correo pertenece a un usuario registrado, recibiras instrucciones para restablecer la contrasena.',
     });
 
-    expect(service.forgotPassword).toHaveBeenCalledWith('a@a.com', 4, '3.3.3.3');
+    expect(service.forgotPassword).toHaveBeenCalledWith('user1', 'a@a.com', 4, '3.3.3.3');
   });
 
   it('resetPassword returns success message', async () => {
     await expect(
       controller.resetPassword(
         {
+          username: 'user1',
           email: 'a@a.com',
           campId: 4,
           code: '12345678',
@@ -102,6 +103,7 @@ describe('AuthController', () => {
     });
 
     expect(service.resetPassword).toHaveBeenCalledWith(
+      'user1',
       'a@a.com',
       4,
       '12345678',

@@ -115,7 +115,7 @@ export class AuthController {
   @ApiOkResponseMessage({ description: 'Password reset request accepted' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async forgotPassword(@Body() body: ForgotPasswordDto, @Req() req: Request) {
-    await this.service.forgotPassword(body.email, body.campId, req.ip ?? 'unknown');
+    await this.service.forgotPassword(body.username, body.email, body.campId, req.ip ?? 'unknown');
     return {
       success: true,
       message:
@@ -135,6 +135,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid or expired code, or invalid password' })
   async resetPassword(@Body() body: ResetPasswordDto, @Req() req: Request) {
     await this.service.resetPassword(
+      body.username,
       body.email,
       body.campId,
       body.code,

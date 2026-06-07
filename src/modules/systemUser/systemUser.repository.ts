@@ -36,6 +36,14 @@ export class UserRepository {
     return await this.repo.findOne({ where: { email, campId } });
   }
 
+  async findByUsernameEmailAndCamp(
+    username: string,
+    email: string,
+    campId: number,
+  ): Promise<User | null> {
+    return await this.repo.findOne({ where: { username, email, campId } });
+  }
+
   async update(id: number, userData: UpdateUserDTO): Promise<User | null> {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
