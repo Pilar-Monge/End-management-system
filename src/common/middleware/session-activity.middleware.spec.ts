@@ -38,7 +38,7 @@ describe('SessionActivityMiddleware', () => {
     const req = {
       headers: { authorization: 'Bearer token-xyz' },
       ip: '3.3.3.3',
-    } as never;
+    } as any;
     const next = jest.fn();
 
     await middleware.use(req, {} as never, next);

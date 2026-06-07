@@ -56,6 +56,7 @@ describe('EmailDeliveryProcessor', () => {
         attempts: 0,
         maxAttempts: 3,
         nextAttemptAt: new Date(),
+        lastError: null as string | null,
       };
       outboxService.findDueForDelivery.mockResolvedValue([mockEmail as any]);
       templateService.render.mockReturnValue({
@@ -92,6 +93,7 @@ describe('EmailDeliveryProcessor', () => {
         attempts: 0,
         maxAttempts: 3,
         nextAttemptAt: new Date(),
+        lastError: null as string | null,
       };
       outboxService.findDueForDelivery.mockResolvedValue([mockEmail as any]);
       templateService.render.mockReturnValue({
@@ -123,6 +125,7 @@ describe('EmailDeliveryProcessor', () => {
         attempts: 2,
         maxAttempts: 3,
         nextAttemptAt: new Date(),
+        lastError: null as string | null,
       };
       outboxService.findDueForDelivery.mockResolvedValue([mockEmail as any]);
       templateService.render.mockReturnValue({
@@ -152,6 +155,7 @@ describe('EmailDeliveryProcessor', () => {
         attempts: 0,
         maxAttempts: 3,
         nextAttemptAt: new Date(),
+        lastError: null as string | null,
       };
       outboxService.findDueForDelivery.mockResolvedValue([mockEmail as any]);
       templateService.render.mockReturnValue({
@@ -180,6 +184,7 @@ describe('EmailDeliveryProcessor', () => {
         attempts: 0,
         maxAttempts: 3,
         nextAttemptAt: new Date(),
+        lastError: null as string | null,
       };
       outboxService.findDueForDelivery.mockResolvedValue([mockEmail as any]);
       templateService.render.mockReturnValue({
