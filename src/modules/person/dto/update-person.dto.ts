@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, Min, Max } from 'class-validator';
-import type { PersonStatus } from '../person.model';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import type { Gender, PersonStatus } from '../person.model';
 
 const PersonStatusEnum = {
   ACTIVE: 'ACTIVE',
@@ -11,7 +11,43 @@ const PersonStatusEnum = {
   ON_EXPEDITION: 'ON_EXPEDITION',
 } as const;
 
+const GenderEnum = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  OTHER: 'OTHER',
+} as const;
+
 export class UpdatePersonDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  lastName1?: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
+  lastName2?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  identificationNumber?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  birthDate?: Date;
+
+  @ApiPropertyOptional({ enum: GenderEnum })
+  @IsOptional()
+  @IsEnum(GenderEnum)
+  gender?: Gender;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsEnum(PersonStatusEnum)
