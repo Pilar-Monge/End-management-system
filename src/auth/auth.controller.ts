@@ -148,6 +148,18 @@ export class AuthController {
     };
   }
 
+  @Get('me')
+  @AuthenticatedOnly()
+  @ApiOperation({
+    summary: 'Get current user profile and session details',
+    description: 'Returns the session details of the authenticated user, including their linked Person profile with a fresh image signed URL.',
+  })
+  @ApiOkResponse({ description: 'Profile details retrieved successfully' })
+  async getMe(@Req() req: Request & { user: JwtPayload }) {
+    const data = await this.service.getMe(req.user.userId);
+    return { success: true, data };
+  }
+
   @Put('me/photo')
   @AuthenticatedOnly()
   @UseInterceptors(FileInterceptor('file'))

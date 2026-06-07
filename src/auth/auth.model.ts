@@ -11,6 +11,7 @@ export interface LoginResponse {
     username: string;
     rol: string;
     campId: number;
+    personId: number | null;
   };
 }
 

@@ -8,6 +8,7 @@ describe('AuthController', () => {
     logout: jest.fn(),
     forgotPassword: jest.fn(),
     resetPassword: jest.fn(),
+    getMe: jest.fn(),
   };
 
   let controller: AuthController;
@@ -110,5 +111,18 @@ describe('AuthController', () => {
       'Abc12345!',
       '4.4.4.4',
     );
+  });
+
+  it('getMe delegates to service and wraps payload', async () => {
+    service.getMe.mockResolvedValue({ id: 1, username: 'test' });
+
+    await expect(
+      controller.getMe({ user: { userId: 123 } } as never),
+    ).resolves.toEqual({
+      success: true,
+      data: { id: 1, username: 'test' },
+    });
+
+    expect(service.getMe).toHaveBeenCalledWith(123);
   });
 });

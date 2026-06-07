@@ -112,6 +112,7 @@ export class AuthService {
         username: user.username,
         rol: user.role,
         campId: user.campId,
+        personId: user.personId,
       },
     };
   }
@@ -472,5 +473,26 @@ export class AuthService {
     // El mecanismo transparente: El servicio de Auth usa internamente al de Personas
     // No hace falta que el frontend conozca el person_id, nosotros lo sabemos por la entidad User
     return await this.personService.uploadPersonPhoto(user.personId, file);
+  }
+
+  async getMe(userId: number): Promise<any> {
+    const user = await this.systemUserRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    let personData: any = null;
+    if (user.personId) {
+      personData = await this.personService.getPersonWithSignedUrl(user.personId);
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      campId: user.campId,
+      personId: user.personId,
+      person: personData,
+    };
   }
 }

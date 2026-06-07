@@ -247,8 +247,8 @@ export class PersonService {
 
   private async addSignedUrlToPerson(
     person: Person,
-  ): Promise<Person & { imageSignedUrl?: string }> {
-    const result: Person & { imageSignedUrl?: string } = { ...person };
+  ): Promise<Person & { imageSignedUrl?: string; userId?: number | null }> {
+    const result: Person & { imageSignedUrl?: string; userId?: number | null } = { ...person };
     if (person.imageUrl) {
       try {
         result.imageSignedUrl = await this.storageService.getSignedUrl(person.imageUrl);
@@ -256,6 +256,8 @@ export class PersonService {
         this.rethrowFriendlyUniqueErrors(error);
       }
     }
+    const linkedUser = await this.findUserByPersonId(person.id);
+    result.userId = linkedUser ? linkedUser.id : null;
     return result;
   }
 

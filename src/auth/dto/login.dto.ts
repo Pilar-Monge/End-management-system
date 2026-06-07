@@ -28,6 +28,9 @@ export class LoginUserResponseDto {
 
   @ApiProperty({ example: 1 })
   campId!: number;
+
+  @ApiProperty({ example: 1, nullable: true })
+  personId!: number | null;
 }
 
 export class LoginResponseDataDto {

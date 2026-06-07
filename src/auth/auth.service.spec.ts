@@ -44,10 +44,16 @@ const notificationService = {
   notifyUser: jest.fn(),
 };
 
+const personService = {
+  getPersonWithSignedUrl: jest.fn(),
+  uploadPersonPhoto: jest.fn(),
+};
+
 const NOW = new Date('2026-01-01T12:00:00.000Z');
 
 const ACTIVE_USER = {
   id: 1,
+  personId: 99,
   username: 'testuser',
   passwordHash: bcrypt.hashSync('securepass', 1),
   role: 'WORKER',
@@ -72,6 +78,7 @@ describe('AuthService', () => {
       systemTimeService as never,
       emailOutboxService as never,
       notificationService as never,
+      personService as never,
     );
   });
 
@@ -146,6 +153,7 @@ describe('AuthService', () => {
           username: ACTIVE_USER.username,
           rol: ACTIVE_USER.role,
           campId: ACTIVE_USER.campId,
+          personId: ACTIVE_USER.personId,
         },
       });
 
@@ -500,6 +508,70 @@ describe('AuthService', () => {
       expect(emailOutboxService.enqueue).toHaveBeenCalledWith(
         expect.objectContaining({ templateKey: 'password_reset_confirmation' }),
       );
+    });
+  });
+
+  // ─── getMe ─────────────────────────────────────────────────────────────────
+
+  describe('getMe', () => {
+    it('throws UnauthorizedException when user is not found', async () => {
+      systemUserRepository.findById.mockResolvedValue(null);
+      await expect(service.getMe(1)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('returns user details without person when personId is missing', async () => {
+      systemUserRepository.findById.mockResolvedValue({
+        id: 2,
+        username: 'no-person',
+        role: 'SYSTEM_ADMIN',
+        campId: 5,
+        personId: null,
+      });
+
+      const result = await service.getMe(2);
+
+      expect(result).toEqual({
+        id: 2,
+        username: 'no-person',
+        role: 'SYSTEM_ADMIN',
+        campId: 5,
+        personId: null,
+        person: null,
+      });
+      expect(personService.getPersonWithSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('returns user details with linked person when personId exists', async () => {
+      systemUserRepository.findById.mockResolvedValue({
+        id: 1,
+        username: 'testuser',
+        role: 'WORKER',
+        campId: 5,
+        personId: 99,
+      });
+      personService.getPersonWithSignedUrl.mockResolvedValue({
+        id: 99,
+        name: 'Jane',
+        lastName1: 'Doe',
+        imageSignedUrl: 'https://example.com/jane.jpg',
+      });
+
+      const result = await service.getMe(1);
+
+      expect(result).toEqual({
+        id: 1,
+        username: 'testuser',
+        role: 'WORKER',
+        campId: 5,
+        personId: 99,
+        person: {
+          id: 99,
+          name: 'Jane',
+          lastName1: 'Doe',
+          imageSignedUrl: 'https://example.com/jane.jpg',
+        },
+      });
+      expect(personService.getPersonWithSignedUrl).toHaveBeenCalledWith(99);
     });
   });
 });
