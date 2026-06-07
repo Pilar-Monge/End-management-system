@@ -148,19 +148,31 @@ describe('UserController', () => {
   });
 
   describe('delete', () => {
-    it('should delete user', async () => {
+    it('should delete user if in same camp', async () => {
+      service.findUserById.mockResolvedValue({ id: 10, campId: 1 } as any);
       service.deleteUser.mockResolvedValue(true);
-      const result = await controller.delete('10');
+      const result = await controller.delete('10', mockRequest);
       expect(result.success).toBe(true);
     });
 
     it('should throw BadRequestException if id is invalid', async () => {
-      await expect(controller.delete('abc')).rejects.toThrow('invalid ID');
+      await expect(controller.delete('abc', mockRequest)).rejects.toThrow('invalid ID');
     });
 
     it('should throw NotFoundException if user not found', async () => {
+      service.findUserById.mockResolvedValue(null);
+      await expect(controller.delete('10', mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if user in different camp', async () => {
+      service.findUserById.mockResolvedValue({ id: 10, campId: 2 } as any);
+      await expect(controller.delete('10', mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if delete fails after passing guards', async () => {
+      service.findUserById.mockResolvedValue({ id: 10, campId: 1 } as any);
       service.deleteUser.mockResolvedValue(false);
-      await expect(controller.delete('10')).rejects.toThrow(NotFoundException);
+      await expect(controller.delete('10', mockRequest)).rejects.toThrow(NotFoundException);
     });
   });
 

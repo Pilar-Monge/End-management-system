@@ -142,18 +142,32 @@ describe('PersonController', () => {
   });
 
   describe('delete', () => {
-    it('should delete a person', async () => {
+    it('should delete a person if camp matches', async () => {
+      service.getPersonById.mockResolvedValue({ id: 1, campId: 1 } as any);
       service.deletePerson.mockResolvedValue(true);
 
-      const result = await controller.delete('1');
+      const result = await controller.delete('1', mockRequest);
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Person deleted successfully');
     });
 
-    it('should throw BadRequestException if delete fails', async () => {
+    it('should throw BadRequestException if camp mismatch', async () => {
+      service.getPersonById.mockResolvedValue({ id: 1, campId: 2 } as any);
+      await expect(controller.delete('1', mockRequest)).rejects.toThrow(
+        'You do not have permission to delete this person',
+      );
+    });
+
+    it('should throw NotFoundException if person not found', async () => {
+      service.getPersonById.mockResolvedValue(null);
+      await expect(controller.delete('1', mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if delete fails after passing guards', async () => {
+      service.getPersonById.mockResolvedValue({ id: 1, campId: 1 } as any);
       service.deletePerson.mockResolvedValue(false);
-      await expect(controller.delete('1')).rejects.toThrow(BadRequestException);
+      await expect(controller.delete('1', mockRequest)).rejects.toThrow(NotFoundException);
     });
   });
 });
