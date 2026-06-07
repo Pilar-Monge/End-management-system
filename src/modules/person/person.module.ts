@@ -8,7 +8,7 @@ import { PersonRepository } from './person.repository';
 import { PersonStatusHistoryEntity } from '../personStatusHistory/personStatusHistory.entity';
 import { PersonStatusHistoryRepository } from '../personStatusHistory/personStatusHistory.repository';
 import { PersonService } from './person.service';
-import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import { R2StorageService } from '../../services/r2-storage.service';
 
 @Module({
   imports: [
@@ -20,7 +20,7 @@ import { SupabaseStorageService } from '../../services/supabase-storage.service'
     PersonRepository,
     PersonStatusHistoryRepository,
     PersonService,
-    SupabaseStorageService,
+    R2StorageService,
   ],
   exports: [PersonService],
 })

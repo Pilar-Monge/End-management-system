@@ -21,7 +21,7 @@ import {
   AdmissionRequestStatus,
 } from './admissionRequest.model';
 import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admissionFeatures.util';
-import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import { R2StorageService } from '../../services/r2-storage.service';
 
 const ADMISSION_MODEL_NAME = 'admission-acceptance-v1';
 const ADMISSION_REVIEW_ROLE_VALUES: readonly SystemRole[] = [
@@ -73,7 +73,7 @@ export class AdmissionRequestService {
     private readonly decisionTreeService: DecisionTreeService,
     private readonly notificationService: NotificationService,
     private readonly systemTimeService: SystemTimeService,
-    private readonly storageService: SupabaseStorageService,
+    private readonly storageService: R2StorageService,
   ) {
     this.repository = repository;
   }

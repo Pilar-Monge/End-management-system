@@ -3,7 +3,7 @@ import { DecisionTreeService } from '../../modules/decisionTree/decisionTree.ser
 import { EncryptionService } from '../../services/encryption.service';
 import { PersonEntity } from '../../modules/person/person.entity';
 import { OccupationEntity } from '../../modules/occupation/occupation.entity';
-import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import { R2StorageService } from '../../services/r2-storage.service';
 import { SystemTimeService } from '../../modules/systemTime/systemTime.service';
 import { UserEntity } from '../../modules/systemUser/systemUser.entity';
 import { AdmissionRequestService } from '../../modules/admissionRequest/admissionRequest.service';
@@ -14,7 +14,7 @@ describe('AdmissionRequestService (API-focused unit tests)', () => {
   let decisionTreeService: jest.Mocked<DecisionTreeService>;
   let notificationService: any;
   let systemTimeService: jest.Mocked<SystemTimeService>;
-  let storageService: jest.Mocked<SupabaseStorageService>;
+  let storageService: jest.Mocked<R2StorageService>;
   let service: AdmissionRequestService;
   let campRepository: any;
   let occupationRepository: any;

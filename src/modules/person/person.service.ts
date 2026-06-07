@@ -7,7 +7,7 @@ import { assertEntityExists } from '../../common/validation/assert-exists';
 import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
 import { PersonStatusHistoryRepository } from '../personStatusHistory/personStatusHistory.repository';
-import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import { R2StorageService } from '../../services/r2-storage.service';
 import type { UserEntity } from '../systemUser/systemUser.entity';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class PersonService {
     private readonly personStatusHistoryRepository: PersonStatusHistoryRepository,
     private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
-    private readonly storageService: SupabaseStorageService,
+    private readonly storageService: R2StorageService,
   ) {}
 
   private async assertAdmissionRequestExists(admissionRequestId: number): Promise<void> {
