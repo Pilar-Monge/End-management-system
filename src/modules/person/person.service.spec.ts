@@ -17,6 +17,7 @@ const repository = {
   findByIdentificationNumber: jest.fn(),
   findByAdmissionRequestId: jest.fn(),
   findLinkedUserByPersonAndCamp: jest.fn(),
+  findLinkedUserByPersonId: jest.fn(),
 };
 
 const personStatusHistoryRepository = {

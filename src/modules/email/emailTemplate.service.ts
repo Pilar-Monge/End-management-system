@@ -94,7 +94,7 @@ export class EmailTemplateService {
   }
 
   private renderPasswordResetRequest(payload: Record<string, unknown>): RenderedEmail {
-    const resetCode = this.toString(payload.resetCode, '');
+    const resetCode = this.toString(payload.resetCode, 'Codigo no disponible');
     const expirationMinutes = this.toString(payload.expirationMinutes, '30');
 
     return {
@@ -107,13 +107,13 @@ export class EmailTemplateService {
         sections: [
           {
             title: 'Codigo de verificacion',
-            html: this.renderStatusCard('Codigo temporal', this.escapeHtml(resetCode), 'warn'),
+            html: this.renderResetCodeCard(resetCode),
           },
           {
             title: 'Ventana de autorizacion',
             html: this.renderStatusCard(
-              'Enlace temporal',
-              `Este enlace expira en ${this.escapeHtml(expirationMinutes)} minutos.`,
+              'Expiracion del codigo',
+              `Este codigo expira en ${this.escapeHtml(expirationMinutes)} minutos.`,
               'warn',
             ),
           },
@@ -393,6 +393,23 @@ export class EmailTemplateService {
         <tr>
           <td style="padding:11px 12px;color:rgba(164,194,197,0.72);font-family:Segoe UI,Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;">${this.escapeHtml(label)}</td>
           <td align="right" style="padding:11px 12px;color:${toneStyle.color};font-family:Segoe UI,Arial,sans-serif;font-size:13px;font-weight:900;line-height:1.3;">${value}</td>
+        </tr>
+      </table>`;
+  }
+
+  private renderResetCodeCard(resetCode: string): string {
+    const safeCode = this.escapeHtml(resetCode);
+    return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid rgba(239,193,110,0.64);background:rgba(245,158,11,0.16);">
+        <tr>
+          <td align="center" style="padding:18px 12px 8px 12px;color:rgba(251,211,141,0.78);font-family:Segoe UI,Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:0.12em;text-transform:uppercase;">
+            Codigo temporal
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:0 12px 18px 12px;color:#fbd38d;font-family:Consolas,Menlo,Monaco,monospace;font-size:32px;font-weight:900;line-height:1.15;letter-spacing:0.22em;">
+            ${safeCode}
+          </td>
         </tr>
       </table>`;
   }

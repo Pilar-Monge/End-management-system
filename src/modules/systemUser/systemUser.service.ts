@@ -130,18 +130,18 @@ export class UserService {
     if (!existing) return null;
 
     const newRole = data.role;
-    if (newRole !== undefined && existing.role === newRole) {
-      throw new BadRequestException(`El usuario ya tiene asignado el rol ${newRole}`);
-    }
-
-    const hasRoleChange = data.role !== undefined;
+    const hasRoleChange = newRole !== undefined && existing.role !== newRole;
     const hasStatusChange = data.status !== undefined && data.status !== existing.status;
 
     if (!hasRoleChange && !hasStatusChange) {
       return this.stripPasswordHash(existing);
     }
 
-    const user = await this.userRepo.update(id, data);
+    const updateData: Partial<Pick<UpdateSystemUserDto, 'role' | 'status'>> = {};
+    if (hasRoleChange) updateData.role = newRole;
+    if (hasStatusChange && data.status !== undefined) updateData.status = data.status;
+
+    const user = await this.userRepo.update(id, updateData);
     if (hasRoleChange) {
       await this.handleRoleChange(existing, data.role as User['role']);
     }

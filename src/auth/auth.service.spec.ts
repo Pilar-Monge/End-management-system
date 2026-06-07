@@ -27,6 +27,7 @@ const authRepository = {
 const systemUserRepository = {
   findByUsername: jest.fn(),
   findByEmail: jest.fn(),
+  findByUsernameEmailAndCamp: jest.fn(),
   findById: jest.fn(),
   update: jest.fn(),
 };
@@ -43,10 +44,16 @@ const notificationService = {
   notifyUser: jest.fn(),
 };
 
+const personService = {
+  getPersonWithSignedUrl: jest.fn(),
+  uploadPersonPhoto: jest.fn(),
+};
+
 const NOW = new Date('2026-01-01T12:00:00.000Z');
 
 const ACTIVE_USER = {
   id: 1,
+  personId: 99,
   username: 'testuser',
   passwordHash: bcrypt.hashSync('securepass', 1),
   role: 'WORKER',
@@ -71,6 +78,7 @@ describe('AuthService', () => {
       systemTimeService as never,
       emailOutboxService as never,
       notificationService as never,
+      personService as never,
     );
   });
 
@@ -144,7 +152,10 @@ describe('AuthService', () => {
           id: ACTIVE_USER.id,
           username: ACTIVE_USER.username,
           rol: ACTIVE_USER.role,
+          role: ACTIVE_USER.role,
           campId: ACTIVE_USER.campId,
+          personId: ACTIVE_USER.personId,
+          status: ACTIVE_USER.status,
         },
       });
 
@@ -330,37 +341,51 @@ describe('AuthService', () => {
   // ─── forgotPassword ────────────────────────────────────────────────────────
 
   describe('forgotPassword', () => {
+    it('returns silently when username is empty', async () => {
+      await service.forgotPassword('', 'test@test.com', 1, '1.1.1.1');
+      expect(systemUserRepository.findByUsernameEmailAndCamp).not.toHaveBeenCalled();
+    });
+
     it('returns silently when email is empty', async () => {
-      await service.forgotPassword('', 1, '1.1.1.1');
-      expect(systemUserRepository.findByEmail).not.toHaveBeenCalled();
+      await service.forgotPassword('testuser', '', 1, '1.1.1.1');
+      expect(systemUserRepository.findByUsernameEmailAndCamp).not.toHaveBeenCalled();
     });
 
     it('returns silently when campId is invalid', async () => {
-      await service.forgotPassword('test@test.com', 0, '1.1.1.1');
-      expect(systemUserRepository.findByEmail).not.toHaveBeenCalled();
+      await service.forgotPassword('testuser', 'test@test.com', 0, '1.1.1.1');
+      expect(systemUserRepository.findByUsernameEmailAndCamp).not.toHaveBeenCalled();
     });
 
     it('returns silently when user is not found', async () => {
-      systemUserRepository.findByEmail.mockResolvedValue(null);
-      await service.forgotPassword('none@test.com', 1, '1.1.1.1');
+      systemUserRepository.findByUsernameEmailAndCamp.mockResolvedValue(null);
+      await service.forgotPassword('missinguser', 'none@test.com', 1, '1.1.1.1');
       expect(authRepository.createPasswordResetToken).not.toHaveBeenCalled();
     });
 
     it('returns silently when user is inactive', async () => {
-      systemUserRepository.findByEmail.mockResolvedValue({ ...ACTIVE_USER, status: 'INACTIVE' });
-      await service.forgotPassword('test@example.com', 5, '1.1.1.1');
+      systemUserRepository.findByUsernameEmailAndCamp.mockResolvedValue({
+        ...ACTIVE_USER,
+        status: 'INACTIVE',
+      });
+      await service.forgotPassword('testuser', 'test@example.com', 5, '1.1.1.1');
       expect(authRepository.createPasswordResetToken).not.toHaveBeenCalled();
     });
 
     it('creates reset code and sends email for active user', async () => {
-      systemUserRepository.findByEmail.mockResolvedValue(ACTIVE_USER);
+      systemUserRepository.findByUsernameEmailAndCamp.mockResolvedValue(ACTIVE_USER);
       authRepository.invalidateActivePasswordResetTokens.mockResolvedValue(undefined);
       authRepository.createPasswordResetToken.mockResolvedValue(undefined);
       authRepository.createAccessLog.mockResolvedValue(undefined);
       notificationService.notifyUser.mockResolvedValue(null);
       emailOutboxService.enqueue.mockResolvedValue(undefined);
 
-      await service.forgotPassword('test@example.com', 5, '1.2.3.4');
+      await service.forgotPassword('testuser', 'test@example.com', 5, '1.2.3.4');
+
+      expect(systemUserRepository.findByUsernameEmailAndCamp).toHaveBeenCalledWith(
+        'testuser',
+        'test@example.com',
+        5,
+      );
 
       expect(authRepository.createPasswordResetToken).toHaveBeenCalledTimes(1);
       expect(authRepository.createPasswordResetToken).toHaveBeenCalledWith(
@@ -382,43 +407,56 @@ describe('AuthService', () => {
   // ─── resetPassword ─────────────────────────────────────────────────────────
 
   describe('resetPassword', () => {
+    it('throws BadRequestException when username is empty', async () => {
+      await expect(
+        service.resetPassword('', 'test@example.com', 5, '12345678', 'newpassword', '1.1.1.1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('throws BadRequestException when email is empty', async () => {
       await expect(
-        service.resetPassword('', 5, '12345678', 'newpassword', '1.1.1.1'),
+        service.resetPassword('testuser', '', 5, '12345678', 'newpassword', '1.1.1.1'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException when password is shorter than 8 chars', async () => {
       await expect(
-        service.resetPassword('test@example.com', 5, '12345678', 'short', '1.1.1.1'),
+        service.resetPassword('testuser', 'test@example.com', 5, '12345678', 'short', '1.1.1.1'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException when code is not 8 digits', async () => {
       await expect(
-        service.resetPassword('test@example.com', 5, '1234567', 'newpassword123', '1.1.1.1'),
+        service.resetPassword('testuser', 'test@example.com', 5, '1234567', 'newpassword123', '1.1.1.1'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException when user is not found', async () => {
-      systemUserRepository.findByEmail.mockResolvedValue(null);
+      systemUserRepository.findByUsernameEmailAndCamp.mockResolvedValue(null);
 
       await expect(
-        service.resetPassword('missing@example.com', 5, '12345678', 'newpassword123', '1.1.1.1'),
+        service.resetPassword(
+          'missinguser',
+          'missing@example.com',
+          5,
+          '12345678',
+          'newpassword123',
+          '1.1.1.1',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException when active token is missing', async () => {
-      systemUserRepository.findByEmail.mockResolvedValue(ACTIVE_USER);
+      systemUserRepository.findByUsernameEmailAndCamp.mockResolvedValue(ACTIVE_USER);
       authRepository.findActivePasswordResetTokenByUserId.mockResolvedValue(null);
 
       await expect(
-        service.resetPassword('test@example.com', 5, '12345678', 'newpassword123', '1.1.1.1'),
+        service.resetPassword('testuser', 'test@example.com', 5, '12345678', 'newpassword123', '1.1.1.1'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('increments attempts and expires token when code is invalid at max attempt', async () => {
-      systemUserRepository.findByEmail.mockResolvedValue(ACTIVE_USER);
+      systemUserRepository.findByUsernameEmailAndCamp.mockResolvedValue(ACTIVE_USER);
       authRepository.findActivePasswordResetTokenByUserId.mockResolvedValue({
         id: 1,
         userId: ACTIVE_USER.id,
@@ -428,7 +466,7 @@ describe('AuthService', () => {
       });
 
       await expect(
-        service.resetPassword('test@example.com', 5, '12345678', 'newpassword123', '1.1.1.1'),
+        service.resetPassword('testuser', 'test@example.com', 5, '12345678', 'newpassword123', '1.1.1.1'),
       ).rejects.toThrow(BadRequestException);
 
       expect(authRepository.incrementPasswordResetTokenAttempts).toHaveBeenCalledWith(1);
@@ -441,7 +479,7 @@ describe('AuthService', () => {
         .update(`${ACTIVE_USER.id}:${ACTIVE_USER.campId}:${code}`)
         .digest('hex');
 
-      systemUserRepository.findByEmail.mockResolvedValue(ACTIVE_USER);
+      systemUserRepository.findByUsernameEmailAndCamp.mockResolvedValue(ACTIVE_USER);
       authRepository.findActivePasswordResetTokenByUserId.mockResolvedValue({
         id: 1,
         userId: ACTIVE_USER.id,
@@ -457,7 +495,13 @@ describe('AuthService', () => {
       notificationService.notifyUser.mockResolvedValue(null);
       emailOutboxService.enqueue.mockResolvedValue(undefined);
 
-      await service.resetPassword('test@example.com', 5, code, 'newpassword123', '1.2.3.4');
+      await service.resetPassword('testuser', 'test@example.com', 5, code, 'newpassword123', '1.2.3.4');
+
+      expect(systemUserRepository.findByUsernameEmailAndCamp).toHaveBeenCalledWith(
+        'testuser',
+        'test@example.com',
+        5,
+      );
 
       expect(systemUserRepository.update).toHaveBeenCalledWith(
         ACTIVE_USER.id,
@@ -466,6 +510,76 @@ describe('AuthService', () => {
       expect(emailOutboxService.enqueue).toHaveBeenCalledWith(
         expect.objectContaining({ templateKey: 'password_reset_confirmation' }),
       );
+    });
+  });
+
+  // ─── getMe ─────────────────────────────────────────────────────────────────
+
+  describe('getMe', () => {
+    it('throws UnauthorizedException when user is not found', async () => {
+      systemUserRepository.findById.mockResolvedValue(null);
+      await expect(service.getMe(1)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('returns user details without person when personId is missing', async () => {
+      systemUserRepository.findById.mockResolvedValue({
+        id: 2,
+        username: 'no-person',
+        role: 'SYSTEM_ADMIN',
+        campId: 5,
+        personId: null,
+        status: 'ACTIVE',
+      });
+
+      const result = await service.getMe(2);
+
+      expect(result).toEqual({
+        id: 2,
+        username: 'no-person',
+        role: 'SYSTEM_ADMIN',
+        rol: 'SYSTEM_ADMIN',
+        campId: 5,
+        personId: null,
+        status: 'ACTIVE',
+        person: null,
+      });
+      expect(personService.getPersonWithSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('returns user details with linked person when personId exists', async () => {
+      systemUserRepository.findById.mockResolvedValue({
+        id: 1,
+        username: 'testuser',
+        role: 'WORKER',
+        campId: 5,
+        personId: 99,
+        status: 'ACTIVE',
+      });
+      personService.getPersonWithSignedUrl.mockResolvedValue({
+        id: 99,
+        name: 'Jane',
+        lastName1: 'Doe',
+        imageSignedUrl: 'https://example.com/jane.jpg',
+      });
+
+      const result = await service.getMe(1);
+
+      expect(result).toEqual({
+        id: 1,
+        username: 'testuser',
+        role: 'WORKER',
+        rol: 'WORKER',
+        campId: 5,
+        personId: 99,
+        status: 'ACTIVE',
+        person: {
+          id: 99,
+          name: 'Jane',
+          lastName1: 'Doe',
+          imageSignedUrl: 'https://example.com/jane.jpg',
+        },
+      });
+      expect(personService.getPersonWithSignedUrl).toHaveBeenCalledWith(99);
     });
   });
 });

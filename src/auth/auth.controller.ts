@@ -115,7 +115,7 @@ export class AuthController {
   @ApiOkResponseMessage({ description: 'Password reset request accepted' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   async forgotPassword(@Body() body: ForgotPasswordDto, @Req() req: Request) {
-    await this.service.forgotPassword(body.email, body.campId, req.ip ?? 'unknown');
+    await this.service.forgotPassword(body.username, body.email, body.campId, req.ip ?? 'unknown');
     return {
       success: true,
       message:
@@ -135,6 +135,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid or expired code, or invalid password' })
   async resetPassword(@Body() body: ResetPasswordDto, @Req() req: Request) {
     await this.service.resetPassword(
+      body.username,
       body.email,
       body.campId,
       body.code,
@@ -145,6 +146,18 @@ export class AuthController {
       success: true,
       message: 'Contrasena actualizada correctamente',
     };
+  }
+
+  @Get('me')
+  @AuthenticatedOnly()
+  @ApiOperation({
+    summary: 'Get current user profile and session details',
+    description: 'Returns the session details of the authenticated user, including their linked Person profile with a fresh image signed URL.',
+  })
+  @ApiOkResponse({ description: 'Profile details retrieved successfully' })
+  async getMe(@Req() req: Request & { user: JwtPayload }) {
+    const data = await this.service.getMe(req.user.userId);
+    return { success: true, data };
   }
 
   @Put('me/photo')

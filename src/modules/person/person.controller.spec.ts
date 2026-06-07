@@ -95,15 +95,28 @@ describe('PersonController', () => {
   });
 
   describe('update', () => {
-    it('should update a person', async () => {
+    it('should update a person if camp matches', async () => {
       service.getPersonById.mockResolvedValue({ id: 1, campId: 1 } as any);
-      service.findUserByPersonId.mockResolvedValue({ id: 1 } as any);
       service.updatePerson.mockResolvedValue({ id: 1, name: 'Updated' } as any);
 
       const result = await controller.update('1', { name: 'Updated' } as any, mockRequest);
 
       expect(result.success).toBe(true);
       expect(result.data.name).toBe('Updated');
+    });
+
+    it('should throw BadRequestException if camp mismatch', async () => {
+      service.getPersonById.mockResolvedValue({ id: 1, campId: 2 } as any);
+      await expect(
+        controller.update('1', { name: 'Updated' } as any, mockRequest),
+      ).rejects.toThrow('You do not have permission to update this person');
+    });
+
+    it('should throw NotFoundException if person not found', async () => {
+      service.getPersonById.mockResolvedValue(null);
+      await expect(
+        controller.update('1', { name: 'Updated' } as any, mockRequest),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

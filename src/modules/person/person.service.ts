@@ -7,7 +7,7 @@ import { assertEntityExists } from '../../common/validation/assert-exists';
 import { PersonRepository } from './person.repository';
 import type { CreatePersonDTO, Person, PersonStatus, UpdatePersonDTO } from './person.model';
 import { PersonStatusHistoryRepository } from '../personStatusHistory/personStatusHistory.repository';
-import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import { R2StorageService } from '../../services/r2-storage.service';
 import type { UserEntity } from '../systemUser/systemUser.entity';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class PersonService {
     private readonly personStatusHistoryRepository: PersonStatusHistoryRepository,
     private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
-    private readonly storageService: SupabaseStorageService,
+    private readonly storageService: R2StorageService,
   ) {}
 
   private async assertAdmissionRequestExists(admissionRequestId: number): Promise<void> {
@@ -247,8 +247,13 @@ export class PersonService {
 
   private async addSignedUrlToPerson(
     person: Person,
-  ): Promise<Person & { imageSignedUrl?: string }> {
-    const result: Person & { imageSignedUrl?: string } = { ...person };
+  ): Promise<Person & { imageSignedUrl?: string; userId?: number | null; occupation?: { id: number; name: string; description: string | null } | null }> {
+    const result: Person & {
+      imageSignedUrl?: string;
+      userId?: number | null;
+      occupation?: { id: number; name: string; description: string | null } | null;
+    } = { ...person };
+
     if (person.imageUrl) {
       try {
         result.imageSignedUrl = await this.storageService.getSignedUrl(person.imageUrl);
@@ -256,6 +261,31 @@ export class PersonService {
         this.rethrowFriendlyUniqueErrors(error);
       }
     }
+
+    const linkedUser = await this.findUserByPersonId(person.id);
+    result.userId = linkedUser ? linkedUser.id : null;
+
+    let occupationData: { id: number; name: string; description: string | null } | null = null;
+    if (person.occupationId) {
+      try {
+        const occupationRepo = this.dataSource.getRepository(OccupationEntity);
+        const occupation = await occupationRepo.findOne({
+          where: { id: person.occupationId },
+          select: { id: true, name: true, description: true },
+        });
+        if (occupation) {
+          occupationData = {
+            id: occupation.id,
+            name: occupation.name,
+            description: occupation.description,
+          };
+        }
+      } catch (error) {
+        this.rethrowFriendlyUniqueErrors(error);
+      }
+    }
+    result.occupation = occupationData;
+
     return result;
   }
 

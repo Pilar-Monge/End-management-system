@@ -10,7 +10,10 @@ export interface LoginResponse {
     id: number;
     username: string;
     rol: string;
+    role: string;
     campId: number;
+    personId: number | null;
+    status: string;
   };
 }
 

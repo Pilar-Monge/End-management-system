@@ -16,6 +16,10 @@ describe('EmailTemplateService', () => {
       expect(result.subject).toBe('Recuperacion de contrasena');
       expect(result.html).toContain('12345678');
       expect(result.text).toContain('15 minutos');
+      expect(result.html).toContain('Este codigo expira en 15 minutos.');
+      expect(result.html).not.toContain('Restablecer contrasena');
+      expect(result.html).not.toContain('Este enlace expira');
+      expect(result.text).not.toContain('Este enlace expira');
     });
 
     it('routes to password reset confirmation', () => {
