@@ -49,4 +49,20 @@ describe('SessionActivityMiddleware', () => {
     expect(req.user).toEqual({ userId: 1, campId: 2, rol: 'WORKER' });
     expect(next).toHaveBeenCalledTimes(1);
   });
+
+  it('falls back to "unknown" IP if req.ip is missing', async () => {
+    authService.validateSession.mockResolvedValue({ userId: 1, campId: 2, rol: 'WORKER' });
+
+    const req = {
+      headers: { authorization: 'Bearer token-xyz' },
+    } as any;
+    const next = jest.fn();
+
+    await middleware.use(req, {} as never, next);
+
+    expect(authService.validateSession).toHaveBeenCalledWith('token-xyz', 'unknown', {
+      updateLastActivity: true,
+    });
+    expect(next).toHaveBeenCalledTimes(1);
+  });
 });

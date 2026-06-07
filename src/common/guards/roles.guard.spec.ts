@@ -82,4 +82,21 @@ describe('RolesGuard', () => {
 
     expect(guard.canActivate(makeContext('WORKER'))).toBe(true);
   });
+
+  it('throws when user object exists but role is missing', () => {
+    (reflector.getAllAndOverride as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(['SYSTEM_ADMIN']);
+
+    const contextWithUserNoRole = {
+      getHandler: jest.fn(),
+      getClass: jest.fn(),
+      switchToHttp: () => ({
+        getRequest: () => ({ user: {} }),
+      }),
+    } as never;
+
+    expect(() => guard.canActivate(contextWithUserNoRole)).toThrow(ForbiddenException);
+  });
 });
