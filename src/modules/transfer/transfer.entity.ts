@@ -18,7 +18,10 @@ import { TRANSFER_STATUS_VALUES, type TransferStatus } from './transfer.model';
 @Index('idx_transfer_request', ['requestId'])
 @Check('chk_transfer_dates', `"planned_arrival_date" > "planned_departure_date"`)
 @Check('chk_transfer_rations', `"rations_for_trip" >= 0`)
-@Check('chk_transfer_status_values', `"status" IN ('PENDING_DEPARTURE','COMPLETED','CANCELED')`)
+@Check(
+  'chk_transfer_status_values',
+  `"status" IN ('PENDING_DEPARTURE','IN_TRANSIT','COMPLETED','CANCELED')`,
+)
 export class TransferEntity {
   @PrimaryGeneratedColumn()
   @ApiProperty()
