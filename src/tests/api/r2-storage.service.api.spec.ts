@@ -142,11 +142,59 @@ describe('R2StorageService', () => {
     expect(mockS3Instance.send).toHaveBeenCalledTimes(1);
   });
 
-  it('throws when delete fails', async () => {
-    mockS3Instance.send.mockRejectedValue(new Error('delete failure'));
+  it('throws when delete fails with non-Error object', async () => {
+    mockS3Instance.send.mockRejectedValue('non-error-delete-failure');
 
     await expect(service.deleteImage('path/file.jpg')).rejects.toThrow(
-      'Failed to delete image: delete failure',
+      'Failed to delete image: unknown',
+    );
+  });
+
+  it('throws when delete fails with real Error object', async () => {
+    mockS3Instance.send.mockRejectedValue(new Error('s3 delete failure'));
+
+    await expect(service.deleteImage('path/file.jpg')).rejects.toThrow(
+      'Failed to delete image: s3 delete failure',
+    );
+  });
+
+  it('uploads image with default folder parameter "general"', async () => {
+    const file = {
+      originalname: 'photo.jpg',
+      mimetype: 'image/jpeg',
+      buffer: Buffer.from('data'),
+    } as Express.Multer.File;
+
+    const result = await service.uploadImage(file);
+
+    expect(result).toBe('general/mocked-uuid-1234.jpg');
+  });
+
+  it('throws when upload fails with non-Error object', async () => {
+    mockS3Instance.send.mockRejectedValue('non-error-upload-failure');
+    const file = {
+      originalname: 'photo.png',
+      mimetype: 'image/png',
+      buffer: Buffer.from('data'),
+    } as Express.Multer.File;
+
+    await expect(service.uploadImage(file)).rejects.toThrow('Failed to upload image: unknown');
+  });
+
+  it('returns signed url with default expiresIn parameter (3600)', async () => {
+    (getSignedUrl as jest.Mock).mockResolvedValue('https://example.com/signed');
+
+    await expect(service.getSignedUrl('path/file.jpg')).resolves.toBe(
+      'https://example.com/signed',
+    );
+    expect(getSignedUrl).toHaveBeenCalledWith(mockS3Instance, expect.any(Object), { expiresIn: 3600 });
+  });
+
+  it('throws when signed url creation fails with non-Error object', async () => {
+    (getSignedUrl as jest.Mock).mockRejectedValue('non-error-presign-failure');
+
+    await expect(service.getSignedUrl('path/file.jpg')).rejects.toThrow(
+      'Failed to create signed URL: unknown',
     );
   });
 });

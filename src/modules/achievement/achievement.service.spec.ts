@@ -79,9 +79,29 @@ describe('AchievementService', () => {
     });
   });
 
+  it('updateAchievement does not check name if name is not provided in data', async () => {
+    repository.update.mockResolvedValue({ id: 1, description: 'New desc' });
+
+    await expect(service.updateAchievement(1, { description: 'New desc' })).resolves.toEqual({
+      id: 1,
+      description: 'New desc',
+    });
+    expect(repository.findByName).not.toHaveBeenCalled();
+  });
+
   it('deleteAchievement delegates to repository', async () => {
     repository.delete.mockResolvedValue(true);
 
     await expect(service.deleteAchievement(1)).resolves.toBe(true);
+  });
+
+  it('updateAchievement allows updating to the same name (own name)', async () => {
+    repository.findByName.mockResolvedValue({ id: 1, name: 'SameName' });
+    repository.update.mockResolvedValue({ id: 1, name: 'SameName' });
+
+    await expect(service.updateAchievement(1, { name: 'SameName' })).resolves.toEqual({
+      id: 1,
+      name: 'SameName',
+    });
   });
 });

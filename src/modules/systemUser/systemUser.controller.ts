@@ -202,7 +202,7 @@ export class UserController {
   }
 
   @Delete('users/:id')
-  @Roles('NO_ACCESS')
+  @Roles('SYSTEM_ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user' })
   @ApiParam({ name: 'id', type: Number })
@@ -212,10 +212,16 @@ export class UserController {
   @ApiUnauthorizedResponse()
   @ApiInternalServerErrorResponse()
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('ID not provided');
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('invalid ID');
+    const currentUser = this.getCurrentUser(req);
+    const existingUser = await this.service.findUserById(parsedId);
+    if (!existingUser) throw new NotFoundException('User not found');
+    if (existingUser.campId !== currentUser.campId) {
+      throw new NotFoundException('User not found');
+    }
     const deleted = await this.service.deleteUser(parsedId);
     if (!deleted) throw new NotFoundException('User not found');
     return { success: true, message: 'User deleted successfully' };

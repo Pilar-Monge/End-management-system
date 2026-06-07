@@ -41,7 +41,7 @@ export interface CreatePersonDTO {
   lastName1: string;
   lastName2?: string | null;
   identificationNumber: string;
-  birthDate: Date;
+  birthDate: Date | string;
   gender: Gender;
   initialHealthLevel?: string | null;
   previousExperience?: string | null;
@@ -58,7 +58,7 @@ export interface UpdatePersonDTO {
   lastName1?: string;
   lastName2?: string | null;
   identificationNumber?: string;
-  birthDate?: Date;
+  birthDate?: Date | string;
   gender?: Gender;
   initialHealthLevel?: string | null;
   previousExperience?: string | null;
