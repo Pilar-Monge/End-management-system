@@ -22,17 +22,17 @@ export async function runSeeder(dataSource: DataSource): Promise<void> {
 
   try {
     const passwordHash = await hash('Seed1234!', 10);
-    const campNames = [
-      'Alpha Bunker',
-      'Sierra Base',
-      'Delta Refuge',
-      'Omega Fortress',
-      'Echo Outpost',
+    const campsData = [
+      { name: 'Alpha Bunker', latitude: 39.8283, longitude: -98.5795 },
+      { name: 'Sierra Base', latitude: 52.52, longitude: 13.405 },
+      { name: 'Delta Refuge', latitude: -34.6037, longitude: -58.3816 },
+      { name: 'Omega Fortress', latitude: 35.6762, longitude: 139.6503 },
+      { name: 'Echo Outpost', latitude: -22.5621, longitude: 17.0658 },
     ];
-    const campIds: number[] = [];
 
-    for (let index = 0; index < campNames.length; index += 1) {
+    for (let index = 0; index < campsData.length; index += 1) {
       const campNumber = index + 1;
+      const campData = campsData[index];
 
       const insertedCamp = await queryRunner.query(
         `
@@ -47,7 +47,7 @@ export async function runSeeder(dataSource: DataSource): Promise<void> {
           VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING id
         `,
-        [campNames[index], '2024-01-01', 20, 'ACTIVE', 9.934739, -84.087502],
+        [campData.name, '2024-01-01', 20, 'ACTIVE', campData.latitude, campData.longitude],
       );
 
       const campId: number = insertedCamp[0].id;
