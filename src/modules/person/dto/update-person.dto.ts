@@ -41,7 +41,7 @@ export class UpdatePersonDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
-  birthDate?: Date;
+  birthDate?: string;
 
   @ApiPropertyOptional({ enum: GenderEnum })
   @IsOptional()
