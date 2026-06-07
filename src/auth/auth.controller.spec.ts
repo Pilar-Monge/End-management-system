@@ -88,7 +88,12 @@ describe('AuthController', () => {
   it('resetPassword returns success message', async () => {
     await expect(
       controller.resetPassword(
-        { token: 'tkn', newPassword: 'Abc12345!' } as never,
+        {
+          email: 'a@a.com',
+          campId: 4,
+          code: '12345678',
+          newPassword: 'Abc12345!',
+        } as never,
         { ip: '4.4.4.4' } as never,
       ),
     ).resolves.toEqual({
@@ -96,6 +101,12 @@ describe('AuthController', () => {
       message: 'Contrasena actualizada correctamente',
     });
 
-    expect(service.resetPassword).toHaveBeenCalledWith('tkn', 'Abc12345!', '4.4.4.4');
+    expect(service.resetPassword).toHaveBeenCalledWith(
+      'a@a.com',
+      4,
+      '12345678',
+      'Abc12345!',
+      '4.4.4.4',
+    );
   });
 });

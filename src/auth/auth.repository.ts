@@ -154,14 +154,19 @@ export class AuthRepository {
   async createPasswordResetToken(data: {
     userId: number;
     tokenHash: string;
+    codeHash: string;
     expiresAt: Date;
     requestIp?: string | null;
+    maxAttempts?: number;
   }): Promise<PasswordResetTokenEntity> {
     const entity = this.passwordResetTokenRepo.create({
       userId: data.userId,
       tokenHash: data.tokenHash,
+      codeHash: data.codeHash,
       status: 'ACTIVE',
       expiresAt: data.expiresAt,
+      attempts: 0,
+      maxAttempts: data.maxAttempts ?? 5,
       usedAt: null,
       requestIp: data.requestIp ?? null,
     });
@@ -169,14 +174,14 @@ export class AuthRepository {
     return await this.passwordResetTokenRepo.save(entity);
   }
 
-  async findActivePasswordResetTokenByHash(
-    tokenHash: string,
+  async findActivePasswordResetTokenByUserId(
+    userId: number,
     now: Date,
   ): Promise<PasswordResetTokenEntity | null> {
     return await this.passwordResetTokenRepo
       .findOne({
         where: {
-          tokenHash,
+          userId,
           status: 'ACTIVE',
         },
         order: {
@@ -196,6 +201,19 @@ export class AuthRepository {
 
         return token;
       });
+  }
+
+  async incrementPasswordResetTokenAttempts(id: number): Promise<void> {
+    await this.passwordResetTokenRepo.increment({ id }, 'attempts', 1);
+  }
+
+  async expirePasswordResetToken(id: number): Promise<void> {
+    await this.passwordResetTokenRepo.update(
+      { id },
+      {
+        status: 'EXPIRED',
+      },
+    );
   }
 
   async markPasswordResetTokenUsed(id: number, now: Date): Promise<void> {

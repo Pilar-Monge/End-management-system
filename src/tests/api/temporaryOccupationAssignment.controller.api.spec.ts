@@ -77,7 +77,7 @@ describe('TemporaryOccupationAssignmentController (API controller unit tests)', 
     service.deleteAssignment.mockResolvedValue(true);
     await expect(controller.delete('1')).resolves.toEqual({
       success: true,
-      message: 'Temporary occupation assignment deleted successfully',
+      message: 'Temporary occupation assignment revoked and deleted successfully',
     });
   });
 });

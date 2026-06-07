@@ -23,6 +23,7 @@ describe('PersonController', () => {
       getAllPersonsWithSignedUrls: jest.fn(),
       updatePerson: jest.fn(),
       uploadPersonPhoto: jest.fn(),
+      findUserByPersonId: jest.fn(),
       deletePerson: jest.fn(),
     } as any;
     controller = new PersonController(service);
@@ -96,6 +97,7 @@ describe('PersonController', () => {
   describe('update', () => {
     it('should update a person', async () => {
       service.getPersonById.mockResolvedValue({ id: 1, campId: 1 } as any);
+      service.findUserByPersonId.mockResolvedValue({ id: 1 } as any);
       service.updatePerson.mockResolvedValue({ id: 1, name: 'Updated' } as any);
 
       const result = await controller.update('1', { name: 'Updated' } as any, mockRequest);
@@ -109,6 +111,7 @@ describe('PersonController', () => {
     it('should upload a photo', async () => {
       const mockFile = { mimetype: 'image/jpeg', size: 100 } as any;
       service.getPersonById.mockResolvedValue({ id: 1, campId: 1 } as any);
+      service.findUserByPersonId.mockResolvedValue({ id: 1 } as any);
       service.uploadPersonPhoto.mockResolvedValue({ id: 1, photoUrl: 'url' } as any);
 
       const result = await controller.uploadPhoto('1', mockFile, mockRequest);

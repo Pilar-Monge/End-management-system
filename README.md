@@ -109,8 +109,8 @@ The backend reads these variables (and uses default values if not provided):
 - `EMAIL_BATCH_SIZE`: max emails processed per cron iteration.
 - `EMAIL_PROCESSOR_CRON`: cron expression for email processing.
 - `EMAIL_PROCESSING_LEASE_MINUTES`: lease in minutes for `PROCESSING` emails before they can be recovered.
-- `PASSWORD_RESET_TTL_MINUTES`: reset token TTL in minutes.
-- `FRONTEND_RESET_PASSWORD_URL`: base reset URL where the token is appended as query param.
+- `PASSWORD_RESET_TTL_MINUTES`: reset code TTL in minutes.
+- `PASSWORD_RESET_CODE_SECRET`: server secret used to protect reset codes with HMAC-SHA256.
 
 ---
 
@@ -148,14 +148,13 @@ Example (default): `http://localhost:3000/`
 
 - TypeORM is configured with `synchronize: false`. Use migrations via `npm run migration:generate`, `npm run migration:run`, and `npm run migration:revert`.
 
-
 ### Port 3000 is already in use
 
 If the application fails to start with an error like `EADDRINUSE: address already in use :::3000`, it means another process is already using port 3000.
 
 Check which process is using port 3000:
 
-```powershell
+````powershell
 netstat -ano | findstr :3000
 
 taskkill /PID XXXX /F
@@ -170,3 +169,4 @@ npm run format
 
 # Analyzes the code and automatically fixes syntax issues and bad practices
 npm run lint -- --fix
+````
