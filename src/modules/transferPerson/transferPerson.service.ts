@@ -134,6 +134,57 @@ export class TransferPersonService {
     return createdAssignments;
   }
 
+  async assignTransportStaffForTransfer(
+    transferId: number,
+    supplierCampId: number,
+    personIds: number[],
+  ): Promise<TransferPerson[]> {
+    const uniquePersonIds = [...new Set(personIds)];
+    if (uniquePersonIds.length === 0) {
+      throw new Error('Debe asignar al menos una persona operativa al traslado');
+    }
+
+    const people = await this.repository.findPeopleByIds(uniquePersonIds);
+    if (people.length !== uniquePersonIds.length) {
+      throw new Error('Una o mas personas operativas no existen');
+    }
+
+    const invalidPerson = people.find(
+      (person) => person.campId !== supplierCampId || person.currentStatus !== 'ACTIVE',
+    );
+    if (invalidPerson) {
+      throw new Error('Las personas operativas deben estar activas en el campamento proveedor');
+    }
+
+    const busyPersonIds = await this.repository.findActiveTransferAssignmentsByPersonIds(
+      uniquePersonIds,
+      transferId,
+    );
+    if (busyPersonIds.length > 0) {
+      throw new Error('Una o mas personas operativas ya estan asignadas a otro traslado activo');
+    }
+
+    const createdAssignments: TransferPerson[] = [];
+
+    for (const personId of uniquePersonIds) {
+      const existing = await this.repository.findByTransferAndPerson(transferId, personId);
+      if (existing) {
+        createdAssignments.push(existing);
+        continue;
+      }
+
+      const created = await this.createTransferPerson({
+        transferId,
+        personId,
+        status: 'CONFIRMED',
+      });
+      createdAssignments.push(created);
+    }
+
+    await this.transferService.syncTransferRations(transferId);
+    return createdAssignments;
+  }
+
   private async resolveTransferScope(transferId: number): Promise<{
     originCampId: number;
     destinationCampId: number;

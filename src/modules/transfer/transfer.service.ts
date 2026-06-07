@@ -28,6 +28,11 @@ export class TransferService {
     return (Math.round(value * 100) / 100).toFixed(2);
   }
 
+  private toNumber(value: string | number | null | undefined): number {
+    const parsed = Number.parseFloat(String(value ?? '0'));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   private getTripDurationDays(plannedDepartureDate: Date, plannedArrivalDate: Date): number {
     const millisPerDay = 24 * 60 * 60 * 1000;
     const rawDays = (plannedArrivalDate.getTime() - plannedDepartureDate.getTime()) / millisPerDay;
@@ -76,6 +81,118 @@ export class TransferService {
     return await this.repository.update(transferId, { rationsForTrip: totalRations });
   }
 
+  async createRequestedPersonManifestFromRequest(
+    transferId: number,
+    requestId: number,
+    supplierCampId: number,
+  ): Promise<number> {
+    const assignedCount = await this.repository.createRequestedPersonManifestFromRequest(
+      transferId,
+      requestId,
+      supplierCampId,
+    );
+    await this.syncTransferRations(transferId);
+    return assignedCount;
+  }
+
+  private async assertTransferCanMove(transfer: Transfer): Promise<void> {
+    const transportStaffCount = await this.repository.countTransferTransportStaff(transfer.id);
+    if (transportStaffCount <= 0) {
+      throw new BadRequestException('El traslado debe tener personal operativo asignado');
+    }
+  }
+
+  private async assertRationsAvailable(transfer: Transfer): Promise<void> {
+    await this.syncTransferRations(transfer.id);
+    const refreshed = await this.repository.findById(transfer.id);
+    const rationsForTrip = this.toNumber(refreshed?.rationsForTrip ?? transfer.rationsForTrip);
+
+    if (rationsForTrip <= 0) {
+      throw new BadRequestException('El traslado debe tener raciones calculadas mayores a 0');
+    }
+
+    const scope = await this.resolveRequestScope(transfer.requestId);
+    const supplierCampId = scope.destinationCampId;
+    const rationInventory = await this.repository.findRationInventoryCandidate(supplierCampId);
+
+    if (!rationInventory) {
+      throw new BadRequestException('No hay recurso FOOD configurado para raciones del traslado');
+    }
+
+    const currentAmount = this.toNumber(rationInventory.currentAmount);
+    const minimumAmount = this.toNumber(rationInventory.minimumAlertAmount);
+    const remainingAmount = currentAmount - rationsForTrip;
+
+    if (currentAmount < rationsForTrip) {
+      throw new BadRequestException('Inventario insuficiente de raciones para ejecutar el traslado');
+    }
+
+    if (remainingAmount < minimumAmount) {
+      throw new BadRequestException(
+        'El traslado dejaria las raciones por debajo del minimo permitido',
+      );
+    }
+  }
+
+  private async applyTransferRations(transfer: Transfer, actorUserId: number): Promise<void> {
+    const alreadyApplied = await this.repository.countAppliedTransferRationMovements(transfer.id);
+    if (alreadyApplied > 0) {
+      return;
+    }
+
+    const refreshed = await this.repository.findById(transfer.id);
+    const rationsForTrip = this.toNumber(refreshed?.rationsForTrip ?? transfer.rationsForTrip);
+    if (rationsForTrip <= 0) {
+      throw new BadRequestException('El traslado debe tener raciones calculadas mayores a 0');
+    }
+
+    const scope = await this.resolveRequestScope(transfer.requestId);
+    const supplierCampId = scope.destinationCampId;
+    const rationInventory = await this.repository.findRationInventoryCandidate(supplierCampId);
+    if (!rationInventory) {
+      throw new BadRequestException('No hay recurso FOOD configurado para raciones del traslado');
+    }
+
+    await this.inventoryMovementService.createMovement({
+      campId: supplierCampId,
+      resourceTypeId: rationInventory.resourceTypeId,
+      amount: this.roundToTwo(rationsForTrip),
+      movementType: 'DAILY_RATION',
+      sourceId: transfer.id,
+      sourceType: 'transfer_rations',
+      recordedBy: actorUserId,
+      description: `Transfer rations consumed for transfer #${transfer.id}`,
+    });
+  }
+
+  private async assertInventoryConsumptionPreservesMinimum(
+    campId: number,
+    resourceTypeId: number,
+    amount: string,
+  ): Promise<void> {
+    const rows = (await this.dataSource.query(
+      `SELECT current_amount::text AS current_amount,
+              minimum_alert_amount::text AS minimum_alert_amount
+       FROM public.camp_inventory
+       WHERE camp_id = $1
+         AND resource_type_id = $2
+       LIMIT 1`,
+      [campId, resourceTypeId],
+    )) as Array<{ current_amount: string; minimum_alert_amount: string }>;
+
+    const currentAmount = this.toNumber(rows[0]?.current_amount);
+    const minimumAmount = this.toNumber(rows[0]?.minimum_alert_amount);
+    const consumedAmount = this.toNumber(amount);
+
+    if (currentAmount < consumedAmount) {
+      throw new BadRequestException('Inventario insuficiente para ejecutar el traslado');
+    }
+
+    if (currentAmount - consumedAmount < minimumAmount) {
+      throw new BadRequestException('El traslado dejaria inventario por debajo del minimo');
+    }
+  }
+
   private async countAppliedTransferMovements(transferId: number): Promise<number> {
     return await this.repository.countAppliedTransferMovements(transferId);
   }
@@ -96,6 +213,12 @@ export class TransferService {
     const deliveredRows = await this.repository.findDeliveredResourcesByTransferId(transferId);
 
     for (const delivered of deliveredRows) {
+      await this.assertInventoryConsumptionPreservesMinimum(
+        supplierCampId,
+        delivered.resourceTypeId,
+        delivered.sentAmount,
+      );
+
       await this.inventoryMovementService.createMovement({
         campId: supplierCampId,
         resourceTypeId: delivered.resourceTypeId,
@@ -237,7 +360,18 @@ export class TransferService {
 
     const updateData: UpdateTransferDTO = { ...data };
 
+    if (updateData.status === 'IN_TRANSIT') {
+      await this.assertTransferCanMove(existing);
+      await this.assertRationsAvailable(existing);
+      updateData.actualDepartureDate = updateData.actualDepartureDate ?? new Date();
+    }
+
     if (updateData.status === 'COMPLETED') {
+      await this.assertTransferCanMove(existing);
+      if (existing.status === 'PENDING_DEPARTURE') {
+        await this.assertRationsAvailable(existing);
+      }
+
       const scope = await this.resolveRequestScope(existing.requestId);
       const resolvedDepartureApprovedBy =
         updateData.departureApprovedBy ??
@@ -256,6 +390,9 @@ export class TransferService {
 
       updateData.departureApprovedBy = resolvedDepartureApprovedBy;
       updateData.arrivalApprovedBy = resolvedArrivalApprovedBy;
+      updateData.actualDepartureDate =
+        updateData.actualDepartureDate ?? existing.actualDepartureDate ?? new Date();
+      updateData.actualArrivalDate = updateData.actualArrivalDate ?? new Date();
     }
 
     if (updateData.requestId !== undefined && updateData.requestId !== existing.requestId) {
@@ -287,8 +424,33 @@ export class TransferService {
         scope.respondedBy ??
         scope.createdBy;
 
+      if (updated.status === 'IN_TRANSIT') {
+        await this.repository.setManifestInTransit(
+          updated.id,
+          updated.actualDepartureDate ?? new Date(),
+        );
+        await this.applyTransferRations(updated, actorUserId);
+      }
+
       if (updated.status === 'COMPLETED') {
+        if (existing.status === 'PENDING_DEPARTURE') {
+          await this.repository.setManifestInTransit(
+            updated.id,
+            updated.actualDepartureDate ?? new Date(),
+          );
+          await this.applyTransferRations(updated, actorUserId);
+        }
+
         await this.applyCompletedTransferInventory(updated.id, updated.requestId, actorUserId);
+        await this.repository.completeManifest(
+          updated.id,
+          updated.requestId,
+          updated.actualArrivalDate ?? new Date(),
+        );
+      }
+
+      if (updated.status === 'CANCELED') {
+        await this.repository.cancelManifest(updated.id);
       }
 
       await this.createTransferHistoryEntry(
@@ -310,7 +472,9 @@ export class TransferService {
           ? 'Traslado completado'
           : updated.status === 'CANCELED'
             ? 'Traslado cancelado'
-            : 'Traslado pendiente de salida';
+            : updated.status === 'IN_TRANSIT'
+              ? 'Traslado en transito'
+              : 'Traslado pendiente de salida';
 
       const message = `El traslado #${updated.id} cambio su estado a ${updated.status}.`;
 

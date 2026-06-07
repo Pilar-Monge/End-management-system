@@ -61,7 +61,14 @@ export class TransferPersonRepository {
            FROM public.transfer_person tp
            JOIN public.transfer t ON t.id = tp.transfer_id
            WHERE tp.person_id = p.id
-             AND t.status <> 'CANCELED'
+             AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+         )
+         AND NOT EXISTS (
+           SELECT 1
+           FROM public.transfer_requested_person trp
+           JOIN public.transfer t ON t.id = trp.transfer_id
+           WHERE trp.person_id = p.id
+             AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
          )
        ORDER BY p.created_at ASC, p.id ASC`,
       [campId, occupationId],
@@ -86,7 +93,14 @@ export class TransferPersonRepository {
            FROM public.transfer_person tp
            JOIN public.transfer t ON t.id = tp.transfer_id
            WHERE tp.person_id = p.id
-             AND t.status <> 'CANCELED'
+             AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+         )
+         AND NOT EXISTS (
+           SELECT 1
+           FROM public.transfer_requested_person trp
+           JOIN public.transfer t ON t.id = trp.transfer_id
+           WHERE trp.person_id = p.id
+             AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
          )
        ORDER BY p.created_at ASC, p.id ASC
        FOR UPDATE SKIP LOCKED`,
@@ -121,6 +135,37 @@ export class TransferPersonRepository {
       where: personIds.map((id) => ({ id })),
       order: { id: 'ASC' },
     });
+  }
+
+  async findActiveTransferAssignmentsByPersonIds(
+    personIds: number[],
+    excludedTransferId: number,
+  ): Promise<number[]> {
+    if (personIds.length === 0) {
+      return [];
+    }
+
+    const rows = (await this.repo.query(
+      `SELECT DISTINCT assigned.person_id
+       FROM (
+         SELECT tp.person_id
+         FROM public.transfer_person tp
+         INNER JOIN public.transfer t ON t.id = tp.transfer_id
+         WHERE tp.person_id = ANY($1::int[])
+           AND tp.transfer_id <> $2
+           AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+         UNION
+         SELECT trp.person_id
+         FROM public.transfer_requested_person trp
+         INNER JOIN public.transfer t ON t.id = trp.transfer_id
+         WHERE trp.person_id = ANY($1::int[])
+           AND trp.transfer_id <> $2
+           AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+       ) assigned`,
+      [personIds, excludedTransferId],
+    )) as Array<{ person_id: number }>;
+
+    return rows.map((row) => row.person_id);
   }
 
   async resolveTransferScope(transferId: number): Promise<{

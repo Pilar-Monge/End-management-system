@@ -17,9 +17,14 @@ const repository: any = {
   resolveRequestScope: jest.fn(),
   resolveTransferScope: jest.fn(),
   countTransferPeople: jest.fn(),
+  countTransferTransportStaff: jest.fn(),
+  countAppliedTransferRationMovements: jest.fn(),
   countAppliedTransferMovements: jest.fn(),
   findDeliveredResourcesByTransferId: jest.fn(),
-  createTransferHistoryEntry: jest.fn(),
+  findRationInventoryCandidate: jest.fn(),
+  createTransferHistoryEntry: jest.fn(),  setManifestInTransit: jest.fn(),
+  completeManifest: jest.fn(),
+  cancelManifest: jest.fn(),
 };
 
 const notificationService: any = {
@@ -34,6 +39,7 @@ const dataSource: any = {
   getRepository: jest.fn().mockReturnValue({
     findOne: jest.fn(),
   }),
+  query: jest.fn(),
 };
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
@@ -43,6 +49,14 @@ describe('TransferService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    repository.countTransferTransportStaff.mockResolvedValue(1);
+    repository.countAppliedTransferRationMovements.mockResolvedValue(0);
+    repository.findRationInventoryCandidate.mockResolvedValue({
+      resourceTypeId: 9,
+      currentAmount: '100.00',
+      minimumAlertAmount: '0.00',
+    });
+    dataSource.query.mockResolvedValue([{ current_amount: '100.00', minimum_alert_amount: '0.00' }]);
     service = new TransferService(
       repository as never,
       notificationService as never,
@@ -182,7 +196,12 @@ describe('TransferService', () => {
     });
 
     it('updates, creates history and applies inventory if COMPLETED', async () => {
-      repository.findById.mockResolvedValue({ id: 1, requestId: 10, status: 'PENDING_DEPARTURE' });
+      repository.findById.mockResolvedValue({
+        id: 1,
+        requestId: 10,
+        status: 'PENDING_DEPARTURE',
+        rationsForTrip: '12.00',
+      });
       repository.update.mockResolvedValue({
         id: 1,
         requestId: 10,
@@ -209,7 +228,7 @@ describe('TransferService', () => {
 
       expect(repository.update).toHaveBeenCalled();
       expect(repository.createTransferHistoryEntry).toHaveBeenCalled();
-      expect(inventoryMovementService.createMovement).toHaveBeenCalledTimes(2); // Sent and Received
+      expect(inventoryMovementService.createMovement).toHaveBeenCalledTimes(3);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);
     });
   });
