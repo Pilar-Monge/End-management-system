@@ -201,15 +201,15 @@ export class IntercampRequestService {
 
   private async ensureApprovedRequestTransfer(
     request: IntercampRequest,
-    personDetailRequirements: Array<{ occupationId: number; quantity: number }>,
+    transportPersonIds: number[],
   ): Promise<void> {
     this.resolvePlannedTransferDates(request);
     await this.assertResourceAvailability(request);
 
     const detailRows = await this.repository.findRequestResourceAmountsByRequestId(request.id);
-    const needsTransfer = detailRows.length > 0 || personDetailRequirements.length > 0;
+    const detailsCount = await this.repository.countRequestDetailsByRequestId(request.id);
 
-    if (!needsTransfer) {
+    if (detailsCount <= 0) {
       return;
     }
 
@@ -224,13 +224,19 @@ export class IntercampRequestService {
       });
     }
 
-    if (personDetailRequirements.length > 0) {
-      await this.transferPersonService.autoAssignGroupForTransfer(
+    if (detailRows.length > 0 || detailsCount > detailRows.length) {
+      await this.transferPersonService.assignTransportStaffForTransfer(
         transfer.id,
         request.destinationCampId,
-        personDetailRequirements,
+        transportPersonIds,
       );
     }
+
+    await this.transferService.createRequestedPersonManifestFromRequest(
+      transfer.id,
+      request.id,
+      request.destinationCampId,
+    );
 
     await this.transferService.syncTransferRations(transfer.id);
   }
@@ -409,6 +415,10 @@ export class IntercampRequestService {
 
     this.assertRequestUpdatePolicy(existing, data, actor);
 
+    const transportPersonIds = [...new Set(data.transportPersonIds ?? [])];
+    const requestUpdateData: UpdateIntercampRequestDTO = { ...data };
+    delete requestUpdateData.transportPersonIds;
+
     if (existing.status === 'PENDING' || data.status === 'APPROVED') {
       const detailsCount = await this.repository.countRequestDetailsByRequestId(id);
       if (detailsCount <= 0) {
@@ -416,11 +426,17 @@ export class IntercampRequestService {
       }
     }
 
-    const originCampId = data.originCampId ?? existing.originCampId;
-    const destinationCampId = data.destinationCampId ?? existing.destinationCampId;
-    const createdBy = data.createdBy ?? existing.createdBy;
+    if (data.status === 'APPROVED' && transportPersonIds.length === 0) {
+      throw new BadRequestException(
+        'Debe asignar personal operativo antes de aprobar la solicitud',
+      );
+    }
+
+    const originCampId = requestUpdateData.originCampId ?? existing.originCampId;
+    const destinationCampId = requestUpdateData.destinationCampId ?? existing.destinationCampId;
+    const createdBy = requestUpdateData.createdBy ?? existing.createdBy;
     const persistedData: UpdateIntercampRequestDTO = {
-      ...data,
+      ...requestUpdateData,
       respondedBy:
         data.status !== undefined ? actor.userId : (data.respondedBy ?? existing.respondedBy),
       responseDate:
@@ -494,7 +510,7 @@ export class IntercampRequestService {
     const statusChanged = updated.status !== existing.status;
     if (statusChanged) {
       if (updated.status === 'APPROVED') {
-        await this.ensureApprovedRequestTransfer(updated, resolvedPersonRequirements);
+        await this.ensureApprovedRequestTransfer(updated, transportPersonIds);
       }
 
       const notificationType =

@@ -29,10 +29,12 @@ const transferService = {
   createTransfer: jest.fn(),
   syncTransferRations: jest.fn(),
   updateTransfer: jest.fn(),
+  createRequestedPersonManifestFromRequest: jest.fn(),
 };
 
 const transferPersonService = {
   autoAssignGroupForTransfer: jest.fn(),
+  assignTransportStaffForTransfer: jest.fn(),
   canFulfillRequirements: jest.fn(),
 };
 
@@ -189,13 +191,14 @@ describe('IntercampRequestService', () => {
 
       await service.updateRequest(
         1,
-        { status: 'APPROVED' },
+        { status: 'APPROVED', transportPersonIds: [31, 32] },
         { userId: 20, campId: 2, rol: 'TRAVEL_MANAGER' },
       );
 
-      expect(transferPersonService.canFulfillRequirements).toHaveBeenCalledWith(
+      expect(transferPersonService.assignTransportStaffForTransfer).toHaveBeenCalledWith(
+        1,
         2,
-        expect.any(Array),
+        [31, 32],
       );
     });
 
@@ -230,15 +233,20 @@ describe('IntercampRequestService', () => {
 
       await service.updateRequest(
         1,
-        { status: 'APPROVED' },
+        { status: 'APPROVED', transportPersonIds: [31, 32] },
         { userId: 20, campId: 2, rol: 'TRAVEL_MANAGER' },
       );
 
       expect(transferService.createTransfer).toHaveBeenCalled();
-      expect(transferPersonService.autoAssignGroupForTransfer).toHaveBeenCalledWith(
+      expect(transferPersonService.assignTransportStaffForTransfer).toHaveBeenCalledWith(
         100,
         2,
-        expect.any(Array),
+        [31, 32],
+      );
+      expect(transferService.createRequestedPersonManifestFromRequest).toHaveBeenCalledWith(
+        100,
+        1,
+        2,
       );
       expect(transferService.syncTransferRations).toHaveBeenCalledWith(100);
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2); // Origin and Dest
@@ -262,7 +270,7 @@ describe('IntercampRequestService', () => {
       await expect(
         service.updateRequest(
           1,
-          { status: 'APPROVED' },
+          { status: 'APPROVED', transportPersonIds: [31, 32] },
           { userId: 20, campId: 2, rol: 'TRAVEL_MANAGER' },
         ),
       ).rejects.toThrow('No se puede aprobar una solicitud con la fecha planeada en el pasado');
@@ -290,7 +298,7 @@ describe('IntercampRequestService', () => {
       await expect(
         service.updateRequest(
           1,
-          { status: 'APPROVED' },
+          { status: 'APPROVED', transportPersonIds: [31, 32] },
           { userId: 20, campId: 2, rol: 'TRAVEL_MANAGER' },
         ),
       ).rejects.toThrow('No hay inventario suficiente para aprobar el recurso 7');
@@ -351,7 +359,7 @@ describe('IntercampRequestService', () => {
       await expect(
         service.updateRequest(
           1,
-          { status: 'APPROVED' },
+          { status: 'APPROVED', transportPersonIds: [31, 32] },
           { userId: 20, campId: 2, rol: 'TRAVEL_MANAGER' },
         ),
       ).rejects.toThrow(
