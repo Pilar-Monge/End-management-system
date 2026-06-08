@@ -7,7 +7,7 @@ import { AdmissionRequestService } from './admissionRequest.service';
 import { DecisionTreeModule } from '../decisionTree/decisionTree.module';
 import { NotificationModule } from '../notification/notification.module';
 import { SystemTimeModule } from '../systemTime/systemTime.module';
-import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import { R2StorageService } from '../../services/r2-storage.service';
 
 @Module({
   imports: [
@@ -17,6 +17,6 @@ import { SupabaseStorageService } from '../../services/supabase-storage.service'
     SystemTimeModule,
   ],
   controllers: [AdmissionRequestController],
-  providers: [AdmissionRequestRepository, AdmissionRequestService, SupabaseStorageService],
+  providers: [AdmissionRequestRepository, AdmissionRequestService, R2StorageService],
 })
 export class AdmissionRequestModule {}

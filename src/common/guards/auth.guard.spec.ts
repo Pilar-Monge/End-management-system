@@ -95,4 +95,20 @@ describe('AuthGuard', () => {
     expect(res.setHeader).toHaveBeenCalledWith('Authorization', 'Bearer new-token');
     expect(req.refreshedToken).toBe('new-token');
   });
+
+  it('falls back to "unknown" IP if request.ip is missing', async () => {
+    const payload = { userId: 1, campId: 2, rol: 'SYSTEM_ADMIN' };
+    authService.validateSession.mockResolvedValue(payload);
+
+    (reflector.getAllAndOverride as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false);
+
+    const req: Record<string, unknown> = {
+      headers: { authorization: 'Bearer token-1' },
+    };
+
+    await expect(guard.canActivate(makeContext(req))).resolves.toBe(true);
+    expect(authService.validateSession).toHaveBeenCalledWith('token-1', 'unknown');
+  });
 });

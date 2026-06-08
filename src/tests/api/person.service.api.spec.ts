@@ -19,6 +19,7 @@ describe('PersonService (API-focused unit tests)', () => {
       update: jest.fn(),
       delete: jest.fn(),
       findLinkedUserByPersonAndCamp: jest.fn(),
+      findLinkedUserByPersonId: jest.fn(),
     };
     personStatusHistoryRepository = { create: jest.fn() };
     notificationService = { notifyCampRoles: jest.fn(), notifyUser: jest.fn() };

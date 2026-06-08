@@ -111,7 +111,10 @@ export class AuthService {
         id: user.id,
         username: user.username,
         rol: user.role,
+        role: user.role,
         campId: user.campId,
+        personId: user.personId,
+        status: user.status,
       },
     };
   }
@@ -247,13 +250,23 @@ export class AuthService {
     return nextToken;
   }
 
-  async forgotPassword(email: string, campId: number, ip: string): Promise<void> {
+  async forgotPassword(
+    username: string,
+    email: string,
+    campId: number,
+    ip: string,
+  ): Promise<void> {
+    const normalizedUsername = typeof username === 'string' ? username.trim() : '';
     const normalizedEmail = typeof email === 'string' ? email.trim() : '';
-    if (!normalizedEmail || !Number.isInteger(campId) || campId <= 0) {
+    if (!normalizedUsername || !normalizedEmail || !Number.isInteger(campId) || campId <= 0) {
       return;
     }
 
-    const user = await this.systemUserRepository.findByEmail(normalizedEmail, campId);
+    const user = await this.systemUserRepository.findByUsernameEmailAndCamp(
+      normalizedUsername,
+      normalizedEmail,
+      campId,
+    );
     if (!user || user.status !== 'ACTIVE') {
       return;
     }
@@ -308,17 +321,20 @@ export class AuthService {
   }
 
   async resetPassword(
+    username: string,
     email: string,
     campId: number,
     code: string,
     newPassword: string,
     ip: string,
   ): Promise<void> {
+    const normalizedUsername = typeof username === 'string' ? username.trim() : '';
     const normalizedEmail = typeof email === 'string' ? email.trim() : '';
     const normalizedCode = typeof code === 'string' ? code.trim() : '';
     const normalizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
 
     if (
+      !normalizedUsername ||
       !normalizedEmail ||
       !Number.isInteger(campId) ||
       campId <= 0 ||
@@ -329,7 +345,11 @@ export class AuthService {
     }
 
     const now = this.systemTimeService.now();
-    const user = await this.systemUserRepository.findByEmail(normalizedEmail, campId);
+    const user = await this.systemUserRepository.findByUsernameEmailAndCamp(
+      normalizedUsername,
+      normalizedEmail,
+      campId,
+    );
     if (!user || user.status !== 'ACTIVE') {
       throw new BadRequestException('Codigo invalido o expirado');
     }
@@ -455,5 +475,28 @@ export class AuthService {
     // El mecanismo transparente: El servicio de Auth usa internamente al de Personas
     // No hace falta que el frontend conozca el person_id, nosotros lo sabemos por la entidad User
     return await this.personService.uploadPersonPhoto(user.personId, file);
+  }
+
+  async getMe(userId: number): Promise<any> {
+    const user = await this.systemUserRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    let personData: any = null;
+    if (user.personId) {
+      personData = await this.personService.getPersonWithSignedUrl(user.personId);
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      rol: user.role,
+      campId: user.campId,
+      status: user.status,
+      personId: user.personId,
+      person: personData,
+    };
   }
 }

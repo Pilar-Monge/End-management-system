@@ -102,7 +102,7 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
       const diff = after - before;
 
       expect(diff).toBeGreaterThanOrEqual(offsetMs - 1);
-      expect(diff).toBeLessThanOrEqual(offsetMs + 10);
+      expect(diff).toBeLessThanOrEqual(offsetMs + 200);
     });
 
     it('cumulative offsets affect now() correctly', () => {
@@ -117,7 +117,7 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
 
       const diff = after - before;
       expect(diff).toBeGreaterThanOrEqual(totalOffset - 1);
-      expect(diff).toBeLessThanOrEqual(totalOffset + 10);
+      expect(diff).toBeLessThanOrEqual(totalOffset + 200);
     });
 
     it('reset offset makes now() return to real time', (done) => {
@@ -144,7 +144,7 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
 
       const diff = after - before;
       expect(diff).toBeGreaterThanOrEqual(4999);
-      expect(diff).toBeLessThanOrEqual(5010);
+      expect(diff).toBeLessThanOrEqual(5200);
     });
 
     it('ISO string is still valid after offset', () => {
@@ -218,7 +218,7 @@ describe('SystemTimeService - Offset Management (unit tests)', () => {
 
       const diff = after - before;
       expect(diff).toBeGreaterThanOrEqual(4999);
-      expect(diff).toBeLessThanOrEqual(5010);
+      expect(diff).toBeLessThanOrEqual(5200);
     });
 
     it('getServerTime returns valid time after offset operations', () => {

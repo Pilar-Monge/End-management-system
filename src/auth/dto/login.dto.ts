@@ -26,8 +26,17 @@ export class LoginUserResponseDto {
   @ApiProperty({ example: 'SYSTEM_ADMIN' })
   rol!: string;
 
+  @ApiProperty({ example: 'SYSTEM_ADMIN' })
+  role!: string;
+
   @ApiProperty({ example: 1 })
   campId!: number;
+
+  @ApiProperty({ example: 1, nullable: true })
+  personId!: number | null;
+
+  @ApiProperty({ example: 'ACTIVE' })
+  status!: string;
 }
 
 export class LoginResponseDataDto {
