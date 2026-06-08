@@ -554,4 +554,64 @@ export class ExpeditionRepository {
       [campId, expeditionId],
     );
   }
+
+  async getResourceSummaryByExpeditionId(expeditionId: number): Promise<{
+    consumed: Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+    obtained: Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+  }> {
+    const consumedRows = (await this.dataSource.query(
+      `
+      SELECT
+        erc.resource_type_id AS "resourceTypeId",
+        rt.name AS "resourceTypeName",
+        rt.unit_of_measure AS "unit",
+        erc.amount::text AS "amount"
+      FROM expedition_resource_consumed erc
+      INNER JOIN resource_type rt ON rt.id = erc.resource_type_id
+      WHERE erc.expedition_id = $1
+      ORDER BY rt.name ASC
+      `,
+      [expeditionId],
+    )) as Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+
+    const obtainedRows = (await this.dataSource.query(
+      `
+      SELECT
+        ero.resource_type_id AS "resourceTypeId",
+        rt.name AS "resourceTypeName",
+        rt.unit_of_measure AS "unit",
+        ero.amount::text AS "amount"
+      FROM expedition_resource_obtained ero
+      INNER JOIN resource_type rt ON rt.id = ero.resource_type_id
+      WHERE ero.expedition_id = $1
+      ORDER BY rt.name ASC
+      `,
+      [expeditionId],
+    )) as Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+
+    return {
+      consumed: consumedRows,
+      obtained: obtainedRows,
+    };
+  }
 }

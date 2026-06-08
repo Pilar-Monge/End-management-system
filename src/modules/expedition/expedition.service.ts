@@ -397,6 +397,28 @@ export class ExpeditionService {
     return expedition;
   }
 
+  async getExpeditionResources(expeditionId: number): Promise<{
+    consumed: Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+    obtained: Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+  } | null> {
+    const expedition = await this.repository.findById(expeditionId);
+    if (!expedition) {
+      return null;
+    }
+
+    return await this.repository.getResourceSummaryByExpeditionId(expeditionId);
+  }
+
   async deleteExpedition(id: number): Promise<boolean> {
     const existing = await this.repository.findById(id);
     if (!existing) {

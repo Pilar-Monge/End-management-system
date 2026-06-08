@@ -135,6 +135,42 @@ export class ExpeditionController {
     const data = await this.service.getActiveExplorations(parsedCampId);
     return { success: true, data };
   }
+
+  @Get(':id/resources')
+  @Roles('TRAVEL_MANAGER', 'SYSTEM_ADMIN')
+  @ApiOperation({ summary: 'Get resources consumed and obtained by expedition' })
+  @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
+  @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition resources summary' })
+  @ApiNotFoundResponse({ description: 'Expedition not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async getResources(@Param('id') id: string, @Req() req: Request) {
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid ID');
+    }
+
+    const expedition = await this.service.getExpeditionById(parsedId);
+    if (!expedition) {
+      throw new NotFoundException('Expedition not found');
+    }
+
+    const currentUser = this.getCurrentUser(req);
+    if (!this.isSystemAdmin(currentUser.rol) && expedition.campId !== currentUser.campId) {
+      throw new BadRequestException('You do not have permission to view this expedition');
+    }
+
+    const resources = await this.service.getExpeditionResources(parsedId);
+    if (!resources) {
+      throw new NotFoundException('Expedition not found');
+    }
+
+    return {
+      success: true,
+      data: resources,
+    };
+  }
+
   @Get(':id')
   @Roles('TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Expedition by id' })
