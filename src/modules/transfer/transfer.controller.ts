@@ -35,9 +35,14 @@ import {
 import { Roles } from '../../common/decorators';
 
 import { TransferService } from './transfer.service';
-import type { CreateTransferDTO, TransferStatus, UpdateTransferDTO } from './transfer.model';
+import type {
+  CreateTransferDTO,
+  TransferStatus,
+  UpdateTransferDTO,
+  UpdateTransferTransportStaffDTO,
+} from './transfer.model';
 import { TransferEntity } from './transfer.entity';
-import { CreateTransferDto, UpdateTransferDto } from './dto';
+import { CreateTransferDto, UpdateTransferDto, UpdateTransferTransportStaffDto } from './dto';
 @Controller('transfers')
 @ApiTags('Transfer')
 export class TransferController {
@@ -208,6 +213,46 @@ export class TransferController {
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error getting transfers',
+      );
+    }
+  }
+  @Put(':id/transport-staff')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @ApiOperation({ summary: 'Replace transfer transport staff manifest' })
+  @ApiParam({ name: 'id', type: Number, description: 'Transfer id' })
+  @ApiBody({ type: UpdateTransferTransportStaffDto })
+  @ApiOkResponseData(TransferEntity, { description: 'Transfer transport staff updated' })
+  @ApiBadRequestResponse({ description: 'Invalid id or payload' })
+  @ApiNotFoundResponse({ description: 'Transfer not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async updateTransportStaff(
+    @Param('id') id: string,
+    @Body() body: UpdateTransferTransportStaffDTO,
+    @Req() req: Request,
+  ) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    try {
+      const currentUser = this.getCurrentUser(req);
+      if (!this.isSystemAdmin(currentUser.rol)) {
+        await this.service.assertTransferCampAccess(parsedId, currentUser.campId);
+      }
+
+      const transfer = await this.service.updateTransportStaff(parsedId, body);
+      if (!transfer) throw new NotFoundException('Transfer not found');
+
+      return {
+        success: true,
+        data: transfer,
+        message: 'Transfer transport staff updated successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error updating transfer transport staff',
       );
     }
   }

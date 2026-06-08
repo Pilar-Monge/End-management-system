@@ -77,7 +77,7 @@ export class EmailDeliveryProcessor {
 
   private calculateNextAttemptDate(failedAttempts: number): Date {
     const index = Math.max(0, Math.min(failedAttempts - 1, RETRY_DELAYS_MINUTES.length - 1));
-    const delayMinutes = RETRY_DELAYS_MINUTES[index] ?? 360;
+    const delayMinutes = RETRY_DELAYS_MINUTES[index]!;
     const next = new Date();
     next.setMinutes(next.getMinutes() + delayMinutes);
     return next;

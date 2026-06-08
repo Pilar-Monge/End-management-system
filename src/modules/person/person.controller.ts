@@ -407,7 +407,7 @@ export class PersonController {
   }
 
   @Delete(':id')
-  @Roles('NO_ACCESS')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiOkResponseMessage({ description: 'Person deleted' })
@@ -415,18 +415,29 @@ export class PersonController {
   @ApiNotFoundResponse({ description: 'Person not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingPerson = await this.service.getPersonById(parsedId);
+      if (!existingPerson) throw new NotFoundException('Person not found');
+
+      if (existingPerson.campId !== currentUser.campId) {
+        throw new BadRequestException('You do not have permission to delete this person');
+      }
+
       const deleted = await this.service.deletePerson(parsedId);
       if (!deleted) throw new NotFoundException('Person not found');
 
       return { success: true, message: 'Person deleted successfully' };
     } catch (error) {
+      if (error && typeof (error as any).getStatus === 'function') {
+        throw error;
+      }
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error deleting person',
       );

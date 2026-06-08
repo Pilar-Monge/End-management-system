@@ -129,6 +129,10 @@ export class UserService {
     const existing = await this.userRepo.findById(id);
     if (!existing) return null;
 
+    if (data.role !== undefined && existing.role === data.role) {
+      throw new BadRequestException(`El usuario ya tiene asignado el rol ${data.role}`);
+    }
+
     const newRole = data.role;
     const hasRoleChange = newRole !== undefined && existing.role !== newRole;
     const hasStatusChange = data.status !== undefined && data.status !== existing.status;
