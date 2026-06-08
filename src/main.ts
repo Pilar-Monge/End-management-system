@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { DataSource } from 'typeorm';
 import { AppDataSource } from './data-source';
 import { runSeeder } from './seeds/seeder';
 import { DecisionTreeService } from './modules/decisionTree/decisionTree.service';
@@ -13,6 +14,8 @@ const DEFAULT_CORS_ORIGINS = [
   'http://127.0.0.1:5173',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
+  'https://endmgmt-app.pentadev.engineer',
+  'https://www.endmgmt-app.pentadev.engineer',
 ] as const;
 
 function resolveCorsOrigins(): string[] {
@@ -75,31 +78,31 @@ async function bootstrap(): Promise<void> {
     SwaggerModule.setup('docs', app, document, { useGlobalPrefix: true });
   }
 
-  if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
-  }
-
+  const migrationDataSource = new DataSource({ ...AppDataSource.options });
   try {
-    await AppDataSource.runMigrations();
-    await runSeeder(AppDataSource);
+    await migrationDataSource.initialize();
+    await migrationDataSource.runMigrations();
+    await runSeeder(migrationDataSource);
+  } catch (error) {
+    logger.error(
+      `Migration/seeder failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+    );
   } finally {
-    if (AppDataSource.isInitialized) {
-      await AppDataSource.destroy();
+    if (migrationDataSource.isInitialized) {
+      await migrationDataSource.destroy();
     }
   }
 
   try {
-    if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
-    }
-
     const decisionTreeService = app.get(DecisionTreeService);
+    const nestDataSource = app.get(DataSource);
+
     const trainingJobs = [
       { filePath: 'train.json', label: 'admission' },
       { filePath: 'train-role.json', label: 'role assignment' },
     ] as const;
 
-    const camps = (await AppDataSource.query('SELECT id FROM camp ORDER BY id')) as Array<{
+    const camps = (await nestDataSource.query('SELECT id FROM camp ORDER BY id')) as Array<{
       id: number;
     }>;
 
@@ -120,14 +123,9 @@ async function bootstrap(): Promise<void> {
     }
   } catch (error) {
     logger.warn(
-      `Could not run AI auto-training on startup: ${
-        error instanceof Error ? error.message : 'unknown error'
+      `Could not run AI auto-training on startup: ${error instanceof Error ? error.message : 'unknown error'
       }`,
     );
-  } finally {
-    if (AppDataSource.isInitialized) {
-      await AppDataSource.destroy();
-    }
   }
 
   const port = Number(process.env.PORT) || 3000;
