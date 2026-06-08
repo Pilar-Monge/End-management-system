@@ -27,6 +27,7 @@ export class RequestPersonDetailService {
   private async resolveRequestScope(requestId: number): Promise<{
     originCampId: number;
     destinationCampId: number;
+    status: string;
   }> {
     const scope = await this.repository.resolveRequestScope(requestId);
     if (!scope) {
@@ -76,6 +77,10 @@ export class RequestPersonDetailService {
       data.requestId,
       'Intercamp request',
     );
+    const scope = await this.resolveRequestScope(data.requestId);
+    if (!['DRAFT', 'PENDING'].includes(scope.status)) {
+      throw new Error('No se pueden agregar detalles a una solicitud finalizada');
+    }
 
     if (data.personId !== undefined && data.personId !== null) {
       await assertEntityExists(this.dataSource, PersonEntity, data.personId, 'Person');
@@ -94,12 +99,34 @@ export class RequestPersonDetailService {
     return await this.repository.findById(id);
   }
 
+  async getRequestScope(requestId: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+    status: string;
+  } | null> {
+    return await this.repository.resolveRequestScope(requestId);
+  }
+
+  async getDetailScope(id: number): Promise<{
+    originCampId: number;
+    destinationCampId: number;
+    status: string;
+  } | null> {
+    const detail = await this.repository.findById(id);
+    if (!detail) {
+      return null;
+    }
+
+    return await this.repository.resolveRequestScope(detail.requestId);
+  }
+
   async getAllDetails(filters?: {
     requestId?: number;
     detailType?: PersonDetailType;
     status?: PersonDetailStatus;
     personId?: number;
     occupationId?: number;
+    involvedCampId?: number;
     page?: number;
     limit?: number;
   }): Promise<{ data: RequestPersonDetail[]; total: number }> {
@@ -113,6 +140,7 @@ export class RequestPersonDetailService {
       status?: PersonDetailStatus;
       personId?: number;
       occupationId?: number;
+      involvedCampId?: number;
       offset: number;
       limit: number;
     } = {
@@ -125,6 +153,7 @@ export class RequestPersonDetailService {
     if (filters?.status !== undefined) repoFilters.status = filters.status;
     if (filters?.personId !== undefined) repoFilters.personId = filters.personId;
     if (filters?.occupationId !== undefined) repoFilters.occupationId = filters.occupationId;
+    if (filters?.involvedCampId !== undefined) repoFilters.involvedCampId = filters.involvedCampId;
 
     return await this.repository.findAllAndCount(repoFilters);
   }
@@ -145,6 +174,12 @@ export class RequestPersonDetailService {
         data.requestId,
         'Intercamp request',
       );
+    }
+
+    const targetRequestId = data.requestId ?? existing.requestId;
+    const scope = await this.resolveRequestScope(targetRequestId);
+    if (!['DRAFT', 'PENDING'].includes(scope.status)) {
+      throw new Error('No se pueden modificar detalles de una solicitud finalizada');
     }
 
     if (data.personId !== undefined && data.personId !== null) {
@@ -171,6 +206,11 @@ export class RequestPersonDetailService {
     const existing = await this.repository.findById(id);
     if (!existing) {
       return false;
+    }
+
+    const scope = await this.resolveRequestScope(existing.requestId);
+    if (scope.status !== 'DRAFT') {
+      throw new Error('No se pueden eliminar detalles despues de enviar la solicitud');
     }
 
     const deleted = await this.repository.delete(id);

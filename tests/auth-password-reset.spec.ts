@@ -43,10 +43,12 @@ test.describe.serial('Auth Password Reset API E2E', () => {
     expect(body.message).toContain('Si el correo pertenece');
   });
 
-  test('POST /api/auth/reset-password rejects invalid token', async ({ request }) => {
+  test('POST /api/auth/reset-password rejects invalid code', async ({ request }) => {
     const response = await request.post('/api/auth/reset-password', {
       data: {
-        token: 'invalid-token-for-test-only-1234567890123456',
+        email: 'admin@camp1.com',
+        campId: 1,
+        code: '00000000',
         newPassword: 'NewStrongPass123!',
       },
     });

@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { DecisionTreeService } from './decisionTree.service';
 import { DecisionTreeClassifier } from 'ml-cart';
 
@@ -20,8 +21,8 @@ const MOCK_PAYLOAD = {
     kind: 'classifier',
     splitColumn: 0,
     splitValue: 25,
-    left: { kind: 'classifier', distribution: [[1]] }, // predicts 0
-    right: { kind: 'classifier', distribution: [[0, 1]] }, // predicts 1
+    left: { kind: 'classifier', distribution: [[1]] },
+    right: { kind: 'classifier', distribution: [[0, 1]] },
   },
 };
 
@@ -277,6 +278,60 @@ describe('DecisionTreeService', () => {
       );
 
       expect(result.prediction).toBeDefined();
+    });
+  });
+
+  describe('confidence-based decisionAction', () => {
+    it('returns AUTO_APPROVE when score > 70 for ACCEPT prediction', async () => {
+      repository.findActiveByModelName
+        .mockResolvedValueOnce(MOCK_MODEL) // admission model
+        .mockResolvedValueOnce(MOCK_ROLE_MODEL); // role model
+      repository.findActiveGlobalByModelName.mockResolvedValue(null);
+
+      const payload = { root: { distribution: [[0.1, 0.9]] } }; // predicted class index 1 has 90%
+      jest.spyOn(service as any, 'loadModelFromModel').mockResolvedValueOnce({
+        loaded: { predict: () => [1], root: payload.root },
+        payload,
+      });
+
+      const result = await service.explainByModelName('admission-acceptance-v1', SAMPLE_FEATURES, 1);
+      expect(result.score).toBeGreaterThan(70);
+      expect(result.decisionAction).toBe('AUTO_APPROVE');
+    });
+
+    it('returns AUTO_REJECT when score < 30 even if prediction is ACCEPT', async () => {
+      repository.findActiveByModelName
+        .mockResolvedValueOnce(MOCK_MODEL)
+        .mockResolvedValueOnce(MOCK_ROLE_MODEL);
+      repository.findActiveGlobalByModelName.mockResolvedValue(null);
+
+      const payload = { root: { distribution: [[0.8, 0.2]] } }; // predicted class index 1 has 20%
+      jest.spyOn(service as any, 'loadModelFromModel').mockResolvedValueOnce({
+        loaded: { predict: () => [1], root: payload.root },
+        payload,
+      });
+
+      const result = await service.explainByModelName('admission-acceptance-v1', SAMPLE_FEATURES, 1);
+      expect(result.score).toBeLessThan(30);
+      expect(result.decisionAction).toBe('AUTO_REJECT');
+    });
+
+    it('returns SUGGEST when score is between 30 and 70', async () => {
+      repository.findActiveByModelName
+        .mockResolvedValueOnce(MOCK_MODEL)
+        .mockResolvedValueOnce(MOCK_ROLE_MODEL);
+      repository.findActiveGlobalByModelName.mockResolvedValue(null);
+
+      const payload = { root: { distribution: [[0.5, 0.5]] } }; // predicted class index 1 has 50%
+      jest.spyOn(service as any, 'loadModelFromModel').mockResolvedValueOnce({
+        loaded: { predict: () => [1], root: payload.root },
+        payload,
+      });
+
+      const result = await service.explainByModelName('admission-acceptance-v1', SAMPLE_FEATURES, 1);
+      expect(result.score).toBeGreaterThanOrEqual(30);
+      expect(result.score).toBeLessThanOrEqual(70);
+      expect(result.decisionAction).toBe('SUGGEST');
     });
   });
 

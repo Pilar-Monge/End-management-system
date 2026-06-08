@@ -18,6 +18,8 @@ import { ResourceTypeEntity } from '../resourceType/resourceType.entity';
 import { UserEntity } from '../systemUser/systemUser.entity';
 import { SystemTimeModule } from '../systemTime/systemTime.module';
 import { TemporaryOccupationAssignmentEntity } from '../temporaryOccupationAssignment/temporaryOccupationAssignment.entity';
+import { TransferModule } from '../transfer/transfer.module';
+import { TransferEntity } from '../transfer/transfer.entity';
 import { TemporalAutomationRepository } from './temporalAutomation.repository';
 import { TemporalAutomationService } from './temporalAutomation.service';
 
@@ -36,10 +38,12 @@ import { TemporalAutomationService } from './temporalAutomation.service';
       PersonEntity,
       ResourceTypeEntity,
       TemporaryOccupationAssignmentEntity,
+      TransferEntity,
       UserEntity,
     ]),
     SystemTimeModule,
     NotificationModule,
+    TransferModule,
   ],
   providers: [
     TemporalAutomationService,

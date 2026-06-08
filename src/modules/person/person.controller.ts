@@ -38,7 +38,7 @@ import {
 import { Roles } from '../../common/decorators';
 
 import { PersonService } from './person.service';
-import type { CreatePersonDTO, PersonStatus, UpdatePersonDTO } from './person.model';
+import type { CreatePersonDTO, PersonStatus } from './person.model';
 import { PersonEntity } from './person.entity';
 import { CreatePersonDto, UpdatePersonDto } from './dto';
 
@@ -230,7 +230,7 @@ export class PersonController {
   @ApiNotFoundResponse({ description: 'Person not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async update(@Param('id') id: string, @Body() body: UpdatePersonDTO, @Req() req: Request) {
+  async update(@Param('id') id: string, @Body() body: UpdatePersonDto, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
@@ -241,6 +241,7 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
+      // Restricción de camp: El admin solo puede editar personas de su propio camp.
       if (existingPerson.campId !== currentUser.campId) {
         throw new BadRequestException('You do not have permission to update this person');
       }
@@ -254,6 +255,9 @@ export class PersonController {
         message: 'Person updated successfully',
       };
     } catch (error) {
+      if (error && typeof (error as any).getStatus === 'function') {
+        throw error;
+      }
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error updating person',
       );
@@ -261,7 +265,7 @@ export class PersonController {
   }
 
   @Post(':id/photo')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Upload person photo' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiConsumes('multipart/form-data')
@@ -305,8 +309,14 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
-      if (existingPerson.campId !== currentUser.campId) {
-        throw new BadRequestException('You do not have permission to update this person');
+      // Restricción estricta: Nadie (ni el admin) puede actualizar la foto de otra persona.
+      const user = await this.service.findUserByPersonId(parsedId);
+      const isOwner = user && user.id === currentUser.userId;
+
+      if (!isOwner) {
+        throw new BadRequestException(
+          `You can only update your own profile photo. Your User ID: ${currentUser.userId}, Person ID in URL: ${parsedId}, Found Linked User: ${user?.id ?? 'none'}`,
+        );
       }
 
       const person = await this.service.uploadPersonPhoto(parsedId, file);
@@ -323,7 +333,7 @@ export class PersonController {
   }
 
   @Put(':id/photo')
-  @Roles('SYSTEM_ADMIN')
+  @Roles('SYSTEM_ADMIN', 'WORKER', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Update person photo' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiConsumes('multipart/form-data')
@@ -367,8 +377,14 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
-      if (existingPerson.campId !== currentUser.campId) {
-        throw new BadRequestException('You do not have permission to update this person');
+      // Restricción estricta: Nadie (ni el admin) puede actualizar la foto de otra persona.
+      const user = await this.service.findUserByPersonId(parsedId);
+      const isOwner = user && user.id === currentUser.userId;
+
+      if (!isOwner) {
+        throw new BadRequestException(
+          `You can only update your own profile photo. Your User ID: ${currentUser.userId}, Person ID in URL: ${parsedId}, Found Linked User: ${user?.id ?? 'none'}`,
+        );
       }
 
       const person = await this.service.uploadPersonPhoto(parsedId, file);
@@ -385,7 +401,7 @@ export class PersonController {
   }
 
   @Delete(':id')
-  @Roles('NO_ACCESS')
+  @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Delete Person' })
   @ApiParam({ name: 'id', type: Number, description: 'Person id' })
   @ApiOkResponseMessage({ description: 'Person deleted' })
@@ -393,18 +409,29 @@ export class PersonController {
   @ApiNotFoundResponse({ description: 'Person not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Req() req: Request) {
     if (!id) throw new BadRequestException('Invalid ID');
 
     const parsedId = Number.parseInt(id, 10);
     if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
 
     try {
+      const currentUser = this.getCurrentUser(req);
+      const existingPerson = await this.service.getPersonById(parsedId);
+      if (!existingPerson) throw new NotFoundException('Person not found');
+
+      if (existingPerson.campId !== currentUser.campId) {
+        throw new BadRequestException('You do not have permission to delete this person');
+      }
+
       const deleted = await this.service.deletePerson(parsedId);
       if (!deleted) throw new NotFoundException('Person not found');
 
       return { success: true, message: 'Person deleted successfully' };
     } catch (error) {
+      if (error && typeof (error as any).getStatus === 'function') {
+        throw error;
+      }
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Error deleting person',
       );

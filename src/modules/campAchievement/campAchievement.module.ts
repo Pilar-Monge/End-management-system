@@ -11,5 +11,6 @@ import { CampAchievementService } from './campAchievement.service';
   imports: [TypeOrmModule.forFeature([CampAchievementEntity]), NotificationModule],
   controllers: [CampAchievementController],
   providers: [CampAchievementRepository, CampAchievementService],
+  exports: [CampAchievementService],
 })
 export class CampAchievementModule {}

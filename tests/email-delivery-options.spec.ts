@@ -13,7 +13,7 @@ function makeEntry(overrides: Partial<EmailOutboxEntity> = {}): EmailOutboxEntit
     subject: overrides.subject ?? 'Subject',
     templateKey: overrides.templateKey ?? 'password_reset_request',
     payload: overrides.payload ?? {
-      resetUrl: 'http://example/reset?token=x',
+      resetCode: '12345678',
       expirationMinutes: '30',
     },
     status: overrides.status ?? 'PENDING',

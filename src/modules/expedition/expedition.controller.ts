@@ -102,7 +102,7 @@ export class ExpeditionController {
   }
 
   @Get('active')
-  @Roles('TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List active expeditions' })
   @ApiOkResponseList(ExpeditionEntity, { description: 'Active expeditions' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
@@ -136,7 +136,7 @@ export class ExpeditionController {
     return { success: true, data };
   }
   @Get(':id')
-  @Roles('TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Expedition by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition id' })
   @ApiOkResponseData(ExpeditionEntity, { description: 'Expedition found' })
@@ -161,7 +161,7 @@ export class ExpeditionController {
     return { success: true, data: expedition };
   }
   @Get()
-  @Roles('TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Expedition' })
   @ApiOkResponseList(ExpeditionEntity, { description: 'Expedition list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })

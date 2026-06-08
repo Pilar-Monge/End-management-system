@@ -34,28 +34,36 @@ export class CampAchievementService {
     }
 
     const message = `${messagePrefix}: ${achievement.name}.`;
-    await this.notificationService.notifyCampRoles(campAchievement.campId, ['SYSTEM_ADMIN'], {
-      type: 'CAMP_ACHIEVEMENT_UNLOCKED',
-      title,
-      message,
-      sourceType: 'camp_achievement',
-      sourceId,
-    });
+    await this.notificationService.notifyCampRoles(
+      campAchievement.campId,
+      ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+      {
+        type: 'CAMP_ACHIEVEMENT_UNLOCKED',
+        title,
+        message,
+        sourceType: 'camp_achievement',
+        sourceId,
+      },
+    );
 
-    await this.notificationService.notifyUser(campAchievement.unlockedBy, {
-      campId: campAchievement.campId,
-      type: 'CAMP_ACHIEVEMENT_UNLOCKED',
-      title: 'Logro registrado',
-      message: `El logro ${achievement.name} fue registrado para tu campamento.`,
-      sourceType: 'camp_achievement',
-      sourceId,
-    });
+    if (campAchievement.unlockedBy) {
+      await this.notificationService.notifyUser(campAchievement.unlockedBy, {
+        campId: campAchievement.campId,
+        type: 'CAMP_ACHIEVEMENT_UNLOCKED',
+        title: 'Logro registrado',
+        message: `El logro ${achievement.name} fue registrado para tu campamento.`,
+        sourceType: 'camp_achievement',
+        sourceId,
+      });
+    }
   }
 
   async createCampAchievement(data: CreateCampAchievementDTO): Promise<CampAchievement> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
     await assertEntityExists(this.dataSource, AchievementEntity, data.achievementId, 'Achievement');
-    await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
+    if (data.unlockedBy) {
+      await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
+    }
 
     const existing = await this.repository.findByKey(data.campId, data.achievementId);
     if (existing) {
@@ -114,7 +122,7 @@ export class CampAchievementService {
     achievementId: number,
     data: UpdateCampAchievementDTO,
   ): Promise<CampAchievement | null> {
-    if (data.unlockedBy !== undefined) {
+    if (data.unlockedBy !== undefined && data.unlockedBy !== null) {
       await assertEntityExists(this.dataSource, UserEntity, data.unlockedBy, 'User');
     }
 
@@ -152,5 +160,17 @@ export class CampAchievementService {
     );
 
     return true;
+  }
+
+  async getLatestUnlocks(campId: number, limit?: number): Promise<CampAchievement[]> {
+    return await this.repository.findLatestUnlocks(campId, limit);
+  }
+
+  async getAchievementProgress(campId: number): Promise<any[]> {
+    return await this.repository.findProgress(campId);
+  }
+
+  async markAchievementAsSeen(campId: number, achievementId: number): Promise<boolean> {
+    return await this.repository.markAsSeen(campId, achievementId);
   }
 }

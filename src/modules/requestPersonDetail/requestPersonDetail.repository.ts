@@ -39,12 +39,14 @@ export class RequestPersonDetailRepository {
   async resolveRequestScope(requestId: number): Promise<{
     originCampId: number;
     destinationCampId: number;
+    status: string;
   } | null> {
     const request = await this.repo.manager.getRepository(IntercampRequestEntity).findOne({
       where: { id: requestId },
       select: {
         originCampId: true,
         destinationCampId: true,
+        status: true,
       },
     });
 
@@ -55,6 +57,7 @@ export class RequestPersonDetailRepository {
     return {
       originCampId: request.originCampId,
       destinationCampId: request.destinationCampId,
+      status: request.status,
     };
   }
 
@@ -64,10 +67,21 @@ export class RequestPersonDetailRepository {
     status?: PersonDetailStatus;
     personId?: number;
     occupationId?: number;
+    involvedCampId?: number;
     offset?: number;
     limit?: number;
   }): Promise<{ data: RequestPersonDetail[]; total: number }> {
     const qb = this.repo.createQueryBuilder('d');
+
+    if (filters?.involvedCampId !== undefined) {
+      qb.innerJoin('intercamp_request', 'ir', 'ir.id = d.request_id');
+      qb.andWhere(
+        '(ir.origin_camp_id = :involvedCampId OR ir.destination_camp_id = :involvedCampId)',
+        {
+          involvedCampId: filters.involvedCampId,
+        },
+      );
+    }
 
     if (filters?.requestId !== undefined) {
       qb.andWhere('d.requestId = :requestId', { requestId: filters.requestId });

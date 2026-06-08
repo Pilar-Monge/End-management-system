@@ -10,12 +10,16 @@ describe('EmailTemplateService', () => {
   describe('render (general routing)', () => {
     it('routes to password reset request', () => {
       const result = service.render('password_reset_request', {
-        resetUrl: 'http://test.com',
+        resetCode: '12345678',
         expirationMinutes: 15,
       });
       expect(result.subject).toBe('Recuperacion de contrasena');
-      expect(result.html).toContain('http://test.com');
+      expect(result.html).toContain('12345678');
       expect(result.text).toContain('15 minutos');
+      expect(result.html).toContain('Este codigo expira en 15 minutos.');
+      expect(result.html).not.toContain('Restablecer contrasena');
+      expect(result.html).not.toContain('Este enlace expira');
+      expect(result.text).not.toContain('Este enlace expira');
     });
 
     it('routes to password reset confirmation', () => {
@@ -69,8 +73,11 @@ describe('EmailTemplateService', () => {
         sourceId: '123',
       });
       expect(result.subject).toBe('Rol actualizado');
-      expect(result.html).toContain('Origen:</strong> user');
-      expect(result.html).toContain('Referencia:</strong> 123');
+      expect(result.html).toContain('Referencia operacional');
+      expect(result.html).toContain('Origen');
+      expect(result.html).toContain('user');
+      expect(result.html).toContain('Referencia');
+      expect(result.html).toContain('123');
       expect(result.text).toContain('Origen: user');
     });
 

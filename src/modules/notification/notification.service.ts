@@ -42,6 +42,8 @@ export class NotificationService {
     'INTERCAMP_REQUEST_APPROVED',
     'INTERCAMP_REQUEST_REJECTED',
     'INTERCAMP_REQUEST_CANCELED',
+    'TEMPORARY_OCCUPATION_ASSIGNED',
+    'TEMPORARY_OCCUPATION_REVOKED',
   ]);
 
   constructor(
@@ -89,6 +91,7 @@ export class NotificationService {
       PERSON_STATUS_CHANGED: 'person_status_changed',
       OCCUPATION_WITHOUT_STAFF: 'occupation_without_staff',
       TEMPORARY_OCCUPATION_ASSIGNED: 'temporary_occupation_assigned',
+      TEMPORARY_OCCUPATION_REVOKED: 'temporary_occupation_revoked',
       CAMP_ACHIEVEMENT_UNLOCKED: 'camp_achievement_unlocked',
     };
 
@@ -329,7 +332,10 @@ export class NotificationService {
     });
   }
 
-  async createNotification(data: CreateNotificationDTO): Promise<Notification> {
+  async createNotification(
+    data: CreateNotificationDTO,
+    preferredUserId?: number,
+  ): Promise<Notification> {
     const hasUser = data.userId !== undefined && data.userId !== null;
     const hasRole = data.targetRole !== undefined && data.targetRole !== null;
     if (!hasUser && !hasRole) {
@@ -337,9 +343,52 @@ export class NotificationService {
     }
 
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
-    await this.validateUserCamp(data.campId, data.userId);
 
-    return await this.repository.create(data);
+    if (hasUser) {
+      await this.validateUserCamp(data.campId, data.userId);
+      return await this.repository.create(data);
+    }
+
+    const targetRole = data.targetRole;
+    if (!targetRole) {
+      throw new Error('La notificacion debe dirigirse a un userId o a un targetRole');
+    }
+
+    const recipients = await this.repository.findActiveUsersByCampAndRoles(data.campId, [
+      targetRole,
+    ]);
+    if (recipients.length === 0) {
+      throw new BadRequestException(
+        'No hay usuarios activos para el rol indicado en ese campamento',
+      );
+    }
+
+    const createdNotifications = await Promise.all(
+      recipients.map(
+        async (recipient) =>
+          await this.repository.create({
+            ...data,
+            userId: recipient.id,
+            targetRole,
+          }),
+      ),
+    );
+
+    if (preferredUserId !== undefined) {
+      const preferredNotification = createdNotifications.find(
+        (notification) => notification.userId === preferredUserId,
+      );
+      if (preferredNotification) {
+        return preferredNotification;
+      }
+    }
+
+    const firstNotification = createdNotifications[0];
+    if (!firstNotification) {
+      throw new BadRequestException('No se pudo crear la notificacion para el rol indicado');
+    }
+
+    return firstNotification;
   }
 
   async getNotificationById(id: number): Promise<Notification | null> {
@@ -349,6 +398,7 @@ export class NotificationService {
   async getAllNotifications(filters?: {
     campId?: number;
     userId?: number;
+    currentRole?: SystemRole;
     targetRole?: SystemRole;
     type?: NotificationType;
     read?: boolean;
@@ -362,6 +412,7 @@ export class NotificationService {
     const repoFilters: {
       campId?: number;
       userId?: number;
+      currentRole?: SystemRole;
       targetRole?: SystemRole;
       type?: NotificationType;
       read?: boolean;
@@ -374,6 +425,7 @@ export class NotificationService {
 
     if (filters?.campId !== undefined) repoFilters.campId = filters.campId;
     if (filters?.userId !== undefined) repoFilters.userId = filters.userId;
+    if (filters?.currentRole !== undefined) repoFilters.currentRole = filters.currentRole;
     if (filters?.targetRole !== undefined) repoFilters.targetRole = filters.targetRole;
     if (filters?.type !== undefined) repoFilters.type = filters.type;
     if (filters?.read !== undefined) repoFilters.read = filters.read;
@@ -440,7 +492,7 @@ export class NotificationService {
         payload: {
           sourceType: options.sourceType ?? undefined,
           sourceId: options.sourceId ?? undefined,
-          ...(options.email?.payload ?? {}),
+          details: options.email?.payload ?? undefined,
         },
       };
 

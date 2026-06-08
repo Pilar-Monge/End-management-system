@@ -85,6 +85,43 @@ describe('UserController', () => {
     });
   });
 
+  describe('findMe', () => {
+    it('should return basic authenticated user profile', async () => {
+      service.findUserById.mockResolvedValue({
+        id: 1,
+        username: 'demo',
+        email: 'demo@example.com',
+        role: 'SYSTEM_ADMIN',
+        status: 'ACTIVE',
+        campId: 1,
+      } as any);
+
+      const result = await controller.findMe(mockRequest);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        id: 1,
+        username: 'demo',
+        email: 'demo@example.com',
+        role: 'SYSTEM_ADMIN',
+        status: 'ACTIVE',
+        campId: 1,
+      });
+    });
+
+    it('should throw NotFoundException if authenticated user is missing', async () => {
+      service.findUserById.mockResolvedValue(null);
+
+      await expect(controller.findMe(mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if authenticated user belongs to another camp', async () => {
+      service.findUserById.mockResolvedValue({ id: 1, campId: 99 } as any);
+
+      await expect(controller.findMe(mockRequest)).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('update', () => {
     it('should update user if in same camp', async () => {
       service.findUserById.mockResolvedValue({ id: 10, campId: 1 } as any);
@@ -111,19 +148,31 @@ describe('UserController', () => {
   });
 
   describe('delete', () => {
-    it('should delete user', async () => {
+    it('should delete user if in same camp', async () => {
+      service.findUserById.mockResolvedValue({ id: 10, campId: 1 } as any);
       service.deleteUser.mockResolvedValue(true);
-      const result = await controller.delete('10');
+      const result = await controller.delete('10', mockRequest);
       expect(result.success).toBe(true);
     });
 
     it('should throw BadRequestException if id is invalid', async () => {
-      await expect(controller.delete('abc')).rejects.toThrow('invalid ID');
+      await expect(controller.delete('abc', mockRequest)).rejects.toThrow('invalid ID');
     });
 
     it('should throw NotFoundException if user not found', async () => {
+      service.findUserById.mockResolvedValue(null);
+      await expect(controller.delete('10', mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if user in different camp', async () => {
+      service.findUserById.mockResolvedValue({ id: 10, campId: 2 } as any);
+      await expect(controller.delete('10', mockRequest)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if delete fails after passing guards', async () => {
+      service.findUserById.mockResolvedValue({ id: 10, campId: 1 } as any);
       service.deleteUser.mockResolvedValue(false);
-      await expect(controller.delete('10')).rejects.toThrow(NotFoundException);
+      await expect(controller.delete('10', mockRequest)).rejects.toThrow(NotFoundException);
     });
   });
 

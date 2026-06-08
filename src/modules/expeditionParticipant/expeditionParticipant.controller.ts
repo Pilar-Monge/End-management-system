@@ -108,7 +108,7 @@ export class ExpeditionParticipantController {
     }
   }
   @Get(':id')
-  @Roles('TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Expedition Participant by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Expedition Participant id' })
   @ApiOkResponseData(ExpeditionParticipantEntity, { description: 'Expedition Participant found' })
@@ -133,7 +133,7 @@ export class ExpeditionParticipantController {
     return { success: true, data: participant };
   }
   @Get()
-  @Roles('TRAVEL_MANAGER')
+  @Roles('TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Expedition Participant' })
   @ApiOkResponseList(ExpeditionParticipantEntity, { description: 'Expedition Participant list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -289,7 +289,7 @@ export class ExpeditionParticipantController {
   @ApiNotFoundResponse({ description: 'Expedition Participant not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete() {
     throw new ForbiddenException('Expedition records cannot be deleted for audit reasons.');
   }
 }

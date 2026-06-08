@@ -44,7 +44,7 @@ import { ExpeditionResourceConsumedEntity } from './expeditionResourceConsumed.e
 import { CreateExpeditionResourceConsumedDto, UpdateExpeditionResourceConsumedDto } from './dto';
 @Controller('expedition-resources-consumed')
 @ApiTags('Expedition Resource Consumed')
-@Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT')
+@Roles('TRAVEL_MANAGER', 'RESOURCE_MANAGEMENT', 'SYSTEM_ADMIN')
 export class ExpeditionResourceConsumedController {
   constructor(private readonly service: ExpeditionResourceConsumedService) {}
 
@@ -315,7 +315,7 @@ export class ExpeditionResourceConsumedController {
   @ApiNotFoundResponse({ description: 'Expedition Resource Consumed not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete() {
     throw new ForbiddenException('Resource records cannot be deleted for audit reasons.');
   }
 }

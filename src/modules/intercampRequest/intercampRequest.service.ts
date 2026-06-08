@@ -10,6 +10,12 @@ import type {
   UpdateIntercampRequestDTO,
 } from './intercampRequest.model';
 
+type RequestActorContext = {
+  userId: number;
+  campId: number;
+  rol: string;
+};
+
 @Injectable()
 export class IntercampRequestService {
   constructor(
@@ -23,14 +29,24 @@ export class IntercampRequestService {
     plannedDepartureDate: Date;
     plannedArrivalDate: Date;
   } {
-    const plannedDepartureDate =
-      request.plannedDepartureDate ?? request.responseDate ?? request.createdDate;
+    if (!request.plannedDepartureDate || !request.plannedArrivalDate) {
+      throw new BadRequestException('plannedDepartureDate and plannedArrivalDate are required');
+    }
 
-    const plannedArrivalDate =
-      request.plannedArrivalDate ?? new Date(plannedDepartureDate.getTime() + 24 * 60 * 60 * 1000);
+    const plannedDepartureDate = request.plannedDepartureDate;
+    const plannedArrivalDate = request.plannedArrivalDate;
 
-    if (plannedArrivalDate.getTime() <= plannedDepartureDate.getTime()) {
-      throw new BadRequestException('plannedArrivalDate must be later than plannedDepartureDate');
+    if (plannedDepartureDate.getTime() < Date.now()) {
+      throw new BadRequestException(
+        'No se puede aprobar una solicitud con la fecha planeada en el pasado',
+      );
+    }
+
+    const diff = plannedArrivalDate.getTime() - plannedDepartureDate.getTime();
+    if (diff <= 60 * 1000) {
+      throw new BadRequestException(
+        'plannedArrivalDate must be at least 1 minute later than plannedDepartureDate',
+      );
     }
 
     return {
@@ -39,13 +55,159 @@ export class IntercampRequestService {
     };
   }
 
-  private hasAutoTransferNeeds(request: IntercampRequest): boolean {
-    return request.personRequirements.length > 0;
+  private toNumber(value: string | number | null | undefined): number {
+    const parsed = Number.parseFloat(String(value ?? '0'));
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  private async ensureApprovedRequestTransfer(request: IntercampRequest): Promise<void> {
+  private async assertResourceAvailability(request: IntercampRequest): Promise<void> {
+    const details = await this.repository.findRequestResourceAmountsByRequestId(request.id);
+
+    for (const detail of details) {
+      const requestedAmount = this.toNumber(detail.amount);
+      if (requestedAmount <= 0) {
+        continue;
+      }
+
+      const [inventoryRow, committedAmountRaw] = await Promise.all([
+        this.repository.findCampInventoryWithMinimum(
+          request.destinationCampId,
+          detail.resourceTypeId,
+        ),
+        this.repository.findCommittedTransferAmountByCampAndResourceType(
+          request.destinationCampId,
+          detail.resourceTypeId,
+          request.id,
+        ),
+      ]);
+
+      const currentAmount = this.toNumber(inventoryRow.current);
+      const minimumAmount = this.toNumber(inventoryRow.minimum);
+      const committedAmount = this.toNumber(committedAmountRaw);
+      const availableAmount = currentAmount - committedAmount;
+
+      if (availableAmount < requestedAmount) {
+        throw new BadRequestException(
+          `No hay inventario suficiente para aprobar el recurso ${detail.resourceTypeId}`,
+        );
+      }
+
+      const remainingAfter = currentAmount - committedAmount - requestedAmount;
+      if (remainingAfter < minimumAmount) {
+        throw new BadRequestException(
+          `No se puede aprobar el recurso ${detail.resourceTypeId}: dejaría el inventario por debajo del mínimo requerido (${minimumAmount})`,
+        );
+      }
+    }
+  }
+
+  private assertRequestUpdatePolicy(
+    existing: IntercampRequest,
+    data: UpdateIntercampRequestDTO,
+    actor: RequestActorContext,
+  ): void {
+    const requestedStatus = data.status ?? existing.status;
+
+    if (existing.status === 'REJECTED' || existing.status === 'CANCELED') {
+      throw new BadRequestException('La solicitud ya finalizo y no puede cambiarse');
+    }
+
+    if (existing.status === 'APPROVED') {
+      if (requestedStatus === 'CANCELED') {
+        if (actor.campId !== existing.destinationCampId) {
+          throw new BadRequestException(
+            'Solo el campamento destino puede cancelar una solicitud aprobada',
+          );
+        }
+
+        if (
+          existing.plannedDepartureDate &&
+          existing.plannedDepartureDate.getTime() <= Date.now()
+        ) {
+          throw new BadRequestException(
+            'No se puede cancelar una solicitud aprobada despues de la salida planeada',
+          );
+        }
+
+        return;
+      }
+
+      if (requestedStatus !== 'REJECTED') {
+        throw new BadRequestException('La solicitud aprobada no puede volver a editarse');
+      }
+
+      if (actor.campId !== existing.destinationCampId) {
+        throw new BadRequestException(
+          'Solo el campamento destino puede rechazar una solicitud aprobada',
+        );
+      }
+
+      return;
+    }
+
+    if (existing.status === 'DRAFT') {
+      if (requestedStatus === 'PENDING') {
+        throw new BadRequestException('Use submit para enviar una solicitud en borrador');
+      }
+
+      if (requestedStatus === 'APPROVED' || requestedStatus === 'REJECTED') {
+        throw new BadRequestException('No se puede aprobar o rechazar una solicitud en borrador');
+      }
+
+      if (actor.campId !== existing.originCampId) {
+        throw new BadRequestException(
+          'Solo el campamento origen puede editar una solicitud en borrador',
+        );
+      }
+
+      return;
+    }
+
+    if (requestedStatus === 'APPROVED' || requestedStatus === 'REJECTED') {
+      if (actor.campId !== existing.destinationCampId) {
+        throw new BadRequestException(
+          'Solo el campamento destino puede aprobar o rechazar la solicitud',
+        );
+      }
+
+      return;
+    }
+
+    if (requestedStatus === 'CANCELED') {
+      if (actor.campId !== existing.originCampId) {
+        throw new BadRequestException('Solo el campamento origen puede cancelar la solicitud');
+      }
+
+      return;
+    }
+
+    if (actor.campId !== existing.originCampId) {
+      throw new BadRequestException(
+        'Solo el campamento origen puede editar una solicitud pendiente',
+      );
+    }
+  }
+
+  private async cancelTransferIfPresent(requestId: number): Promise<void> {
+    const transfer = await this.transferService.getTransferByRequestId(requestId);
+    if (!transfer) {
+      return;
+    }
+
+    if (transfer.status === 'PENDING_DEPARTURE') {
+      await this.transferService.updateTransfer(transfer.id, { status: 'CANCELED' });
+    }
+  }
+
+  private async ensureApprovedRequestTransfer(
+    request: IntercampRequest,
+    personDetailRequirements: Array<{ occupationId: number; quantity: number }>,
+  ): Promise<void> {
+    this.resolvePlannedTransferDates(request);
+    await this.assertResourceAvailability(request);
+
     const detailRows = await this.repository.findRequestResourceAmountsByRequestId(request.id);
-    const needsTransfer = detailRows.length > 0 || this.hasAutoTransferNeeds(request);
+    const needsTransfer = detailRows.length > 0 || personDetailRequirements.length > 0;
 
     if (!needsTransfer) {
       return;
@@ -62,11 +224,11 @@ export class IntercampRequestService {
       });
     }
 
-    if (request.personRequirements.length > 0) {
+    if (personDetailRequirements.length > 0) {
       await this.transferPersonService.autoAssignGroupForTransfer(
         transfer.id,
-        request.originCampId,
-        request.personRequirements,
+        request.destinationCampId,
+        personDetailRequirements,
       );
     }
 
@@ -123,11 +285,17 @@ export class IntercampRequestService {
       data.originCampId,
       data.destinationCampId,
       data.createdBy,
-      data.respondedBy,
     );
 
-    const created = await this.repository.create(data);
+    return await this.repository.create({
+      ...data,
+      status: 'DRAFT',
+      responseDate: null,
+      respondedBy: null,
+    });
+  }
 
+  private async notifySubmittedRequest(created: IntercampRequest): Promise<void> {
     const [originCamp, destinationCamp] = await Promise.all([
       this.repository.findCampById(created.originCampId),
       this.repository.findCampById(created.destinationCampId),
@@ -156,8 +324,36 @@ export class IntercampRequestService {
         sourceId: created.id,
       },
     );
+  }
 
-    return created;
+  async submitRequest(id: number, actor: RequestActorContext): Promise<IntercampRequest | null> {
+    const existing = await this.repository.findById(id);
+    if (!existing) return null;
+
+    if (existing.status !== 'DRAFT') {
+      throw new BadRequestException('Solo se pueden enviar solicitudes en borrador');
+    }
+
+    if (actor.campId !== existing.originCampId) {
+      throw new BadRequestException('Solo el campamento origen puede enviar la solicitud');
+    }
+
+    const detailsCount = await this.repository.countRequestDetailsByRequestId(id);
+    if (detailsCount <= 0) {
+      throw new BadRequestException('La solicitud debe tener al menos un detalle antes de enviarse');
+    }
+
+    this.resolvePlannedTransferDates(existing);
+
+    const updated = await this.repository.update(id, {
+      status: 'PENDING',
+      respondedBy: null,
+      responseDate: null,
+    });
+    if (!updated) return null;
+
+    await this.notifySubmittedRequest(updated);
+    return updated;
   }
 
   async getRequestById(id: number): Promise<IntercampRequest | null> {
@@ -206,34 +402,99 @@ export class IntercampRequestService {
   async updateRequest(
     id: number,
     data: UpdateIntercampRequestDTO,
+    actor: RequestActorContext,
   ): Promise<IntercampRequest | null> {
     const existing = await this.repository.findById(id);
     if (!existing) return null;
 
+    this.assertRequestUpdatePolicy(existing, data, actor);
+
+    if (existing.status === 'PENDING' || data.status === 'APPROVED') {
+      const detailsCount = await this.repository.countRequestDetailsByRequestId(id);
+      if (detailsCount <= 0) {
+        throw new BadRequestException('La solicitud debe tener al menos un detalle');
+      }
+    }
+
     const originCampId = data.originCampId ?? existing.originCampId;
     const destinationCampId = data.destinationCampId ?? existing.destinationCampId;
     const createdBy = data.createdBy ?? existing.createdBy;
-    const respondedBy = data.respondedBy !== undefined ? data.respondedBy : existing.respondedBy;
-    const resolvedPersonRequirements = data.personRequirements ?? existing.personRequirements;
+    const persistedData: UpdateIntercampRequestDTO = {
+      ...data,
+      respondedBy:
+        data.status !== undefined ? actor.userId : (data.respondedBy ?? existing.respondedBy),
+      responseDate:
+        data.status !== undefined ? new Date() : (data.responseDate ?? existing.responseDate),
+    };
+    const respondedBy =
+      persistedData.respondedBy !== undefined ? persistedData.respondedBy : existing.respondedBy;
+    const resolvedPersonRequirements =
+      await this.repository.findPersonDetailRequirementsByRequestId(id);
 
     if (data.status === 'APPROVED' && resolvedPersonRequirements.length > 0) {
       await this.transferPersonService.canFulfillRequirements(
-        originCampId,
+        destinationCampId,
         resolvedPersonRequirements,
       );
     }
 
+    if (data.status === 'APPROVED') {
+      this.resolvePlannedTransferDates({
+        ...existing,
+        ...persistedData,
+        originCampId,
+        destinationCampId,
+        createdBy,
+        respondedBy,
+      });
+      await this.assertResourceAvailability({
+        ...existing,
+        ...persistedData,
+        originCampId,
+        destinationCampId,
+        createdBy,
+        respondedBy,
+      });
+    }
+
     await this.validateRoutingAndOwnership(originCampId, destinationCampId, createdBy, respondedBy);
 
-    const updated = await this.repository.update(id, data);
+    if (data.status === 'APPROVED') {
+      if (actor.campId !== destinationCampId) {
+        throw new BadRequestException('Solo el campamento destino puede aprobar la solicitud');
+      }
+    }
+
+    if (
+      data.status === 'CANCELED' &&
+      existing.status !== 'APPROVED' &&
+      actor.campId !== originCampId
+    ) {
+      throw new BadRequestException('Solo el campamento origen puede cancelar la solicitud');
+    }
+
+    if (data.status === 'REJECTED' || data.status === 'CANCELED') {
+      const transfer = await this.transferService.getTransferByRequestId(id);
+      if (transfer?.status === 'COMPLETED') {
+        throw new BadRequestException(
+          'No se puede modificar una solicitud cuyo traslado ya fue completado',
+        );
+      }
+    }
+
+    const updated = await this.repository.update(id, persistedData);
     if (!updated) {
       return null;
+    }
+
+    if (data.status === 'REJECTED' || data.status === 'CANCELED') {
+      await this.cancelTransferIfPresent(id);
     }
 
     const statusChanged = updated.status !== existing.status;
     if (statusChanged) {
       if (updated.status === 'APPROVED') {
-        await this.ensureApprovedRequestTransfer(updated);
+        await this.ensureApprovedRequestTransfer(updated, resolvedPersonRequirements);
       }
 
       const notificationType =
@@ -274,6 +535,21 @@ export class IntercampRequestService {
           type: notificationType,
           title,
           message,
+          sourceType: 'intercamp_request',
+          sourceId: updated.id,
+        },
+      );
+    } else if (existing.status === 'PENDING') {
+      const targetCampId =
+        actor.campId === updated.originCampId ? updated.destinationCampId : updated.originCampId;
+
+      await this.notificationService.notifyCampRoles(
+        targetCampId,
+        ['SYSTEM_ADMIN', 'RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER'],
+        {
+          type: 'INTERCAMP_REQUEST_RECEIVED',
+          title: 'Solicitud intercampamento actualizada',
+          message: `La solicitud intercampamento #${updated.id} fue actualizada.`,
           sourceType: 'intercamp_request',
           sourceId: updated.id,
         },

@@ -4,9 +4,7 @@ export class RemoveVisitorRole1777800000000 implements MigrationInterface {
   name = 'RemoveVisitorRole1777800000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      "UPDATE public.system_user SET role = 'WORKER' WHERE role = 'VISITOR'",
-    );
+    await queryRunner.query("UPDATE public.system_user SET role = 'WORKER' WHERE role = 'VISITOR'");
     await queryRunner.query(
       "UPDATE public.user_role_history SET rol_anterior = 'WORKER' WHERE rol_anterior = 'VISITOR'",
     );

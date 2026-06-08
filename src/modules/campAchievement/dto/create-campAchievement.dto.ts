@@ -8,10 +8,16 @@ export class CreateCampAchievementDto {
   achievementId!: number;
 
   @ApiPropertyOptional()
-  obtainedDate?: Date;
+  unlockedAt?: Date;
 
-  @ApiProperty()
-  unlockedBy!: number;
+  @ApiPropertyOptional({ nullable: true })
+  unlockedBy?: number | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  progressSnapshot?: number | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  sourceRunId?: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   unlockContext?: string | null;

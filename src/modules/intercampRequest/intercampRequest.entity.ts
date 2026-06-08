@@ -30,7 +30,7 @@ export class IntercampRequestEntity {
     type: 'enum',
     enum: INTERCAMP_REQUEST_STATUS_VALUES,
     enumName: 'intercamp_request_status_enum',
-    default: 'PENDING',
+    default: 'DRAFT',
   })
   @ApiProperty({ enum: INTERCAMP_REQUEST_STATUS_VALUES })
   status!: IntercampRequestStatus;

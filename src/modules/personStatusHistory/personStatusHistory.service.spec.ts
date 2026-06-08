@@ -72,6 +72,11 @@ describe('PersonStatusHistoryService', () => {
       repository.createEntryTransactional.mockRejectedValue(new Error('UNKNOWN'));
       await expect(service.createEntry({} as any)).rejects.toThrow('UNKNOWN');
     });
+
+    it('should rethrow non-Error rejection exceptions', async () => {
+      repository.createEntryTransactional.mockRejectedValue('string-error');
+      await expect(service.createEntry({} as any)).rejects.toBe('string-error');
+    });
   });
 
   describe('getEntryById', () => {
@@ -165,6 +170,18 @@ describe('PersonStatusHistoryService', () => {
       repository.findUserById.mockResolvedValue({ role: 'SYSTEM_ADMIN', campId: 2 });
 
       await expect(service.updateEntry(10, {})).rejects.toThrow(BadRequestException);
+    });
+
+    it('should not notify status change if updated entry is missing status properties', async () => {
+      const existing = { id: 10, personId: 1, changedBy: 5 };
+      repository.findById.mockResolvedValue(existing);
+      repository.findPersonById.mockResolvedValue({ campId: 1 });
+      repository.findUserById.mockResolvedValue({ role: 'SYSTEM_ADMIN', campId: 1 });
+      repository.update.mockResolvedValue({ id: 10, personId: 1 }); // missing status fields
+
+      const result = await service.updateEntry(10, { personId: 1 });
+      expect(result).toBeDefined();
+      expect(notificationService.notifyCampRoles).not.toHaveBeenCalled();
     });
   });
 

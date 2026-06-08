@@ -6,8 +6,11 @@ export interface PasswordResetToken {
   id: number;
   userId: number;
   tokenHash: string;
+  codeHash: string;
   status: PasswordResetTokenStatus;
   expiresAt: Date;
+  attempts: number;
+  maxAttempts: number;
   usedAt: Date | null;
   createdAt: Date;
   requestIp: string | null;

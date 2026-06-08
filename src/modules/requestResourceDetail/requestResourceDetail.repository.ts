@@ -35,12 +35,14 @@ export class RequestResourceDetailRepository {
   async resolveRequestScope(requestId: number): Promise<{
     originCampId: number;
     destinationCampId: number;
+    status: string;
   } | null> {
     const request = await this.repo.manager.getRepository(IntercampRequestEntity).findOne({
       where: { id: requestId },
       select: {
         originCampId: true,
         destinationCampId: true,
+        status: true,
       },
     });
 
@@ -51,6 +53,7 @@ export class RequestResourceDetailRepository {
     return {
       originCampId: request.originCampId,
       destinationCampId: request.destinationCampId,
+      status: request.status,
     };
   }
 

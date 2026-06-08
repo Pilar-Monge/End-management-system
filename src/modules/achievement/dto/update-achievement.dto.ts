@@ -12,4 +12,22 @@ export class UpdateAchievementDto {
 
   @ApiPropertyOptional({ nullable: true })
   iconUrl?: string | null;
+
+  @ApiPropertyOptional()
+  metricKey?: string;
+
+  @ApiPropertyOptional()
+  operator?: string;
+
+  @ApiPropertyOptional()
+  targetValue?: number;
+
+  @ApiPropertyOptional({ nullable: true })
+  windowDays?: number | null;
+
+  @ApiPropertyOptional()
+  scope?: string;
+
+  @ApiPropertyOptional()
+  isActive?: boolean;
 }

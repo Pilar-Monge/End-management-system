@@ -21,7 +21,7 @@ import {
   AdmissionRequestStatus,
 } from './admissionRequest.model';
 import { buildAdmissionFeatures, type AdmissionFeatureVector } from './admissionFeatures.util';
-import { SupabaseStorageService } from '../../services/supabase-storage.service';
+import { R2StorageService } from '../../services/r2-storage.service';
 
 const ADMISSION_MODEL_NAME = 'admission-acceptance-v1';
 const ADMISSION_REVIEW_ROLE_VALUES: readonly SystemRole[] = [
@@ -30,6 +30,19 @@ const ADMISSION_REVIEW_ROLE_VALUES: readonly SystemRole[] = [
   'TRAVEL_MANAGER',
   'SYSTEM_ADMIN',
 ];
+
+const AI_ROLE_TO_SYSTEM_ROLE: Record<string, SystemRole> = {
+  'Medico': 'RESOURCE_MANAGEMENT',
+  'Ingeniero': 'RESOURCE_MANAGEMENT',
+  'Guardia': 'WORKER',
+  'Explorador': 'WORKER',
+  'Recolector de agua': 'WORKER',
+  'Recolector de comida': 'WORKER',
+};
+
+function resolveSystemRoleFromAiSuggestion(suggestedRole: string): SystemRole {
+  return AI_ROLE_TO_SYSTEM_ROLE[suggestedRole] ?? 'WORKER';
+}
 
 interface AiReviewContext {
   aiDecision?: string;
@@ -60,7 +73,7 @@ export class AdmissionRequestService {
     private readonly decisionTreeService: DecisionTreeService,
     private readonly notificationService: NotificationService,
     private readonly systemTimeService: SystemTimeService,
-    private readonly storageService: SupabaseStorageService,
+    private readonly storageService: R2StorageService,
   ) {
     this.repository = repository;
   }
@@ -98,6 +111,18 @@ export class AdmissionRequestService {
 
       const aiDecision = this.normalizeAiDecision(aiExplain.prediction);
 
+      let nextStatus: AdmissionRequestStatus = 'PENDING_ADMIN';
+      let autoApproved = false;
+      let autoRejected = false;
+
+      if (aiExplain.decisionAction === 'AUTO_APPROVE') {
+        nextStatus = 'APPROVED';
+        autoApproved = true;
+      } else if (aiExplain.decisionAction === 'AUTO_REJECT') {
+        nextStatus = 'REJECTED';
+        autoRejected = true;
+      }
+
       await this.repository.saveAiAdmissionReport({
         requestId: createdRequest.id,
         submittedData: {
@@ -125,10 +150,23 @@ export class AdmissionRequestService {
         suggestedOccupationId: assignedOccupation?.id ?? null,
       });
 
-      const updatedRequest = await this.repository.update(createdRequest.id, {
+      const updateData: Partial<UpdateAdmissionRequestDTO> = {
         suggestedOccupationId: assignedOccupation?.id ?? null,
-        status: 'PENDING_ADMIN',
-      });
+        status: nextStatus,
+      };
+
+      if (autoApproved) {
+        updateData.finalOccupationId = assignedOccupation?.id ?? null;
+        updateData.reviewDate = this.systemTimeService.now();
+      } else if (autoRejected) {
+        updateData.rejectionReason = `Rechazado automáticamente por la IA. Motivo: ${aiExplain.explanation?.admissionReason || 'Puntaje de confianza muy bajo'}`;
+        updateData.reviewDate = this.systemTimeService.now();
+      }
+
+      const updatedRequest = await this.repository.update(
+        createdRequest.id,
+        updateData as UpdateAdmissionRequestDTO,
+      );
 
       if (!updatedRequest) {
         throw new Error('Error al actualizar la solicitud despues del reporte de IA');
@@ -136,19 +174,36 @@ export class AdmissionRequestService {
 
       requestToReturn = updatedRequest;
 
-      await this.notifyAiReviewResult(updatedRequest, {
-        aiDecision: aiExplain.prediction,
-        suggestedRole: aiExplain.roleAssignment.suggestedRole,
-        suggestedOccupationName: aiExplain.roleAssignment.mappedOccupationName,
-        admissionSummary: aiExplain.explanation.admissionSummary,
-        admissionReason: aiExplain.explanation.admissionReason,
-        roleSummary: aiExplain.roleAssignment.summary,
-        roleReason: aiExplain.roleAssignment.reason,
-      });
+      let createdAccess = null;
+      if (autoApproved && assignedOccupation) {
+        const aiAssignedRole = resolveSystemRoleFromAiSuggestion(
+          aiExplain.roleAssignment.suggestedRole,
+        );
+        createdAccess = await this.createPersonAndUserForApprovedRequest(
+          updatedRequest,
+          assignedOccupation.id,
+          aiAssignedRole,
+        );
+      }
+
+      if (autoApproved) {
+        await this.notifyAdminReviewResult(updatedRequest, true, createdAccess);
+      } else if (autoRejected) {
+        await this.notifyAdminReviewResult(updatedRequest, false, null);
+      } else {
+        await this.notifyAiReviewResult(updatedRequest, {
+          aiDecision: aiExplain.prediction,
+          suggestedRole: aiExplain.roleAssignment.suggestedRole,
+          suggestedOccupationName: aiExplain.roleAssignment.mappedOccupationName,
+          admissionSummary: aiExplain.explanation.admissionSummary,
+          admissionReason: aiExplain.explanation.admissionReason,
+          roleSummary: aiExplain.roleAssignment.summary,
+          roleReason: aiExplain.roleAssignment.reason,
+        });
+      }
     } catch (error) {
       this.logger.warn(
-        `AI auto-review failed for admission request ${createdRequest.id} (camp ${createdRequest.campId}): ${
-          error instanceof Error ? error.message : 'unknown error'
+        `AI auto-review failed for admission request ${createdRequest.id} (camp ${createdRequest.campId}): ${error instanceof Error ? error.message : 'unknown error'
         }`,
       );
     }
@@ -663,17 +718,17 @@ export class AdmissionRequestService {
         sourceType: 'admission_request',
         details: approved
           ? {
-              nombreSolicitante: applicantName,
-              usuarioAsignado: createdAccess?.username ?? request.desiredUsername,
-              contrasenaTemporal: createdAccess?.generatedPassword ?? 'NO_GENERADA',
-              rolSistema: createdAccess?.role ?? 'NO_ASIGNADO',
-              oficioAsignado: createdAccess?.occupationName ?? 'NO_ASIGNADO',
-              descripcionOficio: createdAccess?.occupationDescription ?? 'Sin descripcion',
-            }
+            nombreSolicitante: applicantName,
+            usuarioAsignado: createdAccess?.username ?? request.desiredUsername,
+            contrasenaTemporal: createdAccess?.generatedPassword ?? 'NO_GENERADA',
+            rolSistema: createdAccess?.role ?? 'NO_ASIGNADO',
+            oficioAsignado: createdAccess?.occupationName ?? 'NO_ASIGNADO',
+            descripcionOficio: createdAccess?.occupationDescription ?? 'Sin descripcion',
+          }
           : {
-              nombreSolicitante: applicantName,
-              motivoRechazo: request.rejectionReason ?? 'Sin motivo especifico',
-            },
+            nombreSolicitante: applicantName,
+            motivoRechazo: request.rejectionReason ?? 'Sin motivo especifico',
+          },
       },
     });
   }
@@ -874,8 +929,7 @@ export class AdmissionRequestService {
         await this.storageService.deleteImage(existing.photoUrl);
       } catch (error) {
         this.logger.warn(
-          `Failed to delete previous image for admission request ${id}: ${
-            error instanceof Error ? error.message : 'unknown error'
+          `Failed to delete previous image for admission request ${id}: ${error instanceof Error ? error.message : 'unknown error'
           }`,
         );
       }
@@ -896,8 +950,7 @@ export class AdmissionRequestService {
         result.photoSignedUrl = await this.storageService.getSignedUrl(request.photoUrl);
       } catch (error) {
         this.logger.debug(
-          `Failed to generate signed URL for admission request ${request.id}: ${
-            error instanceof Error ? error.message : 'unknown error'
+          `Failed to generate signed URL for admission request ${request.id}: ${error instanceof Error ? error.message : 'unknown error'
           }`,
         );
       }

@@ -39,7 +39,11 @@ describe('RequestPersonDetailService', () => {
     };
 
     it('creates and notifies', async () => {
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
       repository.create.mockResolvedValue({ id: 1, ...validDto } as never);
 
       const result = await service.createDetail(validDto);
@@ -70,7 +74,11 @@ describe('RequestPersonDetailService', () => {
     it('updates and notifies', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1, status: 'PENDING' } as never);
       repository.update.mockResolvedValue({ id: 1, requestId: 1, status: 'APPROVED' } as never);
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'PENDING',
+      });
 
       const result = await service.updateDetail(1, { status: 'APPROVED' });
       expect(result?.id).toBe(1);
@@ -86,6 +94,11 @@ describe('RequestPersonDetailService', () => {
 
     it('returns false if delete fails', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1 } as never);
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
       repository.delete.mockResolvedValue(false);
       await expect(service.deleteDetail(1)).resolves.toBe(false);
     });
@@ -93,7 +106,11 @@ describe('RequestPersonDetailService', () => {
     it('deletes and notifies', async () => {
       repository.findById.mockResolvedValue({ id: 1, requestId: 1 } as never);
       repository.delete.mockResolvedValue(true);
-      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.resolveRequestScope.mockResolvedValue({
+        originCampId: 1,
+        destinationCampId: 2,
+        status: 'DRAFT',
+      });
 
       await expect(service.deleteDetail(1)).resolves.toBe(true);
       expect(repository.delete).toHaveBeenCalledWith(1);

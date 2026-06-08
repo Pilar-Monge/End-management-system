@@ -70,39 +70,101 @@ export class IntercampRequestController {
     };
   }
 
-  private isSystemAdmin(rol: string): boolean {
-    return rol === 'SYSTEM_ADMIN';
-  }
   @Post()
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
   @ApiOperation({ summary: 'Create Intercamp Request' })
-  @ApiBody({ type: CreateIntercampRequestDto })
+  @ApiBody({
+    type: CreateIntercampRequestDto,
+    examples: {
+      camp1ToCamp2FoodRequest: {
+        summary: 'Camp 1 requests food from Camp 2',
+        value: {
+          originCampId: 1,
+          destinationCampId: 2,
+          status: 'PENDING',
+          description: 'Request 100 units of canned food from camp 1 to camp 2',
+          plannedDepartureDate: '2026-06-01T09:00:00Z',
+          plannedArrivalDate: '2026-06-01T11:00:00Z',
+          createdDate: '2026-04-05T12:00:00Z',
+          responseDate: null,
+          createdBy: 3,
+          respondedBy: null,
+        },
+      },
+    },
+  })
   @ApiCreatedResponseData(IntercampRequestEntity, { description: 'Intercamp Request created' })
   @ApiBadRequestResponse({ description: 'Invalid payload' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   async create(@Body() body: CreateIntercampRequestDTO, @Req() req: Request) {
     try {
-      const currentUser = this.getCurrentUser(req);
-      if (!this.isSystemAdmin(currentUser.rol)) {
-        if (body.originCampId !== currentUser.campId) {
-          throw new BadRequestException('originCampId must match your authenticated camp');
-        }
+      const missing: string[] = [];
+      if (body.originCampId === undefined || body.originCampId === null)
+        missing.push('originCampId');
+      if (body.destinationCampId === undefined || body.destinationCampId === null)
+        missing.push('destinationCampId');
+      if (!body.plannedDepartureDate) missing.push('plannedDepartureDate');
+      if (!body.plannedArrivalDate) missing.push('plannedArrivalDate');
+      if (body.createdBy === undefined || body.createdBy === null) missing.push('createdBy');
 
-        if (body.createdBy !== currentUser.userId) {
-          throw new BadRequestException('createdBy must match the authenticated user');
+      if (missing.length > 0) {
+        throw new BadRequestException(`Missing required field(s): ${missing.join(', ')}`);
+      }
+
+      try {
+        const dep = new Date(String(body.plannedDepartureDate));
+        const arr = new Date(String(body.plannedArrivalDate));
+        if (!(arr.getTime() > dep.getTime() + 60_000)) {
+          throw new BadRequestException(
+            'plannedArrivalDate must be at least 1 minute after plannedDepartureDate',
+          );
         }
+      } catch (err) {
+        if (err instanceof BadRequestException) throw err;
+        throw new BadRequestException(
+          'Invalid date format for plannedDepartureDate or plannedArrivalDate',
+        );
+      }
+
+      const currentUser = this.getCurrentUser(req);
+      if (body.originCampId !== currentUser.campId) {
+        throw new BadRequestException('originCampId must match your authenticated camp');
+      }
+
+      if (body.createdBy !== currentUser.userId) {
+        throw new BadRequestException('createdBy must match the authenticated user');
       }
 
       const request = await this.service.createRequest(body);
+      if (!request) {
+        throw new BadRequestException(
+          'Could not create intercamp request — please verify required fields and try again',
+        );
+      }
+
       return {
         success: true,
         data: request,
-        message: 'Intercamp request created successfully',
+        message: 'Intercamp request draft created successfully',
       };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
+      }
+
+      const msg = typeof error === 'string' ? error : error instanceof Error ? error.message : null;
+      if (msg) {
+        if (msg.includes('null value in column')) {
+          const col = msg.split('column "')[1]?.split('"')[0];
+          if (col) throw new BadRequestException(`Missing required column: ${col}`);
+        }
+
+        if (msg.includes('violates foreign key constraint')) {
+          throw new BadRequestException(
+            'Foreign key constraint violation: check referenced camp or user ids',
+          );
+        }
       }
 
       throw new BadRequestException(
@@ -110,8 +172,33 @@ export class IntercampRequestController {
       );
     }
   }
-  @Get(':id')
+  @Post(':id/submit')
   @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @ApiOperation({ summary: 'Submit Intercamp Request draft' })
+  @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
+  @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request submitted' })
+  @ApiBadRequestResponse({ description: 'Invalid id or request cannot be submitted' })
+  @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  async submit(@Param('id') id: string, @Req() req: Request) {
+    if (!id) throw new BadRequestException('Invalid ID');
+
+    const parsedId = Number.parseInt(id, 10);
+    if (Number.isNaN(parsedId)) throw new BadRequestException('Invalid ID');
+
+    const currentUser = this.getCurrentUser(req);
+    const request = await this.service.submitRequest(parsedId, currentUser);
+    if (!request) throw new NotFoundException('Intercamp request not found');
+
+    return {
+      success: true,
+      data: request,
+      message: 'Intercamp request submitted successfully',
+    };
+  }
+  @Get(':id')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Intercamp Request by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Intercamp Request id' })
   @ApiOkResponseData(IntercampRequestEntity, { description: 'Intercamp Request found' })
@@ -130,7 +217,6 @@ export class IntercampRequestController {
 
     const currentUser = this.getCurrentUser(req);
     if (
-      !this.isSystemAdmin(currentUser.rol) &&
       request.originCampId !== currentUser.campId &&
       request.destinationCampId !== currentUser.campId
     ) {
@@ -140,7 +226,7 @@ export class IntercampRequestController {
     return { success: true, data: request };
   }
   @Get()
-  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER')
+  @Roles('RESOURCE_MANAGEMENT', 'TRAVEL_MANAGER', 'SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Intercamp Request' })
   @ApiOkResponseList(IntercampRequestEntity, { description: 'Intercamp Request list' })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
@@ -180,8 +266,6 @@ export class IntercampRequestController {
       }
 
       const currentUser = this.getCurrentUser(req);
-      const isAdmin = this.isSystemAdmin(currentUser.rol);
-
       if (originCampId) {
         const parsedOriginCampId = Number.parseInt(originCampId, 10);
         if (Number.isNaN(parsedOriginCampId)) {
@@ -210,12 +294,14 @@ export class IntercampRequestController {
         filters.createdBy = parsedCreatedBy;
       }
 
-      if (!isAdmin) {
-        filters.involvedCampId = currentUser.campId;
+      filters.involvedCampId = currentUser.campId;
 
-        if (filters.createdBy !== undefined && filters.createdBy !== currentUser.userId) {
-          throw new BadRequestException('createdBy filter must match the authenticated user');
-        }
+      if (
+        currentUser.rol !== 'SYSTEM_ADMIN' &&
+        filters.createdBy !== undefined &&
+        filters.createdBy !== currentUser.userId
+      ) {
+        throw new BadRequestException('createdBy filter must match the authenticated user');
       }
 
       if (respondedBy) {
@@ -290,24 +376,71 @@ export class IntercampRequestController {
       }
 
       if (
-        !this.isSystemAdmin(currentUser.rol) &&
         existingRequest.originCampId !== currentUser.campId &&
         existingRequest.destinationCampId !== currentUser.campId
       ) {
         throw new BadRequestException('You can only update requests involving your camp');
       }
 
-      if (!this.isSystemAdmin(currentUser.rol)) {
-        if (body.originCampId !== undefined && body.originCampId !== currentUser.campId) {
-          throw new BadRequestException('originCampId must match your authenticated camp');
-        }
+      if (body.originCampId !== undefined && body.originCampId !== currentUser.campId) {
+        throw new BadRequestException('originCampId must match your authenticated camp');
+      }
 
-        if (body.createdBy !== undefined && body.createdBy !== currentUser.userId) {
-          throw new BadRequestException('createdBy must match the authenticated user');
+      if (body.createdBy !== undefined && body.createdBy !== currentUser.userId) {
+        throw new BadRequestException('createdBy must match the authenticated user');
+      }
+
+      const newStatus: IntercampRequestStatus =
+        (body.status as IntercampRequestStatus) ?? existingRequest.status;
+
+      if (newStatus !== 'DRAFT' && newStatus !== 'PENDING') {
+        const hasRespondedBy =
+          body.respondedBy !== undefined && body.respondedBy !== null
+            ? true
+            : existingRequest.respondedBy !== undefined && existingRequest.respondedBy !== null;
+
+        const hasResponseDate =
+          body.responseDate !== undefined && body.responseDate !== null
+            ? true
+            : existingRequest.responseDate !== undefined && existingRequest.responseDate !== null;
+
+        const missing: string[] = [];
+        if (!hasRespondedBy) missing.push('respondedBy');
+        if (!hasResponseDate) missing.push('responseDate');
+
+        if (missing.length > 0) {
+          throw new BadRequestException(
+            `Missing required field(s) for status '${newStatus}': ${missing.join(', ')}`,
+          );
         }
       }
 
-      const request = await this.service.updateRequest(parsedId, body);
+      if (newStatus === 'APPROVED') {
+        const plannedDeparture = body.plannedDepartureDate ?? existingRequest.plannedDepartureDate;
+        const plannedArrival = body.plannedArrivalDate ?? existingRequest.plannedArrivalDate;
+
+        const missingDates: string[] = [];
+        if (!plannedDeparture) missingDates.push('plannedDepartureDate');
+        if (!plannedArrival) missingDates.push('plannedArrivalDate');
+
+        if (missingDates.length > 0) {
+          throw new BadRequestException(
+            `Missing required field(s) for status 'APPROVED': ${missingDates.join(', ')}`,
+          );
+        }
+
+        const dep =
+          plannedDeparture instanceof Date ? plannedDeparture : new Date(String(plannedDeparture));
+        const arr =
+          plannedArrival instanceof Date ? plannedArrival : new Date(String(plannedArrival));
+        if (!(arr.getTime() > dep.getTime() + 60_000)) {
+          throw new BadRequestException(
+            'plannedArrivalDate must be later than plannedDepartureDate by at least 1 minute',
+          );
+        }
+      }
+
+      const request = await this.service.updateRequest(parsedId, body, currentUser);
       if (!request) throw new NotFoundException('Intercamp request not found');
 
       return {
@@ -334,7 +467,7 @@ export class IntercampRequestController {
   @ApiNotFoundResponse({ description: 'Intercamp Request not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  async delete(@Param('id') id: string) {
+  async delete() {
     throw new ForbiddenException('Transfer records cannot be deleted for audit reasons.');
   }
 }
