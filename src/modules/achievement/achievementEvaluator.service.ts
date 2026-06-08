@@ -247,7 +247,7 @@ export class AchievementEvaluatorService {
     const count = await this.notificationRepo
       .createQueryBuilder('n')
       .where('n.camp_id = :campId', { campId })
-      .andWhere('n.created_at >= :startDate', { startDate })
+      .andWhere('n.created_date >= :startDate', { startDate })
       .andWhere("(n.type LIKE '%CRITICAL%' OR n.title LIKE '%CRITICAL%')")
       .getCount();
 
