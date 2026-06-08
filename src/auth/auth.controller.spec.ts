@@ -18,48 +18,55 @@ describe('AuthController', () => {
     controller = new AuthController(service as never);
   });
 
-  it('login delegates to service and wraps success payload', async () => {
-    service.login.mockResolvedValue({ token: 'abc' });
+  it('login delegates to service and sets cookie', async () => {
+    service.login.mockResolvedValue({ token: 'abc', user: { id: 1 } });
+
+    const res = { cookie: jest.fn() };
 
     await expect(
       controller.login(
         { username: 'u', password: 'p', campId: 1 } as never,
         { ip: '1.1.1.1' } as never,
+        res as never,
       ),
     ).resolves.toEqual({
       success: true,
-      data: { token: 'abc' },
+      data: { user: { id: 1 } },
     });
 
     expect(service.login).toHaveBeenCalledWith(
       { username: 'u', password: 'p', campId: 1 },
       '1.1.1.1',
     );
+    expect(res.cookie).toHaveBeenCalledWith('auth_token', 'abc', expect.any(Object));
   });
 
-  it('logout throws when authorization header is missing', async () => {
-    await expect(controller.logout({ headers: {} } as never)).rejects.toThrow(BadRequestException);
+  it('logout throws when auth_token cookie is missing', async () => {
+    await expect(controller.logout({ cookies: {} } as never, { clearCookie: jest.fn() } as never)).rejects.toThrow(BadRequestException);
   });
 
-  it('logout throws when token is empty after bearer prefix', async () => {
+  it('logout throws when cookie token is empty', async () => {
     await expect(
-      controller.logout({ headers: { authorization: 'Bearer    ' } } as never),
+      controller.logout({ cookies: { auth_token: '' } } as never, { clearCookie: jest.fn() } as never),
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('logout uses refreshedToken over bearer token', async () => {
+  it('logout uses refreshedToken over cookie token and clears cookie', async () => {
+    const res = { clearCookie: jest.fn() };
+    
     await expect(
       controller.logout({
-        headers: { authorization: 'Bearer from-header' },
+        cookies: { auth_token: 'from-cookie' },
         refreshedToken: 'from-refresh',
         ip: '2.2.2.2',
-      } as never),
+      } as never, res as never),
     ).resolves.toEqual({
       success: true,
       message: 'Logged out successfully',
     });
 
     expect(service.logout).toHaveBeenCalledWith('from-refresh', '2.2.2.2');
+    expect(res.clearCookie).toHaveBeenCalledWith('auth_token', expect.any(Object));
   });
 
   it('checkSession returns active status payload', async () => {

@@ -85,8 +85,10 @@ export class AuthService {
     const now = this.systemTimeService.now();
     const expirationDate = new Date(now.getTime() + SESSION_INACTIVITY_MINUTES * 60 * 1000);
 
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
     const session = await this.authRepository.createSession({
-      token,
+      token: tokenHash,
       userId: user.id,
       campId: user.campId,
       startDate: now,
@@ -125,7 +127,8 @@ export class AuthService {
       throw new BadRequestException('Credenciales incompletas');
     }
 
-    const session = await this.authRepository.findActiveSessionByToken(normalizedToken);
+    const tokenHash = createHash('sha256').update(normalizedToken).digest('hex');
+    const session = await this.authRepository.findActiveSessionByToken(tokenHash);
     if (!session) {
       throw new UnauthorizedException('Invalid session');
     }
@@ -185,7 +188,8 @@ export class AuthService {
     const normalizedToken = typeof token === 'string' ? token.trim() : '';
     const payload = this.decodeAndVerifyToken(normalizedToken);
 
-    const session = await this.authRepository.findActiveSessionByToken(normalizedToken);
+    const tokenHash = createHash('sha256').update(normalizedToken).digest('hex');
+    const session = await this.authRepository.findActiveSessionByToken(tokenHash);
     if (!session) {
       throw new UnauthorizedException('Sesión no encontrada');
     }
@@ -236,9 +240,13 @@ export class AuthService {
     const nextToken = await this.generateToken(payload);
     const now = this.systemTimeService.now();
     const expirationDate = new Date(now.getTime() + SESSION_INACTIVITY_MINUTES * 60 * 1000);
+    
+    const currentTokenHash = createHash('sha256').update(normalizedToken).digest('hex');
+    const nextTokenHash = createHash('sha256').update(nextToken).digest('hex');
+
     const replaced = await this.authRepository.replaceActiveSessionToken(
-      normalizedToken,
-      nextToken,
+      currentTokenHash,
+      nextTokenHash,
       expirationDate,
       now,
     );

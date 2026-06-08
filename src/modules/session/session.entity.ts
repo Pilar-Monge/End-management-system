@@ -14,7 +14,7 @@ export class SessionEntity {
   @ApiProperty()
   id!: number;
 
-  @Column({ name: 'token', type: 'text' })
+  @Column({ name: 'token', type: 'varchar', length: 64 })
   @ApiProperty()
   token!: string;
 

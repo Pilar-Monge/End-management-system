@@ -6,6 +6,7 @@ import {
   Post,
   Put,
   Req,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -20,7 +21,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 
 import { AuthenticatedOnly, Public, RefreshSession } from '../common/decorators';
 import { ApiOkResponseData, ApiOkResponseMessage } from '../common/swagger/api-response.decorator';
@@ -45,9 +46,17 @@ export class AuthController {
   @ApiOkResponseData(LoginResponseDataDto, { description: 'Login successful' })
   @ApiBadRequestResponse({ description: 'Incomplete credentials' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  async login(@Body() body: LoginDto, @Req() req: Request) {
+  async login(@Body() body: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const data = await this.service.login(body, req.ip ?? 'unknown');
-    return { success: true, data };
+    
+    res.cookie('auth_token', data.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    const { token, ...userData } = data;
+    return { success: true, data: userData };
   }
 
   @Post('logout')
@@ -59,18 +68,20 @@ export class AuthController {
   @ApiOkResponseMessage({ description: 'Logged out successfully' })
   @ApiBadRequestResponse({ description: 'Missing or invalid Authorization header' })
   @ApiUnauthorizedResponse({ description: 'Invalid session' })
-  async logout(@Req() req: Request & { refreshedToken?: string }) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new BadRequestException('Missing or invalid Authorization header');
-    }
-
-    const token = req.refreshedToken ?? authHeader.slice('Bearer '.length).trim();
+  async logout(@Req() req: Request & { refreshedToken?: string }, @Res({ passthrough: true }) res: Response) {
+    const token = req.refreshedToken ?? req.cookies?.['auth_token'];
     if (!token) {
       throw new BadRequestException('Missing token');
     }
 
     await this.service.logout(token, req.ip ?? 'unknown');
+    
+    res.clearCookie('auth_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+    
     return { success: true, message: 'Logged out successfully' };
   }
 
