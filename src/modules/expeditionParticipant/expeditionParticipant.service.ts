@@ -149,6 +149,19 @@ export class ExpeditionParticipantService {
       );
     }
 
+    const alreadyInActiveExpedition =
+      await this.repository.hasActiveParticipationInExpeditionStatuses(personId, [
+        'PLANNED',
+        'IN_PROGRESS',
+        'DELAYED',
+      ]);
+
+    if (alreadyInActiveExpedition) {
+      throw new BadRequestException(
+        'Esta persona ya esta asignada a una expedicion activa o planificada y no puede ser asignada a otra',
+      );
+    }
+
     return { expedition, person };
   }
 
