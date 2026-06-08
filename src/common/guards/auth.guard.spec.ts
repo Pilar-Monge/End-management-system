@@ -33,26 +33,26 @@ describe('AuthGuard', () => {
   it('allows public routes', async () => {
     (reflector.getAllAndOverride as jest.Mock).mockReturnValueOnce(true).mockReturnValueOnce(false);
 
-    await expect(guard.canActivate(makeContext({ headers: {} }))).resolves.toBe(true);
+    await expect(guard.canActivate(makeContext({ cookies: {} }))).resolves.toBe(true);
   });
 
-  it('throws when authorization header is missing', async () => {
+  it('throws when auth_token cookie is missing', async () => {
     (reflector.getAllAndOverride as jest.Mock)
       .mockReturnValueOnce(false)
       .mockReturnValueOnce(false);
 
-    await expect(guard.canActivate(makeContext({ headers: {} }))).rejects.toThrow(
+    await expect(guard.canActivate(makeContext({ cookies: {} }))).rejects.toThrow(
       UnauthorizedException,
     );
   });
 
-  it('throws when bearer token is empty', async () => {
+  it('throws when cookie token is empty', async () => {
     (reflector.getAllAndOverride as jest.Mock)
       .mockReturnValueOnce(false)
       .mockReturnValueOnce(false);
 
     await expect(
-      guard.canActivate(makeContext({ headers: { authorization: 'Bearer   ' } })),
+      guard.canActivate(makeContext({ cookies: { auth_token: '' } })),
     ).rejects.toThrow(UnauthorizedException);
   });
 
@@ -65,7 +65,7 @@ describe('AuthGuard', () => {
       .mockReturnValueOnce(false);
 
     const req: Record<string, unknown> = {
-      headers: { authorization: 'Bearer token-1' },
+      cookies: { auth_token: 'token-1' },
       ip: '1.1.1.1',
     };
 
@@ -82,17 +82,17 @@ describe('AuthGuard', () => {
     (reflector.getAllAndOverride as jest.Mock).mockReturnValueOnce(false).mockReturnValueOnce(true);
 
     const req: Record<string, unknown> = {
-      headers: { authorization: 'Bearer old-token' },
+      cookies: { auth_token: 'old-token' },
       ip: '2.2.2.2',
     };
     const res = {
-      setHeader: jest.fn(),
+      cookie: jest.fn(),
     };
 
     await expect(guard.canActivate(makeContext(req, res))).resolves.toBe(true);
 
     expect(authService.rotateSessionToken).toHaveBeenCalledWith('old-token', payload);
-    expect(res.setHeader).toHaveBeenCalledWith('Authorization', 'Bearer new-token');
+    expect(res.cookie).toHaveBeenCalledWith('auth_token', 'new-token', expect.any(Object));
     expect(req.refreshedToken).toBe('new-token');
   });
 
@@ -105,7 +105,7 @@ describe('AuthGuard', () => {
       .mockReturnValueOnce(false);
 
     const req: Record<string, unknown> = {
-      headers: { authorization: 'Bearer token-1' },
+      cookies: { auth_token: 'token-1' },
     };
 
     await expect(guard.canActivate(makeContext(req))).resolves.toBe(true);
