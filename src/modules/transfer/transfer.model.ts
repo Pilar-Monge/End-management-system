@@ -1,4 +1,9 @@
-export const TRANSFER_STATUS_VALUES = ['PENDING_DEPARTURE', 'COMPLETED', 'CANCELED'] as const;
+export const TRANSFER_STATUS_VALUES = [
+  'PENDING_DEPARTURE',
+  'IN_TRANSIT',
+  'COMPLETED',
+  'CANCELED',
+] as const;
 
 export type TransferStatus = (typeof TRANSFER_STATUS_VALUES)[number];
 
@@ -42,4 +47,8 @@ export interface UpdateTransferDTO {
   arrivalApprovedBy?: number | null;
   rationsForTrip?: string;
   receptionNotes?: string | null;
+}
+
+export interface UpdateTransferTransportStaffDTO {
+  transportPersonIds: number[];
 }

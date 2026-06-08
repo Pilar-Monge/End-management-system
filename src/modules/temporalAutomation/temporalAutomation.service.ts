@@ -272,7 +272,7 @@ export class TemporalAutomationService {
     const now = this.systemTimeService.now();
     if (!this.transferService || !this.transferRepo) return;
 
-    const dueTransfers = await this.transferRepo.find({
+    const dueDepartureTransfers = await this.transferRepo.find({
       where: {
         status: 'PENDING_DEPARTURE',
         plannedDepartureDate: LessThanOrEqual(now),
@@ -283,16 +283,11 @@ export class TemporalAutomationService {
       },
     });
 
-    if (dueTransfers.length === 0) {
-      return;
-    }
-
-    for (const transfer of dueTransfers) {
+    for (const transfer of dueDepartureTransfers) {
       try {
         await this.transferService.updateTransfer(transfer.id, {
-          status: 'COMPLETED',
+          status: 'IN_TRANSIT',
           actualDepartureDate: now,
-          actualArrivalDate: now,
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'unknown error';
@@ -300,7 +295,6 @@ export class TemporalAutomationService {
           `No se pudo ejecutar automaticamente el traslado ${transfer.id}: ${message}`,
         );
 
-        // Attempt to cancel the transfer to avoid leaving it pending without stock
         try {
           await this.transferService.updateTransfer(transfer.id, { status: 'CANCELED' });
         } catch (cancelErr) {
@@ -311,7 +305,6 @@ export class TemporalAutomationService {
           );
         }
 
-        // Resolve origin/destination camps to notify actors
         try {
           const rows = (await this.transferRepo.query(
             `SELECT r.origin_camp_id AS origin, r.destination_camp_id AS destination
@@ -360,6 +353,31 @@ export class TemporalAutomationService {
             }`,
           );
         }
+      }
+    }
+
+    const dueArrivalTransfers = await this.transferRepo.find({
+      where: {
+        status: 'IN_TRANSIT',
+        plannedArrivalDate: LessThanOrEqual(now),
+      },
+      order: {
+        plannedArrivalDate: 'ASC',
+        id: 'ASC',
+      },
+    });
+
+    for (const transfer of dueArrivalTransfers) {
+      try {
+        await this.transferService.updateTransfer(transfer.id, {
+          status: 'COMPLETED',
+          actualArrivalDate: now,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'unknown error';
+        this.logger.warn(
+          `No se pudo completar automaticamente el traslado ${transfer.id}: ${message}`,
+        );
       }
     }
   }

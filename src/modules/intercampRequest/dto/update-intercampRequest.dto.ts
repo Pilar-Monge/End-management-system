@@ -32,4 +32,7 @@ export class UpdateIntercampRequestDto {
 
   @ApiPropertyOptional({ nullable: true })
   respondedBy?: number | null;
+
+  @ApiPropertyOptional({ type: [Number] })
+  transportPersonIds?: number[];
 }

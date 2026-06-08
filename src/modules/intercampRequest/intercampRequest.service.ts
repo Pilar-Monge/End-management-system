@@ -69,7 +69,10 @@ export class IntercampRequestService {
         continue;
       }
 
-      const [inventoryRow, committedAmountRaw] = await Promise.all([
+      const rationInventory = await this.repository.findRationInventoryCandidate(
+        request.destinationCampId,
+      );
+      const [inventoryRow, committedAmountRaw, committedRationsRaw] = await Promise.all([
         this.repository.findCampInventoryWithMinimum(
           request.destinationCampId,
           detail.resourceTypeId,
@@ -79,11 +82,17 @@ export class IntercampRequestService {
           detail.resourceTypeId,
           request.id,
         ),
+        rationInventory?.resourceTypeId === detail.resourceTypeId
+          ? this.repository.findCommittedTransferRationsByCamp(
+              request.destinationCampId,
+              request.id,
+            )
+          : Promise.resolve('0'),
       ]);
 
       const currentAmount = this.toNumber(inventoryRow.current);
       const minimumAmount = this.toNumber(inventoryRow.minimum);
-      const committedAmount = this.toNumber(committedAmountRaw);
+      const committedAmount = this.toNumber(committedAmountRaw) + this.toNumber(committedRationsRaw);
       const availableAmount = currentAmount - committedAmount;
 
       if (availableAmount < requestedAmount) {
@@ -101,6 +110,46 @@ export class IntercampRequestService {
     }
   }
 
+  private async assertRationAvailability(
+    request: IntercampRequest,
+    transferId: number,
+  ): Promise<void> {
+    const transfer = await this.transferService.syncTransferRations(transferId);
+    const rationsForTrip = this.toNumber(transfer?.rationsForTrip);
+
+    if (rationsForTrip <= 0) {
+      throw new BadRequestException('El traslado debe tener raciones calculadas mayores a 0');
+    }
+
+    const rationInventory = await this.repository.findRationInventoryCandidate(
+      request.destinationCampId,
+    );
+    if (!rationInventory) {
+      throw new BadRequestException(
+        'No se encontro un recurso de comida para reservar raciones del traslado',
+      );
+    }
+
+    const committedRationsRaw = await this.repository.findCommittedTransferRationsByCamp(
+      request.destinationCampId,
+      request.id,
+    );
+    const currentAmount = this.toNumber(rationInventory.currentAmount);
+    const minimumAmount = this.toNumber(rationInventory.minimumAlertAmount);
+    const committedRations = this.toNumber(committedRationsRaw);
+    const availableAmount = currentAmount - committedRations;
+
+    if (availableAmount < rationsForTrip) {
+      throw new BadRequestException('No hay raciones suficientes para aprobar el traslado');
+    }
+
+    const remainingAfter = currentAmount - committedRations - rationsForTrip;
+    if (remainingAfter < minimumAmount) {
+      throw new BadRequestException(
+        `No se puede aprobar el traslado: las raciones quedarian por debajo del minimo requerido (${minimumAmount})`,
+      );
+    }
+  }
   private assertRequestUpdatePolicy(
     existing: IntercampRequest,
     data: UpdateIntercampRequestDTO,
@@ -201,15 +250,15 @@ export class IntercampRequestService {
 
   private async ensureApprovedRequestTransfer(
     request: IntercampRequest,
-    personDetailRequirements: Array<{ occupationId: number; quantity: number }>,
+    transportPersonIds: number[],
   ): Promise<void> {
     this.resolvePlannedTransferDates(request);
     await this.assertResourceAvailability(request);
 
     const detailRows = await this.repository.findRequestResourceAmountsByRequestId(request.id);
-    const needsTransfer = detailRows.length > 0 || personDetailRequirements.length > 0;
+    const detailsCount = await this.repository.countRequestDetailsByRequestId(request.id);
 
-    if (!needsTransfer) {
+    if (detailsCount <= 0) {
       return;
     }
 
@@ -224,15 +273,21 @@ export class IntercampRequestService {
       });
     }
 
-    if (personDetailRequirements.length > 0) {
-      await this.transferPersonService.autoAssignGroupForTransfer(
+    if (detailRows.length > 0 || detailsCount > detailRows.length) {
+      await this.transferPersonService.assignTransportStaffForTransfer(
         transfer.id,
         request.destinationCampId,
-        personDetailRequirements,
+        transportPersonIds,
       );
     }
 
-    await this.transferService.syncTransferRations(transfer.id);
+    await this.transferService.createRequestedPersonManifestFromRequest(
+      transfer.id,
+      request.id,
+      request.destinationCampId,
+    );
+
+    await this.assertRationAvailability(request, transfer.id);
   }
 
   private async validateRoutingAndOwnership(
@@ -409,6 +464,10 @@ export class IntercampRequestService {
 
     this.assertRequestUpdatePolicy(existing, data, actor);
 
+    const transportPersonIds = [...new Set(data.transportPersonIds ?? [])];
+    const requestUpdateData: UpdateIntercampRequestDTO = { ...data };
+    delete requestUpdateData.transportPersonIds;
+
     if (existing.status === 'PENDING' || data.status === 'APPROVED') {
       const detailsCount = await this.repository.countRequestDetailsByRequestId(id);
       if (detailsCount <= 0) {
@@ -416,11 +475,17 @@ export class IntercampRequestService {
       }
     }
 
-    const originCampId = data.originCampId ?? existing.originCampId;
-    const destinationCampId = data.destinationCampId ?? existing.destinationCampId;
-    const createdBy = data.createdBy ?? existing.createdBy;
+    if (data.status === 'APPROVED' && transportPersonIds.length === 0) {
+      throw new BadRequestException(
+        'Debe asignar personal operativo antes de aprobar la solicitud',
+      );
+    }
+
+    const originCampId = requestUpdateData.originCampId ?? existing.originCampId;
+    const destinationCampId = requestUpdateData.destinationCampId ?? existing.destinationCampId;
+    const createdBy = requestUpdateData.createdBy ?? existing.createdBy;
     const persistedData: UpdateIntercampRequestDTO = {
-      ...data,
+      ...requestUpdateData,
       respondedBy:
         data.status !== undefined ? actor.userId : (data.respondedBy ?? existing.respondedBy),
       responseDate:
@@ -494,7 +559,7 @@ export class IntercampRequestService {
     const statusChanged = updated.status !== existing.status;
     if (statusChanged) {
       if (updated.status === 'APPROVED') {
-        await this.ensureApprovedRequestTransfer(updated, resolvedPersonRequirements);
+        await this.ensureApprovedRequestTransfer(updated, transportPersonIds);
       }
 
       const notificationType =
@@ -600,3 +665,4 @@ export class IntercampRequestService {
     return true;
   }
 }
+

@@ -131,6 +131,67 @@ export class IntercampRequestRepository {
     return rows[0]?.total ?? '0';
   }
 
+  async findRationInventoryCandidate(campId: number): Promise<{
+    resourceTypeId: number;
+    currentAmount: string;
+    minimumAlertAmount: string;
+  } | null> {
+    const rows = (await this.repo.query(
+      `SELECT ci.resource_type_id,
+              ci.current_amount::text AS current_amount,
+              ci.minimum_alert_amount::text AS minimum_alert_amount
+       FROM public.camp_inventory ci
+       INNER JOIN public.resource_type rt ON rt.id = ci.resource_type_id
+       WHERE ci.camp_id = $1
+         AND rt.category = 'FOOD'
+       ORDER BY
+         CASE
+           WHEN LOWER(rt.name) LIKE '%ration%' THEN 0
+           WHEN LOWER(rt.name) LIKE '%food%' THEN 1
+           ELSE 2
+         END,
+         ci.resource_type_id ASC
+       LIMIT 1`,
+      [campId],
+    )) as Array<{
+      resource_type_id: number;
+      current_amount: string;
+      minimum_alert_amount: string;
+    }>;
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      resourceTypeId: row.resource_type_id,
+      currentAmount: row.current_amount,
+      minimumAlertAmount: row.minimum_alert_amount,
+    };
+  }
+
+  async findCommittedTransferRationsByCamp(
+    campId: number,
+    excludedRequestId?: number,
+  ): Promise<string> {
+    const params: number[] = [campId];
+    const excludedClause = excludedRequestId === undefined ? '' : ' AND r.id <> $2';
+
+    if (excludedRequestId !== undefined) {
+      params.push(excludedRequestId);
+    }
+
+    const rows = (await this.repo.query(
+      `SELECT COALESCE(SUM(t.rations_for_trip), 0)::text AS total
+       FROM public.transfer t
+       INNER JOIN public.intercamp_request r ON r.id = t.request_id
+       WHERE r.destination_camp_id = $1
+         AND r.status = 'APPROVED'
+         AND t.status = 'PENDING_DEPARTURE'${excludedClause}`,
+      params,
+    )) as Array<{ total: string }>;
+
+    return rows[0]?.total ?? '0';
+  }
   async findRequestResourceAmountsByRequestId(
     requestId: number,
   ): Promise<Array<{ resourceTypeId: number; amount: string }>> {
@@ -277,3 +338,4 @@ export class IntercampRequestRepository {
     return (result.affected ?? 0) > 0;
   }
 }
+

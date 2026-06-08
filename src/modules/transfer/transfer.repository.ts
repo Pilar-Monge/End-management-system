@@ -45,8 +45,218 @@ export class TransferRepository {
   }
 
   async countTransferPeople(transferId: number): Promise<number> {
-    return await this.repo.manager.getRepository(TransferPersonEntity).count({
-      where: { transferId },
+    const transportStaffCount = await this.repo.manager.getRepository(TransferPersonEntity)
+      .createQueryBuilder('tp')
+      .where('tp.transferId = :transferId', { transferId })
+      .andWhere('tp.status <> :canceled', { canceled: 'CANCELED' })
+      .getCount();
+
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.transfer_requested_person
+       WHERE transfer_id = $1
+         AND status <> 'CANCELED'`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return transportStaffCount + (rows[0]?.total ?? 0);
+  }
+
+  async countTransferTransportStaff(transferId: number): Promise<number> {
+    return await this.repo.manager.getRepository(TransferPersonEntity)
+      .createQueryBuilder('tp')
+      .where('tp.transferId = :transferId', { transferId })
+      .andWhere('tp.status <> :canceled', { canceled: 'CANCELED' })
+      .getCount();
+  }
+
+  async countTransferRequestedPeople(transferId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.transfer_requested_person
+       WHERE transfer_id = $1
+         AND status <> 'CANCELED'`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async countAppliedTransferRationMovements(transferId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.inventory_movement
+       WHERE source_type = 'transfer_rations'
+         AND source_id = $1
+         AND movement_type = 'DAILY_RATION'`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async findRationInventoryCandidate(campId: number): Promise<{
+    resourceTypeId: number;
+    currentAmount: string;
+    minimumAlertAmount: string;
+  } | null> {
+    const rows = (await this.repo.query(
+      `SELECT ci.resource_type_id,
+              ci.current_amount::text AS current_amount,
+              ci.minimum_alert_amount::text AS minimum_alert_amount
+       FROM public.camp_inventory ci
+       INNER JOIN public.resource_type rt ON rt.id = ci.resource_type_id
+       WHERE ci.camp_id = $1
+         AND rt.category = 'FOOD'
+       ORDER BY
+         CASE
+           WHEN LOWER(rt.name) LIKE '%ration%' THEN 0
+           WHEN LOWER(rt.name) LIKE '%food%' THEN 1
+           ELSE 2
+         END,
+         ci.resource_type_id ASC
+       LIMIT 1`,
+      [campId],
+    )) as Array<{
+      resource_type_id: number;
+      current_amount: string;
+      minimum_alert_amount: string;
+    }>;
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      resourceTypeId: row.resource_type_id,
+      currentAmount: row.current_amount,
+      minimumAlertAmount: row.minimum_alert_amount,
+    };
+  }
+
+  async setManifestInTransit(transferId: number, departureDate: Date): Promise<void> {
+    await this.repo.manager.transaction(async (manager) => {
+      await manager.query(
+        `UPDATE public.transfer_person
+         SET status = 'IN_TRANSIT',
+             departure_date = COALESCE(departure_date, $2)
+         WHERE transfer_id = $1
+           AND status = 'CONFIRMED'`,
+        [transferId, departureDate],
+      );
+
+      await manager.query(
+        `UPDATE public.transfer_requested_person
+         SET status = 'IN_TRANSIT',
+             departure_date = COALESCE(departure_date, $2)
+         WHERE transfer_id = $1
+           AND status = 'CONFIRMED'`,
+        [transferId, departureDate],
+      );
+
+      await manager.query(
+        `UPDATE public.person
+         SET current_status = 'OUTSIDE_CAMP',
+             updated_at = NOW()
+         WHERE id IN (
+           SELECT person_id FROM public.transfer_person WHERE transfer_id = $1
+           UNION
+           SELECT person_id FROM public.transfer_requested_person WHERE transfer_id = $1
+         )`,
+        [transferId],
+      );
+    });
+  }
+
+  async completeManifest(
+    transferId: number,
+    requestId: number,
+    arrivalDate: Date,
+  ): Promise<void> {
+    const scope = await this.resolveRequestScope(requestId);
+    if (!scope) return;
+
+    await this.repo.manager.transaction(async (manager) => {
+      await manager.query(
+        `UPDATE public.transfer_person
+         SET status = 'DELIVERED',
+             arrival_date = COALESCE(arrival_date, $2)
+         WHERE transfer_id = $1
+           AND status <> 'CANCELED'`,
+        [transferId, arrivalDate],
+      );
+
+      await manager.query(
+        `UPDATE public.person
+         SET current_status = 'ACTIVE',
+             updated_at = NOW()
+         WHERE id IN (
+           SELECT person_id FROM public.transfer_person WHERE transfer_id = $1
+         )`,
+        [transferId],
+      );
+
+      await manager.query(
+        `UPDATE public.transfer_requested_person
+         SET status = 'DELIVERED',
+             arrival_date = COALESCE(arrival_date, $2)
+         WHERE transfer_id = $1
+           AND status <> 'CANCELED'`,
+        [transferId, arrivalDate],
+      );
+
+      await manager.query(
+        `UPDATE public.person
+         SET camp_id = $2,
+             current_status = 'ACTIVE',
+             updated_at = NOW()
+         WHERE id IN (
+           SELECT person_id FROM public.transfer_requested_person WHERE transfer_id = $1
+         )`,
+        [transferId, scope.originCampId],
+      );
+
+      await manager.query(
+        `UPDATE public.system_user
+         SET camp_id = $2,
+             updated_at = NOW()
+         WHERE person_id IN (
+           SELECT person_id FROM public.transfer_requested_person WHERE transfer_id = $1
+         )`,
+        [transferId, scope.originCampId],
+      );
+    });
+  }
+
+  async cancelManifest(transferId: number): Promise<void> {
+    await this.repo.manager.transaction(async (manager) => {
+      await manager.query(
+        `UPDATE public.transfer_person
+         SET status = 'CANCELED'
+         WHERE transfer_id = $1
+           AND status <> 'DELIVERED'`,
+        [transferId],
+      );
+
+      await manager.query(
+        `UPDATE public.transfer_requested_person
+         SET status = 'CANCELED'
+         WHERE transfer_id = $1
+           AND status <> 'DELIVERED'`,
+        [transferId],
+      );
+
+      await manager.query(
+        `UPDATE public.person
+         SET current_status = 'ACTIVE',
+             updated_at = NOW()
+         WHERE current_status = 'OUTSIDE_CAMP'
+           AND id IN (
+             SELECT person_id FROM public.transfer_person WHERE transfer_id = $1
+             UNION
+             SELECT person_id FROM public.transfer_requested_person WHERE transfer_id = $1
+           )`,
+        [transferId],
+      );
     });
   }
 
@@ -91,6 +301,31 @@ export class TransferRepository {
     return rows[0]?.total ?? 0;
   }
 
+  async countAppliedTransferSentMovements(transferId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.inventory_movement
+       WHERE source_type = 'transfer'
+         AND source_id = $1
+         AND movement_type = 'TRANSFER_SENT'`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async countAppliedTransferReceivedMovements(transferId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.inventory_movement
+       WHERE source_type = 'transfer'
+         AND source_id = $1
+         AND movement_type = 'TRANSFER_RECEIVED'`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
   async findDeliveredResourcesByTransferId(transferId: number): Promise<
     Array<{
       id: number;
@@ -161,6 +396,133 @@ export class TransferRepository {
        ) VALUES ($1, $2, $3, $4, $5)`,
       [data.transferId, data.previousStatus, data.newStatus, data.userId, data.comment],
     );
+  }
+
+  async createRequestedPersonManifestFromRequest(
+    transferId: number,
+    requestId: number,
+    supplierCampId: number,
+  ): Promise<number> {
+    return await this.repo.manager.transaction(async (manager) => {
+      const specificRows = (await manager.query(
+        `SELECT rpd.id AS detail_id, rpd.person_id
+         FROM public.request_person_detail rpd
+         INNER JOIN public.person p ON p.id = rpd.person_id
+         WHERE rpd.request_id = $1
+           AND rpd.detail_type = 'SPECIFIC'
+           AND rpd.status <> 'REJECTED'
+           AND rpd.person_id IS NOT NULL
+           AND p.camp_id = $2
+           AND p.current_status = 'ACTIVE'
+           AND NOT EXISTS (
+             SELECT 1
+             FROM public.transfer_person tp
+             INNER JOIN public.transfer t ON t.id = tp.transfer_id
+             WHERE tp.person_id = p.id
+               AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+           )
+           AND NOT EXISTS (
+             SELECT 1
+             FROM public.transfer_requested_person trp
+             INNER JOIN public.transfer t ON t.id = trp.transfer_id
+             WHERE trp.person_id = p.id
+               AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+           )`,
+        [requestId, supplierCampId],
+      )) as Array<{ detail_id: number; person_id: number }>;
+
+      const specificExpectedRows = (await manager.query(
+        `SELECT COUNT(*)::int AS total
+         FROM public.request_person_detail
+         WHERE request_id = $1
+           AND detail_type = 'SPECIFIC'
+           AND status <> 'REJECTED'
+           AND person_id IS NOT NULL`,
+        [requestId],
+      )) as Array<{ total: number }>;
+
+      if (specificRows.length !== (specificExpectedRows[0]?.total ?? 0)) {
+        throw new Error('Una o mas personas especificas solicitadas no estan disponibles');
+      }
+
+      const requirementRows = (await manager.query(
+        `SELECT id AS detail_id, occupation_id, amount
+         FROM public.request_person_detail
+         WHERE request_id = $1
+           AND detail_type = 'BY_OCCUPATION'
+           AND status <> 'REJECTED'
+           AND occupation_id IS NOT NULL
+           AND amount > 0
+         ORDER BY id ASC`,
+        [requestId],
+      )) as Array<{ detail_id: number; occupation_id: number; amount: number }>;
+
+      const selectedPersonIds = new Set<number>();
+      const assignments: Array<{ detailId: number; personId: number }> = [];
+
+      for (const row of specificRows) {
+        selectedPersonIds.add(row.person_id);
+        assignments.push({ detailId: row.detail_id, personId: row.person_id });
+      }
+
+      for (const requirement of requirementRows) {
+        const eligibleRows = (await manager.query(
+          `SELECT p.id
+           FROM public.person p
+           WHERE p.camp_id = $1
+             AND p.occupation_id = $2
+             AND p.current_status = 'ACTIVE'
+             AND NOT EXISTS (
+               SELECT 1
+               FROM public.transfer_person tp
+               INNER JOIN public.transfer t ON t.id = tp.transfer_id
+                 WHERE tp.person_id = p.id
+                 AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+             )
+             AND NOT EXISTS (
+               SELECT 1
+               FROM public.transfer_requested_person trp
+               INNER JOIN public.transfer t ON t.id = trp.transfer_id
+                 WHERE trp.person_id = p.id
+                 AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
+             )
+           ORDER BY p.created_at ASC, p.id ASC
+           FOR UPDATE SKIP LOCKED`,
+          [supplierCampId, requirement.occupation_id],
+        )) as Array<{ id: number }>;
+
+        const availableIds = eligibleRows
+          .map((row) => row.id)
+          .filter((personId) => !selectedPersonIds.has(personId));
+
+        if (availableIds.length < requirement.amount) {
+          throw new Error(
+            `No hay suficientes personas elegibles para el oficio ${requirement.occupation_id}`,
+          );
+        }
+
+        for (const personId of availableIds.slice(0, requirement.amount)) {
+          selectedPersonIds.add(personId);
+          assignments.push({ detailId: requirement.detail_id, personId });
+        }
+      }
+
+      for (const assignment of assignments) {
+        await manager.query(
+          `INSERT INTO public.transfer_requested_person (
+              transfer_id,
+              request_person_detail_id,
+              person_id,
+              status
+           ) VALUES ($1, $2, $3, 'CONFIRMED')
+           ON CONFLICT (transfer_id, person_id)
+           DO NOTHING`,
+          [transferId, assignment.detailId, assignment.personId],
+        );
+      }
+
+      return assignments.length;
+    });
   }
 
   async findAllAndCount(filters?: {
