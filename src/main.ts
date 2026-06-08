@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { AppDataSource } from './data-source';
 import { runSeeder } from './seeds/seeder';
 import { DecisionTreeService } from './modules/decisionTree/decisionTree.service';
