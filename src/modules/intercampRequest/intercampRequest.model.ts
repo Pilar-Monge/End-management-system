@@ -52,4 +52,5 @@ export interface UpdateIntercampRequestDTO {
   responseDate?: Date | null;
   createdBy?: number;
   respondedBy?: number | null;
+  transportPersonIds?: number[];
 }
