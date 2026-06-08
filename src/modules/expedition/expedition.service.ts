@@ -71,6 +71,50 @@ export class ExpeditionService {
     await this.repository.updatePersonStatus(person.id, targetStatus);
   }
 
+  private async notifyParticipantsToCompleteIfPastReturn(
+    expedition: Expedition,
+    nextStatus: ExpeditionStatus,
+    now: Date,
+  ): Promise<void> {
+    const pastReturnDate = now.getTime() >= expedition.plannedReturnDate.getTime();
+    const terminalStatuses: ExpeditionStatus[] = ['COMPLETED', 'CANCELED', 'RETURNED_AFTER_LOST'];
+
+    if (!pastReturnDate || terminalStatuses.includes(nextStatus)) {
+      return;
+    }
+
+    const personIds = await this.repository.getActiveParticipantPersonIds(expedition.id);
+    if (personIds.length === 0) {
+      return;
+    }
+
+    const userIds = await this.repository.findUserIdsByCampAndPersonIds(
+      expedition.campId,
+      personIds,
+    );
+    if (userIds.length === 0) {
+      return;
+    }
+
+    const alreadyNotified = await this.repository.hasExpeditionCompleteNotificationPending(
+      expedition.id,
+      expedition.campId,
+    );
+    if (alreadyNotified) {
+      return;
+    }
+
+    await this.notificationService.notifyUsers(userIds, {
+      campId: expedition.campId,
+      type: 'EXPEDITION_COMPLETED',
+      title: 'Expedicion lista para completar',
+      message: `La expedicion "${expedition.name}" ha finalizado su tiempo estimado. Confirma el regreso del equipo para registrar los recursos obtenidos.`,
+      sourceType: 'expedition_complete_pending',
+      sourceId: expedition.id,
+      sendEmail: false,
+    });
+  }
+
   async createExpedition(data: CreateExpeditionDTO): Promise<Expedition> {
     await assertEntityExists(this.dataSource, CampEntity, data.campId, 'Camp');
 
@@ -187,6 +231,8 @@ export class ExpeditionService {
       now,
       completedStatus,
     );
+
+    await this.repository.markExpeditionCompleteNotificationsAsRead(id, expedition.campId);
 
     await this.syncParticipantPersonStatuses(id);
 
@@ -341,10 +387,36 @@ export class ExpeditionService {
         },
       );
 
+      await this.notifyParticipantsToCompleteIfPastReturn(expedition, nextStatus, now);
+
       return updated;
     }
 
+    await this.notifyParticipantsToCompleteIfPastReturn(expedition, nextStatus, now);
+
     return expedition;
+  }
+
+  async getExpeditionResources(expeditionId: number): Promise<{
+    consumed: Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+    obtained: Array<{
+      resourceTypeId: number;
+      resourceTypeName: string;
+      unit: string;
+      amount: string;
+    }>;
+  } | null> {
+    const expedition = await this.repository.findById(expeditionId);
+    if (!expedition) {
+      return null;
+    }
+
+    return await this.repository.getResourceSummaryByExpeditionId(expeditionId);
   }
 
   async deleteExpedition(id: number): Promise<boolean> {
