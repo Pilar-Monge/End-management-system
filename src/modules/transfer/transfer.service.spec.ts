@@ -20,9 +20,13 @@ const repository: any = {
   countTransferTransportStaff: jest.fn(),
   countAppliedTransferRationMovements: jest.fn(),
   countAppliedTransferMovements: jest.fn(),
+  countAppliedTransferSentMovements: jest.fn(),
+  countAppliedTransferReceivedMovements: jest.fn(),
   findDeliveredResourcesByTransferId: jest.fn(),
   findRationInventoryCandidate: jest.fn(),
-  createTransferHistoryEntry: jest.fn(),  setManifestInTransit: jest.fn(),
+  countTransferRequestedPeople: jest.fn(),
+  createTransferHistoryEntry: jest.fn(),
+  setManifestInTransit: jest.fn(),
   completeManifest: jest.fn(),
   cancelManifest: jest.fn(),
 };
@@ -35,11 +39,21 @@ const inventoryMovementService: any = {
   createMovement: jest.fn(),
 };
 
+const queryRunner: any = {
+  connect: jest.fn(),
+  startTransaction: jest.fn(),
+  query: jest.fn(),
+  commitTransaction: jest.fn(),
+  rollbackTransaction: jest.fn(),
+  release: jest.fn(),
+};
+
 const dataSource: any = {
   getRepository: jest.fn().mockReturnValue({
     findOne: jest.fn(),
   }),
   query: jest.fn(),
+  createQueryRunner: jest.fn().mockReturnValue(queryRunner),
 };
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
@@ -51,6 +65,10 @@ describe('TransferService', () => {
     jest.clearAllMocks();
     repository.countTransferTransportStaff.mockResolvedValue(1);
     repository.countAppliedTransferRationMovements.mockResolvedValue(0);
+    repository.countAppliedTransferSentMovements.mockResolvedValue(0);
+    repository.countAppliedTransferReceivedMovements.mockResolvedValue(0);
+    repository.countTransferRequestedPeople.mockResolvedValue(0);
+    queryRunner.query.mockResolvedValue([]);
     repository.findRationInventoryCandidate.mockResolvedValue({
       resourceTypeId: 9,
       currentAmount: '100.00',
@@ -214,7 +232,8 @@ describe('TransferService', () => {
         destinationCampId: 2,
         createdBy: 1,
       });
-      repository.countAppliedTransferMovements.mockResolvedValue(0);
+      repository.countAppliedTransferSentMovements.mockResolvedValue(0);
+      repository.countAppliedTransferReceivedMovements.mockResolvedValue(0);
       repository.findDeliveredResourcesByTransferId.mockResolvedValue([
         { id: 100, resourceTypeId: 50, sentAmount: '10', receivedAmount: '10' },
       ]);
@@ -229,6 +248,12 @@ describe('TransferService', () => {
       expect(repository.update).toHaveBeenCalled();
       expect(repository.createTransferHistoryEntry).toHaveBeenCalled();
       expect(inventoryMovementService.createMovement).toHaveBeenCalledTimes(3);
+      expect(inventoryMovementService.createMovement).toHaveBeenCalledWith(
+        expect.objectContaining({ movementType: 'TRANSFER_SENT', campId: 2 }),
+      );
+      expect(inventoryMovementService.createMovement).toHaveBeenCalledWith(
+        expect.objectContaining({ movementType: 'TRANSFER_RECEIVED', campId: 1 }),
+      );
       expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);
     });
   });
@@ -273,6 +298,78 @@ describe('TransferService', () => {
       await expect(service.assertTransferCampAccess(1, 3)).rejects.toThrow(
         'You can only access transfers involving your camp',
       );
+    });
+  });
+  describe('updateTransportStaff', () => {
+    it('throws if transfer is not pending departure', async () => {
+      repository.findById.mockResolvedValue({ id: 1, status: 'IN_TRANSIT', requestId: 10 });
+
+      await expect(
+        service.updateTransportStaff(1, { transportPersonIds: [31] }),
+      ).rejects.toThrow('Solo se puede editar personal operativo antes de la salida');
+    });
+
+    it('throws if manifest has no scout', async () => {
+      const dep = new Date('2026-06-10T00:00:00Z');
+      const arr = new Date('2026-06-11T00:00:00Z');
+      repository.findById.mockResolvedValue({
+        id: 1,
+        requestId: 10,
+        status: 'PENDING_DEPARTURE',
+        plannedDepartureDate: dep,
+        plannedArrivalDate: arr,
+      });
+      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      dataSource.query.mockResolvedValueOnce([
+        { id: 31, camp_id: 2, current_status: 'ACTIVE', occupation_name: 'Medic' },
+      ]);
+
+      await expect(
+        service.updateTransportStaff(1, { transportPersonIds: [31] }),
+      ).rejects.toThrow('Debe asignar al menos una persona operativa con oficio Scout');
+    });
+
+    it('replaces manifest and recalculates reserved rations', async () => {
+      const dep = new Date('2026-06-10T00:00:00Z');
+      const arr = new Date('2026-06-12T00:00:00Z');
+      repository.findById
+        .mockResolvedValueOnce({
+          id: 1,
+          requestId: 10,
+          status: 'PENDING_DEPARTURE',
+          plannedDepartureDate: dep,
+          plannedArrivalDate: arr,
+        })
+        .mockResolvedValueOnce({ id: 1, requestId: 10, status: 'PENDING_DEPARTURE', rationsForTrip: '6.00' });
+      repository.resolveRequestScope.mockResolvedValue({ originCampId: 1, destinationCampId: 2 });
+      repository.countTransferRequestedPeople.mockResolvedValue(1);
+      dataSource.getRepository().findOne.mockResolvedValue({ minimumDailyRationPerPerson: '1' });
+      repository.findRationInventoryCandidate.mockResolvedValue({
+        resourceTypeId: 9,
+        currentAmount: '100.00',
+        minimumAlertAmount: '10.00',
+      });
+      dataSource.query
+        .mockResolvedValueOnce([
+          { id: 31, camp_id: 2, current_status: 'ACTIVE', occupation_name: 'Scout' },
+          { id: 32, camp_id: 2, current_status: 'ACTIVE', occupation_name: 'Medic' },
+        ])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ total: '5.00' }]);
+      queryRunner.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('FOR UPDATE')) return [{ id: 1 }];
+        return [];
+      });
+
+      const result = await service.updateTransportStaff(1, { transportPersonIds: [31, 32] });
+
+      expect(result?.rationsForTrip).toBe('6.00');
+      expect(queryRunner.commitTransaction).toHaveBeenCalled();
+      expect(queryRunner.query).toHaveBeenCalledWith(
+        expect.stringContaining('rations_for_trip = $2'),
+        [1, '6.00'],
+      );
+      expect(notificationService.notifyCampRoles).toHaveBeenCalledTimes(2);
     });
   });
 });

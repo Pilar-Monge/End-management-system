@@ -48,3 +48,7 @@ export interface UpdateTransferDTO {
   rationsForTrip?: string;
   receptionNotes?: string | null;
 }
+
+export interface UpdateTransferTransportStaffDTO {
+  transportPersonIds: number[];
+}

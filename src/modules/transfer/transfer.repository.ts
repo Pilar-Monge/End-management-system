@@ -45,14 +45,17 @@ export class TransferRepository {
   }
 
   async countTransferPeople(transferId: number): Promise<number> {
-    const transportStaffCount = await this.repo.manager.getRepository(TransferPersonEntity).count({
-      where: { transferId },
-    });
+    const transportStaffCount = await this.repo.manager.getRepository(TransferPersonEntity)
+      .createQueryBuilder('tp')
+      .where('tp.transferId = :transferId', { transferId })
+      .andWhere('tp.status <> :canceled', { canceled: 'CANCELED' })
+      .getCount();
 
     const rows = (await this.repo.query(
       `SELECT COUNT(*)::int AS total
        FROM public.transfer_requested_person
-       WHERE transfer_id = $1`,
+       WHERE transfer_id = $1
+         AND status <> 'CANCELED'`,
       [transferId],
     )) as Array<{ total: number }>;
 
@@ -60,16 +63,19 @@ export class TransferRepository {
   }
 
   async countTransferTransportStaff(transferId: number): Promise<number> {
-    return await this.repo.manager.getRepository(TransferPersonEntity).count({
-      where: { transferId },
-    });
+    return await this.repo.manager.getRepository(TransferPersonEntity)
+      .createQueryBuilder('tp')
+      .where('tp.transferId = :transferId', { transferId })
+      .andWhere('tp.status <> :canceled', { canceled: 'CANCELED' })
+      .getCount();
   }
 
   async countTransferRequestedPeople(transferId: number): Promise<number> {
     const rows = (await this.repo.query(
       `SELECT COUNT(*)::int AS total
        FROM public.transfer_requested_person
-       WHERE transfer_id = $1`,
+       WHERE transfer_id = $1
+         AND status <> 'CANCELED'`,
       [transferId],
     )) as Array<{ total: number }>;
 
@@ -295,6 +301,31 @@ export class TransferRepository {
     return rows[0]?.total ?? 0;
   }
 
+  async countAppliedTransferSentMovements(transferId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.inventory_movement
+       WHERE source_type = 'transfer'
+         AND source_id = $1
+         AND movement_type = 'TRANSFER_SENT'`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
+
+  async countAppliedTransferReceivedMovements(transferId: number): Promise<number> {
+    const rows = (await this.repo.query(
+      `SELECT COUNT(*)::int AS total
+       FROM public.inventory_movement
+       WHERE source_type = 'transfer'
+         AND source_id = $1
+         AND movement_type = 'TRANSFER_RECEIVED'`,
+      [transferId],
+    )) as Array<{ total: number }>;
+
+    return rows[0]?.total ?? 0;
+  }
   async findDeliveredResourcesByTransferId(transferId: number): Promise<
     Array<{
       id: number;

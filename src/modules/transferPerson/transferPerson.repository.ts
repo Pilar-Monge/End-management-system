@@ -61,6 +61,7 @@ export class TransferPersonRepository {
            FROM public.transfer_person tp
            JOIN public.transfer t ON t.id = tp.transfer_id
            WHERE tp.person_id = p.id
+             AND tp.status <> 'CANCELED'
              AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
          )
          AND NOT EXISTS (
@@ -68,6 +69,7 @@ export class TransferPersonRepository {
            FROM public.transfer_requested_person trp
            JOIN public.transfer t ON t.id = trp.transfer_id
            WHERE trp.person_id = p.id
+             AND trp.status <> 'CANCELED'
              AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
          )
        ORDER BY p.created_at ASC, p.id ASC`,
@@ -93,6 +95,7 @@ export class TransferPersonRepository {
            FROM public.transfer_person tp
            JOIN public.transfer t ON t.id = tp.transfer_id
            WHERE tp.person_id = p.id
+             AND tp.status <> 'CANCELED'
              AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
          )
          AND NOT EXISTS (
@@ -100,6 +103,7 @@ export class TransferPersonRepository {
            FROM public.transfer_requested_person trp
            JOIN public.transfer t ON t.id = trp.transfer_id
            WHERE trp.person_id = p.id
+             AND trp.status <> 'CANCELED'
              AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
          )
        ORDER BY p.created_at ASC, p.id ASC
@@ -172,6 +176,7 @@ export class TransferPersonRepository {
          INNER JOIN public.transfer t ON t.id = tp.transfer_id
          WHERE tp.person_id = ANY($1::int[])
            AND tp.transfer_id <> $2
+           AND tp.status <> 'CANCELED'
            AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
          UNION
          SELECT trp.person_id
@@ -179,6 +184,7 @@ export class TransferPersonRepository {
          INNER JOIN public.transfer t ON t.id = trp.transfer_id
          WHERE trp.person_id = ANY($1::int[])
            AND trp.transfer_id <> $2
+           AND trp.status <> 'CANCELED'
            AND t.status IN ('PENDING_DEPARTURE', 'IN_TRANSIT')
        ) assigned`,
       [personIds, excludedTransferId],
