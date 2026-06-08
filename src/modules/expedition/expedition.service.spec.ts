@@ -21,8 +21,11 @@ const repository = {
   applyDepartureProvisioningIfNeeded: jest.fn(),
   findActiveParticipantPersonStatus: jest.fn(),
   completeExplorationWithLoot: jest.fn(),
+  markExpeditionCompleteNotificationsAsRead: jest.fn(),
   getAllParticipantPersonIds: jest.fn(),
   findUserIdsByCampAndPersonIds: jest.fn(),
+  hasExpeditionCompleteNotificationPending: jest.fn(),
+  getResourceSummaryByExpeditionId: jest.fn(),
 };
 
 const dataSource = {};
@@ -236,6 +239,7 @@ describe('ExpeditionService', () => {
         .mockResolvedValueOnce({ id: 1, campId: 1, name: 'Exp 1', status: 'COMPLETED' }); // after save
       repository.findActiveParticipantPersonStatus.mockResolvedValue({ currentStatus: 'ACTIVE' });
       repository.completeExplorationWithLoot.mockResolvedValue(undefined);
+      repository.markExpeditionCompleteNotificationsAsRead.mockResolvedValue(undefined);
       repository.getActiveParticipantPersonIds.mockResolvedValue([]);
 
       const result = await service.completeExploration(1, 5);
@@ -246,8 +250,33 @@ describe('ExpeditionService', () => {
         NOW,
         'COMPLETED',
       );
+      expect(repository.markExpeditionCompleteNotificationsAsRead).toHaveBeenCalledWith(1, 1);
       expect(result?.status).toBe('COMPLETED');
       expect(notificationService.notifyCampRoles).toHaveBeenCalled();
+    });
+  });
+
+  describe('getExpeditionResources', () => {
+    it('returns null if expedition not found', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(service.getExpeditionResources(1)).resolves.toBeNull();
+    });
+
+    it('returns resource summary for an existing expedition', async () => {
+      const summary = {
+        consumed: [
+          { resourceTypeId: 1, resourceTypeName: 'Water', unit: 'liters', amount: '2.00' },
+        ],
+        obtained: [
+          { resourceTypeId: 2, resourceTypeName: 'Food', unit: 'units', amount: '5.00' },
+        ],
+      };
+      repository.findById.mockResolvedValue({ id: 1 });
+      repository.getResourceSummaryByExpeditionId.mockResolvedValue(summary);
+
+      await expect(service.getExpeditionResources(1)).resolves.toEqual(summary);
+      expect(repository.getResourceSummaryByExpeditionId).toHaveBeenCalledWith(1);
     });
   });
 

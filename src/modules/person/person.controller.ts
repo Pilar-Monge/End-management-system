@@ -74,6 +74,7 @@ export class PersonController {
       rol: currentUser.rol,
     };
   }
+
   @Post()
   @Roles('NO_ACCESS')
   @ApiOperation({ summary: 'Create Person' })
@@ -96,6 +97,7 @@ export class PersonController {
       );
     }
   }
+
   @Get(':id')
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Get Person by id' })
@@ -121,6 +123,7 @@ export class PersonController {
 
     return { success: true, data: person };
   }
+
   @Get()
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'List Person' })
@@ -220,6 +223,7 @@ export class PersonController {
       );
     }
   }
+
   @Put(':id')
   @Roles('SYSTEM_ADMIN')
   @ApiOperation({ summary: 'Update Person' })
@@ -241,12 +245,16 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
-      // Restricción de camp: El admin solo puede editar personas de su propio camp.
       if (existingPerson.campId !== currentUser.campId) {
         throw new BadRequestException('You do not have permission to update this person');
       }
 
-      const person = await this.service.updatePerson(parsedId, body);
+      const payload: any = { ...body };
+      if (payload.birthDate && typeof payload.birthDate === 'string') {
+        payload.birthDate = new Date(payload.birthDate);
+      }
+
+      const person = await this.service.updatePerson(parsedId, payload);
       if (!person) throw new NotFoundException('Person not found');
 
       return {
@@ -309,7 +317,6 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
-      // Restricción estricta: Nadie (ni el admin) puede actualizar la foto de otra persona.
       const user = await this.service.findUserByPersonId(parsedId);
       const isOwner = user && user.id === currentUser.userId;
 
@@ -377,7 +384,6 @@ export class PersonController {
       const existingPerson = await this.service.getPersonById(parsedId);
       if (!existingPerson) throw new NotFoundException('Person not found');
 
-      // Restricción estricta: Nadie (ni el admin) puede actualizar la foto de otra persona.
       const user = await this.service.findUserByPersonId(parsedId);
       const isOwner = user && user.id === currentUser.userId;
 
