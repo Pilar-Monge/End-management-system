@@ -27,12 +27,8 @@ export class AuthGuard implements CanActivate {
 
     const response = context.switchToHttp().getResponse<Response>();
     const request = context.switchToHttp().getRequest<Request & { user?: unknown }>();
-    const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token requerido');
-    }
-
-    const token = authHeader.slice('Bearer '.length).trim();
+    
+    const token = request.cookies?.['auth_token'];
     if (!token) {
       throw new UnauthorizedException('Token requerido');
     }
@@ -40,7 +36,11 @@ export class AuthGuard implements CanActivate {
     const payload = await this.authService.validateSession(token, request.ip ?? 'unknown');
     if (shouldRefreshSession) {
       const newToken = await this.authService.rotateSessionToken(token, payload);
-      response.setHeader('Authorization', `Bearer ${newToken}`);
+      response.cookie('auth_token', newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
       (request as Request & { refreshedToken?: string }).refreshedToken = newToken;
     }
 
