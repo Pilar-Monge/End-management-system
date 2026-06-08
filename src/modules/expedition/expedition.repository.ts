@@ -250,6 +250,41 @@ export class ExpeditionRepository {
         [expedition.id],
       )) as Array<{ resource_type_id: number; total_amount: string }>;
 
+      if (lootRows.length === 0) {
+        const resourceTypes = (await queryRunner.query(
+          `
+          SELECT id, category
+          FROM resource_type
+          WHERE category IN ('FOOD', 'WATER', 'MEDICAL', 'AMMUNITION')
+          ORDER BY RANDOM()
+          LIMIT 4
+          `,
+        )) as Array<{ id: number; category: string }>;
+
+        for (const resourceType of resourceTypes) {
+          const randomAmount = (Math.random() * 14 + 1).toFixed(2);
+
+          await queryRunner.query(
+            `
+            INSERT INTO expedition_resource_obtained (
+              expedition_id,
+              resource_type_id,
+              amount,
+              recorded_by,
+              record_date
+            )
+            VALUES ($1, $2, $3, $4, $5)
+            `,
+            [expedition.id, resourceType.id, randomAmount, completedBy, now.toISOString()],
+          );
+
+          lootRows.push({
+            resource_type_id: resourceType.id,
+            total_amount: randomAmount,
+          });
+        }
+      }
+
       for (const row of lootRows) {
         await queryRunner.query(
           `
@@ -481,5 +516,42 @@ export class ExpeditionRepository {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async hasExpeditionCompleteNotificationPending(
+    expeditionId: number,
+    campId: number,
+  ): Promise<boolean> {
+    const rows = (await this.dataSource.query(
+      `
+      SELECT COUNT(*)::int AS total
+      FROM notification
+      WHERE camp_id = $1
+        AND source_type = 'expedition_complete_pending'
+        AND source_id = $2
+        AND read = false
+      `,
+      [campId, expeditionId],
+    )) as Array<{ total: number }>;
+
+    return (rows[0]?.total ?? 0) > 0;
+  }
+
+  async markExpeditionCompleteNotificationsAsRead(
+    expeditionId: number,
+    campId: number,
+  ): Promise<void> {
+    await this.dataSource.query(
+      `
+      UPDATE notification
+      SET read = true,
+          read_date = NOW()
+      WHERE camp_id = $1
+        AND source_type = 'expedition_complete_pending'
+        AND source_id = $2
+        AND read = false
+      `,
+      [campId, expeditionId],
+    );
   }
 }
