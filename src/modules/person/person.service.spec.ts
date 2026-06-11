@@ -274,7 +274,7 @@ describe('PersonService', () => {
 
     it('sets userId if linkedUser exists in DB', async () => {
       repository.findById.mockResolvedValue({ id: 1 });
-      repository.findLinkedUserByPersonId.mockResolvedValue({ id: 42 });
+      repository.findLinkedUserByPersonId.mockResolvedValue({ id: 42, role: 'WORKER', status: 'ACTIVE', username: 'mockuser' });
 
       const result = await service.getPersonWithSignedUrl(1);
 
