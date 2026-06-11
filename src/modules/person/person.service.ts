@@ -308,9 +308,9 @@ export class PersonService {
       result.userId = null;
       result.systemUserId = null;
       result.accountId = null;
-      result.accountStatus = undefined;
-      result.accountRole = undefined;
-      result.username = undefined;
+      delete result.accountStatus;
+      delete result.accountRole;
+      delete result.username;
       result.systemUser = null;
     }
 
