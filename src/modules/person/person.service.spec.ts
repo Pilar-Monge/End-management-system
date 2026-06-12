@@ -294,13 +294,10 @@ describe('PersonService', () => {
   // ─── getAllPersons ──────────────────────────────────────────────────────
 
   describe('getAllPersons', () => {
-    it('uses default pagination if not provided', async () => {
+    it('does not apply pagination if page or limit are not provided', async () => {
       repository.findAllAndCount.mockResolvedValue({ data: [], total: 0 });
       await service.getAllPersons();
-      expect(repository.findAllAndCount).toHaveBeenCalledWith({
-        offset: 0,
-        limit: 10,
-      });
+      expect(repository.findAllAndCount).toHaveBeenCalledWith({});
     });
 
     it('passes custom filters and pagination correctly', async () => {

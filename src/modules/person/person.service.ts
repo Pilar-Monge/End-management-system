@@ -65,19 +65,21 @@ export class PersonService {
     page?: number;
     limit?: number;
   }): Promise<{ data: Person[]; total: number }> {
-    const page = filters?.page ?? 1;
-    const limit = filters?.limit ?? 10;
-    const offset = (page - 1) * limit;
     const repoFilters: {
       campId?: number;
       currentStatus?: PersonStatus;
       occupationId?: number;
-      offset: number;
-      limit: number;
-    } = {
-      offset,
-      limit,
-    };
+      offset?: number;
+      limit?: number;
+    } = {};
+
+    if (filters?.page !== undefined || filters?.limit !== undefined) {
+      const page = filters.page ?? 1;
+      const limit = filters.limit ?? 10;
+      repoFilters.limit = limit;
+      repoFilters.offset = (page - 1) * limit;
+    }
+
     if (filters?.campId !== undefined) repoFilters.campId = filters.campId;
     if (filters?.currentStatus !== undefined) repoFilters.currentStatus = filters.currentStatus;
     if (filters?.occupationId !== undefined) repoFilters.occupationId = filters.occupationId;
