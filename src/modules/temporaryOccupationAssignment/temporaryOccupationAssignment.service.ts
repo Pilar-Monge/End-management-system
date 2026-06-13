@@ -166,7 +166,7 @@ export class TemporaryOccupationAssignmentService {
 
       isExpired = endMidnight < nowMidnight;
     }
-    const status = isExpired ? 'FINALIZADA' : 'ACTIVA';
+    const status: 'ACTIVA' | 'FINALIZADA' = isExpired ? 'FINALIZADA' : 'ACTIVA';
     return { ...assignment, status };
   }
 
@@ -217,7 +217,7 @@ export class TemporaryOccupationAssignmentService {
 
         isExpired = endMidnight < nowMidnight;
       }
-      const status = isExpired ? 'FINALIZADA' : 'ACTIVA';
+      const status: 'ACTIVA' | 'FINALIZADA' = isExpired ? 'FINALIZADA' : 'ACTIVA';
       return { ...assignment, status };
     });
     return { data, total: result.total };
