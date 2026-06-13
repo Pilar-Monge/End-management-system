@@ -65,19 +65,21 @@ export class PersonService {
     page?: number;
     limit?: number;
   }): Promise<{ data: Person[]; total: number }> {
-    const page = filters?.page ?? 1;
-    const limit = filters?.limit ?? 10;
-    const offset = (page - 1) * limit;
     const repoFilters: {
       campId?: number;
       currentStatus?: PersonStatus;
       occupationId?: number;
-      offset: number;
-      limit: number;
-    } = {
-      offset,
-      limit,
-    };
+      offset?: number;
+      limit?: number;
+    } = {};
+
+    if (filters?.page !== undefined || filters?.limit !== undefined) {
+      const page = filters.page ?? 1;
+      const limit = filters.limit ?? 10;
+      repoFilters.limit = limit;
+      repoFilters.offset = (page - 1) * limit;
+    }
+
     if (filters?.campId !== undefined) repoFilters.campId = filters.campId;
     if (filters?.currentStatus !== undefined) repoFilters.currentStatus = filters.currentStatus;
     if (filters?.occupationId !== undefined) repoFilters.occupationId = filters.occupationId;
@@ -247,10 +249,38 @@ export class PersonService {
 
   private async addSignedUrlToPerson(
     person: Person,
-  ): Promise<Person & { imageSignedUrl?: string; userId?: number | null; occupation?: { id: number; name: string; description: string | null } | null }> {
+  ): Promise<
+    Person & {
+      imageSignedUrl?: string;
+      userId?: number | null;
+      systemUserId?: number | null;
+      accountId?: number | null;
+      accountStatus?: string;
+      accountRole?: string;
+      username?: string;
+      systemUser?: {
+        id: number;
+        username: string;
+        role: string;
+        status: string;
+      } | null;
+      occupation?: { id: number; name: string; description: string | null } | null;
+    }
+  > {
     const result: Person & {
       imageSignedUrl?: string;
       userId?: number | null;
+      systemUserId?: number | null;
+      accountId?: number | null;
+      accountStatus?: string;
+      accountRole?: string;
+      username?: string;
+      systemUser?: {
+        id: number;
+        username: string;
+        role: string;
+        status: string;
+      } | null;
       occupation?: { id: number; name: string; description: string | null } | null;
     } = { ...person };
 
@@ -263,7 +293,28 @@ export class PersonService {
     }
 
     const linkedUser = await this.findUserByPersonId(person.id);
-    result.userId = linkedUser ? linkedUser.id : null;
+    if (linkedUser) {
+      result.userId = linkedUser.id;
+      result.systemUserId = linkedUser.id;
+      result.accountId = linkedUser.id;
+      result.accountStatus = linkedUser.status;
+      result.accountRole = linkedUser.role;
+      result.username = linkedUser.username;
+      result.systemUser = {
+        id: linkedUser.id,
+        username: linkedUser.username,
+        role: linkedUser.role,
+        status: linkedUser.status,
+      };
+    } else {
+      result.userId = null;
+      result.systemUserId = null;
+      result.accountId = null;
+      delete result.accountStatus;
+      delete result.accountRole;
+      delete result.username;
+      result.systemUser = null;
+    }
 
     let occupationData: { id: number; name: string; description: string | null } | null = null;
     if (person.occupationId) {
@@ -295,7 +346,9 @@ export class PersonService {
     return await this.addSignedUrlToPerson(person);
   }
 
-  async findUserByPersonId(personId: number): Promise<Pick<UserEntity, 'id'> | null> {
+  async findUserByPersonId(
+    personId: number,
+  ): Promise<Pick<UserEntity, 'id' | 'role' | 'status' | 'username'> | null> {
     return await this.repository.findLinkedUserByPersonId(personId);
   }
 

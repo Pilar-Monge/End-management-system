@@ -66,11 +66,16 @@ export class PersonRepository {
     });
   }
 
-  async findLinkedUserByPersonId(personId: number): Promise<Pick<UserEntity, 'id'> | null> {
+  async findLinkedUserByPersonId(
+    personId: number,
+  ): Promise<Pick<UserEntity, 'id' | 'role' | 'status' | 'username'> | null> {
     return await this.repo.manager.getRepository(UserEntity).findOne({
       where: { personId },
       select: {
         id: true,
+        role: true,
+        status: true,
+        username: true,
       },
     });
   }

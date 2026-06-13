@@ -205,7 +205,7 @@ export class PersonController {
 
       const result = await this.service.getAllPersonsWithSignedUrls(filters);
       const resolvedPage = filters.page ?? 1;
-      const resolvedLimit = filters.limit ?? 10;
+      const resolvedLimit = filters.limit ?? Math.max(1, result.total);
 
       return {
         success: true,

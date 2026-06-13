@@ -99,7 +99,7 @@ export class TemporalAutomationRepository {
         FROM temporary_occupation_assignment
         WHERE person_id = p.id
           AND start_date <= $2
-          AND (end_date IS NULL OR end_date >= $2)
+          AND (end_date IS NULL OR end_date + INTERVAL '1 day' > $2)
         ORDER BY start_date DESC
         LIMIT 1
       ) ta ON true
@@ -133,7 +133,7 @@ export class TemporalAutomationRepository {
         FROM temporary_occupation_assignment
         WHERE person_id = p.id
           AND start_date <= $2
-          AND (end_date IS NULL OR end_date >= $2)
+          AND (end_date IS NULL OR end_date + INTERVAL '1 day' > $2)
         ORDER BY start_date DESC
         LIMIT 1
       ) ta ON true
